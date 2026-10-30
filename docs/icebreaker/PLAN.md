@@ -148,7 +148,7 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   (« Hein ?! ») si frappées, si un combat s'entend, ou si un joueur approche (6 blocs, 2,5 accroupi), et les
   endormies à 12 blocs avec elles (`generation.ron` → `sleep`). Vérifié (client texte) : couchées, endormies à 12
   blocs, la caserne se réveille à 4 blocs, le nid à l'explosion. Pas vu dans le vrai client (pose : à moitié dans
-  le sol ?), approche accroupie non testée. — *hash à venir*
+  le sol ?), approche accroupie non testée. — e0355bd6d5
 - [ ] **G.10 Éclairage selon les habitants** — torches et braseros dans les salles occupées, plus sombre dans les
   nids et les salles vides (réglages dans `generation.ron`).
   *Fin* : la différence entre une caserne et un nid se voit.
