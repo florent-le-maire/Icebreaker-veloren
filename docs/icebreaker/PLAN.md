@@ -35,9 +35,9 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   gérées. — b166c0e2e4
 - [x] **I.3 Personnages communs à toutes les instances** — base de personnages dans `ICEBREAKER_CAMPAIGN_DIR`, monde
   recréé à chaque lancement ; en instance, le waypoint sauvé (d'un autre monde) est ignoré. Vérifié : deux lancements
-  successifs utilisent la même base ; pas encore vérifié en jeu avec un objet ramassé.
+  successifs utilisent la même base ; pas encore vérifié en jeu avec un objet ramassé. — 159c42400d
 - [x] **I.4 Lanceur unique** — `icebreaker.ps1 village | donjon <type> | route` : dossier et ports par lieu, graine au
-  hasard, journée de 48 min. `donjon` marche (port 14110) ; `village` et `route` arrivent avec V.1 et P.1.
+  hasard, journée de 48 min. `donjon` marche (port 14110) ; `village` et `route` arrivent avec V.1 et P.1. — 159c42400d
 - [ ] **I.5 Temps de carte** — 1 min réelle = 30 min de carte (journée de 48 min), horloge gardée dans la campagne et
   reprise d'une instance à l'autre.
   *Fin* : l'heure affichée continue d'une instance à la suivante.
