@@ -28,8 +28,8 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
 
 ## Jalon 1 — Des instances propres (la base de tout)
 
-- [ ] **I.1 Pas de faune sauvage en instance** — seuls les habitants du lieu apparaissent.
-  *Fin* : 5 min dans une instance gnarling sans aucune créature hors du donjon.
+- [x] **I.1 Pas de faune sauvage en instance** — ni faune des chunks, ni oiseaux et monstres errants de rtsim ;
+  restent les habitants du donjon et de la ville. Pas encore vérifié 5 min en jeu. — c1c1aa969c
 - [ ] **I.2 Zone fermée avec horizon** — terrain plus grand que la zone jouable ; au bord, le serveur repousse le
   joueur avec un message « Vous ne pouvez pas quitter la zone ». Rayon jouable réglable.
   *Fin* : impossible de sortir à pied, en planeur ou en nageant ; l'horizon reste un vrai paysage.

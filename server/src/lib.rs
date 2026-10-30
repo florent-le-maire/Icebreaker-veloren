@@ -489,6 +489,14 @@ impl Server {
 
         state.ecs_mut().insert(map);
 
+        // Icebreaker: the site an encounter instance is built around (origin, radius).
+        #[cfg(feature = "worldgen")]
+        let instance_site_area = world::icebreaker::is_instance()
+            .then(|| world.civs().sites().find(|site| site.is_dungeon()))
+            .flatten()
+            .and_then(|site| site.site_tmp)
+            .map(|site| (index.sites[site].origin, index.sites[site].radius()));
+
         #[cfg(feature = "worldgen")]
         let spawn_point = SpawnPoint({
             let index = index.as_index_ref();
@@ -501,22 +509,17 @@ impl Server {
             let center_chunk = world.sim().map_size_lg().chunks().map(i32::from) / 2;
             // Icebreaker: in an encounter instance, players start in front of its
             // dungeon, just outside the site, on the side facing the map center.
-            let instance_dungeon = world::icebreaker::is_instance()
-                .then(|| world.civs().sites().find(|site| site.is_dungeon()))
-                .flatten()
-                .and_then(|site| site.site_tmp)
-                .map(|site| {
-                    const MARGIN: f32 = 24.0;
-                    let site = &index.sites[site];
-                    let center_wpos = TerrainChunkSize::center_wpos(center_chunk);
-                    let toward_center = (center_wpos - site.origin)
-                        .as_::<f32>()
-                        .try_normalized()
-                        .unwrap_or(Vec2::unit_y());
-                    let spawn = site.origin + (toward_center * (site.radius() + MARGIN)).as_::<i32>();
-                    info!(?spawn, dungeon = ?site.origin, radius = site.radius(), "Icebreaker instance spawn");
-                    spawn
-                });
+            let instance_dungeon = instance_site_area.map(|(origin, radius)| {
+                const MARGIN: f32 = 24.0;
+                let center_wpos = TerrainChunkSize::center_wpos(center_chunk);
+                let toward_center = (center_wpos - origin)
+                    .as_::<f32>()
+                    .try_normalized()
+                    .unwrap_or(Vec2::unit_y());
+                let spawn = origin + (toward_center * (radius + MARGIN)).as_::<i32>();
+                info!(?spawn, dungeon = ?origin, radius, "Icebreaker instance spawn");
+                spawn
+            });
             let spawn_wpos = instance_dungeon.unwrap_or_else(|| {
                 let spawn_chunk = world
                     .civs()
@@ -535,6 +538,18 @@ impl Server {
 
         // Set the spawn point we calculated above
         state.ecs_mut().insert(spawn_point);
+
+        // Icebreaker: players can't leave the area of an encounter instance.
+        #[cfg(feature = "worldgen")]
+        let zone = instance_site_area.map(|(origin, radius)| sys::icebreaker_zone::Zone {
+            center: origin.as_(),
+            radius: radius + settings.icebreaker.zone_margin,
+        });
+        #[cfg(not(feature = "worldgen"))]
+        let zone = None;
+        state
+            .ecs_mut()
+            .insert(sys::icebreaker_zone::IcebreakerZone::new(zone));
 
         // Insert a default AABB for the world
         // TODO: prevent this from being deleted

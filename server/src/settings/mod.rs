@@ -206,6 +206,22 @@ pub struct Settings {
 
     #[serde(default)]
     pub world: WorldSettings,
+
+    #[serde(default)]
+    pub icebreaker: IcebreakerSettings,
+}
+
+/// Icebreaker: settings of encounter instances.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
+pub struct IcebreakerSettings {
+    /// How far (in blocks) players may go beyond the edge of the instance's
+    /// site before the server pushes them back.
+    pub zone_margin: f32,
+}
+
+impl Default for IcebreakerSettings {
+    fn default() -> Self { Self { zone_margin: 120.0 } }
 }
 
 impl Default for Settings {
@@ -235,6 +251,7 @@ impl Default for Settings {
             gameplay: GameplaySettings::default(),
             moderation: ModerationSettings::default(),
             world: WorldSettings::default(),
+            icebreaker: IcebreakerSettings::default(),
         }
     }
 }
