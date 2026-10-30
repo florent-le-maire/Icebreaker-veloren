@@ -4,8 +4,13 @@
 
 pub mod dungeon;
 
-use crate::site::{Site, SiteKind, plot::PlotKind};
-use tracing::warn;
+use crate::site::{
+    Site, SiteKind,
+    plot::{Plot, PlotKind},
+};
+use common::store::Id;
+use std::{collections::HashSet, sync::RwLock};
+use tracing::{info, warn};
 
 const INSTANCE_SITE_VAR: &str = "ICEBREAKER_INSTANCE_SITE";
 const TOWN_SIZE_VAR: &str = "ICEBREAKER_TOWN_SIZE";
@@ -56,17 +61,24 @@ pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
     })
 }
 
-/// The `count` houses of the village nearest to `square` (world position),
-/// for its buildings: (in front of the door, bounds), in world coordinates.
-/// Fewer if the town has fewer houses (its other kinds have no `House` plots).
-pub fn village_houses(
-    site: &Site,
-    square: vek::Vec2<i32>,
-    count: usize,
-) -> Vec<(vek::Vec2<i32>, vek::Aabr<i32>)> {
+/// A house of the village, built or a plot to build on.
+#[derive(Clone, Copy, Debug)]
+pub struct VillageHouse {
+    pub plot: Id<Plot>,
+    /// In front of the door, on the road (world position).
+    pub front: vek::Vec2<i32>,
+    /// World bounds.
+    pub bounds: vek::Aabr<i32>,
+}
+
+/// The houses of the village, nearest to `square` (world position) first: the
+/// first ones hold its buildings, the next ones grow it. None if the town has
+/// no `House` plots (other kinds of towns).
+pub fn village_houses(site: &Site, square: vek::Vec2<i32>) -> Vec<VillageHouse> {
     let mut houses = site
-        .plots()
-        .filter_map(|plot| match plot.kind() {
+        .plots
+        .iter()
+        .filter_map(|(id, plot)| match plot.kind() {
             PlotKind::House(house) => {
                 let tiles = plot.find_bounds();
                 // The door tile is the house's; its neighbour out of the house is
@@ -81,17 +93,78 @@ pub fn village_houses(
                 .map(|dir| house.door_tile + dir)
                 .find(|tile| !plot.tiles().any(|t| t == *tile))
                 .unwrap_or(house.door_tile);
-                Some((site.tile_center_wpos(front), vek::Aabr {
-                    min: site.tile_wpos(tiles.min),
-                    max: site.tile_wpos(tiles.max + 1),
-                }))
+                Some(VillageHouse {
+                    plot: id,
+                    front: site.tile_center_wpos(front),
+                    bounds: vek::Aabr {
+                        min: site.tile_wpos(tiles.min),
+                        max: site.tile_wpos(tiles.max + 1),
+                    },
+                })
             },
             _ => None,
         })
         .collect::<Vec<_>>();
-    houses.sort_by_key(|(door, _)| door.distance_squared(square));
-    houses.truncate(count);
+    houses.sort_by_key(|house| house.front.distance_squared(square));
     houses
+}
+
+/// The village as it stands: the plots of its town not built (yet), which are
+/// not drawn, and how many people live there (for rtsim). Set by the server
+/// once the world is generated, before any chunk is.
+struct Village {
+    hidden: HashSet<Id<Plot>>,
+    inhabitants: u32,
+}
+
+static VILLAGE: RwLock<Option<Village>> = RwLock::new(None);
+
+/// Sets what of the village's town stands: the `built` houses, its square and
+/// roads, its fields; and how many people live there.
+pub fn set_village(site: &Site, built: &HashSet<Id<Plot>>, inhabitants: u32) {
+    let hidden = site
+        .plots
+        .iter()
+        .filter(|(id, plot)| {
+            !built.contains(id)
+                && !matches!(
+                    plot.kind(),
+                    PlotKind::Plaza(_)
+                        | PlotKind::Road(_)
+                        | PlotKind::Bridge(_)
+                        | PlotKind::FarmField(_)
+                )
+        })
+        .map(|(id, _)| id)
+        .collect::<HashSet<_>>();
+    info!(
+        built = built.len(),
+        hidden = hidden.len(),
+        inhabitants,
+        "Icebreaker village"
+    );
+    *VILLAGE.write().unwrap_or_else(|e| e.into_inner()) = Some(Village {
+        hidden,
+        inhabitants,
+    });
+}
+
+/// Whether this plot of the village is not built (yet).
+pub(crate) fn is_hidden(plot: Id<Plot>) -> bool {
+    VILLAGE
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .is_some_and(|village| village.hidden.contains(&plot))
+}
+
+/// How many people live in the village, once set.
+pub fn village_inhabitants() -> Option<u32> {
+    VILLAGE
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .map(|village| village.inhabitants)
 }
 
 /// What the mission of a dungeon of our generator counts: its leader,

@@ -33,7 +33,9 @@ pub fn wanted_population(world: &World, index: IndexRef) -> Population {
         // TODO: Stupid. Only find site towns
         .filter(|(_, site)| site.meta().is_some_and(|m| matches!(m, common::terrain::SiteKindMeta::Settlement(_))))
     {
-        let town_pop = site.plots().len() as u32;
+        // Icebreaker: the village has as many people as its built houses hold.
+        let town_pop = world::icebreaker::village_inhabitants()
+            .unwrap_or(site.plots().len() as u32);
         let guards = town_pop / 4;
         let adventurers = town_pop / 5;
         let others = town_pop.saturating_sub(guards + adventurers);

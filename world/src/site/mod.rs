@@ -3190,7 +3190,10 @@ impl Site {
             for x in tile_aabr.min.x..tile_aabr.max.x {
                 self.render_tile(canvas, Vec2::new(x, y));
 
-                if let Some(plot) = self.tiles.get(Vec2::new(x, y)).plot {
+                // Icebreaker: the village's plots not built yet are not drawn.
+                if let Some(plot) = self.tiles.get(Vec2::new(x, y)).plot
+                    && !crate::icebreaker::is_hidden(plot)
+                {
                     plots.insert(plot);
                 }
             }
@@ -3199,7 +3202,11 @@ impl Site {
         canvas.foreach_col(|canvas, wpos2d, col| {
             let tile = self.wpos_tile(wpos2d);
             for z_off in (-2..4).rev() {
-                if let Some(plot) = tile.plot.map(|p| self.plot(p)) {
+                if let Some(plot) = tile
+                    .plot
+                    .filter(|p| !crate::icebreaker::is_hidden(*p))
+                    .map(|p| self.plot(p))
+                {
                     canvas.map_resource(
                         wpos2d.with_z(plot.rel_terrain_offset(col) + z_off),
                         |block| {

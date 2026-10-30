@@ -70,6 +70,13 @@ $port = if ($Port) { $Port } else { $ports[$Lieu] }
 Remove-Item -Recurse -Force "$ud\server\rtsim" -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force "$ud\server\server_config", "$ud\server-cli", "$root\campagne" | Out-Null
 
+# Le village garde sa graine pour toute la campagne : ses maisons (bâties ou à bâtir) restent à leur place.
+$graineVillage = "$root\campagne\village-graine.txt"
+if ($Lieu -eq "village" -and -not $PSBoundParameters.ContainsKey("Seed")) {
+    if (Test-Path $graineVillage) { $Seed = [int](Get-Content $graineVillage -TotalCount 1) }
+    else { Set-Content -Path $graineVillage -Value $Seed -Encoding ascii }
+}
+
 # Les lecteurs RON refusent le BOM : UTF-8 sans BOM. Les champs absents prennent leur valeur par défaut.
 $utf8 = New-Object Text.UTF8Encoding($false)
 [IO.File]::WriteAllText("$ud\server\server_config\settings.ron", @"

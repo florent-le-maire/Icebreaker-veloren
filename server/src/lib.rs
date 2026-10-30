@@ -22,6 +22,7 @@ pub mod icebreaker_mission;
 pub mod icebreaker_return;
 pub mod icebreaker_services;
 pub mod icebreaker_treasury;
+pub mod icebreaker_village;
 pub mod icebreaker_warehouse;
 pub mod input;
 pub mod location;
@@ -572,13 +573,18 @@ impl Server {
             let square = spawn_point.0.xy().as_::<i32>();
             let houses = instance_site
                 .filter(|_| world::icebreaker::is_village())
-                .map(|site| world::icebreaker::village_houses(&index.sites[site], square, 4));
+                .map(|site| world::icebreaker::village_houses(&index.sites[site], square));
+            // Icebreaker: only some of the town's houses stand (jalon C).
+            if let (Some(site), Some(houses)) = (instance_site, &houses) {
+                icebreaker_village::set_village(&index.sites[site], houses);
+            }
             offsets
                 .iter()
                 .enumerate()
                 .map(|(i, offset)| {
                     let houses = houses.as_ref()?;
-                    let (door, bounds) = houses.get(i).copied().unwrap_or_else(|| {
+                    let house = houses.get(i).map(|house| (house.front, house.bounds));
+                    let (door, bounds) = house.unwrap_or_else(|| {
                         let wpos = square + Vec2::<f32>::from(*offset).as_::<i32>();
                         (wpos, Aabr {
                             min: wpos - 6,
