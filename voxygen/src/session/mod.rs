@@ -2441,9 +2441,9 @@ struct IcebreakerTopView {
     /// The height at which the screen meets the village: a little above the
     /// character's ground at the start, halfway up the houses.
     plane_z: f32,
-    /// The buildings (name, bounds in world coordinates), once the server sent
-    /// them.
-    buildings: Vec<(comp::Content, Aabr<i32>)>,
+    /// The buildings and plots to build on (name, bounds in world coordinates,
+    /// whether a plot), once the server sent them.
+    buildings: Vec<(comp::Content, Aabr<i32>, bool)>,
 }
 
 /// How high above the character the top view starts.
@@ -2514,7 +2514,7 @@ impl SessionState {
     }
 
     /// Where the buildings are on screen this frame, for the HUD: name, screen
-    /// rectangle (-1 to 1, y up) and whether the cursor is over it.
+    /// rectangle (-1 to 1, y up), whether the cursor is over it, whether a plot.
     fn update_icebreaker_top_view(&mut self, global_state: &GlobalState) {
         let Some(view) = &self.icebreaker_top_view else {
             return;
@@ -2523,7 +2523,7 @@ impl SessionState {
         let on_screen = view
             .buildings
             .iter()
-            .map(|(name, bounds)| {
+            .map(|(name, bounds, plot)| {
                 let bounds_f = Aabr {
                     min: bounds.min.as_::<f32>(),
                     max: bounds.max.as_::<f32>(),
@@ -2533,7 +2533,7 @@ impl SessionState {
                     max: self.icebreaker_world_to_ndc(view, bounds_f.max),
                 };
                 let hovered = bounds_f.contains_point(cursor);
-                (name.clone(), rect, hovered)
+                (name.clone(), rect, hovered, *plot)
             })
             .collect();
         self.hud.icebreaker_buildings(on_screen);

@@ -1357,9 +1357,10 @@ pub struct Hud {
     /// the last building clicked there (title, lines).
     icebreaker_top_view: bool,
     icebreaker_panel: Option<(comp::Content, Vec<comp::Content>)>,
-    /// Icebreaker: the buildings on screen in the top view (name, rectangle
-    /// from -1 to 1 with y up, whether under the cursor).
-    icebreaker_buildings: Vec<(comp::Content, Aabr<f32>, bool)>,
+    /// Icebreaker: the buildings and plots on screen in the top view (name,
+    /// rectangle from -1 to 1 with y up, whether under the cursor, whether a
+    /// plot to build on).
+    icebreaker_buildings: Vec<(comp::Content, Aabr<f32>, bool, bool)>,
     force_chat_input: Option<String>,
     force_chat_cursor: Option<Index>,
     tab_complete: Option<String>,
@@ -4161,14 +4162,16 @@ impl Hud {
                 self.ids.icebreaker_building_names.resize(count, ids);
             }
             let half_win = Vec2::new(ui_widgets.win_w, ui_widgets.win_h) / 2.0;
-            for (i, (name, rect, hovered)) in self.icebreaker_buildings.iter().enumerate() {
+            for (i, (name, rect, hovered, plot)) in self.icebreaker_buildings.iter().enumerate() {
                 let min = rect.min.as_::<f64>() * half_win;
                 let max = rect.max.as_::<f64>() * half_win;
                 let center = (min + max) / 2.0;
-                let (fill, font_size) = if *hovered {
-                    ((1.0, 0.85, 0.3, 0.45), 26)
-                } else {
-                    ((1.0, 1.0, 1.0, 0.15), 18)
+                // Buildings in white, plots to build on in green; yellow under
+                // the cursor.
+                let (fill, font_size) = match (*hovered, *plot) {
+                    (true, _) => ((1.0, 0.85, 0.3, 0.45), 26),
+                    (false, false) => ((1.0, 1.0, 1.0, 0.15), 18),
+                    (false, true) => ((0.3, 0.9, 0.3, 0.2), 16),
                 };
                 Rectangle::fill([(max.x - min.x).abs(), (max.y - min.y).abs()])
                     .rgba(fill.0, fill.1, fill.2, fill.3)
@@ -5442,7 +5445,7 @@ impl Hud {
         self.icebreaker_panel = panel;
     }
 
-    pub fn icebreaker_buildings(&mut self, buildings: Vec<(comp::Content, Aabr<f32>, bool)>) {
+    pub fn icebreaker_buildings(&mut self, buildings: Vec<(comp::Content, Aabr<f32>, bool, bool)>) {
         self.icebreaker_buildings = buildings;
     }
 

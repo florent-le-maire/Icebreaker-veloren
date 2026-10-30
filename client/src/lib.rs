@@ -135,8 +135,9 @@ pub enum Event {
     Dialogue(Uid, rtsim::Dialogue<true>),
     /// Icebreaker: the panel of a village building (title, lines).
     IcebreakerPanel(comp::Content, Vec<comp::Content>),
-    /// Icebreaker: the village buildings (name, bounds in world coordinates).
-    IcebreakerBuildings(Vec<(comp::Content, Aabr<i32>)>),
+    /// Icebreaker: the village buildings and plots to build on (name, bounds in
+    /// world coordinates, whether a plot).
+    IcebreakerBuildings(Vec<(comp::Content, Aabr<i32>, bool)>),
     Gizmos(Vec<Gizmos>),
 }
 

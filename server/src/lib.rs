@@ -563,7 +563,7 @@ impl Server {
         // square, their NPC standing at the door; on the square, at the setting's
         // offset from the spawn point, if the town lacks houses.
         #[cfg(feature = "worldgen")]
-        let village_posts = {
+        let (village_posts, village) = {
             let offsets = [
                 settings.icebreaker.storekeeper_offset,
                 settings.icebreaker.treasurer_offset,
@@ -575,10 +575,13 @@ impl Server {
                 .filter(|_| world::icebreaker::is_village())
                 .map(|site| world::icebreaker::village_houses(&index.sites[site], square));
             // Icebreaker: only some of the town's houses stand (jalon C).
-            if let (Some(site), Some(houses)) = (instance_site, &houses) {
-                icebreaker_village::set_village(&index.sites[site], houses);
-            }
-            offsets
+            let village = match (instance_site, &houses) {
+                (Some(site), Some(houses)) => {
+                    icebreaker_village::IcebreakerVillage::new(&index.sites[site], houses)
+                },
+                _ => icebreaker_village::IcebreakerVillage::default(),
+            };
+            let posts = offsets
                 .iter()
                 .enumerate()
                 .map(|(i, offset)| {
@@ -594,16 +597,19 @@ impl Server {
                     let pos = world.find_accessible_pos(index.as_index_ref(), door, false);
                     Some((pos, bounds))
                 })
-                .collect::<Vec<_>>()
+                .collect::<Vec<_>>();
+            (posts, village)
         };
         #[cfg(not(feature = "worldgen"))]
-        let village_posts = vec![None; 4];
+        let (village_posts, village) = (vec![None; 4], icebreaker_village::IcebreakerVillage::default());
         let village_npc_pos = |i: usize| village_posts[i].map(|(pos, _)| pos);
         state
             .ecs_mut()
             .insert(icebreaker_buildings::IcebreakerBuildings::new(
                 village_posts.iter().map(|post| post.map(|(_, bounds)| bounds)),
+                village.open_plots(),
             ));
+        state.ecs_mut().insert(village);
         let campaign_dir = std::env::var_os("ICEBREAKER_CAMPAIGN_DIR").map(std::path::PathBuf::from);
         state
             .ecs_mut()

@@ -221,8 +221,9 @@ pub enum ServerGeneral {
     SiteEconomy(EconomyInfo),
     /// Icebreaker: the panel of a village building (title, lines).
     IcebreakerPanel(Content, Vec<Content>),
-    /// Icebreaker: the village buildings (name, bounds in world coordinates).
-    IcebreakerBuildings(Vec<(Content, Aabr<i32>)>),
+    /// Icebreaker: the village buildings and plots to build on (name, bounds in
+    /// world coordinates, whether a plot).
+    IcebreakerBuildings(Vec<(Content, Aabr<i32>, bool)>),
     MapMarker(comp::MapMarkerUpdate),
     WeatherUpdate(SharedWeatherGrid),
     LocalWindUpdate(Vec2<f32>),

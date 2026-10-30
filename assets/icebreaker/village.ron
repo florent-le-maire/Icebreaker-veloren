@@ -10,4 +10,10 @@
     maisons_au_depart: 6,
     // Habitants (gardes, marchands, aventuriers, villageois) par maison bâtie.
     habitants_par_maison: 2,
+    // Terrains à bâtir proposés à la fois, les plus proches de la place d'abord.
+    terrains_ouverts: 6,
+    // Prix d'une maison, en pièces d'or de la caisse.
+    prix_maison: 300,
+    // Durée d'un chantier de maison, en heures de carte (1 min réelle = 30 min de carte).
+    heures_chantier: 6.0,
 )

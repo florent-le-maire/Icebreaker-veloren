@@ -1,13 +1,15 @@
 //! Icebreaker: the village buildings (V.6). Each is one of the town's houses
 //! nearest to the square, its NPC standing at the door. In the top view of the
 //! village, the client asks for the buildings (to show their names and
-//! highlight the one under the cursor), and a click on one for its panel.
+//! highlight the one under the cursor), and a click on one for its panel. The
+//! plots to build on (jalon C) are shown and clicked likewise.
 
 use crate::{
     client::Client,
     events::ServerEvent,
     icebreaker_services::IcebreakerServices,
     icebreaker_treasury::IcebreakerTreasury,
+    icebreaker_village::{self, VillageConfig},
     icebreaker_warehouse::IcebreakerWarehouse,
 };
 use common::{
@@ -46,13 +48,25 @@ impl Building {
     }
 }
 
-/// Where each building is (none outside the village).
+/// A place of the village shown in the top view: a building, or a plot to
+/// build on (its rank among the town's houses).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Place {
+    Building(Building),
+    Plot(usize),
+}
+
+/// Where each building and plot to build on is (none outside the village).
 #[derive(Default)]
-pub struct IcebreakerBuildings(Vec<(Building, Aabr<i32>)>);
+pub struct IcebreakerBuildings(Vec<(Place, Aabr<i32>)>);
 
 impl IcebreakerBuildings {
-    /// The buildings of `Building::ALL` with their bounds, if any.
-    pub fn new(bounds: impl IntoIterator<Item = Option<Aabr<i32>>>) -> Self {
+    /// The buildings of `Building::ALL` with their bounds, if any, and the
+    /// plots to build on (rank, bounds).
+    pub fn new(
+        bounds: impl IntoIterator<Item = Option<Aabr<i32>>>,
+        plots: impl IntoIterator<Item = (usize, Aabr<i32>)>,
+    ) -> Self {
         Self(
             Building::ALL
                 .into_iter()
@@ -61,28 +75,52 @@ impl IcebreakerBuildings {
                 .inspect(|(building, bounds)| {
                     info!(?building, ?bounds, "Icebreaker: village building")
                 })
+                .map(|(building, bounds)| (Place::Building(building), bounds))
+                .chain(plots.into_iter().map(|(rank, bounds)| (Place::Plot(rank), bounds)))
                 .collect(),
         )
     }
 
-    /// The building at `wpos`, if any.
-    pub fn at(&self, wpos: Vec2<f32>) -> Option<Building> {
+    /// The place at `wpos`, if any.
+    pub fn at(&self, wpos: Vec2<f32>) -> Option<Place> {
         let wpos = wpos.map(|e| e.floor() as i32);
         self.0
             .iter()
             .find(|(_, bounds)| bounds.contains_point(wpos))
-            .map(|(building, _)| *building)
+            .map(|(place, _)| *place)
     }
 }
 
-/// The panel of `building`: title and lines.
+/// What a plot to build on is called on the top view.
+fn plot_name(config: &VillageConfig) -> String {
+    format!("Terrain à bâtir ({} or)", config.prix_maison)
+}
+
+/// The panel of `place`: title and lines.
 fn panel(
-    building: Building,
+    place: Place,
     warehouse: &IcebreakerWarehouse,
     treasury: &IcebreakerTreasury,
     services: &IcebreakerServices,
 ) -> (Content, Vec<Content>) {
     let plain = |text: String| Content::Plain(text);
+    let building = match place {
+        Place::Building(building) => building,
+        Place::Plot(_) => {
+            let config = icebreaker_village::config();
+            return (plain("Terrain à bâtir".to_string()), vec![
+                plain(format!(
+                    "Une maison : {} pièces d'or de la caisse (la caisse en a {}).",
+                    config.prix_maison,
+                    treasury.coins()
+                )),
+                plain(format!(
+                    "Chantier : {} h de carte, puis de nouveaux habitants.",
+                    config.heures_chantier
+                )),
+            ]);
+        },
+    };
     let lines = match building {
         Building::Warehouse => {
             let items = warehouse.load_items();
@@ -139,20 +177,26 @@ impl ServerEvent for IcebreakerBuildingEvent {
             };
             match event.wpos {
                 Some(wpos) => {
-                    if let Some(building) = buildings.at(wpos) {
-                        let (title, lines) = panel(building, &warehouse, &treasury, &services);
+                    if let Some(place) = buildings.at(wpos) {
+                        let (title, lines) = panel(place, &warehouse, &treasury, &services);
                         client.send_fallible(ServerGeneral::IcebreakerPanel(title, lines));
                     }
                 },
-                None => client.send_fallible(ServerGeneral::IcebreakerBuildings(
-                    buildings
-                        .0
-                        .iter()
-                        .map(|(building, bounds)| {
-                            (Content::Plain(building.name().to_string()), *bounds)
-                        })
-                        .collect(),
-                )),
+                None => {
+                    let config = icebreaker_village::config();
+                    client.send_fallible(ServerGeneral::IcebreakerBuildings(
+                        buildings
+                            .0
+                            .iter()
+                            .map(|(place, bounds)| match place {
+                                Place::Building(building) => {
+                                    (Content::Plain(building.name().to_string()), *bounds, false)
+                                },
+                                Place::Plot(_) => (Content::Plain(plot_name(&config)), *bounds, true),
+                            })
+                            .collect(),
+                    ))
+                },
             }
         }
     }
@@ -168,11 +212,15 @@ mod tests {
             min: Vec2::new(x, 0),
             max: Vec2::new(x + 10, 10),
         };
-        let buildings =
-            IcebreakerBuildings::new([Some(square(0)), None, Some(square(20)), Some(square(40))]);
-        assert_eq!(buildings.at(Vec2::new(5.5, 5.0)), Some(Building::Warehouse));
-        assert_eq!(buildings.at(Vec2::new(25.0, 9.9)), Some(Building::Intendance));
-        assert_eq!(buildings.at(Vec2::new(45.0, 1.0)), Some(Building::Infirmary));
-        assert_eq!(buildings.at(Vec2::new(15.0, 5.0)), None);
+        let buildings = IcebreakerBuildings::new(
+            [Some(square(0)), None, Some(square(20)), Some(square(40))],
+            [(7, square(60))],
+        );
+        let at = |x, y| buildings.at(Vec2::new(x, y));
+        assert_eq!(at(5.5, 5.0), Some(Place::Building(Building::Warehouse)));
+        assert_eq!(at(25.0, 9.9), Some(Place::Building(Building::Intendance)));
+        assert_eq!(at(45.0, 1.0), Some(Place::Building(Building::Infirmary)));
+        assert_eq!(at(65.0, 1.0), Some(Place::Plot(7)));
+        assert_eq!(at(15.0, 5.0), None);
     }
 }
