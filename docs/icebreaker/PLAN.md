@@ -42,7 +42,7 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   `campagne/horloge.ron`, écrite par l'instance qui a des joueurs (toutes les `icebreaker.clock_save_interval`, 5 s,
   et au départ du dernier), reprise par une instance vide à l'arrivée de son premier joueur : l'heure suit les joueurs
   et s'arrête quand personne ne joue. Vérifié avec le client texte : reprise à l'arrivée, ×30, continuité après
-  relance. Deux instances jouées en même temps s'écrasent l'horloge (la dernière écrite gagne).
+  relance. Deux instances jouées en même temps s'écrasent l'horloge (la dernière écrite gagne). — 4a688313bc
 
 ## Jalon 2 — Le village (première version)
 
