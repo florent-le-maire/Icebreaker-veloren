@@ -5577,9 +5577,15 @@ impl Hud {
         self.icebreaker_buildings.clear();
     }
 
-    /// Icebreaker: whether the cursor is over no widget (a click there is on
-    /// the village of the top view).
-    pub fn icebreaker_cursor_free(&self) -> bool { self.ui.no_widget_capturing_mouse() }
+    /// Icebreaker: whether a click at the cursor is on the village of the top
+    /// view: over no widget, or over a building's rectangle or name (not over
+    /// the panel, its buttons, or the rest of the HUD).
+    pub fn icebreaker_cursor_free(&self) -> bool {
+        self.ui.widget_capturing_mouse().is_none_or(|id| {
+            self.ids.icebreaker_building_rects.contains(&id)
+                || self.ids.icebreaker_building_names.contains(&id)
+        })
+    }
 
     pub fn icebreaker_expedition(&mut self, expedition: Option<(comp::Content, Vec<(String, bool)>)>) {
         self.icebreaker_expedition = expedition;

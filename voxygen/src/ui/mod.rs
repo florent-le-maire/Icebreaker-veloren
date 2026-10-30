@@ -279,6 +279,15 @@ impl Ui {
         self.ui.global_input().current.widget_capturing_keyboard
     }
 
+    // Icebreaker: the widget capturing the mouse, besides the window.
+    pub fn widget_capturing_mouse(&self) -> Option<widget::Id> {
+        self.ui
+            .global_input()
+            .current
+            .widget_capturing_mouse
+            .filter(|id| id != &self.ui.window)
+    }
+
     // Get whether a widget besides the window is capturing the mouse.
     pub fn no_widget_capturing_mouse(&self) -> bool {
         self.ui
