@@ -134,8 +134,14 @@ fn main() -> io::Result<()> {
     // Relative to data_dir
     const PERSISTENCE_DB_DIR: &str = "saves";
 
+    // Icebreaker: every instance of a campaign shares the characters saved in
+    // `ICEBREAKER_CAMPAIGN_DIR`, while its world stays its own.
+    let db_dir = match std::env::var_os("ICEBREAKER_CAMPAIGN_DIR") {
+        Some(campaign_dir) => std::path::PathBuf::from(campaign_dir).join(PERSISTENCE_DB_DIR),
+        None => server_data_dir.join(PERSISTENCE_DB_DIR),
+    };
     let database_settings = DatabaseSettings {
-        db_dir: server_data_dir.join(PERSISTENCE_DB_DIR),
+        db_dir,
         sql_log_mode,
     };
 

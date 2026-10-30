@@ -703,6 +703,11 @@ impl StateExt for State {
             map_marker,
         } = components;
 
+        // Icebreaker: characters are shared by every instance but each instance has
+        // its own world, so a saved waypoint points into another world. Characters
+        // always enter an instance at its spawn point.
+        let waypoint = waypoint.filter(|_| !world::icebreaker::is_instance());
+
         if let Some(player_uid) = self.read_component_copied::<Uid>(entity) {
             let result =
                 if let Some(presence) = self.ecs().write_storage::<Presence>().get_mut(entity) {

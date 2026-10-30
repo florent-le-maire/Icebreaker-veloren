@@ -30,14 +30,14 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
 
 - [x] **I.1 Pas de faune sauvage en instance** — ni faune des chunks, ni oiseaux et monstres errants de rtsim ;
   restent les habitants du donjon et de la ville. Pas encore vérifié 5 min en jeu. — c1c1aa969c
-- [ ] **I.2 Zone fermée avec horizon** — terrain plus grand que la zone jouable ; au bord, le serveur repousse le
-  joueur avec un message « Vous ne pouvez pas quitter la zone ». Rayon jouable réglable.
-  *Fin* : impossible de sortir à pied, en planeur ou en nageant ; l'horizon reste un vrai paysage.
-- [ ] **I.3 Personnages communs à toutes les instances** — tous les serveurs lisent la même base de personnages
-  (dossier de campagne) ; seul le monde est recréé.
-  *Fin* : un personnage ramasse un objet en donjon, on lance une autre instance, il l'a toujours.
-- [ ] **I.4 Lanceur unique** — `icebreaker.ps1 village | donjon <type> | route`, avec ports et dossiers séparés.
-  *Fin* : les trois commandes démarrent, le client s'y connecte.
+- [x] **I.2 Zone fermée avec horizon** — cercle autour du site (rayon du site + `icebreaker.zone_margin`, 120 blocs) ;
+  le serveur remet le joueur sur le bord avec un message. À vérifier en jeu (pied, planeur, nage) ; montures non
+  gérées. — b166c0e2e4
+- [x] **I.3 Personnages communs à toutes les instances** — base de personnages dans `ICEBREAKER_CAMPAIGN_DIR`, monde
+  recréé à chaque lancement ; en instance, le waypoint sauvé (d'un autre monde) est ignoré. Vérifié : deux lancements
+  successifs utilisent la même base ; pas encore vérifié en jeu avec un objet ramassé.
+- [x] **I.4 Lanceur unique** — `icebreaker.ps1 village | donjon <type> | route` : dossier et ports par lieu, graine au
+  hasard, journée de 48 min. `donjon` marche (port 14110) ; `village` et `route` arrivent avec V.1 et P.1.
 - [ ] **I.5 Temps de carte** — 1 min réelle = 30 min de carte (journée de 48 min), horloge gardée dans la campagne et
   reprise d'une instance à l'autre.
   *Fin* : l'heure affichée continue d'une instance à la suivante.

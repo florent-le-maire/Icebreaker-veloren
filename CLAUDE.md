@@ -18,7 +18,8 @@ fichier de `docs/icebreaker/design/` utile.
 
 - Compiler le serveur : `cargo build -p veloren-server-cli` ; le client : `cargo build -p veloren-voxygen`.
 - Tests ciblés : `cargo test -p <crate> <filtre>`.
-- Instance : `powershell -ExecutionPolicy Bypass -File .\icebreaker-instance.ps1 -Site Gnarling` (port 14104), puis
-  le client en multijoueur sur `localhost:14104`.
+- Lieu de la campagne : `powershell -ExecutionPolicy Bypass -File .\icebreaker.ps1 donjon -Site Gnarling`
+  (port 14110 ; village 14100 et route 14120 à venir), puis le client en multijoueur sur `localhost:<port>`.
+  Personnages communs à tous les lieux dans `userdata-icebreaker\campagne`.
 - Lancer depuis la racine du dépôt (le jeu y cherche `assets/`). Un serveur qui tourne verrouille son `.exe` :
   le renommer avant de recompiler plutôt que d'arrêter un serveur qu'on n'a pas lancé.
