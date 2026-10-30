@@ -499,10 +499,18 @@ impl PlayState for MainMenuState {
             }
         }
 
+        // Icebreaker: travelling to another place of the campaign connects there.
+        let travel = matches!(self.init, InitState::None)
+            .then(crate::icebreaker::take_address)
+            .flatten()
+            .map(|address| self.main_menu_ui.icebreaker_travel(address));
+
         // Maintain the UI.
         for event in self
             .main_menu_ui
             .maintain(global_state, global_state.clock.real_dt())
+            .into_iter()
+            .chain(travel)
         {
             match event {
                 MainMenuEvent::LoginAttempt { server_address } => {

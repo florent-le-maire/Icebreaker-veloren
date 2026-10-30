@@ -221,6 +221,9 @@ pub enum ServerGeneral {
     SiteEconomy(EconomyInfo),
     /// Icebreaker: the panel of a village building (title, lines).
     IcebreakerPanel(Content, Vec<Content>),
+    /// Icebreaker: go to the place of the campaign listening on this port, on the
+    /// same host (the client leaves this server and connects there).
+    IcebreakerTravel(u16),
     /// Icebreaker: the village buildings and plots to build on (name, bounds in
     /// world coordinates, whether a plot).
     IcebreakerBuildings(Vec<(Content, Aabr<i32>, bool)>),
@@ -381,6 +384,7 @@ impl ServerMsg {
                         | ServerGeneral::FinishedTrade(_)
                         | ServerGeneral::SiteEconomy(_)
                         | ServerGeneral::IcebreakerPanel(..)
+                        | ServerGeneral::IcebreakerTravel(_)
                         | ServerGeneral::IcebreakerBuildings(_)
                         | ServerGeneral::MapMarker(_)
                         | ServerGeneral::WeatherUpdate(_)

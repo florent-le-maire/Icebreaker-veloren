@@ -252,6 +252,20 @@ impl ServerEvent for DialogueEvent {
 
                 let dialogue = dialogue.into_validated_unchecked();
 
+                // Icebreaker: a destination chosen at the expedition leader sends the
+                // player there.
+                if agents.get(target).is_some_and(|agent| {
+                    matches!(
+                        agent.behavior.trading_behavior,
+                        comp::agent::TradingBehavior::Departure
+                    )
+                }) && let DialogueKind::Response { response_id, .. } = &dialogue.kind
+                    && let Some(lieu) = crate::icebreaker_expedition::chosen_destination(*response_id)
+                    && let Some(client) = clients.get(sender)
+                {
+                    crate::icebreaker_expedition::travel(client, &lieu);
+                }
+
                 if let Some(agent) = agents.get_mut(target) {
                     agent
                         .inbox

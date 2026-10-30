@@ -2,9 +2,9 @@
 //!
 //! The summary is what the character carries more than when it arrived in the
 //! instance (coins, then items), told to every player of the instance. The
-//! player is then disconnected and joins the village by hand (main menu); the
-//! character, saved on disconnect, keeps what it carries since characters are
-//! shared by every instance (I.3).
+//! player then goes back to the village by itself (V.8), its server started if
+//! needed; the character, saved on disconnect, keeps what it carries since
+//! characters are shared by every instance (I.3).
 
 use crate::{Server, icebreaker_treasury::COINS};
 use common::{
@@ -113,12 +113,22 @@ pub(crate) fn handle_rentrer(
         server.notify_players(ServerGeneral::server_msg(ChatType::Meta, line));
     }
 
-    server.notify_client(
-        client,
-        ServerGeneral::Disconnect(DisconnectReason::Kicked(
-            "Retour au village : cliquer sur « Village » au menu principal.".to_string(),
-        )),
-    );
+    // The client goes to the village by itself (V.8); disconnecting it here too
+    // saves the character before it gets there.
+    match crate::icebreaker_expedition::village() {
+        Some(village) => {
+            let clients = server.state.ecs().read_storage::<crate::client::Client>();
+            if let Some(client) = clients.get(client) {
+                crate::icebreaker_expedition::travel(client, &village);
+            }
+        },
+        None => server.notify_client(
+            client,
+            ServerGeneral::Disconnect(DisconnectReason::Kicked(
+                "Retour au village : cliquer sur « Village » au menu principal.".to_string(),
+            )),
+        ),
+    }
     server
         .state
         .mut_resource::<EventBus<ClientDisconnectEvent>>()

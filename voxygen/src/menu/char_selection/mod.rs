@@ -125,7 +125,19 @@ impl PlayState for CharSelectionState {
                 .char_selection_ui
                 .maintain(global_state, &self.client.borrow());
 
-            for event in events {
+            // Icebreaker: after a travel to another place of the campaign, the same
+            // character plays on.
+            let travel_play = {
+                let client = self.client.borrow();
+                let list = client.character_list();
+                (!list.loading)
+                    .then(crate::icebreaker::take_character)
+                    .flatten()
+                    .filter(|id| list.characters.iter().any(|c| c.character.id == Some(*id)))
+                    .map(ui::Event::Play)
+            };
+
+            for event in events.into_iter().chain(travel_play) {
                 match event {
                     ui::Event::Logout => {
                         return PlayStateResult::Pop;

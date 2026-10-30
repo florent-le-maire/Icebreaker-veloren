@@ -20,6 +20,7 @@ mod ecs;
 pub mod error;
 pub mod game_input;
 pub mod hud;
+pub mod icebreaker;
 pub mod key_state;
 pub mod menu;
 pub mod mesh;

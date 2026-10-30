@@ -397,6 +397,21 @@ impl SessionState {
                 client::Event::IcebreakerPanel(title, lines) => {
                     self.hud.icebreaker_panel(Some((title, lines)));
                 },
+                // Icebreaker: off to another place of the campaign, through the main
+                // menu, with the same character.
+                client::Event::IcebreakerTravel(port) => {
+                    let character = match client.presence() {
+                        Some(common::comp::PresenceKind::Character(id)) => Some(id),
+                        _ => None,
+                    };
+                    crate::icebreaker::go(
+                        &global_state.settings.networking.default_server,
+                        port,
+                        character,
+                    );
+                    client.logout();
+                    return Ok(TickAction::Disconnect);
+                },
                 client::Event::Dialogue(sender_uid, dialogue) => {
                     if let Some(sender) = client.state().ecs().entity_from_uid(sender_uid) {
                         self.hud.dialogue(sender, pos, dialogue, global_state);

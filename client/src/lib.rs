@@ -135,6 +135,8 @@ pub enum Event {
     Dialogue(Uid, rtsim::Dialogue<true>),
     /// Icebreaker: the panel of a village building (title, lines).
     IcebreakerPanel(comp::Content, Vec<comp::Content>),
+    /// Icebreaker: go to the place of the campaign listening on this port.
+    IcebreakerTravel(u16),
     /// Icebreaker: the village buildings and plots to build on (name, bounds in
     /// world coordinates, whether a plot).
     IcebreakerBuildings(Vec<(comp::Content, Aabr<i32>, bool)>),
@@ -2998,6 +3000,9 @@ impl Client {
             },
             ServerGeneral::IcebreakerBuildings(buildings) => {
                 frontend_events.push(Event::IcebreakerBuildings(buildings));
+            },
+            ServerGeneral::IcebreakerTravel(port) => {
+                frontend_events.push(Event::IcebreakerTravel(port));
             },
             ServerGeneral::IcebreakerPanel(title, lines) => {
                 frontend_events.push(Event::IcebreakerPanel(title, lines));

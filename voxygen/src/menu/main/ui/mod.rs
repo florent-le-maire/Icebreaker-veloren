@@ -468,6 +468,18 @@ impl Controls {
         .into()
     }
 
+    /// Icebreaker: shows the connecting screen and asks to connect to a place
+    /// of the campaign.
+    fn icebreaker_connect(&mut self, ui: &mut Ui, server_address: String) -> Event {
+        self.login_info.server.clone_from(&server_address);
+        self.screen = Screen::Connecting {
+            screen: connecting::Screen::new(ui),
+            connection_state: ConnectionState::InProgress,
+            init_stage: DetailedInitializationStage::StartingMultiplayer,
+        };
+        Event::LoginAttempt { server_address }
+    }
+
     fn update(
         &mut self,
         message: Message,
@@ -565,13 +577,7 @@ impl Controls {
                 let lieu = icebreaker::lieux().read().0.get(index).cloned();
                 match lieu.map(|lieu| icebreaker::lancer(&lieu)) {
                     Some(Ok(server_address)) => {
-                        self.login_info.server.clone_from(&server_address);
-                        self.screen = Screen::Connecting {
-                            screen: connecting::Screen::new(ui),
-                            connection_state: ConnectionState::InProgress,
-                            init_stage: DetailedInitializationStage::StartingMultiplayer,
-                        };
-                        events.push(Event::LoginAttempt { server_address });
+                        events.push(self.icebreaker_connect(ui, server_address));
                     },
                     Some(Err(error)) => self.connection_error(error),
                     None => {},
@@ -844,6 +850,11 @@ impl MainMenuUi {
     }
 
     pub fn connected(&mut self) { self.controls.exit_connect_screen(); }
+
+    /// Icebreaker: connects to another place of the campaign (travel, V.8).
+    pub fn icebreaker_travel(&mut self, server_address: String) -> Event {
+        self.controls.icebreaker_connect(&mut self.ui, server_address)
+    }
 
     pub fn cancel_connection(&mut self) { self.controls.exit_connect_screen(); }
 
