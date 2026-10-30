@@ -84,6 +84,22 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   Bilan à tous (or, puis « 3 × objet ») de ce que le personnage porte de plus qu'à son arrivée, puis déconnexion ;
   on rejoint le village par le menu. Testé (bilan, commande reçue) ; pas encore en jeu avec du butin. — 046140d4fb
 
+## Jalon C — Le village qui grandit (Flo, 2026-10-28)
+
+La ville complète est prévue dès le départ ; seules quelques maisons sont bâties, les autres sont des terrains à
+bâtir. On y paie des chantiers avec l'or de la caisse ; la maison sort de terre pendant la partie. Réglages dans
+`assets/icebreaker/village.ron`, état dans `campagne/village.ron`.
+
+- [x] **C.1 Petit village** — au départ, les 4 maisons des bâtiments et 2 maisons d'habitation ; 2 habitants par
+  maison bâtie. Graine du village gardée pour la campagne. Testé (démarrage, maison bâtie / terrain vide au client
+  texte) ; pas encore vu en jeu. — 0df322747c
+- [ ] **C.2 Terrains à bâtir** — en vue de dessus, les terrains libres (« Terrain à bâtir », prix), cliquables.
+- [ ] **C.3 Commander un chantier** — bouton « Bâtir (300 or) » dans le panneau d'un terrain, payé par la caisse ;
+  chantier et fin (temps de carte) dans la campagne.
+- [ ] **C.4 Chantier visible** — la maison sort de terre au fil du temps de carte, sans relancer.
+- [ ] **C.5 Nouveaux habitants** — une maison finie amène des habitants.
+- [ ] **C.6 Paliers** — l'or investi (300, 1000, 3000) ouvre des terrains plus loin de la place.
+
 ## Jalon 3 — Pillage sur la route
 
 - [ ] **P.1 Instance route** — un tronçon de route dans un paysage, zone fermée (I.2).
