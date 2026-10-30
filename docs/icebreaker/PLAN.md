@@ -91,9 +91,11 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   *Fin* : village → donjon → `/rentrer` → village sans passer par le menu.
   Le jeu revient au menu, se connecte et rejoue le même personnage. Testé (logique serveur, compilation) ; pas
   encore fait le voyage complet en jeu. — fa8e4b0c1c
-- [ ] **V.9 Départ groupé** — le premier inscrit choisit la destination, les autres rejoignent ; « Prêt » ; quand
+- [x] **V.9 Départ groupé** — le premier inscrit choisit la destination, les autres rejoignent ; « Prêt » ; quand
   tous sont prêts, 5 s annoncées puis départ ensemble ; s'éloigner ou se déconnecter désinscrit.
   *Fin* : deux joueurs arrivent ensemble dans le donjon.
+  Partir seul : choisir le lieu puis « Je suis prêt ». Testé (logique à deux joueurs, démarrage) ; pas encore
+  en jeu. — 8a708aeddc
 
 ## Jalon C — Le village qui grandit (Flo, 2026-10-28)
 
