@@ -1,0 +1,4 @@
+# Icebreaker : description du plugin, lue par Veloren dans le .plugin.tar.
+name = "icebreaker"
+modules = ["icebreaker.wasm"]
+dependencies = []

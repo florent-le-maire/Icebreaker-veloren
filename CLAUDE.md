@@ -50,10 +50,16 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
 
 ## Commandes
 
-- Compiler le serveur : `cargo build -p veloren-server-cli` ; le client : `cargo build -p veloren-voxygen`.
+- Compiler le serveur : `cargo build -p veloren-server-cli --features plugins` (sans la feature, le mod n'est pas
+  chargé) ; le client : `cargo build -p veloren-voxygen`. Le mod (`plugin/icebreaker`) : `.\icebreaker.ps1 mod`
+  (cible `wasm32-wasip2`, plan dans `docs/icebreaker/PLAN-MOD.md`).
 - Tests ciblés : `cargo test -p <crate> <filtre>`.
 - Lieu de la campagne : `powershell -ExecutionPolicy Bypass -File .\icebreaker.ps1 village` (port 14100) ou
   `donjon -Site Gnarling` (port 14110 ; route 14120 à venir), puis le client en multijoueur sur `localhost:<port>`.
   Personnages communs à tous les lieux dans `userdata-icebreaker\campagne`.
+- Client texte pour tester sans affichage : `cargo build -p veloren-client --example chat_cli --features
+  "plugins bin_bot"`, puis sur l'entrée : pseudo, `localhost:<port>`, un mot de passe quelconque, et des lignes de
+  chat (`/commande args` part en commande). Laisser ~40 s entre deux connexions coupées net : le serveur n'accepte
+  la suivante qu'une fois la précédente expirée.
 - Lancer depuis la racine du dépôt (le jeu y cherche `assets/`). Un serveur qui tourne verrouille son `.exe` :
   le renommer avant de recompiler plutôt que d'arrêter un serveur qu'on n'a pas lancé.

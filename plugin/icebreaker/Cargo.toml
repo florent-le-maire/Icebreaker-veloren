@@ -1,0 +1,15 @@
+# Icebreaker : le mod Icebreaker, plugin serveur WASM (docs/icebreaker/PLAN-MOD.md).
+# Construit par `.\icebreaker.ps1 mod`, qui le pose dans assets/plugins/icebreaker.plugin.tar.
+[package]
+name = "icebreaker"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.63.0"

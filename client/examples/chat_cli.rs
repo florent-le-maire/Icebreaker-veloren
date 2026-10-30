@@ -58,10 +58,18 @@ fn main() {
     };
 
     let provider = StaticCredentialProvider {
-        credentials_by_auth: [(
-            Some("https://auth.veloren.net".to_string()),
-            Credentials::UsernamePassword(username.to_string(), password.to_string()),
-        )]
+        credentials_by_auth: [
+            (
+                Some("https://auth.veloren.net".to_string()),
+                Credentials::UsernamePassword(username.to_string(), password.to_string()),
+            ),
+            // Icebreaker : accepte aussi les serveurs sans authentification
+            // (`--no-auth`, ceux du lanceur).
+            (
+                None,
+                Credentials::UsernamePassword(username.to_string(), password.to_string()),
+            ),
+        ]
         .into(),
     };
 
@@ -93,7 +101,16 @@ fn main() {
 
     loop {
         for msg in rx.try_iter() {
-            client.send_chat(msg)
+            // Icebreaker : « /commande args » part en commande, pour tester les
+            // commandes du serveur et des plugins.
+            if let Some(command) = msg.strip_prefix('/') {
+                let mut words = command.split_whitespace().map(str::to_string);
+                if let Some(name) = words.next() {
+                    client.send_command(name, words.collect());
+                }
+            } else {
+                client.send_chat(msg)
+            }
         }
 
         let events = match client.tick(comp::ControllerInputs::default(), clock.game_dt()) {
