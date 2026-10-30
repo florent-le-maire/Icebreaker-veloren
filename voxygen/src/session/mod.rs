@@ -2453,12 +2453,14 @@ const ICEBREAKER_TOP_VIEW_PLANE: f32 = 5.0;
 
 impl SessionState {
     fn toggle_icebreaker_top_view(&mut self) {
+        // Read apart: the client is borrowed again below to ask for the buildings.
+        let position = self.client.borrow().position();
         let camera = self.scene.camera_mut();
         if let Some(view) = self.icebreaker_top_view.take() {
             camera.set_mode(CameraMode::ThirdPerson);
             camera.set_orientation_instant(view.ori);
             self.hud.icebreaker_top_view(false);
-        } else if let Some(pos) = self.client.borrow().position() {
+        } else if let Some(pos) = position {
             let ori = camera.get_orientation();
             camera.set_mode(CameraMode::Freefly);
             camera.set_orientation_instant(Vec3::new(0.0, std::f32::consts::FRAC_PI_2, 0.0));
