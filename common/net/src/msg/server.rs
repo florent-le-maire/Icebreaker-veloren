@@ -219,8 +219,9 @@ pub enum ServerGeneral {
     FinishedTrade(TradeResult),
     /// Economic information about sites
     SiteEconomy(EconomyInfo),
-    /// Icebreaker: the panel of a village building (title, lines).
-    IcebreakerPanel(Content, Vec<Content>),
+    /// Icebreaker: the panel of a village building (title, lines, and a button:
+    /// label, and the chat command it sends).
+    IcebreakerPanel(Content, Vec<Content>, Option<(Content, Vec<String>)>),
     /// Icebreaker: go to the place of the campaign listening on this port, on the
     /// same host (the client leaves this server and connects there).
     IcebreakerTravel(u16),

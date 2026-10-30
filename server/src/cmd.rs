@@ -157,6 +157,7 @@ fn do_command(
         ServerChatCommand::Ban => handle_ban,
         ServerChatCommand::BanIp => handle_ban_ip,
         ServerChatCommand::BanLog => handle_ban_log,
+        ServerChatCommand::Batir => crate::icebreaker_village::handle_batir,
         ServerChatCommand::BattleMode => handle_battlemode,
         ServerChatCommand::BattleModeForce => handle_battlemode_force,
         ServerChatCommand::Body => handle_body,

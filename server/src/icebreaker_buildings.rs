@@ -9,12 +9,13 @@ use crate::{
     events::ServerEvent,
     icebreaker_services::IcebreakerServices,
     icebreaker_treasury::IcebreakerTreasury,
-    icebreaker_village::{self, VillageConfig},
+    icebreaker_village::{self, Chantier, IcebreakerVillage, VillageConfig},
     icebreaker_warehouse::IcebreakerWarehouse,
 };
 use common::{
     comp::{Content, LocalizationArg, item::ItemDesc, item::ItemI18n},
     event::IcebreakerBuildingEvent,
+    resources::TimeOfDay,
 };
 use common_net::msg::ServerGeneral;
 use specs::{Read, ReadStorage};
@@ -60,17 +61,14 @@ pub enum Place {
     Plot(usize),
 }
 
-/// Where each building and plot to build on is (none outside the village).
+/// Where each building is (none outside the village); the plots to build on
+/// come from the village, which changes as it grows.
 #[derive(Default)]
 pub struct IcebreakerBuildings(Vec<(Place, Aabr<i32>)>);
 
 impl IcebreakerBuildings {
-    /// The buildings of `Building::ALL` with their bounds, if any, and the
-    /// plots to build on (rank, bounds).
-    pub fn new(
-        bounds: impl IntoIterator<Item = Option<Aabr<i32>>>,
-        plots: impl IntoIterator<Item = (usize, Aabr<i32>)>,
-    ) -> Self {
+    /// The buildings of `Building::ALL` with their bounds, if any.
+    pub fn new(bounds: impl IntoIterator<Item = Option<Aabr<i32>>>) -> Self {
         Self(
             Building::ALL
                 .into_iter()
@@ -80,49 +78,88 @@ impl IcebreakerBuildings {
                     info!(?building, ?bounds, "Icebreaker: village building")
                 })
                 .map(|(building, bounds)| (Place::Building(building), bounds))
-                .chain(plots.into_iter().map(|(rank, bounds)| (Place::Plot(rank), bounds)))
                 .collect(),
         )
     }
 
-    /// The place at `wpos`, if any.
-    pub fn at(&self, wpos: Vec2<f32>) -> Option<Place> {
-        let wpos = wpos.map(|e| e.floor() as i32);
+    /// The buildings and the plots to build on (rank, bounds).
+    pub fn places(
+        &self,
+        plots: impl IntoIterator<Item = (usize, Aabr<i32>)>,
+    ) -> Vec<(Place, Aabr<i32>)> {
         self.0
             .iter()
-            .find(|(_, bounds)| bounds.contains_point(wpos))
-            .map(|(place, _)| *place)
+            .copied()
+            .chain(plots.into_iter().map(|(rank, bounds)| (Place::Plot(rank), bounds)))
+            .collect()
     }
 }
 
-/// What a plot to build on is called on the top view.
-fn plot_name(config: &VillageConfig) -> String {
-    format!("Terrain à bâtir ({} or)", config.prix_maison)
+/// The place at `wpos`, if any.
+fn place_at(places: &[(Place, Aabr<i32>)], wpos: Vec2<f32>) -> Option<Place> {
+    let wpos = wpos.map(|e| e.floor() as i32);
+    places
+        .iter()
+        .find(|(_, bounds)| bounds.contains_point(wpos))
+        .map(|(place, _)| *place)
 }
 
-/// The panel of `place`: title and lines.
+/// Hours of map time left until map time `fin`, at map time `now`.
+fn hours_left(fin: f64, now: f64) -> f64 { ((fin - now) / 3600.0).max(0.0) }
+
+/// What a plot to build on is called on the top view.
+fn plot_name(config: &VillageConfig, chantier: Option<Chantier>, now: f64) -> String {
+    match chantier {
+        Some(chantier) => format!("Chantier ({:.0} h)", hours_left(chantier.fin, now).ceil()),
+        None => format!("Terrain à bâtir ({} or)", config.prix_maison),
+    }
+}
+
+/// What a panel shows: title, lines, and a button (label, command) if any.
+type Panel = (Content, Vec<Content>, Option<(Content, Vec<String>)>);
+
+/// The panel of `place` at map time `now`.
 fn panel(
     place: Place,
     warehouse: &IcebreakerWarehouse,
     treasury: &IcebreakerTreasury,
     services: &IcebreakerServices,
-) -> (Content, Vec<Content>) {
+    village: &IcebreakerVillage,
+    now: f64,
+) -> Panel {
     let plain = |text: String| Content::Plain(text);
     let building = match place {
         Place::Building(building) => building,
-        Place::Plot(_) => {
+        Place::Plot(rank) => {
             let config = icebreaker_village::config();
-            return (plain("Terrain à bâtir".to_string()), vec![
-                plain(format!(
-                    "Une maison : {} pièces d'or de la caisse (la caisse en a {}).",
-                    config.prix_maison,
-                    treasury.coins()
+            if let Some(chantier) = village.chantier(rank) {
+                return (
+                    plain("Chantier".to_string()),
+                    vec![plain(format!(
+                        "Une maison est en construction : finie dans {:.1} h de carte.",
+                        hours_left(chantier.fin, now)
+                    ))],
+                    None,
+                );
+            }
+            return (
+                plain("Terrain à bâtir".to_string()),
+                vec![
+                    plain(format!(
+                        "Une maison : {} pièces d'or de la caisse (la caisse en a {}).",
+                        config.prix_maison,
+                        treasury.coins()
+                    )),
+                    plain(format!(
+                        "Chantier : {} h de carte, puis de nouveaux habitants.",
+                        config.heures_chantier
+                    )),
+                ],
+                Some((
+                    plain(format!("Bâtir ({} or)", config.prix_maison)),
+                    vec!["batir".to_string(), rank.to_string()],
                 )),
-                plain(format!(
-                    "Chantier : {} h de carte, puis de nouveaux habitants.",
-                    config.heures_chantier
-                )),
-            ]);
+            );
         },
     };
     let lines = match building {
@@ -174,7 +211,7 @@ fn panel(
         )
         .collect(),
     };
-    (plain(building.name().to_string()), lines)
+    (plain(building.name().to_string()), lines, None)
 }
 
 impl ServerEvent for IcebreakerBuildingEvent {
@@ -184,34 +221,41 @@ impl ServerEvent for IcebreakerBuildingEvent {
         Read<'a, IcebreakerWarehouse>,
         Read<'a, IcebreakerTreasury>,
         Read<'a, IcebreakerServices>,
+        Read<'a, IcebreakerVillage>,
+        Read<'a, TimeOfDay>,
     );
 
     fn handle(
         events: impl ExactSizeIterator<Item = Self>,
-        (clients, buildings, warehouse, treasury, services): Self::SystemData<'_>,
+        (clients, buildings, warehouse, treasury, services, village, time_of_day): Self::SystemData<'_>,
     ) {
+        let now = time_of_day.0;
+        let places = buildings.places(village.open_plots());
         for event in events {
             let Some(client) = clients.get(event.entity) else {
                 continue;
             };
             match event.wpos {
                 Some(wpos) => {
-                    if let Some(place) = buildings.at(wpos) {
-                        let (title, lines) = panel(place, &warehouse, &treasury, &services);
-                        client.send_fallible(ServerGeneral::IcebreakerPanel(title, lines));
+                    if let Some(place) = place_at(&places, wpos) {
+                        let (title, lines, action) =
+                            panel(place, &warehouse, &treasury, &services, &village, now);
+                        client.send_fallible(ServerGeneral::IcebreakerPanel(title, lines, action));
                     }
                 },
                 None => {
                     let config = icebreaker_village::config();
                     client.send_fallible(ServerGeneral::IcebreakerBuildings(
-                        buildings
-                            .0
+                        places
                             .iter()
                             .map(|(place, bounds)| match place {
                                 Place::Building(building) => {
                                     (Content::Plain(building.name().to_string()), *bounds, false)
                                 },
-                                Place::Plot(_) => (Content::Plain(plot_name(&config)), *bounds, true),
+                                Place::Plot(rank) => {
+                                    let name = plot_name(&config, village.chantier(*rank), now);
+                                    (Content::Plain(name), *bounds, true)
+                                },
                             })
                             .collect(),
                     ))
@@ -231,15 +275,25 @@ mod tests {
             min: Vec2::new(x, 0),
             max: Vec2::new(x + 10, 10),
         };
-        let buildings = IcebreakerBuildings::new(
-            [Some(square(0)), None, Some(square(20)), Some(square(40))],
-            [(7, square(60))],
-        );
-        let at = |x, y| buildings.at(Vec2::new(x, y));
+        let buildings =
+            IcebreakerBuildings::new([Some(square(0)), None, Some(square(20)), Some(square(40))]);
+        let places = buildings.places([(7, square(60))]);
+        let at = |x, y| place_at(&places, Vec2::new(x, y));
         assert_eq!(at(5.5, 5.0), Some(Place::Building(Building::Warehouse)));
         assert_eq!(at(25.0, 9.9), Some(Place::Building(Building::Intendance)));
         assert_eq!(at(45.0, 1.0), Some(Place::Building(Building::Infirmary)));
         assert_eq!(at(65.0, 1.0), Some(Place::Plot(7)));
         assert_eq!(at(15.0, 5.0), None);
+    }
+
+    #[test]
+    fn a_plot_is_named_after_its_price_or_its_chantier() {
+        let config = icebreaker_village::config();
+        assert!(plot_name(&config, None, 0.0).contains(&config.prix_maison.to_string()));
+        let chantier = Chantier {
+            rang: 7,
+            fin: 3.0 * 3600.0,
+        };
+        assert_eq!(plot_name(&config, Some(chantier), 0.5 * 3600.0), "Chantier (3 h)");
     }
 }

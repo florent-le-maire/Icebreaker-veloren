@@ -6,6 +6,7 @@ pub mod icebreaker_clock;
 pub mod icebreaker_expedition;
 pub mod icebreaker_sleep;
 pub mod icebreaker_slots;
+pub mod icebreaker_village;
 pub mod icebreaker_zone;
 pub mod invite_timeout;
 pub mod item;
@@ -44,6 +45,7 @@ pub fn add_server_systems(dispatch_builder: &mut DispatcherBuilder) {
     dispatch::<icebreaker_clock::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_expedition::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_slots::Sys>(dispatch_builder, &[]);
+    dispatch::<icebreaker_village::Sys>(dispatch_builder, &[]);
     // Icebreaker: after the movements, so that sleepers keep lying.
     dispatch::<icebreaker_sleep::Sys>(dispatch_builder, &[
         &phys::Sys::sys_name(),

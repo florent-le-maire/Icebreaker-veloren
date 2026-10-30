@@ -36,10 +36,13 @@ pub fn config() -> VillageConfig {
         .clone()
 }
 
-/// What is saved of the village: the ranks of its standing houses.
+/// What is saved of the village: the ranks of its standing houses, and the
+/// houses being built.
 #[derive(Debug, Default, Deserialize, Serialize)]
 struct SavedVillage {
     construites: Vec<usize>,
+    #[serde(default)]
+    chantiers: Vec<Chantier>,
 }
 
 fn village_file() -> Option<PathBuf> {
@@ -80,6 +83,14 @@ fn open_plots(
         .collect()
 }
 
+/// A house being built on a plot (C.3): its rank, and when it is done (map
+/// time, `TimeOfDay`).
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+pub struct Chantier {
+    pub rang: usize,
+    pub fin: f64,
+}
+
 /// The village as it stands (none outside the village).
 #[derive(Default)]
 pub struct IcebreakerVillage {
@@ -87,6 +98,8 @@ pub struct IcebreakerVillage {
     houses: Vec<VillageHouse>,
     /// The ranks of the standing houses.
     standing: Vec<usize>,
+    chantiers: Vec<Chantier>,
+    path: Option<PathBuf>,
 }
 
 impl IcebreakerVillage {
@@ -94,8 +107,14 @@ impl IcebreakerVillage {
     /// world which ones stand and how many people live there.
     pub fn new(site: &Site, houses: &[VillageHouse]) -> Self {
         let config = config();
-        let saved = village_file().and_then(|path| std::fs::read_to_string(path).ok());
+        let path = village_file();
+        let saved = path.as_ref().and_then(|path| std::fs::read_to_string(path).ok());
         let standing = standing_ranks(&config, saved.as_deref());
+        let chantiers = saved
+            .as_deref()
+            .and_then(|text| ron::from_str::<SavedVillage>(text).ok())
+            .map(|saved| saved.chantiers)
+            .unwrap_or_default();
         let built = standing
             .iter()
             .filter_map(|rank| houses.get(*rank))
@@ -106,18 +125,132 @@ impl IcebreakerVillage {
         let village = Self {
             houses: houses.to_vec(),
             standing,
+            chantiers,
+            path,
         };
-        info!(plots = ?village.open_plots(), "Icebreaker: plots to build on");
+        info!(plots = ?village.open_plots(), chantiers = ?village.chantiers, "Icebreaker: plots to build on");
         village
     }
 
-    /// The plots to build on now: (rank, bounds).
+    /// The plots to build on now (chantiers included): (rank, bounds).
     pub fn open_plots(&self) -> Vec<(usize, vek::Aabr<i32>)> {
         open_plots(&self.houses, &self.standing, config().terrains_ouverts)
             .into_iter()
             .map(|(rank, house)| (rank, house.bounds))
             .collect()
     }
+
+    /// The house being built on the plot of rank `rang`, if any.
+    pub fn chantier(&self, rang: usize) -> Option<Chantier> {
+        self.chantiers.iter().find(|c| c.rang == rang).copied()
+    }
+
+    /// Why a house cannot be built on the plot of rank `rang`, if it cannot.
+    pub fn cannot_build(&self, rang: usize) -> Option<String> {
+        if self.chantier(rang).is_some() {
+            Some("Un chantier est déjà en cours sur ce terrain.".to_string())
+        } else if !self.open_plots().iter().any(|(rank, _)| *rank == rang) {
+            Some("Ce terrain n'est pas à bâtir.".to_string())
+        } else {
+            None
+        }
+    }
+
+    /// Starts building a house on the plot of rank `rang` at map time `now`
+    /// (check `cannot_build` first); returns when it is done.
+    pub fn build(&mut self, rang: usize, now: f64) -> f64 {
+        let fin = now + config().heures_chantier * 3600.0;
+        self.chantiers.push(Chantier { rang, fin });
+        self.save();
+        fin
+    }
+
+    /// The chantiers done at map time `now`: their houses now stand (seen at
+    /// the next start of the server until C.4). Returns their ranks.
+    pub fn finish_due(&mut self, now: f64) -> Vec<usize> {
+        let (done, going): (Vec<_>, Vec<_>) = self.chantiers.iter().partition(|c| c.fin <= now);
+        if done.is_empty() {
+            return Vec::new();
+        }
+        self.chantiers = going;
+        let ranks = done.iter().map(|c| c.rang).collect::<Vec<_>>();
+        self.standing.extend(&ranks);
+        self.standing.sort_unstable();
+        self.save();
+        ranks
+    }
+
+    fn save(&self) {
+        let Some(path) = &self.path else {
+            return;
+        };
+        let saved = SavedVillage {
+            construites: self.standing.clone(),
+            chantiers: self.chantiers.clone(),
+        };
+        match crate::icebreaker_warehouse::write_campaign_file(path, &saved) {
+            Ok(()) => info!(?saved, "Icebreaker: village saved"),
+            Err(err) => warn!(?err, ?path, "Icebreaker: could not save the village"),
+        }
+    }
+}
+
+/// `/batir <terrain>` (the « Bâtir » button of a plot's panel, C.3): starts
+/// building a house on the plot of this rank, paid by the treasury.
+pub(crate) fn handle_batir(
+    server: &mut crate::Server,
+    client: specs::Entity,
+    _target: specs::Entity,
+    args: Vec<String>,
+    _action: &common::cmd::ServerChatCommand,
+) -> Result<(), common::comp::Content> {
+    use crate::icebreaker_treasury::IcebreakerTreasury;
+    use common::comp::{self, Content};
+    use specs::{LendJoin, WorldExt};
+
+    let Some(rang) = args.first().and_then(|arg| arg.parse::<usize>().ok()) else {
+        return Err(Content::Plain("Quel terrain ? (/batir <numéro>)".to_string()));
+    };
+    let ecs = server.state.ecs();
+    if let Some(why) = ecs.read_resource::<IcebreakerVillage>().cannot_build(rang) {
+        return Err(Content::Plain(why));
+    }
+    let config = config();
+    let price = u64::from(config.prix_maison);
+    {
+        let mut treasury = ecs.write_resource::<IcebreakerTreasury>();
+        if !treasury.spend(price) {
+            return Err(Content::Plain(format!(
+                "La caisse n'a que {} pièces d'or ; une maison en coûte {price}.",
+                treasury.coins()
+            )));
+        }
+        // The treasurer's name shows the treasury.
+        let name = treasury.treasurer_name();
+        let agents = ecs.read_storage::<comp::Agent>();
+        let mut stats = ecs.write_storage::<comp::Stats>();
+        let mut treasurers = (&agents, &mut stats).lend_join();
+        while let Some((agent, mut stats)) = treasurers.next() {
+            if matches!(agent.behavior.trading_behavior, comp::agent::TradingBehavior::Treasury) {
+                stats.name = Content::Plain(name.clone());
+            }
+        }
+    }
+    let now = ecs.read_resource::<common::resources::TimeOfDay>().0;
+    ecs.write_resource::<IcebreakerVillage>().build(rang, now);
+    let alias = ecs
+        .read_storage::<comp::Player>()
+        .get(client)
+        .map_or_else(|| "Quelqu'un".to_string(), |player| player.alias.clone());
+    server.notify_players(common_net::msg::ServerGeneral::server_msg(
+        comp::ChatType::Meta,
+        Content::Plain(format!(
+            "{alias} lance un chantier de maison au village ({price} or de la caisse) : fini dans \
+             {} h de carte.",
+            config.heures_chantier
+        )),
+    ));
+    Ok(())
 }
 
 #[cfg(test)]
@@ -152,5 +285,39 @@ mod tests {
             .map(|(rank, _)| rank)
             .collect::<Vec<_>>();
         assert_eq!(ranks, vec![4, 6, 7]);
+    }
+
+    #[test]
+    fn a_house_is_built_on_a_free_plot_and_stands_once_done() {
+        let house = |x| VillageHouse {
+            plot: common::store::Id::new(x as u64),
+            front: vek::Vec2::new(x, 0),
+            bounds: vek::Aabr {
+                min: vek::Vec2::new(x, 0),
+                max: vek::Vec2::new(x + 5, 5),
+            },
+        };
+        let mut village = IcebreakerVillage {
+            houses: (0..20).map(house).collect(),
+            standing: (0..7).collect(),
+            chantiers: Vec::new(),
+            path: None,
+        };
+        assert!(village.cannot_build(2).is_some(), "a standing house");
+        assert!(village.cannot_build(19).is_some(), "too far, not offered yet");
+        assert!(village.cannot_build(7).is_none());
+
+        let fin = village.build(7, 1000.0);
+        assert_eq!(fin, 1000.0 + config().heures_chantier * 3600.0);
+        assert!(village.cannot_build(7).is_some(), "already being built");
+        assert_eq!(village.finish_due(fin - 1.0), Vec::<usize>::new());
+        assert_eq!(village.finish_due(fin), vec![7]);
+        assert!(village.standing.contains(&7) && village.chantier(7).is_none());
+
+        let saved = ron::from_str::<SavedVillage>(
+            "(construites: [0, 1], chantiers: [(rang: 8, fin: 5.0)])",
+        )
+        .unwrap();
+        assert_eq!(saved.chantiers, vec![Chantier { rang: 8, fin: 5.0 }]);
     }
 }

@@ -394,8 +394,8 @@ impl SessionState {
                         view.buildings = buildings;
                     }
                 },
-                client::Event::IcebreakerPanel(title, lines) => {
-                    self.hud.icebreaker_panel(Some((title, lines)));
+                client::Event::IcebreakerPanel(title, lines, action) => {
+                    self.hud.icebreaker_panel(Some((title, lines, action)));
                 },
                 // Icebreaker: off to another place of the campaign, through the main
                 // menu, with the same character.

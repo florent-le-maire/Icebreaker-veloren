@@ -372,6 +372,8 @@ pub enum ServerChatCommand {
     Ban,
     BanIp,
     BanLog,
+    /// Icebreaker: build a house on a plot of the village (C.3).
+    Batir,
     BattleMode,
     BattleModeForce,
     Body,
@@ -548,6 +550,11 @@ impl ServerChatCommand {
                 Some(Moderator),
             ),
             #[rustfmt::skip]
+            ServerChatCommand::Batir => cmd(
+                vec![Integer("terrain", 0, Required)],
+                Content::localized("command-batir-desc"),
+                None,
+            ),
             ServerChatCommand::BattleMode => cmd(
                 vec![Enum(
                     "battle mode",
@@ -1182,6 +1189,7 @@ impl ServerChatCommand {
             ServerChatCommand::Ban => "ban",
             ServerChatCommand::BanIp => "ban_ip",
             ServerChatCommand::BanLog => "ban_log",
+            ServerChatCommand::Batir => "batir",
             ServerChatCommand::BattleMode => "battlemode",
             ServerChatCommand::BattleModeForce => "battlemode_force",
             ServerChatCommand::Body => "body",

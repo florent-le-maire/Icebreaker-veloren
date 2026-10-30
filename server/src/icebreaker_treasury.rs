@@ -62,6 +62,17 @@ impl IcebreakerTreasury {
 
     pub fn coins(&self) -> u64 { self.coins }
 
+    /// Takes `amount` coins out of the treasury (a village construction, C.3),
+    /// if it holds as many.
+    pub fn spend(&mut self, amount: u64) -> bool {
+        if self.coins < amount {
+            return false;
+        }
+        self.coins -= amount;
+        self.save();
+        true
+    }
+
     /// The chunk the treasurer spawns with.
     pub fn treasurer_chunk(&self) -> Option<Vec2<i32>> { self.treasurer_pos.map(chunk_of) }
 

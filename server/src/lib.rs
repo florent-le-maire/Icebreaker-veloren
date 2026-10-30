@@ -603,7 +603,6 @@ impl Server {
             .ecs_mut()
             .insert(icebreaker_buildings::IcebreakerBuildings::new(
                 village_posts.iter().map(|post| post.map(|(_, bounds)| bounds)),
-                village.open_plots(),
             ));
         state.ecs_mut().insert(village);
         let campaign_dir = std::env::var_os("ICEBREAKER_CAMPAIGN_DIR").map(std::path::PathBuf::from);
