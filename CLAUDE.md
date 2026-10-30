@@ -21,16 +21,16 @@ fichier de `docs/icebreaker/design/` utile.
 
 ## Travailler à plusieurs agents (repris de `../Icebreaker/CLAUDE.md`, §5 bis)
 
-Plusieurs agents travaillent en même temps sur ce dépôt. La branche de référence est **`icebreaker-traces`**,
-ouverte dans le dossier principal `Veloren-test`.
+Plusieurs agents travaillent en même temps sur ce dépôt. La branche de référence est **`master`**,
+ouverte dans le dossier principal `Veloren-test` ; Veloren d'origine reste lisible dans `origin/master`.
 
 - **Un agent = un worktree = une piste**, jamais à plusieurs dans le même dossier. Au démarrage, avant de toucher au
   code : `git worktree list` ; si le worktree de la piste existe, y travailler, sinon le créer :
-  `git worktree add ../Veloren-<piste> -b icebreaker-<piste> icebreaker-traces`, puis travailler **uniquement**
+  `git worktree add ../Veloren-<piste> -b icebreaker-<piste> master`, puis travailler **uniquement**
   dans ce dossier. Pistes actuelles : `Veloren-donjon`, `Veloren-mod` (plan `docs/icebreaker/PLAN-MOD.md`).
 - Le premier build d'un worktree refait toute la compilation dans son propre `target/` (long, c'est normal).
 - Une simple question, une relecture ou une modification de doc d'une ligne n'ont pas besoin de worktree.
-- Tâche finie et testée → commit sur la branche de la piste, `git rebase icebreaker-traces`, puis fusion en avance
+- Tâche finie et testée → commit sur la branche de la piste, `git rebase master`, puis fusion en avance
   rapide (`git merge --ff-only icebreaker-<piste>` depuis `Veloren-test`). Fusionner souvent, à chaque tâche.
 - Si on doit malgré tout partager un dossier : committer uniquement ses propres changements via un index git
   temporaire (`GIT_INDEX_FILE`), jamais `git add -A` sur l'index partagé.
