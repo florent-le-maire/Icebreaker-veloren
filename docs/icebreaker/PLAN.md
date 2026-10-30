@@ -172,6 +172,28 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   éclairée que vide, torches contre un mur), contrôle des blocs pour 4 graines, serveur lancé (graine 1234 : 27
   torches, 45 braseros). Pas vu en jeu (sens des torches à vérifier). — ee9fbfe5a4
 
+**IA du donjon** (`design/creatures.md`, tâches H du projet ; `design/menace.md`, palier 1) — en s'appuyant sur ce
+que Veloren fait déjà (vue, ouïe, combat, fuite). G.11 à G.14 d'abord ; G.15 et G.16 à redécouper après.
+- [ ] **G.11 Attaque surprise** — un coup sur une créature endormie fait ×1,5 dégâts, « Surprise ! » au-dessus d'elle.
+  *Fin* : frapper un dormeur fait plus mal qu'une créature éveillée.
+- [ ] **G.12 Appel à l'aide** — l'archer sous 75 % de ses PV et le guetteur dès le premier coup crient « À l'aide ! »
+  (24 blocs, une fois toutes les 6 s) ; brutes et chef qui l'entendent prennent l'agresseur pour cible même sans le
+  voir ; les dormeurs à portée se réveillent.
+  *Fin* : frapper l'archer fait venir la brute de la salle voisine.
+- [ ] **G.13 Déroute à la mort du chef** — « Le chef est tombé ! » : les créatures à 24 blocs fuient (brute 4 s,
+  archer 8 s, guetteur 12 s), « Fuite ! » au-dessus d'elles, puis se reprennent.
+  *Fin* : tuer le chef disperse sa garde.
+- [ ] **G.14 Le guetteur messager** — un guetteur qui repère un joueur crie « Des intrus ! » et court prévenir la
+  créature combattante la plus proche, qui vient voir.
+  *Fin* : on voit le guetteur s'enfuir et des renforts revenir avec lui.
+- [ ] **G.15 Niveau d'alerte du donjon** — calme, inquiet, en alerte, mobilisé : monte avec les cris, combats et morts,
+  redescend lentement ; chaque niveau s'annonce (texte d'ambiance, torches qui s'allument dans les salles sombres,
+  dormeurs qui se lèvent).
+  *Fin* : un combat bruyant met le donjon en alerte, une entrée discrète le laisse calme.
+- [ ] **G.16 Embuscade préparée** — la salle prévenue par le guetteur se poste autour de sa porte et attend (~40 s)
+  avant d'aller chercher les intrus ; derrière la porte, c'est « trop calme ».
+  *Fin* : on se fait cueillir en passant la porte.
+
 **Donjons avancés (idées, à découper le moment venu)** — aujourd'hui un seul lieu, le souterrain. Lieux envisagés
 (le projet Icebreaker en décrit déjà quelques-uns : `design/generation.md`, « Derrière les murs et lieux ») :
 - **La tour** : on monte au lieu de descendre, étages étroits, maçonnerie et ciel autour, chef au sommet.
@@ -200,7 +222,6 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
 
 - Passage automatique du client d'une instance à l'autre.
 - Biome imposé pour terracotta, myrmidons et sahagins.
-- IA : alerte, embuscades, fuite et appel à l'aide (`design/creatures.md`, `design/menace.md`).
 - Classes (`decisions/0010-classes-et-combos.md`) : capacités en fichiers de données.
 - Recrues, traits, blessures, rang, registre commun (`design/village.md`).
 - Carte stratégique façon Mount & Blade sur un grand monde Veloren, rencontres qui lancent les instances.
