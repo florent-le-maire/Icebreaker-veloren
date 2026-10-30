@@ -188,12 +188,21 @@ impl Screen {
             .padding(3)
             .width(Length::Units(230));
 
+        // Icebreaker: our title, in Veloren's title font.
+        let icebreaker_title = Text::new("Icebreaker")
+            .font(fonts.alkhemi.id)
+            .size(fonts.alkhemi.scale(48));
+
         let version_stage =
             Text::new(common::util::VELOREN_VERSION_STAGE).size(fonts.cyri.scale(22));
 
         let right_column = Container::new(
-            Column::with_children(vec![v_logo.into(), version_stage.into()])
-                .align_items(Align::Center),
+            Column::with_children(vec![
+                v_logo.into(),
+                icebreaker_title.into(),
+                version_stage.into(),
+            ])
+            .align_items(Align::Center),
         )
         .width(Length::Fill)
         .height(Length::Fill)
