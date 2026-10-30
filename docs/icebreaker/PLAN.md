@@ -104,9 +104,13 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   verrous avec leur clé dans une branche avant eux, branches, boucles et chutes dans une même zone, règles de
   voisinage ; réglages `sizes`, `branch_roles`, `rules`, `goal_roles` de `generation.ron`. Vérifié : sur 1000 graines
   par taille, objectif atteignable, retour toujours possible, chef unique et au plus profond, maximums, garde avant
-  chaque verrou, casernes après l'entrée ou une garde, nids loin du chemin principal. — (hash à venir)
-- [ ] **G.4 Assemblage** — salles posées étage par étage, couloirs et escaliers creusés.
-  *Fin* : un donjon `medium` se parcourt de l'entrée à l'antre du chef.
+  chaque verrou, casernes après l'entrée ou une garde, nids loin du chemin principal. — c6e8b4ef5f
+- [x] **G.4 Assemblage** — `DungeonAssembler.cs` traduit (`assemble.rs`, sans les murs communs des châteaux) : salles
+  posées depuis l'entrée, couloirs creusés par A* avec escaliers, boucles et puits de chute ; le tunnel de surface prend
+  une porte de l'entrée (nouvelle salle `entree_quatre_portes`). Le serveur génère un donjon `medium` « tuer le chef »
+  (graine du monde) et l'écrit dans son journal. Vérifié : 100 graines par taille assemblées et finissables (tout
+  accessible depuis le tunnel, retour toujours possible, chef au plus profond) ; contrôle des blocs sans problème pour
+  les graines 1234, 7 et 99 ; pas encore parcouru en jeu. — (hash à venir)
 - [ ] **G.5 Peuplement** — créatures et coffres de Veloren selon le rôle des salles, un seul chef au fond.
   *Fin* : on traverse le donjon et on tue le chef.
 - [ ] **G.6 Paramètres de mission** — taille, objectif, région, saison, menace, ennemis passés par le lanceur.

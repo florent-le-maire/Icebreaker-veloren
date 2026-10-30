@@ -79,6 +79,7 @@ pub struct Settings {
     pub rules: Rules,
     /// The room at the end of the main path, by objective.
     pub goal_roles: BTreeMap<String, String>,
+    pub assembly: super::assemble::AssemblySettings,
 }
 
 fn role(name: &str, errors: &mut Vec<String>) -> RoomRole {

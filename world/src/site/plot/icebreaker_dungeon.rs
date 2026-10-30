@@ -302,7 +302,11 @@ impl Site {
             ..Site::default()
         };
         let generated = dungeon::Settings::load().and_then(|settings| {
-            let dungeon = dungeon::generate(&settings, rng.random())?;
+            let mission = dungeon::Mission {
+                seed: rng.random(),
+                ..dungeon::Mission::default()
+            };
+            let dungeon = dungeon::generate(&settings, &mission)?;
             Ok((dungeon, settings))
         });
         let (dungeon, settings) = match generated {
@@ -312,7 +316,7 @@ impl Site {
                 return site;
             },
         };
-        info!("Icebreaker dungeon plan:\n{}", dungeon.plan.to_text());
+        info!("Icebreaker dungeon: {}\n{}", dungeon.summary, dungeon.plan.to_text());
         let plot = IcebreakerDungeon::new(dungeon, settings.render, land, origin);
         let bounds = plot.bounds();
         let tile_size = TILE_SIZE as i32;

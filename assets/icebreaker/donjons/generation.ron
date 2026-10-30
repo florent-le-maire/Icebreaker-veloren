@@ -71,4 +71,13 @@
         "explore": "sanctum",
         "bossLair": "bossLair",
     },
+    // Assemblage (tâche G.4) : placement des salles et creusement des couloirs.
+    assembly: (
+        attempts: 20,           // tentatives complètes avant d'abandonner
+        placement_tries: 40,    // essais pour placer une salle
+        extra_passage_tries: 8, // essais pour une boucle ou une chute (abandonnée sinon)
+        spacing: (1, 5),        // cases entre une porte et la salle suivante
+        search_limit: 3000,     // cases examinées par recherche de couloir
+        margin: 6,              // marge autour du donjon où un couloir peut passer
+    ),
 )

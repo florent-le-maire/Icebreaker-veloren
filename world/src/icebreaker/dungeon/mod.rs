@@ -2,6 +2,7 @@
 //! several levels (`plan`), then voxels drawn by the `IcebreakerDungeon` plot
 //! (`site/plot/icebreaker_dungeon.rs`).
 
+pub mod assemble;
 pub mod graph;
 pub mod plan;
 pub mod rooms;
@@ -38,6 +39,8 @@ pub struct Tunnel {
 pub struct Dungeon {
     pub plan: Plan,
     pub tunnel: Tunnel,
+    /// What the dungeon is made of, for the logs.
+    pub summary: String,
 }
 
 /// Marks the tunnel in front of `door` (a wall cell of a room, opening toward
@@ -96,22 +99,70 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
         })
         .ok_or("pas de place pour le tunnel d'entrée")?;
     close_connectors(&mut plan);
-    Ok(Dungeon { plan, tunnel })
+    Ok(Dungeon {
+        plan,
+        tunnel,
+        summary: format!("salle seule : {}", room.id),
+    })
 }
 
-/// Generates the dungeon of an instance.
-pub fn generate(settings: &Settings, _seed: u64) -> Result<Dungeon, String> {
+/// Seeds tried one after the other when a dungeon can't be assembled.
+const SEED_TRIES: u64 = 10;
+
+/// Generates the dungeon of a mission: its graph, then the assembly of the
+/// rooms. A seed whose dungeon can't be assembled gives way to the next one.
+pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, String> {
     let catalog = RoomCatalog::load()?;
     // A single room to look at (`ICEBREAKER_DONJON_SALLE`, `-Salle` of the launcher).
-    let room = match std::env::var("ICEBREAKER_DONJON_SALLE") {
-        Ok(id) if !id.is_empty() => catalog.get(&id).ok_or(format!("salle inconnue : {id}"))?,
-        _ => catalog
-            .with_role(RoomRole::Entrance)
-            .into_iter()
-            .next()
-            .ok_or("aucune salle d'entrée")?,
-    };
-    single_room(settings, room)
+    if let Ok(id) = std::env::var("ICEBREAKER_DONJON_SALLE")
+        && !id.is_empty()
+    {
+        let room = catalog.get(&id).ok_or(format!("salle inconnue : {id}"))?;
+        return single_room(settings, room);
+    }
+
+    let resolved = settings.resolve(mission)?;
+    let missing: Vec<&str> = std::iter::once(RoomRole::Entrance)
+        .chain([resolved.goal, resolved.fallback, RoomRole::Hall, RoomRole::GuardRoom])
+        .chain(resolved.weights.keys().copied())
+        .filter(|role| catalog.with_role(*role).is_empty())
+        .map(RoomRole::name)
+        .collect();
+    if !missing.is_empty() {
+        return Err(format!("aucune salle pour : {}", missing.join(", ")));
+    }
+    let mut failures = Vec::new();
+    for seed in mission.seed..mission.seed + SEED_TRIES {
+        let graph = graph::generate(&resolved, seed);
+        let assembled = assemble::assemble(
+            &graph,
+            &catalog,
+            seed,
+            &settings.assembly,
+            settings.render.tunnel_cells,
+            |failure| failures.push(format!("graine {seed}, {failure}")),
+        );
+        if let Some(assembled) = assembled {
+            let rooms: Vec<String> = assembled
+                .rooms
+                .iter()
+                .map(|r| format!("{} {}", graph.rooms[r.graph_room].role.name(), r.template.id))
+                .collect();
+            return Ok(Dungeon {
+                plan: assembled.plan,
+                tunnel: assembled.tunnel,
+                summary: format!(
+                    "{} {}, graine {seed} ({} tentative(s)) ; salles : {}\n{}",
+                    mission.size,
+                    mission.objective,
+                    assembled.attempts,
+                    rooms.join(", "),
+                    graph.describe()
+                ),
+            });
+        }
+    }
+    Err(format!("aucun donjon assemblé :\n{}", failures.join("\n")))
 }
 
 #[cfg(test)]
