@@ -116,7 +116,8 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   liste des inscrits (et qui est prêt) à gauche, en direct, pour tout le village ; inscrit tant qu'on est au village.
   Commande `/expedition`. Testé (client texte : inscription, prêt, départ, retour) ; boutons et liste pas encore vus
   en jeu. — 16423be9bb
-- [ ] **V.12 Échanges à distance** — Entrepôt et Intendance : « Ouvrir l'échange » depuis le panneau, sans aller au PNJ.
+- [x] **V.12 Échanges à distance** — Entrepôt et Intendance : « Ouvrir l'échange » depuis le panneau, sans aller au PNJ.
+  Commande `/echanger`. Testé (client texte : échange ouvert à ~85 blocs) ; fenêtre pas encore vue en jeu. — 6ba0e5f24f
 
 ## Jalon C — Le village qui grandit (Flo, 2026-10-28)
 
