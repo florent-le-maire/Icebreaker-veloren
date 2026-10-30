@@ -402,6 +402,12 @@ impl Attack {
         let damage_modifier = attacker
             .and_then(|a| a.stats)
             .map_or(1.0, |s| s.attack_damage_modifier);
+        // Icebreaker : combat létal, dégâts multipliés selon la cible (`icebreaker.combat`).
+        let damage_modifier = damage_modifier
+            * crate::icebreaker_combat::IcebreakerCombat::multiplicateur_actuel(
+                attacker.is_some(),
+                target.player.is_some(),
+            );
         for damage in self
             .damages
             .iter()

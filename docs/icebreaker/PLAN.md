@@ -233,6 +233,12 @@ que Veloren fait déjà (vue, ouïe, combat, fuite). G.11 à G.14 d'abord ; G.15
 - **Le gouffre** (façon *Made in Abyss*) : un grand puits vertical, des salles accrochées à ses parois ; plus on
   descend, plus c'est dangereux et riche, et remonter coûte (fatigue, temps de carte, blessures ?).
 
+## Jalon L — Combat létal (Flo, 2026-10-30)
+
+- [ ] **L.1 Dégâts façon Dark Souls** — `assets/icebreaker/combat.ron` multiplie les dégâts des attaques selon la
+  cible : une arme de départ tue un gnarling en ~3 coups, un gnarling tue un joueur en 3 à 4 coups ; une créature
+  plus forte encaisse plus. La mise à terre des humanoïdes reste. — *en cours : Veloren-combat, 2026-10-30*
+
 ## Jalon 4 — Démo à l'équipe
 
 - [x] **S.1 Script de lancement Linux** — `icebreaker.sh`, même rôle que `icebreaker.ps1` (village, donjon), pour le

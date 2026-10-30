@@ -1,0 +1,8 @@
+// Icebreaker : combat létal façon Dark Souls (`common/src/icebreaker_combat.rs`).
+// Multiplicateurs des dégâts des attaques selon la cible (les pièges et l'environnement ne changent pas).
+// Repères : une épée de départ (5–7 × 0,6 dégâts) tue un gnarling (50 PV) en ~3 coups ; un gnarling
+// (2,5 à 4 dégâts) tue un joueur de 100 PV en 3 à 4 coups. Une créature plus forte encaisse plus.
+(
+    degats_contre_creatures: 5.0,
+    degats_contre_joueurs: 9.0,
+)

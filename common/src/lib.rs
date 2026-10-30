@@ -15,6 +15,8 @@ pub use uuid;
 // Modules
 
 pub mod combat;
+// Icebreaker : combat létal (multiplicateurs de dégâts).
+pub mod icebreaker_combat;
 pub mod comp;
 pub mod consts;
 pub mod resources;
