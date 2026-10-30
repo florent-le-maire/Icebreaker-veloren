@@ -131,7 +131,7 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   lancé avec `-Menace 5 -Faction adlet -Region mountain`. — 7cc1eff81c
 - [x] **G.7 Victoire** — tuer le chef (ou le boss) annonce à tous « Mission accomplie » avec le bilan (créatures
   tuées, coffres ouverts, d'après les traces du donjon). Vérifié avec le client texte (`!jouer`, `/goto` chez le
-  chef, `/explosion`) : message reçu. Pas encore descendu à pied jusqu'au chef en jeu. — *hash à venir*
+  chef, `/explosion`) : message reçu. Pas encore descendu à pied jusqu'au chef en jeu. — 74756d34f3
 - [ ] **G.8 Verrous et clés** — chaque porte verrouillée devient une porte à clé de Veloren, sa clé posée où le
   générateur l'a mise, consommée à l'ouverture.
   *Fin* : la porte refuse sans la clé et s'ouvre avec ; le donjon reste finissable (contrôle des blocs).
