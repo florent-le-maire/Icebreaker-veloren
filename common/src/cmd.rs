@@ -393,6 +393,8 @@ pub enum ServerChatCommand {
     Dismount,
     DropAll,
     Dummy,
+    /// Icebreaker: prepare an expedition at the village (V.11).
+    Expedition,
     Explosion,
     Faction,
     GiveItem,
@@ -676,6 +678,11 @@ impl ServerChatCommand {
                 vec![],
                 Content::localized("command-dummy-desc"),
                 Some(Admin),
+            ),
+            ServerChatCommand::Expedition => cmd(
+                vec![Any("choix", Required)],
+                Content::localized("command-expedition-desc"),
+                None,
             ),
             ServerChatCommand::Explosion => cmd(
                 vec![Float("radius", 5.0, Required)],
@@ -1216,6 +1223,7 @@ impl ServerChatCommand {
             ServerChatCommand::DisconnectAllPlayers => "disconnect_all_players",
             ServerChatCommand::DropAll => "dropall",
             ServerChatCommand::Dummy => "dummy",
+            ServerChatCommand::Expedition => "expedition",
             ServerChatCommand::Explosion => "explosion",
             ServerChatCommand::Faction => "faction",
             ServerChatCommand::GiveItem => "give_item",

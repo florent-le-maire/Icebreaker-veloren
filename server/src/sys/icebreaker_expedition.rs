@@ -1,6 +1,6 @@
 use crate::{
     client::Client,
-    icebreaker_expedition::{self, IcebreakerExpedition, LEAVE_RANGE},
+    icebreaker_expedition::{self, IcebreakerExpedition},
     icebreaker_return::Arrival,
     icebreaker_slots::IcebreakerSlots,
 };
@@ -12,11 +12,12 @@ use common::{
 };
 use common_ecs::{Job, Origin, Phase, System};
 use common_net::msg::ServerGeneral;
-use specs::{Join, Read, ReadExpect, ReadStorage, WriteStorage};
+use specs::{Join, Read, ReadExpect, ReadStorage, Write, WriteStorage};
 use vek::*;
 
 /// Icebreaker: the expedition being prepared at the « Départ » house (V.9).
-/// Its members who disconnect or go too far from the leader leave it; once
+/// Its members who disconnect or leave the village (into a dungeon slot) leave
+/// it; every second, it is shown to the players of the village (V.11); once
 /// everyone was ready for `DEPARTURE_DELAY`, they all go to its destination:
 /// in the campaign (decision 0016), teleported to a free dungeon slot of this
 /// server; otherwise, to the server of the place (V.8).
@@ -26,7 +27,7 @@ impl<'a> System<'a> for Sys {
     type SystemData = (
         Read<'a, Time>,
         Read<'a, IdMaps>,
-        Read<'a, IcebreakerExpedition>,
+        Write<'a, IcebreakerExpedition>,
         Read<'a, IcebreakerSlots>,
         ReadExpect<'a, EventBus<ClientDisconnectEvent>>,
         ReadExpect<'a, EventBus<TeleportToPositionEvent>>,
@@ -46,7 +47,7 @@ impl<'a> System<'a> for Sys {
         (
             time,
             id_maps,
-            expedition,
+            mut expedition,
             slots,
             disconnects,
             teleports,
@@ -57,9 +58,9 @@ impl<'a> System<'a> for Sys {
             mut arrivals,
         ): Self::SystemData,
     ) {
-        let Some(leader) = expedition.leader_pos() else {
+        if expedition.leader_pos().is_none() {
             return;
-        };
+        }
         let campaign = !slots.0.is_empty();
         let player_positions = (&players, &positions)
             .join()
@@ -76,7 +77,7 @@ impl<'a> System<'a> for Sys {
                 id_maps
                     .uid_entity(uid)
                     .and_then(|entity| positions.get(entity))
-                    .is_some_and(|pos| pos.0.distance(leader) <= LEAVE_RANGE)
+                    .is_some_and(|pos| slots.at(pos.0.xy()).is_none())
             },
             |lieu| !campaign || free_slot(lieu).is_some(),
         );
@@ -89,6 +90,19 @@ impl<'a> System<'a> for Sys {
             }
         };
         announce.into_iter().for_each(tell_all);
+
+        // The expedition, shown every second to the players of the village.
+        if time.0 - expedition.last_shown >= 1.0 {
+            expedition.last_shown = time.0;
+            let summary = icebreaker_expedition::summary(time.0).map(|(title, members)| {
+                (Content::Plain(title), members)
+            });
+            for (client, pos) in (&clients, &positions).join() {
+                // Nothing for those away in a dungeon slot.
+                let shown = summary.clone().filter(|_| slots.at(pos.0.xy()).is_none());
+                client.send_fallible(ServerGeneral::IcebreakerExpedition(shown));
+            }
+        }
 
         let Some((lieu, members)) = departure else {
             return;

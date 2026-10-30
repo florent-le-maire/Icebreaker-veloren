@@ -16,6 +16,7 @@ use common::{
     comp::{Content, LocalizationArg, item::ItemDesc, item::ItemI18n},
     event::IcebreakerBuildingEvent,
     resources::TimeOfDay,
+    uid::Uid,
 };
 use common_net::msg::ServerGeneral;
 use specs::{Read, ReadStorage};
@@ -134,6 +135,7 @@ fn panel(
     services: &IcebreakerServices,
     village: &IcebreakerVillage,
     now: f64,
+    player: Option<Uid>,
 ) -> Panel {
     let plain = |text: String| Content::Plain(text);
     let building = match place {
@@ -210,21 +212,18 @@ fn panel(
             actions = vec![button(format!("Me soigner ({price} or)"), &["soigner"])];
             vec![plain(format!("Soin complet : {price} pièces d'or."))]
         },
-        Building::Departure => std::iter::once(plain(
-            "Le chef d'expédition, à la porte, organise les départs (E) :".to_string(),
-        ))
-        .chain(
-            crate::icebreaker_expedition::destinations()
+        // The expedition leader's question and answers, as buttons (V.11).
+        Building::Departure => {
+            let Some(player) = player else {
+                return (plain(building.name().to_string()), Vec::new(), Vec::new());
+            };
+            let (question, buttons) = crate::icebreaker_expedition::panel_for(player);
+            actions = buttons
                 .into_iter()
-                .map(|(_, lieu)| {
-                    plain(if lieu.actif {
-                        format!("- {}", lieu.nom)
-                    } else {
-                        format!("- {} (pas encore ouvert)", lieu.nom)
-                    })
-                }),
-        )
-        .collect(),
+                .map(|(label, command)| (plain(label), command))
+                .collect();
+            vec![plain(question)]
+        },
     };
     (plain(building.name().to_string()), lines, actions)
 }
@@ -238,11 +237,12 @@ impl ServerEvent for IcebreakerBuildingEvent {
         Read<'a, IcebreakerServices>,
         Read<'a, IcebreakerVillage>,
         Read<'a, TimeOfDay>,
+        ReadStorage<'a, Uid>,
     );
 
     fn handle(
         events: impl ExactSizeIterator<Item = Self>,
-        (clients, buildings, warehouse, treasury, services, village, time_of_day): Self::SystemData<'_>,
+        (clients, buildings, warehouse, treasury, services, village, time_of_day, uids): Self::SystemData<'_>,
     ) {
         let now = time_of_day.0;
         let places = buildings.places(village.open_plots());
@@ -254,7 +254,15 @@ impl ServerEvent for IcebreakerBuildingEvent {
                 Some(wpos) => {
                     if let Some(place) = place_at(&places, wpos) {
                         let (title, lines, action) =
-                            panel(place, &warehouse, &treasury, &services, &village, now);
+                            panel(
+                            place,
+                            &warehouse,
+                            &treasury,
+                            &services,
+                            &village,
+                            now,
+                            uids.get(event.entity).copied(),
+                        );
                         client.send_fallible(ServerGeneral::IcebreakerPanel(title, lines, action));
                     }
                 },

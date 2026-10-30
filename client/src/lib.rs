@@ -138,6 +138,8 @@ pub enum Event {
     IcebreakerPanel(comp::Content, Vec<comp::Content>, Vec<(comp::Content, Vec<String>)>),
     /// Icebreaker: go to the place of the campaign listening on this port.
     IcebreakerTravel(u16),
+    /// Icebreaker: the expedition being prepared at the village, or none.
+    IcebreakerExpedition(Option<(comp::Content, Vec<(String, bool)>)>),
     /// Icebreaker: the village buildings and plots to build on (name, bounds in
     /// world coordinates, whether a plot).
     IcebreakerBuildings(Vec<(comp::Content, Aabr<i32>, bool)>),
@@ -3001,6 +3003,9 @@ impl Client {
             },
             ServerGeneral::IcebreakerBuildings(buildings) => {
                 frontend_events.push(Event::IcebreakerBuildings(buildings));
+            },
+            ServerGeneral::IcebreakerExpedition(expedition) => {
+                frontend_events.push(Event::IcebreakerExpedition(expedition));
             },
             ServerGeneral::IcebreakerTravel(port) => {
                 frontend_events.push(Event::IcebreakerTravel(port));

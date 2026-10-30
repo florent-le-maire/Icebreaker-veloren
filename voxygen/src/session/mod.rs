@@ -400,6 +400,9 @@ impl SessionState {
                         view.buildings = buildings;
                     }
                 },
+                client::Event::IcebreakerExpedition(expedition) => {
+                    self.hud.icebreaker_expedition(expedition);
+                },
                 client::Event::IcebreakerPanel(title, lines, actions) => {
                     self.hud.icebreaker_panel(Some((title, lines, actions)));
                 },

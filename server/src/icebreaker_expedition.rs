@@ -32,6 +32,8 @@ use vek::*;
 #[derive(Default)]
 pub struct IcebreakerExpedition {
     leader_pos: Option<Vec3<f32>>,
+    /// When the expedition was last shown to the village (`Time`).
+    pub last_shown: f64,
 }
 
 impl IcebreakerExpedition {
@@ -39,7 +41,10 @@ impl IcebreakerExpedition {
         if let Some(pos) = leader_pos {
             info!(?pos, "Icebreaker: village expedition leader");
         }
-        Self { leader_pos }
+        Self {
+            leader_pos,
+            last_shown: 0.0,
+        }
     }
 
     pub fn leader_pos(&self) -> Option<Vec3<f32>> { self.leader_pos }
@@ -114,9 +119,6 @@ pub const LEAVE: u16 = 1003;
 
 /// How long the expedition waits, once everyone is ready, before leaving.
 pub const DEPARTURE_DELAY: f64 = 5.0;
-/// How far from the expedition leader a member may go before leaving the
-/// expedition (blocks).
-pub const LEAVE_RANGE: f32 = 60.0;
 
 /// The expedition being prepared (V.9): the first player to register chooses
 /// the destination, the others join; it leaves `DEPARTURE_DELAY` after all of
@@ -267,6 +269,96 @@ pub struct Outcome {
     pub announce: Vec<String>,
 }
 
+/// The command word of an answer to the expedition leader (`/expedition`), and
+/// back.
+fn answer_word(id: u16) -> String {
+    match id {
+        JOIN => "rejoindre".to_string(),
+        READY => "pret".to_string(),
+        WAIT => "attendre".to_string(),
+        LEAVE => "quitter".to_string(),
+        index => index.to_string(),
+    }
+}
+
+fn answer_of_word(word: &str) -> Option<u16> {
+    match word {
+        "rejoindre" => Some(JOIN),
+        "pret" | "prêt" => Some(READY),
+        "attendre" => Some(WAIT),
+        "quitter" => Some(LEAVE),
+        index => index.parse().ok().filter(|index| *index < JOIN),
+    }
+}
+
+/// The « Départ » panel of the top view for `player` (V.11): the question of
+/// the expedition leader, and its answers as buttons (label, command).
+pub fn panel_for(player: Uid) -> (String, Vec<(String, Vec<String>)>) {
+    let (question, answers) = question(expedition().as_ref(), player);
+    let buttons = answers
+        .into_iter()
+        .filter(|(id, _)| *id != NOT_NOW)
+        .map(|(id, label)| (label, vec!["expedition".to_string(), answer_word(id)]))
+        .collect();
+    (question, buttons)
+}
+
+/// The expedition being prepared, for the list shown to the village (V.11):
+/// its title, and its members (alias, ready).
+pub fn summary(now: f64) -> Option<(String, Vec<(String, bool)>)> {
+    expedition().as_ref().map(|exp| {
+        let title = match exp.departure {
+            Some(departure) => format!(
+                "Expédition vers {} : départ dans {:.0} s",
+                exp.destination_name(),
+                (departure - now).max(0.0).ceil()
+            ),
+            None => format!("Expédition vers {}", exp.destination_name()),
+        };
+        let members = exp.members.iter().map(|m| (m.alias.clone(), m.ready)).collect();
+        (title, members)
+    })
+}
+
+/// `/expedition <choix>` (the « Départ » panel, V.11): a destination number,
+/// `rejoindre`, `pret`, `attendre` or `quitter` — as the answers to the
+/// expedition leader.
+pub(crate) fn handle_expedition(
+    server: &mut crate::Server,
+    client: specs::Entity,
+    _target: specs::Entity,
+    args: Vec<String>,
+    _action: &common::cmd::ServerChatCommand,
+) -> Result<(), Content> {
+    use specs::WorldExt;
+    let ecs = server.state.ecs();
+    if ecs.read_resource::<IcebreakerExpedition>().leader_pos.is_none() {
+        return Err(Content::Plain("Les expéditions partent du village.".to_string()));
+    }
+    let Some(id) = args.first().and_then(|word| answer_of_word(word)) else {
+        return Err(Content::Plain(
+            "/expedition <numéro de destination>, rejoindre, pret, attendre ou quitter".to_string(),
+        ));
+    };
+    let (Some(uid), alias) = (
+        ecs.read_storage::<Uid>().get(client).copied(),
+        ecs.read_storage::<comp::Player>()
+            .get(client)
+            .map_or_else(|| "Quelqu'un".to_string(), |player| player.alias.clone()),
+    ) else {
+        return Err(Content::Plain("Il faut être en jeu.".to_string()));
+    };
+    let now = ecs.read_resource::<common::resources::Time>().0;
+    let outcome = answer(uid, &alias, id, now);
+    if let Some(reply) = outcome.reply {
+        server.notify_client(client, ServerGeneral::server_msg(ChatType::Meta, Content::Plain(reply)));
+    }
+    for line in outcome.announce {
+        server.notify_players(ServerGeneral::server_msg(ChatType::Meta, Content::Plain(line)));
+    }
+    Ok(())
+}
+
 /// Applies the answer `response_id` of `player` (`alias`) at time `now`.
 pub fn answer(player: Uid, alias: &str, response_id: u16, now: f64) -> Outcome {
     answer_to(&mut expedition(), player, alias, response_id, now)
@@ -282,7 +374,12 @@ fn answer_to(
     let mut outcome = Outcome::default();
     match (expedition.as_mut(), response_id) {
         (_, NOT_NOW) => {},
-        (None, index) => match lieux().get(usize::from(index)) {
+        (None, index) => match destinations()
+            .into_iter()
+            .find(|(i, _)| *i == usize::from(index))
+            .map(|(_, lieu)| lieu)
+            .as_ref()
+        {
             Some(lieu) if !lieu.actif => {
                 outcome.reply = Some(format!("{} n'est pas encore ouvert.", lieu.nom));
             },
@@ -306,7 +403,7 @@ fn answer_to(
                     departure: None,
                 });
             },
-            None => {},
+            None => outcome.reply = Some("Ce n'est pas une destination d'expédition.".to_string()),
         },
         (Some(exp), JOIN) if exp.member(player).is_none() => {
             exp.members.push(Member {
@@ -549,6 +646,21 @@ mod tests {
         let (lieu, members) = departure.unwrap();
         assert_eq!(lieu.nom, lieux()[usize::from(donjon)].nom);
         assert_eq!(members, vec![flo, sayanel]);
+        assert_eq!(exp, None);
+    }
+
+    #[test]
+    fn the_panel_buttons_send_the_answers() {
+        for id in [JOIN, READY, WAIT, LEAVE, 2] {
+            assert_eq!(answer_of_word(&answer_word(id)), Some(id));
+        }
+        assert_eq!(answer_of_word("n'importe"), None);
+        assert_eq!(answer_of_word("1500"), None);
+        // The village is no destination.
+        let mut exp = None;
+        let home = lieux().iter().position(Lieu::is_home).unwrap() as u16;
+        let uid = Uid(std::num::NonZeroU64::new(1).unwrap());
+        answer_to(&mut exp, uid, "Flo", home, 0.0);
         assert_eq!(exp, None);
     }
 

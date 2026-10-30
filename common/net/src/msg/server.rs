@@ -225,6 +225,9 @@ pub enum ServerGeneral {
     /// Icebreaker: go to the place of the campaign listening on this port, on the
     /// same host (the client leaves this server and connects there).
     IcebreakerTravel(u16),
+    /// Icebreaker: the expedition being prepared at the village (title, members:
+    /// alias and whether ready), or none; sent every second to the village.
+    IcebreakerExpedition(Option<(Content, Vec<(String, bool)>)>),
     /// Icebreaker: the village buildings and plots to build on (name, bounds in
     /// world coordinates, whether a plot).
     IcebreakerBuildings(Vec<(Content, Aabr<i32>, bool)>),
@@ -386,6 +389,7 @@ impl ServerMsg {
                         | ServerGeneral::SiteEconomy(_)
                         | ServerGeneral::IcebreakerPanel(..)
                         | ServerGeneral::IcebreakerTravel(_)
+                        | ServerGeneral::IcebreakerExpedition(_)
                         | ServerGeneral::IcebreakerBuildings(_)
                         | ServerGeneral::MapMarker(_)
                         | ServerGeneral::WeatherUpdate(_)

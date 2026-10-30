@@ -342,6 +342,8 @@ widget_ids! {
         icebreaker_panel_bg,
         icebreaker_panel_txt,
         icebreaker_panel_buttons[],
+        icebreaker_expedition_bg,
+        icebreaker_expedition_txt,
         icebreaker_building_rects[],
         icebreaker_building_names[],
         // Icebreaker: ring on the locked enemy
@@ -1373,6 +1375,9 @@ pub struct Hud {
     /// the last building clicked there (title, lines).
     icebreaker_top_view: bool,
     icebreaker_panel: Option<IcebreakerPanel>,
+    /// Icebreaker: the expedition being prepared at the village (title,
+    /// members: alias and whether ready), shown on the left (V.11).
+    icebreaker_expedition: Option<(comp::Content, Vec<(String, bool)>)>,
     /// Icebreaker: the buildings and plots on screen in the top view (name,
     /// rectangle from -1 to 1 with y up, whether under the cursor, whether a
     /// plot to build on).
@@ -1483,6 +1488,7 @@ impl Hud {
             force_ungrab: false,
             icebreaker_top_view: false,
             icebreaker_panel: None,
+            icebreaker_expedition: None,
             icebreaker_buildings: Vec::new(),
             force_chat_input: None,
             force_chat_cursor: None,
@@ -4323,6 +4329,31 @@ impl Hud {
         }
         self.events.extend(icebreaker_command);
 
+        // Icebreaker: the expedition being prepared, on the left, for the village.
+        if let Some((title, members)) = &self.icebreaker_expedition {
+            let text = std::iter::once(i18n.get_content(title))
+                .chain(members.iter().map(|(alias, ready)| {
+                    if *ready {
+                        format!("  {alias} : prêt")
+                    } else {
+                        format!("  {alias}")
+                    }
+                }))
+                .collect::<Vec<_>>()
+                .join("
+");
+            Rectangle::fill([320.0, 24.0 + 22.0 * (members.len() + 1) as f64])
+                .rgba(0.0, 0.0, 0.0, 0.6)
+                .mid_left_with_margin_on(ui_widgets.window, 10.0)
+                .set(self.ids.icebreaker_expedition_bg, ui_widgets);
+            Text::new(&text)
+                .color(TEXT_COLOR)
+                .top_left_with_margins_on(self.ids.icebreaker_expedition_bg, 10.0, 12.0)
+                .font_id(self.fonts.cyri.conrod_id)
+                .font_size(self.fonts.cyri.scale(16))
+                .set(self.ids.icebreaker_expedition_txt, ui_widgets);
+        }
+
         // Camera clamp indicator
         if let Some(cameraclamp_key) = global_state
             .settings
@@ -5549,6 +5580,10 @@ impl Hud {
     /// Icebreaker: whether the cursor is over no widget (a click there is on
     /// the village of the top view).
     pub fn icebreaker_cursor_free(&self) -> bool { self.ui.no_widget_capturing_mouse() }
+
+    pub fn icebreaker_expedition(&mut self, expedition: Option<(comp::Content, Vec<(String, bool)>)>) {
+        self.icebreaker_expedition = expedition;
+    }
 
     pub fn icebreaker_panel(&mut self, panel: Option<IcebreakerPanel>) {
         self.icebreaker_panel = panel;
