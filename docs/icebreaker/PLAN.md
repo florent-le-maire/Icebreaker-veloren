@@ -50,9 +50,11 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
 - [x] **I.7 Monde unique** (`0016`) — `icebreaker.ps1 campagne` : village au centre, emplacements de donjon
   (`assets/icebreaker/campagne.ron` : 2 Gnarling, 2 générés) à ~1000 blocs ; une zone fermée par lieu ; menu : un
   seul bouton « Campagne ». Testé (démarrage en ~10 s, zones) ; pas encore en jeu. — cd1c0527cd
-- [ ] **I.8 Expédition par téléportation** — le départ groupé (V.9) téléporte vers un emplacement libre ; `/rentrer`
+- [x] **I.8 Expédition par téléportation** — le départ groupé (V.9) téléporte vers un emplacement libre ; `/rentrer`
   ramène sur la place ; emplacement occupé tant qu'un membre y est.
   *Fin* : village → donjon → village sans changer de serveur.
+  Pas de place libre : on attend. Testé (logique ; `/rentrer` depuis un emplacement au client texte) ; départ par
+  le chef pas encore vu en jeu. — e1cdcaee54
 - [ ] **I.9 Remise à neuf** — quand le dernier membre rentre, terrain regénéré, créatures et coffres de retour.
   *Fin* : une deuxième expédition retrouve monstres et coffres.
 
