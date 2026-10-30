@@ -138,7 +138,7 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   différente par porte (`generation.ron` → `keys`), dans un coffre posé où le générateur l'a mise, consommée à
   l'ouverture ; une porte ouverte le reste. Vérifié (client texte) : sans clé et avec une autre clé, refus ; avec la
   bonne, la porte s'ouvre et la clé disparaît ; le coffre donne la clé ; contrôle des blocs, 4 graines. Pas encore
-  ouvert à la main en jeu. — *hash à venir*
+  ouvert à la main en jeu. — 6bf39d3a49
 - [ ] **G.9 Créatures endormies** — les créatures notées endormies sont couchées, immobiles, avec des « Zzz »
   au-dessus d'elles ; frappées, ou réveillées par le bruit ou l'alerte d'un voisin, elles se lèvent.
   *Fin* : on traverse une caserne sans réveiller personne ; frapper une créature réveille la salle.
