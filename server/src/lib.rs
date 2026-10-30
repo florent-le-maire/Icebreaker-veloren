@@ -499,21 +499,35 @@ impl Server {
             // Search for town defined by spawn_town server setting. If this fails, or is
             // None, set spawn to the nearest town to the centre of the world
             let center_chunk = world.sim().map_size_lg().chunks().map(i32::from) / 2;
-            // Icebreaker: in an encounter instance, players start at its dungeon.
+            // Icebreaker: in an encounter instance, players start in front of its
+            // dungeon, just outside the site, on the side facing the map center.
             let instance_dungeon = std::env::var_os("ICEBREAKER_INSTANCE_SITE")
                 .and_then(|_| world.civs().sites().find(|site| site.is_dungeon()))
-                .map(|site| site.center);
-            let spawn_chunk = instance_dungeon.unwrap_or_else(|| {
-                world
+                .and_then(|site| site.site_tmp)
+                .map(|site| {
+                    const MARGIN: f32 = 24.0;
+                    let site = &index.sites[site];
+                    let center_wpos = TerrainChunkSize::center_wpos(center_chunk);
+                    let toward_center = (center_wpos - site.origin)
+                        .as_::<f32>()
+                        .try_normalized()
+                        .unwrap_or(Vec2::unit_y());
+                    let spawn = site.origin + (toward_center * (site.radius() + MARGIN)).as_::<i32>();
+                    info!(?spawn, dungeon = ?site.origin, radius = site.radius(), "Icebreaker instance spawn");
+                    spawn
+                });
+            let spawn_wpos = instance_dungeon.unwrap_or_else(|| {
+                let spawn_chunk = world
                     .civs()
                     .sites()
                     .filter(|site| site.is_settlement())
                     .map(|site| site.center)
                     .min_by_key(|site_pos| site_pos.distance_squared(center_chunk))
-                    .unwrap_or(center_chunk)
+                    .unwrap_or(center_chunk);
+                TerrainChunkSize::center_wpos(spawn_chunk)
             });
 
-            world.find_accessible_pos(index, TerrainChunkSize::center_wpos(spawn_chunk), false)
+            world.find_accessible_pos(index, spawn_wpos, false)
         });
         #[cfg(not(feature = "worldgen"))]
         let spawn_point = SpawnPoint::default();
