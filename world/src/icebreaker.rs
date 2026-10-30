@@ -78,20 +78,60 @@ pub fn check_generated_dungeon(
         _ => None,
     })?;
     let chunk_size = TerrainChunkSize::RECT_SIZE.map(|e| e as i32);
+    let bounds = dungeon.bounds();
+    let key_of = |wpos: vek::Vec2<i32>| wpos.map2(chunk_size, |e, s| e.div_euclid(s));
+    let (low, high) = (key_of(bounds.min), key_of(bounds.max));
     let mut chunks = HashMap::new();
-    let problems = dungeon.check_blocks(|wpos| {
-        let key = wpos.xy().map2(chunk_size, |e, s| e.div_euclid(s));
-        let chunk = chunks.entry(key).or_insert_with(|| {
-            world
-                .generate_chunk(index, key, None, || false, None)
-                .ok()
-                .map(|(chunk, _)| chunk)
-        });
-        let chunk = chunk.as_ref()?;
+    let mut spawned = Vec::new();
+    for x in low.x..=high.x {
+        for y in low.y..=high.y {
+            let key = vek::Vec2::new(x, y);
+            let generated = world.generate_chunk(index, key, None, || false, None).ok();
+            if let Some((_, supplement)) = &generated {
+                spawned.extend(supplement
+                    .entity_spawns
+                    .iter()
+                    .flat_map(|spawn| match spawn {
+                        common::generation::EntitySpawn::Entity(e) => vec![e.pos],
+                        common::generation::EntitySpawn::Group(g) => g.iter().map(|e| e.pos).collect(),
+                    })
+                    .filter(|pos| bounds.contains_point(pos.xy().as_())));
+            }
+            chunks.insert(key, generated.map(|(chunk, _)| chunk));
+        }
+    }
+    let mut problems = dungeon.check_blocks(|wpos| {
+        let key = key_of(wpos.xy());
+        let chunk = chunks.get(&key)?.as_ref()?;
         let local = wpos - (key * chunk_size).with_z(0);
-        Some(chunk.get(local).copied().unwrap_or(common::terrain::Block::new(BlockKind::Air, Default::default())))
+        Some(
+            chunk
+                .get(local)
+                .copied()
+                .unwrap_or(common::terrain::Block::new(BlockKind::Air, Default::default())),
+        )
     });
-    Some((dungeon.dungeon().plan.to_text(), problems))
+    let plan = &dungeon.dungeon().plan;
+    // One creature on each marker of the plan; others (from caves) are only counted.
+    let mut others = spawned.clone();
+    for (cell, symbol) in &plan.cells {
+        if dungeon::populate::kind_of(*symbol).is_some() {
+            let pos = dungeon.spawn_pos(*cell);
+            let here = spawned.iter().filter(|p| **p == pos).count();
+            if here != 1 {
+                problems.push(format!("{here} créature(s) au lieu d'une sur '{symbol}' en {cell:?}"));
+            }
+            others.retain(|p| *p != pos);
+        }
+    }
+    let report = format!(
+        "{}\n{}\n{} créature(s) apparue(s) dans le donjon, {} autre(s) dans la zone",
+        dungeon.dungeon().summary,
+        plan.to_text(),
+        spawned.len() - others.len(),
+        others.len()
+    );
+    Some((report, problems))
 }
 
 /// Whether the instance is the village (built around a town).

@@ -80,4 +80,56 @@
         search_limit: 3000,     // cases examinées par recherche de couloir
         margin: 6,              // marge autour du donjon où un couloir peut passer
     ),
+    // Habitants et butin selon le rôle de la salle (tâche G.5). creatures : nombre par sorte (brute, archer, lookout,
+    // chief, boss) ; chests : coffres ; awake : éveillées (false : endormies, noté dans le plan, sans effet dans Veloren).
+    // Rôle absent : salle vide. Le chef garde toujours la salle de l'objectif.
+    population: {
+        "hall": (creatures: {"lookout": (0, 1)}),
+        "guardRoom": (creatures: {"brute": (1, 2), "archer": (0, 1)}),
+        "barracks": (creatures: {"brute": (2, 3)}, awake: false),
+        "storage": (creatures: {"lookout": (0, 1)}, chests: (1, 2)),
+        "kitchen": (creatures: {"brute": (0, 1), "lookout": (0, 1)}),
+        "nest": (creatures: {"brute": (2, 3)}, awake: false),
+        "treasure": (creatures: {"brute": (1, 1), "archer": (0, 1)}, chests: (2, 3)),
+        "chiefLair": (creatures: {"chief": (1, 1), "archer": (1, 2)}),
+        "prison": (creatures: {"brute": (1, 2)}),
+        "vault": (creatures: {"brute": (1, 2), "archer": (0, 1)}, chests: (3, 4)),
+        "sanctum": (creatures: {"archer": (1, 2)}, chests: (1, 1)),
+        "bossLair": (creatures: {"boss": (1, 1)}, chests: (1, 2)),
+    },
+    // Qui habite le donjon : pour chaque sorte des plans, des créatures de Veloren (tirées au hasard dans la liste) ;
+    // chest : le coffre (son butin vient de Veloren, DungeonChest0 = gnarlings, 1 = adlets, 5 = cultistes).
+    default_faction: "gnarling",
+    factions: {
+        "gnarling": (
+            creatures: {
+                "brute": ["common.entity.dungeon.gnarling.logger"],
+                "archer": ["common.entity.dungeon.gnarling.stalker"],
+                "lookout": ["common.entity.dungeon.gnarling.mugger"],
+                "chief": ["common.entity.dungeon.gnarling.chieftain"],
+                "boss": ["common.entity.dungeon.gnarling.harvester"],
+            },
+            chest: "DungeonChest0",
+        ),
+        "adlet": (
+            creatures: {
+                "brute": ["common.entity.dungeon.adlet.icepicker"],
+                "archer": ["common.entity.dungeon.adlet.hunter"],
+                "lookout": ["common.entity.dungeon.adlet.tracker"],
+                "chief": ["common.entity.dungeon.adlet.elder"],
+                "boss": ["common.entity.dungeon.adlet.yeti"],
+            },
+            chest: "DungeonChest1",
+        ),
+        "cultist": (
+            creatures: {
+                "brute": ["common.entity.dungeon.cultist.husk_brute"],
+                "archer": ["common.entity.dungeon.cultist.warlock"],
+                "lookout": ["common.entity.dungeon.cultist.cultist", "common.entity.dungeon.cultist.husk"],
+                "chief": ["common.entity.dungeon.cultist.warlord"],
+                "boss": ["common.entity.dungeon.cultist.mindflayer"],
+            },
+            chest: "DungeonChest5",
+        ),
+    },
 )

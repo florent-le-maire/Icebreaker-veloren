@@ -5,6 +5,7 @@
 pub mod assemble;
 pub mod graph;
 pub mod plan;
+pub mod populate;
 pub mod rooms;
 pub mod settings;
 
@@ -41,6 +42,8 @@ pub struct Dungeon {
     pub tunnel: Tunnel,
     /// What the dungeon is made of, for the logs.
     pub summary: String,
+    /// Who lives there.
+    pub faction: settings::Faction,
 }
 
 /// Marks the tunnel in front of `door` (a wall cell of a room, opening toward
@@ -103,6 +106,11 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
         plan,
         tunnel,
         summary: format!("salle seule : {}", room.id),
+        faction: settings
+            .factions
+            .get(&settings.default_faction)
+            .cloned()
+            .ok_or("faction par défaut inconnue")?,
     })
 }
 
@@ -142,7 +150,8 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
             settings.render.tunnel_cells,
             |failure| failures.push(format!("graine {seed}, {failure}")),
         );
-        if let Some(assembled) = assembled {
+        if let Some(mut assembled) = assembled {
+            let (creatures, chests) = populate::populate(&mut assembled, &graph, &resolved, seed);
             let rooms: Vec<String> = assembled
                 .rooms
                 .iter()
@@ -152,13 +161,15 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 plan: assembled.plan,
                 tunnel: assembled.tunnel,
                 summary: format!(
-                    "{} {}, graine {seed} ({} tentative(s)) ; salles : {}\n{}",
+                    "{} {}, graine {seed} ({} tentative(s)), {creatures} créature(s), {chests} \
+                     coffre(s) ; salles : {}\n{}",
                     mission.size,
                     mission.objective,
                     assembled.attempts,
                     rooms.join(", "),
                     graph.describe()
                 ),
+                faction: resolved.faction.clone(),
             });
         }
     }
@@ -171,6 +182,17 @@ mod tests {
 
     #[test]
     fn settings_load() { Settings::load().unwrap(); }
+
+    #[test]
+    fn faction_creatures_exist() {
+        let settings = Settings::load().unwrap();
+        for (name, faction) in &settings.factions {
+            for asset in faction.creatures.values().flatten() {
+                let path = common::assets::ASSETS_PATH.join(asset.replace('.', "/") + ".ron");
+                assert!(path.exists(), "faction {name} : {asset} introuvable");
+            }
+        }
+    }
 
     #[test]
     fn every_room_alone_reaches_its_tunnel() {

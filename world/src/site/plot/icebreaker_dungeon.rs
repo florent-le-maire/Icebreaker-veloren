@@ -5,12 +5,16 @@
 use super::*;
 use crate::{
     Land,
-    icebreaker::dungeon::{self, Dungeon, RenderSettings, plan},
+    icebreaker::dungeon::{self, Dungeon, RenderSettings, plan, populate},
     site::namegen::NameGen,
     util::{RandomField, Sampler},
 };
-use common::terrain::{Block, BlockKind, SpriteKind};
+use common::{
+    generation::EntityInfo,
+    terrain::{Block, BlockKind, SpriteKind},
+};
 use rand::prelude::*;
+use rand_chacha::ChaCha8Rng;
 use tracing::{error, info};
 use vek::*;
 
@@ -50,6 +54,12 @@ impl IcebreakerDungeon {
     pub fn entrance(&self) -> Vec2<i32> { self.entrance }
 
     pub fn dungeon(&self) -> &Dungeon { &self.dungeon }
+
+    /// Where the creature of a marker cell appears.
+    pub fn spawn_pos(&self, cell: plan::Cell) -> Vec3<f32> {
+        let min = self.cell_min(cell);
+        (min.xy() + self.render.cell_size / 2).with_z(min.z + 1).as_::<f32>() + Vec3::new(0.5, 0.5, 0.0)
+    }
 
     /// Checks the drawn blocks (`block_at`) against the plan: every cell one
     /// can reach from the tunnel has a solid floor and room above it. Returns
@@ -287,6 +297,45 @@ impl Structure for IcebreakerDungeon {
                 );
             }
         }
+
+        // The people and the chests of the plan.
+        let faction = &self.dungeon.faction;
+        let chest = chest_sprite(&faction.chest);
+        for (cell, symbol) in &plan.cells {
+            let min = self.cell_min(*cell);
+            let center = (min.xy() + c / 2).with_z(min.z + 1);
+            let noise = RandomField::new(11).get(Vec3::new(cell.x, cell.y, cell.level));
+            if *symbol == '$' {
+                painter.rotated_sprite(center, chest, (noise % 4) as u8 * 2);
+            } else if let Some(kind) = populate::kind_of(*symbol)
+                && let Some(assets) = faction.creatures.get(kind).filter(|a| !a.is_empty())
+            {
+                // The painter's area includes its far edge, shared with the next
+                // chunk: spawn there only once.
+                let area = painter.render_aabr();
+                if center.x == area.max.x || center.y == area.max.y {
+                    continue;
+                }
+                let asset = &assets[noise as usize % assets.len()];
+                let mut rng = ChaCha8Rng::seed_from_u64(noise as u64);
+                painter.spawn(
+                    EntityInfo::at(self.spawn_pos(*cell))
+                        .with_asset_expect(asset, &mut rng, None),
+                );
+            }
+        }
+    }
+}
+
+/// The chest sprite named in the data (its loot comes from Veloren).
+fn chest_sprite(name: &str) -> SpriteKind {
+    match name {
+        "DungeonChest1" => SpriteKind::DungeonChest1,
+        "DungeonChest2" => SpriteKind::DungeonChest2,
+        "DungeonChest3" => SpriteKind::DungeonChest3,
+        "DungeonChest4" => SpriteKind::DungeonChest4,
+        "DungeonChest5" => SpriteKind::DungeonChest5,
+        _ => SpriteKind::DungeonChest0,
     }
 }
 

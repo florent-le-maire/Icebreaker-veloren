@@ -14,7 +14,7 @@ pub struct Range(pub i32, pub i32);
 impl Range {
     pub fn roll(self, rng: &mut impl RngExt) -> i32 { rng.random_range(self.0..=self.1) }
 
-    fn valid(self, lowest: i32) -> bool { lowest <= self.0 && self.0 <= self.1 }
+    pub fn valid(self, lowest: i32) -> bool { lowest <= self.0 && self.0 <= self.1 }
 }
 
 /// How a plan becomes voxels.
@@ -80,6 +80,38 @@ pub struct Settings {
     /// The room at the end of the main path, by objective.
     pub goal_roles: BTreeMap<String, String>,
     pub assembly: super::assemble::AssemblySettings,
+    /// People and loot by role of room (absent: an empty room).
+    pub population: BTreeMap<String, RoomPopulation>,
+    /// Who lives in the dungeon: Veloren creatures for each kind of the plans.
+    pub factions: BTreeMap<String, Faction>,
+    pub default_faction: String,
+}
+
+/// People and loot of a room: creatures by kind (`brute`, `archer`,
+/// `lookout`, `chief`, `boss`), chests, awake or asleep.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(default)]
+pub struct RoomPopulation {
+    pub creatures: BTreeMap<String, Range>,
+    pub chests: Range,
+    pub awake: bool,
+}
+
+impl Default for RoomPopulation {
+    fn default() -> Self {
+        Self {
+            creatures: BTreeMap::new(),
+            chests: Range(0, 0),
+            awake: true,
+        }
+    }
+}
+
+/// The Veloren creatures (entity configs) of each kind, and the chest sprite.
+#[derive(Clone, Debug, Deserialize)]
+pub struct Faction {
+    pub creatures: BTreeMap<String, Vec<String>>,
+    pub chest: String,
 }
 
 fn role(name: &str, errors: &mut Vec<String>) -> RoomRole {
@@ -131,6 +163,27 @@ impl Settings {
         {
             role(name, &mut errors);
         }
+        for (name, population) in &settings.population {
+            role(name, &mut errors);
+            for (kind, range) in &population.creatures {
+                if super::populate::KINDS.iter().all(|(k, _)| k != kind) {
+                    errors.push(format!("population.{name} : sorte de créature inconnue « {kind} »"));
+                }
+                if !range.valid(0) {
+                    errors.push(format!("population.{name}.{kind} : il faut 0 ≤ min ≤ max"));
+                }
+            }
+        }
+        for (name, faction) in &settings.factions {
+            for (kind, _) in super::populate::KINDS {
+                if faction.creatures.get(kind).is_none_or(Vec::is_empty) {
+                    errors.push(format!("factions.{name} : aucune créature « {kind} »"));
+                }
+            }
+        }
+        if !settings.factions.contains_key(&settings.default_faction) {
+            errors.push(format!("default_faction : faction inconnue « {} »", settings.default_faction));
+        }
         if errors.is_empty() {
             Ok(settings)
         } else {
@@ -176,6 +229,18 @@ impl Settings {
             })
             .collect();
         let fallback = role(&self.rules.fallback, &mut errors);
+        let population = self
+            .population
+            .iter()
+            .map(|(name, population)| (role(name, &mut errors), population.clone()))
+            .collect();
+        let faction_name = mission.faction.clone().unwrap_or_else(|| self.default_faction.clone());
+        let faction = self.factions.get(&faction_name).cloned().ok_or_else(|| {
+            format!(
+                "faction inconnue : {faction_name} (factions : {})",
+                self.factions.keys().cloned().collect::<Vec<_>>().join(", ")
+            )
+        })?;
         if !errors.is_empty() {
             return Err(errors.join(" ; "));
         }
@@ -186,6 +251,8 @@ impl Settings {
             rules,
             guard_before_locks: self.rules.guard_before_locks,
             fallback,
+            population,
+            faction,
         })
     }
 }
@@ -199,6 +266,8 @@ pub struct Mission {
     pub size: String,
     /// `killChief`, `rescue`, `loot`, `clear`, `explore`, `bossLair`.
     pub objective: String,
+    /// Who lives there (`factions` of `generation.ron`; none: the default one).
+    pub faction: Option<String>,
 }
 
 impl Default for Mission {
@@ -207,6 +276,7 @@ impl Default for Mission {
             seed: 0,
             size: "medium".into(),
             objective: "killChief".into(),
+            faction: None,
         }
     }
 }
@@ -228,4 +298,6 @@ pub struct Resolved {
     pub rules: BTreeMap<RoomRole, ResolvedRule>,
     pub guard_before_locks: bool,
     pub fallback: RoomRole,
+    pub population: BTreeMap<RoomRole, RoomPopulation>,
+    pub faction: Faction,
 }

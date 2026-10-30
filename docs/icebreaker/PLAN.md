@@ -110,9 +110,14 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   une porte de l'entrée (nouvelle salle `entree_quatre_portes`). Le serveur génère un donjon `medium` « tuer le chef »
   (graine du monde) et l'écrit dans son journal. Vérifié : 100 graines par taille assemblées et finissables (tout
   accessible depuis le tunnel, retour toujours possible, chef au plus profond) ; contrôle des blocs sans problème pour
-  les graines 1234, 7 et 99 ; pas encore parcouru en jeu. — (hash à venir)
-- [ ] **G.5 Peuplement** — créatures et coffres de Veloren selon le rôle des salles, un seul chef au fond.
-  *Fin* : on traverse le donjon et on tue le chef.
+  les graines 1234, 7 et 99 ; pas encore parcouru en jeu. — 8bbfde656f
+- [x] **G.5 Peuplement** — `DungeonPopulator.cs` traduit (`populate.rs`) : créatures et coffres par rôle de salle
+  (`population`), d'abord sur les propositions des salles, jamais devant une porte ; le chef garde toujours la salle
+  de l'objectif. Créatures et coffres de Veloren par faction (`factions` : gnarling par défaut, adlet, cultist ;
+  coffres et butin de Veloren). Les endormies sont notées dans le plan (majuscules) mais apparaissent éveillées.
+  Vérifié : tests (un seul chef, dans la salle de l'objectif ; personne devant une porte ; donjon toujours
+  finissable) ; contrôle des blocs et des apparitions (une créature par marqueur, 11 à 20 par donjon) pour 5 graines.
+  Pas encore joué : à vérifier en jeu que le chef se tue au fond. — (hash à venir)
 - [ ] **G.6 Paramètres de mission** — taille, objectif, région, saison, menace, ennemis passés par le lanceur.
   *Fin* : même graine, menace 1 et menace 5 donnent des donjons visiblement différents.
 
