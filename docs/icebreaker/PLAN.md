@@ -150,9 +150,10 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
 
 ## Jalon 4 — Démo à l'équipe
 
-- [ ] **S.1 Script de lancement Linux** — `icebreaker.sh`, même rôle que `icebreaker.ps1` (village, donjon), pour le
-  serveur de test (VPS Hetzner CX22, x86, 2 vCPU, 4 Go). — *en cours : Veloren-serveur, 2026-10-28*
+- [x] **S.1 Script de lancement Linux** — `icebreaker.sh`, même rôle que `icebreaker.ps1` (village, donjon), pour le
+  serveur de test (VPS Hetzner CX22, x86, 2 vCPU, 4 Go).
   *Fin* : `./icebreaker.sh village` démarre un serveur qui écoute sur 14100.
+  Village et donjon démarrent (Git Bash + serveur Windows) ; pas encore lancé sur un vrai Linux. — df6e34479d
 - [ ] **S.2 Serveur sur le VPS** — binaire Linux release, assets, un service systemd par lieu (village et donjon
   en même temps), pare-feu ouvert sur les ports de jeu ; `--no-auth` (on fait confiance aux potes au début).
   *Fin* : un pote se connecte à `<vps>:14100` depuis chez lui.
