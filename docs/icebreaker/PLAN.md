@@ -49,7 +49,7 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
 - [x] **V.1 Instance village** — `icebreaker.ps1 village` (port 14100, `-Site Town` par défaut, ou CliffTown,
   DesertCity, SavannahTown, CoastalTown) : une seule ville au centre du petit monde, sans autre site ni faune ;
   apparition sur sa place principale ; zone fermée autour (I.2). Habitants : gardes, marchands, aventuriers, chats
-  et chiens. Vérifié : génération, apparition sur la place, connexion, horloge reprise ; pas encore promené en jeu.
+  et chiens. Vérifié : génération, apparition sur la place, connexion, horloge reprise ; pas encore promené en jeu. — 5237f6c353
 - [ ] **V.2 Entrepôt commun** — un coffre du village dont le contenu est partagé et sauvegardé dans la campagne.
   *Fin* : un joueur y dépose un objet, un autre le retrouve après redémarrage.
 - [ ] **V.3 Caisse commune** — chaque joueur garde son or (règle de butin) et peut en verser dans la caisse.
