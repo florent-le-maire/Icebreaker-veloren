@@ -19,6 +19,8 @@ impl DungeonTraces {
 
     pub fn record_collected(&mut self, wpos: Vec3<i32>) { self.collected.insert(wpos); }
 
+    pub fn is_collected(&self, wpos: Vec3<i32>) -> bool { self.collected.contains(&wpos) }
+
     /// Collected sprites whose position satisfies `filter` (typically: inside a
     /// given chunk).
     pub fn collected_where(&self, filter: impl Fn(Vec3<i32>) -> bool) -> Vec<Vec3<i32>> {

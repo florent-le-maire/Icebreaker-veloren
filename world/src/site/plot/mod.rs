@@ -75,7 +75,7 @@ pub use self::{
     glider_ring::GliderRing,
     gnarling::GnarlingFortification,
     haniwa::Haniwa,
-    icebreaker_dungeon::IcebreakerDungeon,
+    icebreaker_dungeon::{IcebreakerDungeon, MissionTargets},
     house::House,
     jungle_ruin::JungleRuin,
     myrmidon_arena::MyrmidonArena,

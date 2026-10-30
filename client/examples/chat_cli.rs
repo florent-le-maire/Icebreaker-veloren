@@ -83,7 +83,12 @@ fn main() {
             &|_| {},
             |_| {},
             Default::default(),
-            ClientType::ChatOnly,
+            // Icebreaker : `ICEBREAKER_JOUER` pour entrer dans le monde (ligne `!jouer`).
+            if std::env::var_os("ICEBREAKER_JOUER").is_some() {
+                ClientType::Game
+            } else {
+                ClientType::ChatOnly
+            },
         ))
         .expect("Failed to create client instance");
 
@@ -99,17 +104,51 @@ fn main() {
         }
     });
 
+    // Icebreaker : `!jouer` entre dans le monde avec le premier personnage du
+    // compte (créé s'il n'y en a pas), pour tester les commandes qui en veulent un.
+    let mut joining = false;
+    let mut created = false;
+
     loop {
         for msg in rx.try_iter() {
             // Icebreaker : « /commande args » part en commande, pour tester les
             // commandes du serveur et des plugins.
-            if let Some(command) = msg.strip_prefix('/') {
+            if msg.is_empty() {
+                continue;
+            } else if msg == "!jouer" {
+                client.load_character_list();
+                joining = true;
+            } else if let Some(command) = msg.strip_prefix('/') {
                 let mut words = command.split_whitespace().map(str::to_string);
                 if let Some(name) = words.next() {
                     client.send_command(name, words.collect());
                 }
             } else {
                 client.send_chat(msg)
+            }
+        }
+
+        if joining && !client.character_list().loading {
+            let first = client.character_list().characters.first().and_then(|c| c.character.id);
+            if let Some(id) = first {
+                println!("Entrée dans le monde avec le personnage {id:?}");
+                client.request_character(id, common::ViewDistances {
+                    terrain: 5,
+                    entity: 5,
+                });
+                joining = false;
+            } else if !created {
+                let body = comp::body::humanoid::Body::random();
+                client.create_character(
+                    username.clone(),
+                    Some("common.items.weapons.sword.starter".to_string()),
+                    None,
+                    body.into(),
+                    false,
+                    None,
+                );
+                client.load_character_list();
+                created = true;
             }
         }
 

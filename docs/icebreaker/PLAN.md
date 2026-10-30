@@ -129,6 +129,18 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   journal donne les paramètres appliqués. Vérifié : graine 1234, menace 1 = 8 salles, 7 créatures ; menace 5 = 14
   salles, un étage de plus, 36 créatures ; toutes les combinaisons région × saison × objectif se génèrent ; serveur
   lancé avec `-Menace 5 -Faction adlet -Region mountain`. — 7cc1eff81c
+- [x] **G.7 Victoire** — tuer le chef (ou le boss) annonce à tous « Mission accomplie » avec le bilan (créatures
+  tuées, coffres ouverts, d'après les traces du donjon). Vérifié avec le client texte (`!jouer`, `/goto` chez le
+  chef, `/explosion`) : message reçu. Pas encore descendu à pied jusqu'au chef en jeu. — *hash à venir*
+- [ ] **G.8 Verrous et clés** — chaque porte verrouillée devient une porte à clé de Veloren, sa clé posée où le
+  générateur l'a mise, consommée à l'ouverture.
+  *Fin* : la porte refuse sans la clé et s'ouvre avec ; le donjon reste finissable (contrôle des blocs).
+- [ ] **G.9 Créatures endormies** — les créatures notées endormies restent immobiles et peu vigilantes ; frappées,
+  ou réveillées par le bruit ou l'alerte d'un voisin, elles se lèvent.
+  *Fin* : on traverse une caserne sans réveiller personne ; frapper une créature réveille la salle.
+- [ ] **G.10 Éclairage selon les habitants** — torches et braseros dans les salles occupées, plus sombre dans les
+  nids et les salles vides (réglages dans `generation.ron`).
+  *Fin* : la différence entre une caserne et un nid se voit.
 
 ## Jalon 4 — Démo à l'équipe
 
@@ -138,7 +150,6 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
 ## Plus tard (à découper le moment venu)
 
 - Passage automatique du client d'une instance à l'autre.
-- Donjon généré : verrous et clés effectifs, créatures endormies, éclairage selon les habitants.
 - Biome imposé pour terracotta, myrmidons et sahagins.
 - IA : alerte, embuscades, fuite et appel à l'aide (`design/creatures.md`, `design/menace.md`).
 - Classes (`decisions/0010-classes-et-combos.md`) : capacités en fichiers de données.
@@ -155,4 +166,6 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
 
 ## Questions ouvertes
 
-(aucune pour l'instant)
+- **G.8, clés** : une clé différente par porte (proposé : sinon on peut se bloquer en ouvrant la mauvaise porte),
+  ou une seule clé qui ouvre n'importe quelle porte ?
+- **G.9, sommeil** : immobiles et peu vigilantes suffit pour le prototype (proposé), ou une vraie pose couchée ?

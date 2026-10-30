@@ -56,6 +56,15 @@ pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
     })
 }
 
+/// What the mission of a dungeon of our generator counts: its leader,
+/// creatures and chests.
+pub fn dungeon_mission(site: &Site) -> Option<crate::site::plot::MissionTargets> {
+    site.plots().find_map(|plot| match plot.kind() {
+        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.mission_targets()),
+        _ => None,
+    })
+}
+
 /// Generates the chunks of the dungeon of our generator in `world` and checks
 /// its blocks against its plan (`examples/icebreaker_dungeon.rs`). `None` if
 /// the world has no such dungeon; otherwise the plan and the problems found.

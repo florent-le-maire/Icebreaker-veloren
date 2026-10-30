@@ -17,6 +17,7 @@ pub mod connection_handler;
 mod data_dir;
 pub mod error;
 pub mod events;
+pub mod icebreaker_mission;
 pub mod icebreaker_treasury;
 pub mod icebreaker_warehouse;
 pub mod input;
@@ -577,6 +578,19 @@ impl Server {
                 campaign_dir,
                 village_npc_pos(settings.icebreaker.treasurer_offset),
             ));
+
+        // Icebreaker: a generated dungeon's mission is won by killing its leader.
+        #[cfg(feature = "worldgen")]
+        let mission = instance_site
+            .and_then(|site| world::icebreaker::dungeon_mission(&index.sites[site]))
+            .inspect(|t| {
+                let (creatures, chests) = (t.creatures.len(), t.chests.len());
+                info!(leader = ?t.leader, creatures, chests, "Icebreaker dungeon mission");
+            })
+            .map(|t| icebreaker_mission::IcebreakerMission::new(t.leader, t.creatures, t.chests));
+        #[cfg(not(feature = "worldgen"))]
+        let mission = None;
+        state.ecs_mut().insert(mission.unwrap_or_default());
 
         // Set the spawn point we calculated above
         state.ecs_mut().insert(spawn_point);

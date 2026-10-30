@@ -566,6 +566,8 @@ pub struct DestroyEventData<'a> {
     masses: ReadStorage<'a, comp::Mass>,
     #[cfg(feature = "worldgen")]
     dungeon_slots: ReadStorage<'a, rtsim::DungeonSlot>,
+    #[cfg(feature = "worldgen")]
+    icebreaker_mission: Read<'a, crate::icebreaker_mission::IcebreakerMission>,
     event_buses: DestroyEvents<'a>,
     buffs: ReadStorage<'a, comp::Buffs>,
     orientations: ReadStorage<'a, comp::Ori>,
@@ -1389,6 +1391,18 @@ impl ServerEvent for DestroyEvent {
                 // Dungeons keep their traces: a killed dungeon NPC never respawns.
                 if should_delete && let Some(slot) = data.dungeon_slots.get(ev.entity) {
                     data.rtsim.hook_dungeon_npc_killed(*slot);
+                    // Icebreaker: killing the leader of a generated dungeon wins its mission.
+                    if data.icebreaker_mission.is_leader(slot) {
+                        let content = data.icebreaker_mission.accomplished_message(
+                            |slot| data.rtsim.is_dungeon_npc_killed(slot),
+                            |wpos| data.rtsim.is_dungeon_sprite_collected(wpos),
+                        );
+                        tracing::info!(?content, "Icebreaker: dungeon mission accomplished");
+                        emitters.emit(ChatEvent {
+                            msg: comp::ChatType::Meta.into_msg(content),
+                            from_client: false,
+                        });
+                    }
                 }
             }
 

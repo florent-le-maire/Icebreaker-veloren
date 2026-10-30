@@ -211,6 +211,10 @@ impl RtSim {
         self.state.data_mut().dungeon_traces.record_collected(wpos);
     }
 
+    pub fn is_dungeon_sprite_collected(&self, wpos: Vec3<i32>) -> bool {
+        self.state.data().dungeon_traces.is_collected(wpos)
+    }
+
     pub fn dungeon_collected_in_chunk(&self, key: Vec2<i32>) -> Vec<Vec3<i32>> {
         self.state
             .data()

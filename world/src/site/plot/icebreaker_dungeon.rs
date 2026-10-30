@@ -18,6 +18,15 @@ use rand_chacha::ChaCha8Rng;
 use tracing::{error, info};
 use vek::*;
 
+/// See [`IcebreakerDungeon::mission_targets`].
+#[derive(Clone, Debug, Default)]
+pub struct MissionTargets {
+    /// Where the leader appears, and its kind (`chief` or `boss`).
+    pub leader: Option<(Vec3<i32>, String)>,
+    pub creatures: Vec<Vec3<i32>>,
+    pub chests: Vec<Vec3<i32>>,
+}
+
 pub struct IcebreakerDungeon {
     dungeon: Dungeon,
     render: RenderSettings,
@@ -54,6 +63,30 @@ impl IcebreakerDungeon {
     pub fn entrance(&self) -> Vec2<i32> { self.entrance }
 
     pub fn dungeon(&self) -> &Dungeon { &self.dungeon }
+
+    /// What the mission counts (Icebreaker G.7): where each creature appears,
+    /// the leader of the dungeon apart (its boss, or else its chief), and where
+    /// the chests are, as positions of rtsim's dungeon slots and collected
+    /// sprites.
+    pub fn mission_targets(&self) -> MissionTargets {
+        let faction = &self.dungeon.faction;
+        let rank = |kind: &str| ["chief", "boss"].iter().position(|k| *k == kind);
+        let mut targets = MissionTargets::default();
+        for (cell, symbol) in &self.dungeon.plan.cells {
+            let spot = self.spawn_pos(*cell).map(|e| e.floor() as i32);
+            if *symbol == '$' {
+                targets.chests.push(spot);
+            } else if let Some(kind) = populate::kind_of(*symbol)
+                && faction.creatures.get(kind).is_some_and(|a| !a.is_empty())
+            {
+                targets.creatures.push(spot);
+                if rank(kind) > targets.leader.as_ref().and_then(|(_, k)| rank(k)) {
+                    targets.leader = Some((spot, kind.to_string()));
+                }
+            }
+        }
+        targets
+    }
 
     /// Where the creature of a marker cell appears.
     pub fn spawn_pos(&self, cell: plan::Cell) -> Vec3<f32> {

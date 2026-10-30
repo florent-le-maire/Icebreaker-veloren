@@ -61,6 +61,8 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
 - Client texte pour tester sans affichage : `cargo build -p veloren-client --example chat_cli --features
   "plugins bin_bot"`, puis sur l'entrée : pseudo, `localhost:<port>`, un mot de passe quelconque, et des lignes de
   chat (`/commande args` part en commande). Laisser ~40 s entre deux connexions coupées net : le serveur n'accepte
-  la suivante qu'une fois la précédente expirée.
+  la suivante qu'une fois la précédente expirée. Avec `ICEBREAKER_JOUER=1`, la ligne `!jouer` entre dans le monde
+  avec un personnage (pour `/goto`, `/explosion`… ; admin : `veloren-server-cli --no-auth admin add <pseudo> admin`
+  avec le même `VELOREN_USERDATA`).
 - Lancer depuis la racine du dépôt (le jeu y cherche `assets/`). Un serveur qui tourne verrouille son `.exe` :
   le renommer avant de recompiler plutôt que d'arrêter un serveur qu'on n'a pas lancé.
