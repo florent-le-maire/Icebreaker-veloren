@@ -74,9 +74,11 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   le vrai village ; un clic sur un bâtiment ouvre son panneau (niveau, stocks, actions). Le serveur envoie la liste des
   bâtiments et leur emprise.
   *Fin* : en vue de dessus, cliquer sur l'entrepôt affiche son contenu.
-- [ ] **V.5 Retour au village** — commande `/rentrer` en instance : bilan dans le chat, le joueur repart vers le
+- [x] **V.5 Retour au village** — commande `/rentrer` en instance : bilan dans le chat, le joueur repart vers le
   village (reconnexion à la main pour l'instant).
   *Fin* : donjon → `/rentrer` → village, avec le butin.
+  Bilan à tous (or, puis « 3 × objet ») de ce que le personnage porte de plus qu'à son arrivée, puis déconnexion ;
+  on rejoint le village par le menu. Testé (bilan, commande reçue) ; pas encore en jeu avec du butin. — 046140d4fb
 
 ## Jalon 3 — Pillage sur la route
 
@@ -172,4 +174,6 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
 
 ## Questions ouvertes
 
-(aucune pour l'instant)
+1. **PV entre deux lieux** : Veloren remet les PV au maximum à chaque connexion ; on revient donc soigné du donjon
+   et l'infirmerie (V.4) ne sert qu'aux blessures prises au village. Sauver les PV dans la campagne, ou attendre
+   les blessures (`design/village.md`) ?
