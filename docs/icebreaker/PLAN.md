@@ -153,7 +153,7 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   aucune ; garde, cuisine, chef : beaucoup ; caserne : peu), ×0,3 sans créature, peu dans les couloirs ; moitié
   torches au mur, moitié braseros (`generation.ron` → `lighting`). Vérifié : test (nid noir, salle habitée bien plus
   éclairée que vide, torches contre un mur), contrôle des blocs pour 4 graines, serveur lancé (graine 1234 : 27
-  torches, 45 braseros). Pas vu en jeu (sens des torches à vérifier). — *hash à venir*
+  torches, 45 braseros). Pas vu en jeu (sens des torches à vérifier). — ee9fbfe5a4
 
 **Donjons avancés (idées, à découper le moment venu)** — aujourd'hui un seul lieu, le souterrain. Lieux envisagés
 (le projet Icebreaker en décrit déjà quelques-uns : `design/generation.md`, « Derrière les murs et lieux ») :
