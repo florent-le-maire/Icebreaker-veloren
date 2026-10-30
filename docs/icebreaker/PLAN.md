@@ -117,9 +117,13 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   coffres et butin de Veloren). Les endormies sont notées dans le plan (majuscules) mais apparaissent éveillées.
   Vérifié : tests (un seul chef, dans la salle de l'objectif ; personne devant une porte ; donjon toujours
   finissable) ; contrôle des blocs et des apparitions (une créature par marqueur, 11 à 20 par donjon) pour 5 graines.
-  Pas encore joué : à vérifier en jeu que le chef se tue au fond. — (hash à venir)
-- [ ] **G.6 Paramètres de mission** — taille, objectif, région, saison, menace, ennemis passés par le lanceur.
-  *Fin* : même graine, menace 1 et menace 5 donnent des donjons visiblement différents.
+  Pas encore joué : à vérifier en jeu que le chef se tue au fond. — 99ec6f363a
+- [x] **G.6 Paramètres de mission** — `icebreaker.ps1 donjon -Site Genere -Taille -Objectif -Region -Saison -Menace
+  -Ennemis -Faction` (variables `ICEBREAKER_DONJON_*`) ; effets dans `generation.ron` → `parameters` (valeurs du
+  projet Icebreaker : écarts qui s'ajoutent, facteurs qui se multiplient, chef et boss uniques). Le résumé du
+  journal donne les paramètres appliqués. Vérifié : graine 1234, menace 1 = 8 salles, 7 créatures ; menace 5 = 14
+  salles, un étage de plus, 36 créatures ; toutes les combinaisons région × saison × objectif se génèrent ; serveur
+  lancé avec `-Menace 5 -Faction adlet -Region mountain`. — (hash à venir)
 
 ## Jalon 4 — Démo à l'équipe
 

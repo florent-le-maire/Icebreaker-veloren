@@ -85,6 +85,8 @@ pub struct Settings {
     /// Who lives in the dungeon: Veloren creatures for each kind of the plans.
     pub factions: BTreeMap<String, Faction>,
     pub default_faction: String,
+    /// What region, season, threat, enemies and objective change.
+    pub parameters: Parameters,
 }
 
 /// People and loot of a room: creatures by kind (`brute`, `archer`,
@@ -181,6 +183,35 @@ impl Settings {
                 }
             }
         }
+        let p = &settings.parameters;
+        let tables = [
+            ("regions", &p.regions),
+            ("seasons", &p.seasons),
+            ("threats", &p.threats),
+            ("densities", &p.densities),
+            ("objectives", &p.objectives),
+        ];
+        for (table, modifiers) in tables {
+            for (key, m) in modifiers {
+                for name in m.rooms.keys() {
+                    role(name, &mut errors);
+                }
+                for kind in m.creatures.keys() {
+                    if super::populate::KINDS.iter().all(|(k, _)| k != kind) {
+                        errors.push(format!("parameters.{table}.{key} : sorte de créature inconnue « {kind} »"));
+                    }
+                }
+                if m.creature_factor < 0.0 || m.chests < 0.0 || m.rooms.values().chain(m.creatures.values()).any(|f| *f < 0.0) {
+                    errors.push(format!("parameters.{table}.{key} : les facteurs doivent être ≥ 0"));
+                }
+            }
+        }
+        if !p.threats.contains_key(&p.default_threat.to_string()) {
+            errors.push(format!("parameters.default_threat ({}) absente de threats", p.default_threat));
+        }
+        if !p.densities.contains_key(&p.default_density) {
+            errors.push(format!("parameters.default_density ({}) absente de densities", p.default_density));
+        }
         if !settings.factions.contains_key(&settings.default_faction) {
             errors.push(format!("default_faction : faction inconnue « {} »", settings.default_faction));
         }
@@ -193,9 +224,46 @@ impl Settings {
 
     pub fn load() -> Result<Self, String> { Self::parse(&super::read_data("generation.ron")?) }
 
-    /// The settings of a mission (task G.6 adds region, season, threat…).
+    /// The modifiers of a mission: its region, season, threat, number of
+    /// enemies and objective. Unknown names are errors.
+    fn modifiers(&self, mission: &Mission) -> Result<Vec<(String, &Modifier)>, String> {
+        fn find<'a>(
+            table: &'a BTreeMap<String, Modifier>,
+            key: &str,
+            what: &str,
+        ) -> Result<(String, &'a Modifier), String> {
+            table.get(key).map(|m| (key.to_string(), m)).ok_or_else(|| {
+                format!(
+                    "{what} inconnue : {key} (connues : {})",
+                    table.keys().cloned().collect::<Vec<_>>().join(", ")
+                )
+            })
+        }
+        let p = &self.parameters;
+        let mut modifiers = Vec::new();
+        if let Some(region) = &mission.region {
+            modifiers.push(find(&p.regions, region, "région")?);
+        }
+        if let Some(season) = &mission.season {
+            modifiers.push(find(&p.seasons, season, "saison")?);
+        }
+        let threat = mission.threat.unwrap_or(p.default_threat).to_string();
+        modifiers.push(find(&p.threats, &threat, "menace")?);
+        let density = mission.density.as_deref().unwrap_or(&p.default_density);
+        modifiers.push(find(&p.densities, density, "quantité d'ennemis")?);
+        if let Some(objective) = p.objectives.get(&mission.objective) {
+            modifiers.push((mission.objective.clone(), objective));
+        }
+        Ok(modifiers)
+    }
+
+    /// The settings of a mission: the effects of its region, season, threat,
+    /// number of enemies and objective applied to the shape of the graph, the
+    /// weights of the roles of the branches and the people. Shifts add up,
+    /// factors multiply; the chief and the boss stay unique.
     pub fn resolve(&self, mission: &Mission) -> Result<Resolved, String> {
         let mut errors = Vec::new();
+        let modifiers = self.modifiers(mission)?;
         let shape = self.sizes.get(&mission.size).cloned().ok_or_else(|| {
             format!(
                 "taille de donjon inconnue : {} (tailles : {})",
@@ -211,10 +279,31 @@ impl Settings {
             )
         })?;
         let goal = role(goal, &mut errors);
+        let shift = |range: Range, delta: i32, lowest: i32| {
+            Range((range.0 + delta).max(lowest), (range.1 + delta).max(lowest))
+        };
+        let sum = |f: fn(&Modifier) -> i32| modifiers.iter().map(|(_, m)| f(m)).sum::<i32>();
+        let mut shape = shape;
+        shape.main_path = shift(shape.main_path, sum(|m| m.main_path), 2);
+        let levels = shift(shape.levels, sum(|m| m.levels), 1);
+        // At least one room per level.
+        shape.levels = Range(levels.0.min(shape.main_path.0), levels.1.min(shape.main_path.0));
+        shape.branches = shift(shape.branches, sum(|m| m.branches), 0);
+
         let mut weights = BTreeMap::new();
         for name in &self.branch_roles {
             *weights.entry(role(name, &mut errors)).or_insert(0.0) += 1.0;
         }
+        for (role, weight) in weights.iter_mut() {
+            for (_, m) in &modifiers {
+                *weight *= m.rooms.get(role.name()).copied().unwrap_or(1.0);
+            }
+        }
+        let creature_factor: f64 = modifiers.iter().map(|(_, m)| m.creature_factor).product();
+        let chest_factor: f64 = modifiers.iter().map(|(_, m)| m.chests).product();
+        let scale = |range: Range, factor: f64| {
+            Range((range.0 as f64 * factor).round() as i32, (range.1 as f64 * factor).round() as i32)
+        };
         let rules = self
             .rules
             .roles
@@ -232,7 +321,24 @@ impl Settings {
         let population = self
             .population
             .iter()
-            .map(|(name, population)| (role(name, &mut errors), population.clone()))
+            .map(|(name, population)| {
+                let mut population = population.clone();
+                for (kind, range) in population.creatures.iter_mut() {
+                    if kind != "chief" && kind != "boss" {
+                        let factor = modifiers.iter().fold(creature_factor, |f, (_, m)| {
+                            f * m.creatures.get(kind).copied().unwrap_or(1.0)
+                        });
+                        *range = scale(*range, factor);
+                    }
+                }
+                population.chests = scale(population.chests, chest_factor);
+                (role(name, &mut errors), population)
+            })
+            .collect();
+        let names: Vec<String> = modifiers
+            .iter()
+            .map(|(key, m)| if m.name.is_empty() { key.clone() } else { m.name.clone() })
+            .filter(|n| !n.is_empty())
             .collect();
         let faction_name = mission.faction.clone().unwrap_or_else(|| self.default_faction.clone());
         let faction = self.factions.get(&faction_name).cloned().ok_or_else(|| {
@@ -253,8 +359,56 @@ impl Settings {
             fallback,
             population,
             faction,
+            modifiers: names,
         })
     }
+}
+
+/// What a parameter of the mission changes. `main_path`, `levels`,
+/// `branches`: rooms of the main path, levels, branches in more (or less);
+/// `rooms`: factor of the weight of a role of the branches (0: never);
+/// `creature_factor`: factor of the number of creatures (the chief stays
+/// unique); `creatures`: factor by kind; `chests`: factor of the chests.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(default)]
+pub struct Modifier {
+    /// Shown in the summary of the dungeon (empty: its key).
+    pub name: String,
+    pub main_path: i32,
+    pub levels: i32,
+    pub branches: i32,
+    pub rooms: BTreeMap<String, f64>,
+    pub creature_factor: f64,
+    pub creatures: BTreeMap<String, f64>,
+    pub chests: f64,
+}
+
+impl Default for Modifier {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            main_path: 0,
+            levels: 0,
+            branches: 0,
+            rooms: BTreeMap::new(),
+            creature_factor: 1.0,
+            creatures: BTreeMap::new(),
+            chests: 1.0,
+        }
+    }
+}
+
+/// `generation.ron` → `parameters`.
+#[derive(Clone, Debug, Deserialize)]
+pub struct Parameters {
+    pub regions: BTreeMap<String, Modifier>,
+    pub seasons: BTreeMap<String, Modifier>,
+    /// From 1 (low) to 5 (extreme), as text keys.
+    pub threats: BTreeMap<String, Modifier>,
+    pub default_threat: i32,
+    pub densities: BTreeMap<String, Modifier>,
+    pub default_density: String,
+    pub objectives: BTreeMap<String, Modifier>,
 }
 
 /// What the generator is asked for. The same mission always gives the same
@@ -268,6 +422,14 @@ pub struct Mission {
     pub objective: String,
     /// Who lives there (`factions` of `generation.ron`; none: the default one).
     pub faction: Option<String>,
+    /// `forest`, `mountain`, `swamp` (none: no effect).
+    pub region: Option<String>,
+    /// `spring`, `summer`, `autumn`, `winter` (none: no effect).
+    pub season: Option<String>,
+    /// 1 to 5 (none: the default threat).
+    pub threat: Option<i32>,
+    /// Number of enemies: `low`, `medium`, `high` (none: the default one).
+    pub density: Option<String>,
 }
 
 impl Default for Mission {
@@ -277,7 +439,39 @@ impl Default for Mission {
             size: "medium".into(),
             objective: "killChief".into(),
             faction: None,
+            region: None,
+            season: None,
+            threat: None,
+            density: None,
         }
+    }
+}
+
+impl Mission {
+    /// The mission given by the `ICEBREAKER_DONJON_*` variables (set by the
+    /// launcher: `-Taille`, `-Objectif`, `-Region`, `-Saison`, `-Menace`,
+    /// `-Ennemis`, `-Faction`); unset or empty: the default.
+    pub fn from_env(seed: u64) -> Result<Self, String> {
+        let var = |name: &str| {
+            std::env::var(format!("ICEBREAKER_DONJON_{name}"))
+                .ok()
+                .filter(|v| !v.is_empty())
+        };
+        let default = Self::default();
+        let threat = match var("MENACE") {
+            Some(t) => Some(t.parse().map_err(|_| format!("menace illisible : {t}"))?),
+            None => None,
+        };
+        Ok(Self {
+            seed,
+            size: var("TAILLE").unwrap_or(default.size),
+            objective: var("OBJECTIF").unwrap_or(default.objective),
+            faction: var("FACTION"),
+            region: var("REGION"),
+            season: var("SAISON"),
+            threat,
+            density: var("ENNEMIS"),
+        })
     }
 }
 
@@ -300,4 +494,6 @@ pub struct Resolved {
     pub fallback: RoomRole,
     pub population: BTreeMap<RoomRole, RoomPopulation>,
     pub faction: Faction,
+    /// Names of the parameters applied, for the summary.
+    pub modifiers: Vec<String>,
 }

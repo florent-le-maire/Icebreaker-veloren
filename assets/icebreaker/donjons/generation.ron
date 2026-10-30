@@ -132,4 +132,47 @@
             chest: "DungeonChest5",
         ),
     },
+    // Paramètres de la mission (tâche G.6) : région, saison, menace, nombre d'ennemis et objectif changent le donjon.
+    // Valeurs du projet Icebreaker, à régler en jouant. Les écarts s'ajoutent, les facteurs se multiplient :
+    //   main_path, levels, branches : salles du chemin principal, étages, branches en plus (ou en moins) ;
+    //   rooms : facteur du poids d'un rôle des branches (0 : jamais) ;
+    //   creature_factor : facteur du nombre de créatures (le chef et le boss restent uniques) ; creatures : par sorte ;
+    //   chests : facteur du nombre de coffres. name : affiché dans le résumé du donjon (journal du serveur).
+    parameters: (
+        regions: {
+            "forest": (name: "Forêt", rooms: {"nest": 2, "kitchen": 1.5}, creatures: {"archer": 1.5}),
+            "mountain": (name: "Montagne", levels: 1, main_path: 1, rooms: {"barracks": 2, "nest": 0.5}, creatures: {"brute": 1.2}),
+            "swamp": (name: "Marais", rooms: {"nest": 3, "treasure": 0.5, "kitchen": 0.5}, creatures: {"lookout": 2}, chests: 0.7),
+        },
+        seasons: {
+            "spring": (name: "Printemps", rooms: {"nest": 1.5}),
+            "summer": (name: "Été", creatures: {"lookout": 1.5}),
+            "autumn": (name: "Automne", rooms: {"storage": 2, "kitchen": 1.5}, chests: 1.3),
+            "winter": (name: "Hiver", rooms: {"barracks": 2, "storage": 0.5}, creature_factor: 1.1, chests: 0.8),
+        },
+        // Menace de 1 (faible) à 5 (extrême) ; default_threat quand la mission n'en dit rien.
+        default_threat: 3,
+        threats: {
+            "1": (name: "Menace faible", creature_factor: 0.5, branches: -1),
+            "2": (name: "Menace modérée", creature_factor: 0.75),
+            "3": (name: "Menace normale"),
+            "4": (name: "Menace forte", creature_factor: 1.25, branches: 1),
+            "5": (name: "Menace extrême", creature_factor: 1.5, branches: 1, main_path: 1, levels: 1),
+        },
+        // Nombre d'ennemis (faible / moyen / beaucoup) ; default_density quand la mission n'en dit rien.
+        default_density: "low",
+        densities: {
+            "low": (name: "Ennemis : peu"),
+            "medium": (name: "Ennemis : moyen", creature_factor: 2),
+            "high": (name: "Ennemis : beaucoup", creature_factor: 3.5),
+        },
+        objectives: {
+            "loot": (name: "Piller", rooms: {"treasure": 3, "storage": 1.5}, chests: 1.3),
+            "clear": (name: "Nettoyer", rooms: {"nest": 2}, creature_factor: 1.2),
+            "rescue": (name: "Sauver", rooms: {"guardRoom": 1.5, "barracks": 1.5}),
+            "explore": (name: "Explorer", main_path: 1, levels: 1, creature_factor: 0.8),
+            // Le boss suffit : un peu moins de monde en chemin.
+            "bossLair": (name: "Antre de boss", creature_factor: 0.8),
+        },
+    ),
 )

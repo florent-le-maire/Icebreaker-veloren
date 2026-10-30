@@ -351,10 +351,7 @@ impl Site {
             ..Site::default()
         };
         let generated = dungeon::Settings::load().and_then(|settings| {
-            let mission = dungeon::Mission {
-                seed: rng.random(),
-                ..dungeon::Mission::default()
-            };
+            let mission = dungeon::Mission::from_env(rng.random())?;
             let dungeon = dungeon::generate(&settings, &mission)?;
             Ok((dungeon, settings))
         });

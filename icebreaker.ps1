@@ -1,7 +1,8 @@
 # Icebreaker : lance un serveur pour un lieu de la campagne.
 #
 #   .\icebreaker.ps1 donjon -Site Gnarling   (port 14110)
-#   .\icebreaker.ps1 donjon -Site Genere     (port 14110 ; donjon de notre générateur, jalon G)
+#   .\icebreaker.ps1 donjon -Site Genere     (port 14110 ; donjon de notre générateur, jalon G ; mission :
+#                                             -Taille -Objectif -Region -Saison -Menace -Ennemis -Faction)
 #   .\icebreaker.ps1 route                   (port 14120, pas encore fait : P.1)
 #   .\icebreaker.ps1 village                 (port 14100 ; -Site Town, CliffTown, DesertCity,
 #                                             SavannahTown ou CoastalTown, Town par défaut)
@@ -26,7 +27,15 @@ param(
     # Port du serveur, à la place de celui du lieu (pour lancer deux serveurs du même lieu).
     [int]$Port = 0,
     # Lieu « Genere » : une seule salle à regarder (nom de fichier de assets\icebreaker\donjons\salles).
-    [string]$Salle = ""
+    [string]$Salle = "",
+    # Lieu « Genere » : la mission (assets\icebreaker\donjons\generation.ron ; vide : valeur par défaut).
+    [ValidateSet("", "small", "medium", "large")] [string]$Taille = "",
+    [ValidateSet("", "killChief", "rescue", "loot", "clear", "explore", "bossLair")] [string]$Objectif = "",
+    [ValidateSet("", "forest", "mountain", "swamp")] [string]$Region = "",
+    [ValidateSet("", "spring", "summer", "autumn", "winter")] [string]$Saison = "",
+    [ValidateSet("", "1", "2", "3", "4", "5")] [string]$Menace = "",
+    [ValidateSet("", "low", "medium", "high")] [string]$Ennemis = "",
+    [ValidateSet("", "gnarling", "adlet", "cultist")] [string]$Faction = ""
 )
 
 $repo = $PSScriptRoot
@@ -85,6 +94,13 @@ $env:ICEBREAKER_CAMPAIGN_DIR = "$root\campagne"
 $env:ICEBREAKER_INSTANCE_SITE = $Site
 $env:ICEBREAKER_TOWN_SIZE = $TailleVille.ToString([Globalization.CultureInfo]::InvariantCulture)
 $env:ICEBREAKER_DONJON_SALLE = $Salle
+$env:ICEBREAKER_DONJON_TAILLE = $Taille
+$env:ICEBREAKER_DONJON_OBJECTIF = $Objectif
+$env:ICEBREAKER_DONJON_REGION = $Region
+$env:ICEBREAKER_DONJON_SAISON = $Saison
+$env:ICEBREAKER_DONJON_MENACE = $Menace
+$env:ICEBREAKER_DONJON_ENNEMIS = $Ennemis
+$env:ICEBREAKER_DONJON_FACTION = $Faction
 Write-Host "Icebreaker : $Lieu ($Site), graine $Seed, port $port"
 Set-Location $repo
 & ".\target\debug\veloren-server-cli.exe" --no-auth

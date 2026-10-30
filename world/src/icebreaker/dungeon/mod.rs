@@ -161,10 +161,11 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 plan: assembled.plan,
                 tunnel: assembled.tunnel,
                 summary: format!(
-                    "{} {}, graine {seed} ({} tentative(s)), {creatures} créature(s), {chests} \
+                    "{} {} ({}), graine {seed} ({} tentative(s)), {creatures} créature(s), {chests} \
                      coffre(s) ; salles : {}\n{}",
                     mission.size,
                     mission.objective,
+                    resolved.modifiers.join(", "),
                     assembled.attempts,
                     rooms.join(", "),
                     graph.describe()
@@ -182,6 +183,54 @@ mod tests {
 
     #[test]
     fn settings_load() { Settings::load().unwrap(); }
+
+    #[test]
+    fn threat_changes_the_dungeon() {
+        let settings = Settings::load().unwrap();
+        // (cells, creatures) over a few seeds.
+        let measure = |threat: i32| {
+            (0..20).fold((0, 0), |(cells, creatures), seed| {
+                let mission = Mission {
+                    seed,
+                    threat: Some(threat),
+                    ..Mission::default()
+                };
+                let dungeon = generate(&settings, &mission).unwrap();
+                let plan = &dungeon.plan;
+                let people = plan.cells.values().filter(|s| populate::kind_of(**s).is_some()).count();
+                (cells + plan.cells.len(), creatures + people)
+            })
+        };
+        let (low, high) = (measure(1), measure(5));
+        assert!(high.0 > low.0, "menace 5 pas plus grande : {low:?} / {high:?}");
+        assert!(high.1 > 2 * low.1, "menace 5 pas plus peuplée : {low:?} / {high:?}");
+    }
+
+    #[test]
+    fn every_parameter_resolves() {
+        let settings = Settings::load().unwrap();
+        let p = &settings.parameters;
+        for region in p.regions.keys() {
+            for season in p.seasons.keys() {
+                for objective in settings.goal_roles.keys() {
+                    let mission = Mission {
+                        region: Some(region.clone()),
+                        season: Some(season.clone()),
+                        objective: objective.clone(),
+                        density: Some("high".into()),
+                        ..Mission::default()
+                    };
+                    let dungeon = generate(&settings, &mission).unwrap_or_else(|e| panic!("{mission:?} : {e}"));
+                    assert!(!dungeon.plan.cells.is_empty());
+                }
+            }
+        }
+        let unknown = Mission {
+            region: Some("lune".into()),
+            ..Mission::default()
+        };
+        assert!(settings.resolve(&unknown).unwrap_err().contains("région inconnue"));
+    }
 
     #[test]
     fn faction_creatures_exist() {
