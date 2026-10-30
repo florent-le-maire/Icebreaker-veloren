@@ -86,9 +86,9 @@ puis on la retire.
 
 ### Jalon M1 — Socle du mod
 
-- [ ] **M.1 Plugin vide chargé** — `plugin/icebreaker/` (copie de `plugin/examples/hello`), construit en
-  `.plugin.tar` par une commande du lanceur (`icebreaker.ps1 mod`), posé dans `assets/plugins/`.
-  *Fin* : le serveur l'annonce au démarrage, le client le reçoit, `/icebreaker` répond dans le chat.
+- [x] **M.1 Plugin vide chargé** — `plugin/icebreaker/` construit par `icebreaker.ps1 mod` ; serveur compilé avec
+  `--features plugins`. Vérifié au client texte : chargé au démarrage, `/icebreaker` répond. Pas vérifié : le
+  téléchargement du plugin par voxygen (le client texte ne l'installe pas). — 5cf1352c2b
 - [ ] **M.2 Données à part** — `icebreaker-assets/` monté par `VELOREN_ASSETS_OVERRIDE` dans le lanceur ; on y
   déplace le titre (traduction) et les touches AZERTY (`settings.ron` client fourni) ; on retire le code client
   correspondant. *Fin* : titre et touches inchangés, `voxygen` revenu à l'identique de Veloren pour ces points.
