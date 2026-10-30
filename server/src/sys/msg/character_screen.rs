@@ -186,6 +186,12 @@ impl Sys {
                         alias
                     )))?;
                 } else if let Some(player) = data.players.get(entity) {
+                    // Icebreaker: in an encounter instance, ignore the chosen starting
+                    // town so the character starts at the spawn point, in front of the
+                    // dungeon.
+                    #[cfg(feature = "worldgen")]
+                    let start_site = start_site
+                        .filter(|_| std::env::var_os("ICEBREAKER_INSTANCE_SITE").is_none());
                     #[cfg(feature = "worldgen")]
                     let waypoint = start_site.and_then(|site_idx| {
                         // Don't allow starting here if it's not a possible starting site.
