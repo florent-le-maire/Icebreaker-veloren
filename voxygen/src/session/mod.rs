@@ -1,3 +1,4 @@
+mod icebreaker_lock;
 pub mod interactable;
 pub mod settings_change;
 mod target;
@@ -111,6 +112,9 @@ pub struct SessionState {
     freecam_pos: Vec3<f32>,
     /// Icebreaker: the top view of the village, when on.
     icebreaker_top_view: Option<IcebreakerTopView>,
+    /// Icebreaker: the locked enemy (Dark Souls), when on.
+    icebreaker_lock: Option<icebreaker_lock::Verrou>,
+    icebreaker_lock_settings: icebreaker_lock::Reglages,
     auto_walk: bool,
     walking_speed: bool,
     camera_clamp: bool,
@@ -187,6 +191,8 @@ impl SessionState {
             free_look: false,
             freecam_pos: Vec3::zero(),
             icebreaker_top_view: None,
+            icebreaker_lock: None,
+            icebreaker_lock_settings: icebreaker_lock::Reglages::charger(),
             auto_walk: false,
             walking_speed: false,
             camera_clamp: false,
@@ -1363,6 +1369,9 @@ impl PlayState for SessionState {
                             GameInput::IcebreakerTopView if state => {
                                 self.toggle_icebreaker_top_view();
                             },
+                            GameInput::IcebreakerLockTarget if state => {
+                                self.toggle_icebreaker_lock();
+                            },
                             _ => {},
                         }
                     },
@@ -1385,6 +1394,11 @@ impl PlayState for SessionState {
                     Event::ScreenshotMessage(screenshot_msg) => self
                         .hud
                         .new_message(ChatType::CommandInfo.into_plain_msg(screenshot_msg)),
+
+                    // Icebreaker: while an enemy is locked, the wheel switches to its neighbour.
+                    Event::Zoom(delta) if self.icebreaker_lock.is_some() => {
+                        self.switch_icebreaker_lock(delta);
+                    },
 
                     Event::Zoom(delta) if self.zoom_lock => {
                         // only fire this Hud event when player has "intent" to zoom
@@ -1413,6 +1427,9 @@ impl PlayState for SessionState {
                     }, // TODO: Do something if the event wasn't handled?
                 }
             }
+
+            // Icebreaker: the camera follows the locked enemy.
+            self.update_icebreaker_lock(dt);
 
             // Talk to entities when we are in dialogue with them
             if let Some(tgt) = self.hud.current_dialogue() {
@@ -2576,5 +2593,107 @@ impl SessionState {
             })
             .collect();
         self.hud.icebreaker_buildings(on_screen);
+    }
+}
+
+/// Icebreaker: lock on an enemy (Dark Souls, `icebreaker_lock`).
+impl SessionState {
+    /// The living enemies around, with the middle of their body.
+    fn icebreaker_lock_candidates(&self) -> Vec<(specs::Entity, Vec3<f32>)> {
+        use specs::{Join, LendJoin};
+        let client = self.client.borrow();
+        let ecs = client.state().ecs();
+        let (positions, interpolated, alignments, healths, bodies, scales) = (
+            ecs.read_storage::<Pos>(),
+            ecs.read_storage::<crate::ecs::comp::Interpolated>(),
+            ecs.read_storage::<comp::Alignment>(),
+            ecs.read_storage::<comp::Health>(),
+            ecs.read_storage::<comp::Body>(),
+            ecs.read_storage::<comp::Scale>(),
+        );
+        (
+            &ecs.entities(),
+            &positions,
+            interpolated.maybe(),
+            &alignments,
+            &healths,
+            &bodies,
+            scales.maybe(),
+        )
+            .join()
+            .filter(|(_, _, _, alignment, health, ..)| {
+                matches!(alignment, comp::Alignment::Enemy) && !health.is_dead
+            })
+            .map(|(entity, pos, interpolated, _, _, body, scale)| {
+                let pos = interpolated.map_or(pos.0, |i| i.pos);
+                let height = body.height() * scale.map_or(1.0, |s| s.0);
+                (entity, pos + Vec3::unit_z() * height * 0.5)
+            })
+            .collect()
+    }
+
+    fn toggle_icebreaker_lock(&mut self) {
+        if self.icebreaker_lock.take().is_some() {
+            return;
+        }
+        let camera = self.scene.camera();
+        self.icebreaker_lock = icebreaker_lock::choisir(
+            camera.get_focus_pos(),
+            camera.forward_xy(),
+            &self.icebreaker_lock_candidates(),
+            self.icebreaker_lock_settings.rayon,
+        )
+        .map(|cible| icebreaker_lock::Verrou {
+            cible,
+            depuis_molette: f32::INFINITY,
+        });
+    }
+
+    /// The wheel up locks the enemy on the right, down the one on the left.
+    fn switch_icebreaker_lock(&mut self, delta: f32) {
+        let candidates = self.icebreaker_lock_candidates();
+        let origin = self.scene.camera().get_focus_pos();
+        let settings = &self.icebreaker_lock_settings;
+        let Some(lock) = &mut self.icebreaker_lock else {
+            return;
+        };
+        if delta.abs() < f32::EPSILON || lock.depuis_molette < settings.delai_molette {
+            return;
+        }
+        let Some(current) = candidates.iter().find(|(e, _)| *e == lock.cible) else {
+            return;
+        };
+        if let Some(next) =
+            icebreaker_lock::suivante(origin, *current, &candidates, settings.rayon, delta < 0.0)
+        {
+            lock.cible = next;
+            lock.depuis_molette = 0.0;
+        }
+    }
+
+    /// Turns the camera toward the locked enemy; the lock drops when it dies or is too far.
+    fn update_icebreaker_lock(&mut self, dt: f32) {
+        let Some(target) = self.icebreaker_lock.as_ref().map(|lock| lock.cible) else {
+            return;
+        };
+        let origin = self.scene.camera().get_focus_pos();
+        let settings = &self.icebreaker_lock_settings;
+        let target_pos = self
+            .icebreaker_lock_candidates()
+            .into_iter()
+            .find(|(e, _)| *e == target)
+            .map(|(_, pos)| pos)
+            .filter(|pos| pos.distance(origin) <= settings.rayon_perte);
+        match target_pos {
+            Some(pos) if self.icebreaker_top_view.is_none() => {
+                let ori = icebreaker_lock::orientation_vers(origin, pos, settings.inclinaison);
+                let speed = settings.vitesse_camera;
+                self.scene.camera_mut().lerp_toward(ori, dt, speed);
+                if let Some(lock) = &mut self.icebreaker_lock {
+                    lock.depuis_molette += dt;
+                }
+            },
+            _ => self.icebreaker_lock = None,
+        }
     }
 }

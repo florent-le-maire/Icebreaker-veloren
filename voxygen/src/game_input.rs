@@ -74,6 +74,9 @@ pub enum GameInput {
     /// Icebreaker: top view of the village.
     #[strum(serialize = "gameinput-icebreaker-topview")]
     IcebreakerTopView,
+    /// Icebreaker: lock on an enemy (Dark Souls).
+    #[strum(serialize = "gameinput-icebreaker-locktarget")]
+    IcebreakerLockTarget,
     #[strum(serialize = "gameinput-togglewalk")]
     ToggleWalk,
     #[strum(serialize = "gameinput-autowalk")]

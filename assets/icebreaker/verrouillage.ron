@@ -1,0 +1,14 @@
+// Icebreaker : verrouillage d'une cible, façon Dark Souls (touche W par défaut,
+// `voxygen/src/session/icebreaker_lock.rs`). Distances en blocs (1 bloc ≈ 1 m).
+(
+    // Distance jusqu'à laquelle on peut verrouiller un ennemi.
+    rayon: 20.0,
+    // Distance au-delà de laquelle le verrouillage saute.
+    rayon_perte: 30.0,
+    // Inclinaison de la caméra vers le bas (radians), pour garder le personnage en vue.
+    inclinaison: 0.2,
+    // Vitesse à laquelle la caméra se tourne vers la cible (plus grand : plus vif).
+    vitesse_camera: 8.0,
+    // Temps minimum (s) entre deux changements de cible à la molette.
+    delai_molette: 0.2,
+)

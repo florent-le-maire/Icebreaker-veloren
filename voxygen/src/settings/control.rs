@@ -297,6 +297,7 @@ impl ControlSettings {
             GameInput::MuteAmbience => return None,
             GameInput::ToggleWalk => char("B"),
             GameInput::IcebreakerTopView => char("U"),
+            GameInput::IcebreakerLockTarget => char("W"),
         }))
     }
 
