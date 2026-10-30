@@ -99,9 +99,12 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   chaque connecteur) ; `-Salle <nom>` dessine une seule salle. Contrôle des blocs : `cargo run -p veloren-world
   --example icebreaker_dungeon -- <graine>` génère le petit monde et vérifie que chaque case accessible a un sol et de
   la place au-dessus, marches du tunnel comprises. Vérifié : 16 salles valides ; entrée, antre du chef, sanctuaire,
-  poste de garde, hall à escalier, réserve sans problème de blocs. — (hash à venir)
-- [ ] **G.3 Graphe de mission** — chemin principal, branches, verrous, boucles, chutes, règles de voisinage.
-  *Fin* : sur 1000 graines par taille, l'objectif est atteignable et l'on peut toujours revenir à l'entrée.
+  poste de garde, hall à escalier, réserve sans problème de blocs. — f539365558
+- [x] **G.3 Graphe de mission** — `MissionGraphGenerator.cs` traduit (`graph.rs`) : chemin principal découpé en étages,
+  verrous avec leur clé dans une branche avant eux, branches, boucles et chutes dans une même zone, règles de
+  voisinage ; réglages `sizes`, `branch_roles`, `rules`, `goal_roles` de `generation.ron`. Vérifié : sur 1000 graines
+  par taille, objectif atteignable, retour toujours possible, chef unique et au plus profond, maximums, garde avant
+  chaque verrou, casernes après l'entrée ou une garde, nids loin du chemin principal. — (hash à venir)
 - [ ] **G.4 Assemblage** — salles posées étage par étage, couloirs et escaliers creusés.
   *Fin* : un donjon `medium` se parcourt de l'entrée à l'antre du chef.
 - [ ] **G.5 Peuplement** — créatures et coffres de Veloren selon le rôle des salles, un seul chef au fond.

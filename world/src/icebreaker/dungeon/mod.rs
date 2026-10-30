@@ -2,53 +2,17 @@
 //! several levels (`plan`), then voxels drawn by the `IcebreakerDungeon` plot
 //! (`site/plot/icebreaker_dungeon.rs`).
 
+pub mod graph;
 pub mod plan;
 pub mod rooms;
+pub mod settings;
 
 use plan::{Cell, Plan};
 use rooms::{RoomCatalog, RoomRole};
-use serde::Deserialize;
+pub use settings::{Mission, RenderSettings, Settings};
 
 /// Where the dungeon data lives, under `assets/`.
 const DATA_DIR: &str = "icebreaker/donjons";
-
-/// How a plan becomes voxels (`generation.ron` → `render`).
-#[derive(Clone, Debug, Deserialize)]
-pub struct RenderSettings {
-    /// Blocks per cell, horizontally.
-    pub cell_size: i32,
-    /// Blocks per level (floor included). Stairs climb one level over one
-    /// cell, one block per step: at most `cell_size`.
-    pub level_height: i32,
-    /// Cells of the tunnel from the surface down to the entrance room.
-    pub tunnel_cells: i32,
-    pub wall_color: (u8, u8, u8),
-    pub floor_color: (u8, u8, u8),
-}
-
-/// The settings of the generator (`assets/icebreaker/donjons/generation.ron`).
-#[derive(Clone, Debug, Deserialize)]
-pub struct Settings {
-    pub render: RenderSettings,
-}
-
-impl Settings {
-    pub fn parse(text: &str) -> Result<Self, String> {
-        let settings: Self =
-            ron::from_str(text).map_err(|e| format!("generation.ron illisible : {e}"))?;
-        let render = &settings.render;
-        if render.cell_size < 3 || render.level_height < 3 || render.level_height > render.cell_size
-        {
-            return Err("render : il faut 3 ≤ level_height ≤ cell_size".into());
-        }
-        if render.tunnel_cells < 1 {
-            return Err("render : tunnel_cells doit être au moins 1".into());
-        }
-        Ok(settings)
-    }
-
-    pub fn load() -> Result<Self, String> { Self::parse(&read_data("generation.ron")?) }
-}
 
 /// The path of a data file of the generator.
 pub fn data_path(name: &str) -> std::path::PathBuf {
