@@ -41,6 +41,19 @@ impl Component for ActorId {
     type Storage = specs::VecStorage<Self>;
 }
 
+/// Identifies a NPC spawned by a dungeon: its spawn position, and its rank
+/// among the NPCs spawned at that same position. Stable across reloads because
+/// dungeon generation is seeded.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DungeonSlot {
+    pub wpos: Vec3<i32>,
+    pub nth: u8,
+}
+
+impl Component for DungeonSlot {
+    type Storage = specs::DenseVecStorage<Self>;
+}
+
 #[derive(EnumIter, Clone, Copy)]
 pub enum PersonalityTrait {
     Open,

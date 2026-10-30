@@ -564,6 +564,8 @@ pub struct DestroyEventData<'a> {
     #[cfg(feature = "worldgen")]
     rtsim_actors: ReadStorage<'a, rtsim::ActorId>,
     masses: ReadStorage<'a, comp::Mass>,
+    #[cfg(feature = "worldgen")]
+    dungeon_slots: ReadStorage<'a, rtsim::DungeonSlot>,
     event_buses: DestroyEvents<'a>,
     buffs: ReadStorage<'a, comp::Buffs>,
     orientations: ReadStorage<'a, comp::Ori>,
@@ -1382,6 +1384,11 @@ impl ServerEvent for DestroyEvent {
                             )
                             .and_then(entity_as_actor),
                     );
+                }
+
+                // Dungeons keep their traces: a killed dungeon NPC never respawns.
+                if should_delete && let Some(slot) = data.dungeon_slots.get(ev.entity) {
+                    data.rtsim.hook_dungeon_npc_killed(*slot);
                 }
             }
 

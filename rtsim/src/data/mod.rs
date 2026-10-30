@@ -1,6 +1,7 @@
 pub mod actor;
 pub mod airship;
 pub mod architect;
+pub mod dungeon_trace;
 pub mod faction;
 pub mod nature;
 pub mod quest;
@@ -55,6 +56,8 @@ pub struct Data {
     pub architect: Architect,
     #[serde(default)]
     pub quests: Quests,
+    #[serde(default)]
+    pub dungeon_traces: dungeon_trace::DungeonTraces,
 
     #[serde(default)]
     pub tick: u64,

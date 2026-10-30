@@ -6,7 +6,7 @@ use atomicwrites::{AtomicFile, OverwriteBehavior};
 use common::{
     grid::Grid,
     mounting::VolumePos,
-    rtsim::{ActorId, TerrainResource, WorldSettings},
+    rtsim::{ActorId, DungeonSlot, TerrainResource, WorldSettings},
     terrain::{CoordinateConversions, SpriteKind},
 };
 use common_ecs::{System, dispatch};
@@ -185,6 +185,37 @@ impl RtSim {
             world,
             index,
         )
+    }
+
+    /// Whether this chunk belongs to a dungeon site (dungeons keep traces of
+    /// what players did in them).
+    pub fn is_dungeon_chunk(world: &World, index: IndexRef, key: Vec2<i32>) -> bool {
+        world.sim().get(key).is_some_and(|chunk| {
+            chunk.sites.iter().any(|site| {
+                index.sites.get(*site).kind.and_then(|kind| kind.meta()).is_some_and(
+                    |meta| matches!(meta, common::terrain::site::SiteKindMeta::Dungeon(_)),
+                )
+            })
+        })
+    }
+
+    pub fn is_dungeon_npc_killed(&self, slot: &DungeonSlot) -> bool {
+        self.state.data().dungeon_traces.is_killed(slot)
+    }
+
+    pub fn hook_dungeon_npc_killed(&mut self, slot: DungeonSlot) {
+        self.state.data_mut().dungeon_traces.record_kill(slot);
+    }
+
+    pub fn hook_dungeon_sprite_collected(&mut self, wpos: Vec3<i32>) {
+        self.state.data_mut().dungeon_traces.record_collected(wpos);
+    }
+
+    pub fn dungeon_collected_in_chunk(&self, key: Vec2<i32>) -> Vec<Vec3<i32>> {
+        self.state
+            .data()
+            .dungeon_traces
+            .collected_where(|wpos| wpos.xy().wpos_to_cpos() == key)
     }
 
     pub fn hook_load_chunk(

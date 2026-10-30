@@ -427,6 +427,18 @@ impl ServerEvent for InventoryManipEvent {
                             // We made sure earlier the block was not already modified this tick
                             data.block_change.set(sprite_pos, block.into_collected());
 
+                            // Dungeons keep their traces: looted chests stay looted.
+                            #[cfg(feature = "worldgen")]
+                            if crate::rtsim::RtSim::is_dungeon_chunk(
+                                &data.world,
+                                data.index.as_index_ref(),
+                                common::terrain::CoordinateConversions::wpos_to_cpos(
+                                    &sprite_pos.xy(),
+                                ),
+                            ) {
+                                data.rtsim.hook_dungeon_sprite_collected(sprite_pos);
+                            }
+
                             // If the block was a keyhole, remove nearby door blocks
                             // TODO: Abstract this code into a generalised way to do block updates?
                             if let Some(kind_to_destroy) = match block.get_sprite() {

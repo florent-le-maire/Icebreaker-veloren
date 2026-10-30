@@ -127,6 +127,7 @@ pub fn handle_create_npc(server: &mut Server, ev: CreateNpcEvent) -> EcsEntity {
         loot,
         pets,
         rtsim_actor,
+        dungeon_slot,
         projectile,
         heads,
         death_effects,
@@ -139,6 +140,7 @@ pub fn handle_create_npc(server: &mut Server, ev: CreateNpcEvent) -> EcsEntity {
             ev.pos, ev.ori, stats, skill_set, health, poise, inventory, body, scale,
         )
         .maybe_with(heads)
+        .maybe_with(dungeon_slot)
         .maybe_with(death_effects)
         .maybe_with(rider_effects);
 

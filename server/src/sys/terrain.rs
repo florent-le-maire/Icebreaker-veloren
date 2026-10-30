@@ -27,9 +27,11 @@ use common::{
     generation::{EntityInfo, EntitySpawn, SpecialEntity},
     lottery::LootSpec,
     resources::{Time, TimeOfDay},
+    rtsim::DungeonSlot,
     slowjob::SlowJobPool,
-    terrain::TerrainGrid,
+    terrain::{CoordinateConversions, TerrainGrid},
     util::Dir,
+    vol::WriteVol,
 };
 
 use common_ecs::{Job, Origin, Phase, System};
@@ -134,7 +136,10 @@ impl<'a> System<'a> for Sys {
         // Also, send the chunk data to anybody that is close by.
         let mut new_chunks = Vec::new();
         'insert_terrain_chunks: while let Some((key, res)) = data.chunk_generator.recv_new_chunk() {
-            #[cfg_attr(not(feature = "persistent_world"), expect(unused_mut))]
+            #[cfg_attr(
+                not(any(feature = "persistent_world", feature = "worldgen")),
+                expect(unused_mut)
+            )]
             let (mut chunk, supplement) = match res {
                 Ok((chunk, supplement)) => (chunk, supplement),
                 Err(Some(entity)) => {
@@ -157,6 +162,20 @@ impl<'a> System<'a> for Sys {
                 terrain_persistence.apply_changes(key, &mut chunk);
             }
 
+            // Dungeons keep their traces: what players already looted stays looted.
+            #[cfg(feature = "worldgen")]
+            let in_dungeon =
+                rtsim::RtSim::is_dungeon_chunk(&data.world, data.index.as_index_ref(), key);
+            #[cfg(not(feature = "worldgen"))]
+            let in_dungeon = false;
+            #[cfg(feature = "worldgen")]
+            if in_dungeon {
+                let chunk_wpos = Vec3::from(key.cpos_to_wpos());
+                for wpos in data.rtsim.dungeon_collected_in_chunk(key) {
+                    let _ = chunk.map(wpos - chunk_wpos, |block| block.into_collected());
+                }
+            }
+
             // Arcify the chunk
             let chunk = Arc::new(chunk);
 
@@ -173,6 +192,26 @@ impl<'a> System<'a> for Sys {
                 data.rtsim
                     .hook_load_chunk(key, supplement.rtsim_max_resources, &data.world);
             }
+
+            // Dungeon NPCs are identified by their spawn position (and rank at that
+            // position), so the ones players killed stay dead.
+            let mut slot_counts = std::collections::HashMap::<Vec3<i32>, u8>::new();
+            let mut dungeon_slot = |pos: Vec3<f32>| {
+                in_dungeon.then(|| {
+                    let wpos = pos.map(|e| e.floor() as i32);
+                    let nth = slot_counts.entry(wpos).or_insert(0);
+                    let slot = DungeonSlot { wpos, nth: *nth };
+                    *nth = nth.saturating_add(1);
+                    slot
+                })
+            };
+            #[cfg(feature = "worldgen")]
+            let is_killed = |slot: &Option<DungeonSlot>| {
+                slot.as_ref()
+                    .is_some_and(|slot| data.rtsim.is_dungeon_npc_killed(slot))
+            };
+            #[cfg(not(feature = "worldgen"))]
+            let is_killed = |_: &Option<DungeonSlot>| false;
 
             // Handle chunk supplement
             for entity_spawn in supplement.entity_spawns {
@@ -191,13 +230,19 @@ impl<'a> System<'a> for Sys {
                     EntitySpawn::Entity(entity) => {
                         check_pos(entity.pos);
 
+                        let spawn_pos = entity.pos;
                         let data = SpawnEntityData::from_entity_info(*entity);
                         match data {
                             SpawnEntityData::Special(pos, entity) => {
                                 emitters.emit(CreateSpecialEntityEvent { pos, entity });
                             },
                             SpawnEntityData::Npc(data) => {
-                                let (npc_builder, pos) = data.to_npc_builder();
+                                let slot = dungeon_slot(spawn_pos);
+                                if is_killed(&slot) {
+                                    continue;
+                                }
+                                let (mut npc_builder, pos) = data.to_npc_builder();
+                                npc_builder.dungeon_slot = slot;
 
                                 emitters.emit(CreateNpcEvent {
                                     pos,
@@ -214,16 +259,24 @@ impl<'a> System<'a> for Sys {
 
                         let create_npc_events = group
                             .into_iter()
-                            .filter_map(|entity| match SpawnEntityData::from_entity_info(entity) {
+                            .filter_map(|entity| {
+                                let spawn_pos = entity.pos;
+                                match SpawnEntityData::from_entity_info(entity) {
                                 SpawnEntityData::Special(..) => None,
                                 SpawnEntityData::Npc(data) => {
-                                    let (npc_builder, pos) = data.to_npc_builder();
+                                    let slot = dungeon_slot(spawn_pos);
+                                    if is_killed(&slot) {
+                                        return None;
+                                    }
+                                    let (mut npc_builder, pos) = data.to_npc_builder();
+                                    npc_builder.dungeon_slot = slot;
                                     Some(CreateNpcEvent {
                                         pos,
                                         ori: comp::Ori::from(Dir::random_2d(&mut rng)),
                                         npc: npc_builder.with_anchor(comp::Anchor::Chunk(key)),
                                     })
                                 },
+                            }
                             })
                             .collect::<Vec<_>>();
 
