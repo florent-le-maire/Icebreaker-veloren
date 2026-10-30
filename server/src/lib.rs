@@ -501,8 +501,9 @@ impl Server {
             let center_chunk = world.sim().map_size_lg().chunks().map(i32::from) / 2;
             // Icebreaker: in an encounter instance, players start in front of its
             // dungeon, just outside the site, on the side facing the map center.
-            let instance_dungeon = std::env::var_os("ICEBREAKER_INSTANCE_SITE")
-                .and_then(|_| world.civs().sites().find(|site| site.is_dungeon()))
+            let instance_dungeon = world::icebreaker::is_instance()
+                .then(|| world.civs().sites().find(|site| site.is_dungeon()))
+                .flatten()
                 .and_then(|site| site.site_tmp)
                 .map(|site| {
                     const MARGIN: f32 = 24.0;

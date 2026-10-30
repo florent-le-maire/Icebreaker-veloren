@@ -273,7 +273,7 @@ impl Civs {
 
         // Icebreaker: an encounter instance is a small world holding one chosen
         // dungeon near its center, instead of randomly placed sites.
-        let instance_site = instance_site_from_env();
+        let instance_site = crate::icebreaker::instance_site();
         if let Some(kind) = instance_site {
             let center = world_dims.center();
             let near_center = ProximityRequirementsBuilder::new()
@@ -1595,28 +1595,6 @@ fn loc_suitable_for_walking(sim: &WorldSim, loc: Vec2<i32>) -> bool {
     }
 }
 
-/// Icebreaker: the dungeon kind an encounter instance is built around, read
-/// from `ICEBREAKER_INSTANCE_SITE` (e.g. `Haniwa`). Unset means a normal world.
-fn instance_site_from_env() -> Option<SiteKind> {
-    let name = std::env::var("ICEBREAKER_INSTANCE_SITE").ok()?;
-    let kind = match name.as_str() {
-        "Gnarling" => SiteKind::Gnarling,
-        "Adlet" => SiteKind::Adlet,
-        "Haniwa" => SiteKind::Haniwa,
-        "Terracotta" => SiteKind::Terracotta,
-        "Myrmidon" => SiteKind::Myrmidon,
-        "Sahagin" => SiteKind::Sahagin,
-        "Cultist" => SiteKind::Cultist,
-        "DwarvenMine" => SiteKind::DwarvenMine,
-        "ChapelSite" => SiteKind::ChapelSite,
-        "VampireCastle" => SiteKind::VampireCastle,
-        _ => {
-            warn!(?name, "Unknown ICEBREAKER_INSTANCE_SITE, generating a normal world");
-            return None;
-        },
-    };
-    Some(kind)
-}
 
 /// Attempt to search for a location that's suitable for site construction
 // FIXME when a `close_to_one_of` requirement is passed in, we should start with

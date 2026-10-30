@@ -53,6 +53,10 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
 - [ ] **V.4 Bâtiments par dialogue** — un PNJ par bâtiment, ses choix ouvrent l'action (Veloren a déjà des dialogues
   à questions et réponses) : intendance (achat et vente, avec le commerce de Veloren), infirmerie (soin payant).
   *Fin* : on achète une potion à l'intendant et on se fait soigner à l'infirmerie.
+- [ ] **V.6 Vue du village de dessus** — au village, une touche passe en vue de dessus (caméra fixe, façon 2D) sur
+  le vrai village ; un clic sur un bâtiment ouvre son panneau (niveau, stocks, actions). Le serveur envoie la liste des
+  bâtiments et leur emprise.
+  *Fin* : en vue de dessus, cliquer sur l'entrepôt affiche son contenu.
 - [ ] **V.5 Retour au village** — commande `/rentrer` en instance : bilan dans le chat, le joueur repart vers le
   village (reconnexion à la main pour l'instant).
   *Fin* : donjon → `/rentrer` → village, avec le butin.
@@ -85,10 +89,14 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
 - Recrues, traits, blessures, rang, registre commun (`design/village.md`).
 - Carte stratégique façon Mount & Blade sur un grand monde Veloren, rencontres qui lancent les instances.
 
+## Décisions (Flo, 2026-10-28)
+
+1. **Personnages** : pour le prototype, chaque compte garde ses propres personnages (modèle de Veloren) ; le
+   registre commun viendra plus tard.
+2. **Village** : une vraie ville Veloren où l'on marche, **plus une vue de dessus façon 2D** où l'on clique sur les
+   bâtiments pour voir les stocks et agir (V.6).
+3. **Butin du convoi** : chacun garde ce qu'il ramène (règle de butin habituelle).
+
 ## Questions ouvertes
 
-1. **Registre commun** : dans Veloren, chaque compte a ses propres personnages. On garde ce modèle pour le prototype
-   (proposé), ou on vise tout de suite le registre commun de `design/village.md` ?
-2. **Forme du village** : une vraie ville Veloren où l'on marche entre les bâtiments (proposé), ou un écran à menus
-   comme la version Godot ?
-3. **Butin du convoi** : partagé entre les pilleurs, ou chacun garde ce qu'il ramasse (règle actuelle) ?
+(aucune pour l'instant)

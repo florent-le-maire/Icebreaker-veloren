@@ -57,6 +57,12 @@ pub fn wanted_population(world: &World, index: IndexRef) -> Population {
     pop.add(TrackedPopulation::PirateCaptains, pirate_hideouts);
     pop.add(TrackedPopulation::Pirates, 10 * pirate_hideouts);
 
+    // Icebreaker: an encounter instance holds only the inhabitants of its place,
+    // no roaming birds or monsters.
+    if world::icebreaker::is_instance() {
+        return pop;
+    }
+
     // Birds
     let world_area = world.sim().map_size_lg().chunks_len();
     let bird_pop = world_area.div_ceil(2usize.pow(16)) as u32;

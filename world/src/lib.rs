@@ -15,6 +15,7 @@ pub mod canvas;
 pub mod civ;
 mod column;
 pub mod config;
+pub mod icebreaker;
 pub mod index;
 pub mod land;
 pub mod layer;
@@ -551,17 +552,20 @@ impl World {
             }
         }
 
-        // Apply layer supplement
-        layer::wildlife::apply_wildlife_supplement(
-            &mut dynamic_rng,
-            chunk_wpos2d,
-            sample_get,
-            &chunk,
-            index,
-            sim_chunk,
-            &mut supplement,
-            time.as_ref(),
-        );
+        // Apply layer supplement (Icebreaker: no wildlife in encounter instances, only
+        // the inhabitants of the place)
+        if !icebreaker::is_instance() {
+            layer::wildlife::apply_wildlife_supplement(
+                &mut dynamic_rng,
+                chunk_wpos2d,
+                sample_get,
+                &chunk,
+                index,
+                sim_chunk,
+                &mut supplement,
+                time.as_ref(),
+            );
+        }
 
         // Apply site supplementary information
         sim_chunk.sites.iter().for_each(|site| {
