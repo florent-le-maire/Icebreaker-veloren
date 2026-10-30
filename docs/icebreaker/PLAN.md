@@ -148,6 +148,15 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   nids et les salles vides (réglages dans `generation.ron`).
   *Fin* : la différence entre une caserne et un nid se voit.
 
+**Donjons avancés (idées, à découper le moment venu)** — aujourd'hui un seul lieu, le souterrain. Lieux envisagés
+(le projet Icebreaker en décrit déjà quelques-uns : `design/generation.md`, « Derrière les murs et lieux ») :
+- **La tour** : on monte au lieu de descendre, étages étroits, maçonnerie et ciel autour, chef au sommet.
+- **Le marécage** : salles à ciel ouvert reliées par l'eau et la boue, nids nombreux (effets de la région Marais).
+- **La forêt** : clairières reliées par des sentiers, sous les arbres ; nids et archers (région Forêt).
+- **Le château** : salles collées par leurs murs, cour et remparts (assemblage « salles collées » du projet).
+- **Le gouffre** (façon *Made in Abyss*) : un grand puits vertical, des salles accrochées à ses parois ; plus on
+  descend, plus c'est dangereux et riche, et remonter coûte (fatigue, temps de carte, blessures ?).
+
 ## Jalon 4 — Démo à l'équipe
 
 - [x] **S.1 Script de lancement Linux** — `icebreaker.sh`, même rôle que `icebreaker.ps1` (village, donjon), pour le
@@ -187,3 +196,5 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
 1. **PV entre deux lieux** : Veloren remet les PV au maximum à chaque connexion ; on revient donc soigné du donjon
    et l'infirmerie (V.4) ne sert qu'aux blessures prises au village. Sauver les PV dans la campagne, ou attendre
    les blessures (`design/village.md`) ?
+2. **Gouffre** (donjons avancés, jalon G) : que coûte la remontée, et le gouffre est-il une seule mission très
+   profonde ou une suite de descentes qu'on reprend où on s'était arrêté ?
