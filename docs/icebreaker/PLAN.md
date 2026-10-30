@@ -20,8 +20,9 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
 
 ## Architecture visée
 
-- **Un processus serveur par instance** (`0005`) : village, donjon, route. Chacun génère son petit monde au
-  lancement (graine + type de lieu + paramètres).
+- **Un seul serveur pour la campagne** (`0016`, remplace pour ce prototype le processus par instance de `0005`) :
+  le village et des emplacements de donjon dans un même monde ; une expédition prend un emplacement libre. Les lieux
+  restent lançables seuls pour tester un donjon.
 - **Ce qui dure entre les instances** (personnages, inventaires, caisse et entrepôt du village, horloge, traces des
   donjons) vit dans un dossier de **campagne** commun à tous les processus, pas dans le monde d'une instance.
 - Le client passe d'une instance à l'autre en se reconnectant (à la main d'abord, automatiquement ensuite).
@@ -46,6 +47,14 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
 - [x] **I.6 Lieux au menu** — au menu principal, bloc « Campagne », un bouton par lieu
   (`assets/icebreaker/lieux.ron`) : lance `icebreaker.ps1` si le port est libre, puis connexion ; route grisée ;
   donjon généré sur 14130. Vérifié : lancement et connexion (client texte) ; pas encore cliqué en jeu. — fceac98232
+- [x] **I.7 Monde unique** (`0016`) — `icebreaker.ps1 campagne` : village au centre, emplacements de donjon
+  (`assets/icebreaker/campagne.ron` : 2 Gnarling, 2 générés) à ~1000 blocs ; une zone fermée par lieu ; menu : un
+  seul bouton « Campagne ». Testé (démarrage en ~10 s, zones) ; pas encore en jeu. — cd1c0527cd
+- [ ] **I.8 Expédition par téléportation** — le départ groupé (V.9) téléporte vers un emplacement libre ; `/rentrer`
+  ramène sur la place ; emplacement occupé tant qu'un membre y est.
+  *Fin* : village → donjon → village sans changer de serveur.
+- [ ] **I.9 Remise à neuf** — quand le dernier membre rentre, terrain regénéré, créatures et coffres de retour.
+  *Fin* : une deuxième expédition retrouve monstres et coffres.
 
 ## Jalon 2 — Le village (première version)
 

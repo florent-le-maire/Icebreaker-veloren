@@ -54,10 +54,10 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   chargé) ; le client : `cargo build -p veloren-voxygen`. Le mod (`plugin/icebreaker`) : `.\icebreaker.ps1 mod`
   (cible `wasm32-wasip2`, plan dans `docs/icebreaker/PLAN-MOD.md`).
 - Tests ciblés : `cargo test -p <crate> <filtre>`.
-- Lieu de la campagne : `powershell -ExecutionPolicy Bypass -File .\icebreaker.ps1 village` (port 14100) ou
-  `donjon -Site Gnarling` (port 14110 ; route 14120 à venir), puis le client en multijoueur sur `localhost:<port>`.
-  Personnages communs à tous les lieux dans `userdata-icebreaker\campagne`. Ou les boutons « Campagne » du menu
-  principal (`assets/icebreaker/lieux.ron`) : ils lancent le serveur si besoin puis s'y connectent.
+- Campagne (décision 0016) : `powershell -ExecutionPolicy Bypass -File .\icebreaker.ps1 campagne` (port 14100 : le
+  village et les emplacements de donjon dans un seul serveur), ou le bouton « Campagne » du menu principal. Un lieu
+  seul, pour tester : `village`, `donjon -Site Gnarling` (port 14110), `donjon -Site Genere` ; client en multijoueur
+  sur `localhost:<port>`. Personnages communs dans `userdata-icebreaker\campagne`.
 - Client texte pour tester sans affichage : `cargo build -p veloren-client --example chat_cli --features
   "plugins bin_bot"`, puis sur l'entrée : pseudo, `localhost:<port>`, un mot de passe quelconque, et des lignes de
   chat (`/commande args` part en commande). Laisser ~40 s entre deux connexions coupées net : le serveur n'accepte
