@@ -70,10 +70,13 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   *Fin* : on achète une potion à l'intendant et on se fait soigner à l'infirmerie.
   Intendant (marchand de Veloren, stock et prix de l'économie de la ville, T) et Infirmier (E : question, soin
   complet pour `icebreaker.heal_price`, 60 or) sur la place. Testé (stock, prix, démarrage) ; pas encore en jeu. — 7eb80e8bdc
-- [ ] **V.6 Vue du village de dessus** — au village, une touche passe en vue de dessus (caméra fixe, façon 2D) sur
+- [x] **V.6 Vue du village de dessus** — au village, une touche passe en vue de dessus (caméra fixe, façon 2D) sur
   le vrai village ; un clic sur un bâtiment ouvre son panneau (niveau, stocks, actions). Le serveur envoie la liste des
   bâtiments et leur emprise.
   *Fin* : en vue de dessus, cliquer sur l'entrepôt affiche son contenu.
+  Bâtiments = les 4 maisons les plus proches de la place, PNJ devant la porte. Touche U : caméra au-dessus, clic →
+  le serveur répond par le panneau du bâtiment visé (contenu, total, prix ; pas de niveau ni d'action pour
+  l'instant). Testé (clic → bâtiment, démarrage, PNJ devant les maisons) ; pas encore en jeu. — f58a449123
 - [x] **V.5 Retour au village** — commande `/rentrer` en instance : bilan dans le chat, le joueur repart vers le
   village (reconnexion à la main pour l'instant).
   *Fin* : donjon → `/rentrer` → village, avec le butin.
