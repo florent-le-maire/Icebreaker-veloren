@@ -3,6 +3,8 @@ mod connecting;
 //mod disclaimer;
 mod credentials;
 mod credits;
+// Icebreaker : boutons des lieux de la campagne au menu.
+mod icebreaker;
 mod login;
 mod servers;
 #[cfg(feature = "singleplayer")]
@@ -280,6 +282,8 @@ enum Message {
     #[cfg(feature = "singleplayer")]
     WorldConfirmation(world_selector::Confirmation),
     Multiplayer,
+    // Icebreaker : lieu de la campagne (index dans `assets/icebreaker/lieux.ron`).
+    Campagne(usize),
     UnlockServerField,
     LanguageChanged(usize),
     OpenLanguageMenu,
@@ -555,6 +559,23 @@ impl Controls {
                 events.push(Event::LoginAttempt {
                     server_address: self.login_info.server.trim().to_string(),
                 });
+            },
+            // Icebreaker : lance le serveur du lieu si besoin, puis s'y connecte.
+            Message::Campagne(index) => {
+                let lieu = icebreaker::lieux().read().0.get(index).cloned();
+                match lieu.map(|lieu| icebreaker::lancer(&lieu)) {
+                    Some(Ok(server_address)) => {
+                        self.login_info.server.clone_from(&server_address);
+                        self.screen = Screen::Connecting {
+                            screen: connecting::Screen::new(ui),
+                            connection_state: ConnectionState::InProgress,
+                            init_stage: DetailedInitializationStage::StartingMultiplayer,
+                        };
+                        events.push(Event::LoginAttempt { server_address });
+                    },
+                    Some(Err(error)) => self.connection_error(error),
+                    None => {},
+                }
             },
             Message::UnlockServerField => self.server_field_locked = false,
             Message::Username(new_value) => {

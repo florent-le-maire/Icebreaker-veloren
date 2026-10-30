@@ -56,7 +56,8 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
 - Tests ciblés : `cargo test -p <crate> <filtre>`.
 - Lieu de la campagne : `powershell -ExecutionPolicy Bypass -File .\icebreaker.ps1 village` (port 14100) ou
   `donjon -Site Gnarling` (port 14110 ; route 14120 à venir), puis le client en multijoueur sur `localhost:<port>`.
-  Personnages communs à tous les lieux dans `userdata-icebreaker\campagne`.
+  Personnages communs à tous les lieux dans `userdata-icebreaker\campagne`. Ou les boutons « Campagne » du menu
+  principal (`assets/icebreaker/lieux.ron`) : ils lancent le serveur si besoin puis s'y connectent.
 - Client texte pour tester sans affichage : `cargo build -p veloren-client --example chat_cli --features
   "plugins bin_bot"`, puis sur l'entrée : pseudo, `localhost:<port>`, un mot de passe quelconque, et des lignes de
   chat (`/commande args` part en commande). Laisser ~40 s entre deux connexions coupées net : le serveur n'accepte

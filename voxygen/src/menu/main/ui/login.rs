@@ -337,6 +337,9 @@ pub struct LoginBanner {
     singleplayer_button: button::State,
 
     unlock_server_field_button: button::State,
+
+    // Icebreaker : un bouton par lieu de la campagne.
+    campagne_buttons: Vec<button::State>,
 }
 
 impl LoginBanner {
@@ -429,6 +432,7 @@ impl LoginBanner {
             .height(Length::Units(200))
             .spacing(8)
             .into(),
+            campagne(&mut self.campagne_buttons, fonts, button_style),
         ])
         .width(Length::Fill)
         .align_items(Align::Center);
@@ -438,4 +442,47 @@ impl LoginBanner {
             .center_y()
             .into()
     }
+}
+
+/// Icebreaker : les lieux de la campagne (`assets/icebreaker/lieux.ron`),
+/// grisés s'ils ne sont pas encore faits.
+fn campagne<'a>(
+    buttons: &'a mut Vec<button::State>,
+    fonts: &Fonts,
+    button_style: style::button::Style,
+) -> Element<'a, Message> {
+    const BUTTON_HEIGHT: u16 = 40;
+    const SPACING: u16 = 6;
+    let lieux = super::icebreaker::lieux().read().0.clone();
+    buttons.resize_with(lieux.len(), Default::default);
+
+    let mut children = vec![
+        Space::new(Length::Fill, Length::Units(12)).into(),
+        Text::new("Campagne")
+            .size(fonts.cyri.scale(INPUT_TEXT_SIZE))
+            .into(),
+    ];
+    children.extend(
+        buttons
+            .iter_mut()
+            .zip(&lieux)
+            .enumerate()
+            .map(|(index, (state, lieu))| {
+                Container::new(neat_button(
+                    state,
+                    lieu.nom.clone(),
+                    FILL_FRAC_TWO,
+                    button_style,
+                    lieu.actif.then_some(Message::Campagne(index)),
+                ))
+                .width(Length::Fill)
+                .height(Length::Units(BUTTON_HEIGHT))
+                .into()
+            }),
+    );
+    Column::with_children(children)
+        .max_width(170)
+        .spacing(SPACING)
+        .align_items(Align::Center)
+        .into()
 }
