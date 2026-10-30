@@ -428,6 +428,8 @@ pub enum ServerChatCommand {
     Region,
     ReloadChunks,
     RemoveLights,
+    /// Icebreaker: leave an encounter instance for the village, with a summary.
+    Rentrer,
     RepairEquipment,
     ResetRecipes,
     Respawn,
@@ -883,6 +885,9 @@ impl ServerChatCommand {
                 Content::localized("command-remove_lights-desc"),
                 Some(Admin),
             ),
+            ServerChatCommand::Rentrer => {
+                cmd(vec![], Content::localized("command-rentrer-desc"), None)
+            },
             ServerChatCommand::RevokeBuild => cmd(
                 vec![Any("area_name", Required)],
                 Content::localized("command-revoke_build-desc"),
@@ -1227,6 +1232,7 @@ impl ServerChatCommand {
             ServerChatCommand::Region => "region",
             ServerChatCommand::ReloadChunks => "reload_chunks",
             ServerChatCommand::RemoveLights => "remove_lights",
+            ServerChatCommand::Rentrer => "rentrer",
             ServerChatCommand::RevokeBuild => "revoke_build",
             ServerChatCommand::RevokeBuildAll => "revoke_build_all",
             ServerChatCommand::Safezone => "safezone",

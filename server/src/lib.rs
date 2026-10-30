@@ -18,6 +18,7 @@ mod data_dir;
 pub mod error;
 pub mod events;
 pub mod icebreaker_mission;
+pub mod icebreaker_return;
 pub mod icebreaker_services;
 pub mod icebreaker_treasury;
 pub mod icebreaker_warehouse;
@@ -480,6 +481,7 @@ impl Server {
         state.ecs_mut().register::<RepositionToFreeSpace>();
         state.ecs_mut().register::<common::rtsim::ActorId>();
         state.ecs_mut().register::<common::rtsim::DungeonSlot>();
+        state.ecs_mut().register::<icebreaker_return::Arrival>();
 
         // Load banned words list
         let banned_words = settings.moderation.load_banned_words(data_dir);

@@ -206,6 +206,7 @@ fn do_command(
         ServerChatCommand::Region => handle_region,
         ServerChatCommand::ReloadChunks => handle_reload_chunks,
         ServerChatCommand::RemoveLights => handle_remove_lights,
+        ServerChatCommand::Rentrer => crate::icebreaker_return::handle_rentrer,
         ServerChatCommand::Respawn => handle_respawn,
         ServerChatCommand::RevokeBuild => handle_revoke_build,
         ServerChatCommand::RevokeBuildAll => handle_revoke_build_all,

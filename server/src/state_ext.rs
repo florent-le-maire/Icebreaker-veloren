@@ -748,6 +748,11 @@ impl StateExt for State {
             self.write_component_ignore_entity_dead(entity, stats);
             self.write_component_ignore_entity_dead(entity, active_abilities);
             self.write_component_ignore_entity_dead(entity, skill_set);
+            // Icebreaker: what the character arrives with, for the summary of `/rentrer`.
+            self.write_component_ignore_entity_dead(
+                entity,
+                crate::icebreaker_return::Arrival::of(&inventory),
+            );
             self.write_component_ignore_entity_dead(entity, inventory);
             self.write_component_ignore_entity_dead(
                 entity,
