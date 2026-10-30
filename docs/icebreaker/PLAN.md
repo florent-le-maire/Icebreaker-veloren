@@ -43,8 +43,9 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   et au départ du dernier), reprise par une instance vide à l'arrivée de son premier joueur : l'heure suit les joueurs
   et s'arrête quand personne ne joue. Vérifié avec le client texte : reprise à l'arrivée, ×30, continuité après
   relance. Deux instances jouées en même temps s'écrasent l'horloge (la dernière écrite gagne). — 4a688313bc
-- [ ] **I.6 Lieux au menu** — au menu principal, un bouton par lieu (`assets/icebreaker/lieux.ron`) : lance
-  `icebreaker.ps1` si le port est libre, puis connexion ; route grisée. — *en cours : Veloren-menu, 2026-10-28*
+- [x] **I.6 Lieux au menu** — au menu principal, bloc « Campagne », un bouton par lieu
+  (`assets/icebreaker/lieux.ron`) : lance `icebreaker.ps1` si le port est libre, puis connexion ; route grisée ;
+  donjon généré sur 14130. Vérifié : lancement et connexion (client texte) ; pas encore cliqué en jeu. — fceac98232
 
 ## Jalon 2 — Le village (première version)
 
