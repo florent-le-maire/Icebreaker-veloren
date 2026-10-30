@@ -82,15 +82,18 @@ pub fn handle_inbox_dialogue(bdata: &mut BehaviorData) -> bool {
         return false;
     }
 
-    // Icebreaker: the healer answers the player's choice.
-    if matches!(
-        agent.behavior.trading_behavior,
-        TradingBehavior::Infirmary { .. }
-    ) {
+    // Icebreaker: the healer and the expedition leader answer the player's choice.
+    if agent.behavior.trading_behavior.is_icebreaker_dialogue() {
         if let Some(AgentEvent::Dialogue(sender, dialogue)) = agent.inbox.pop_front() {
-            crate::icebreaker_services::answer_healing(
-                controller, agent_data, agent, emitters, sender, &dialogue,
-            );
+            if matches!(agent.behavior.trading_behavior, TradingBehavior::Departure) {
+                crate::icebreaker_expedition::answer_destination(
+                    controller, agent_data, agent, emitters, sender, &dialogue,
+                );
+            } else {
+                crate::icebreaker_services::answer_healing(
+                    controller, agent_data, agent, emitters, sender, &dialogue,
+                );
+            }
         }
         return true;
     }
@@ -162,6 +165,10 @@ pub fn handle_inbox_talk(bdata: &mut BehaviorData) -> bool {
                     by,
                     hurt.then_some(price),
                 );
+                return true;
+            }
+            if matches!(agent.behavior.trading_behavior, TradingBehavior::Departure) {
+                crate::icebreaker_expedition::offer_destinations(controller, by);
                 return true;
             }
             let greeting = match agent.behavior.trading_behavior {
@@ -484,7 +491,9 @@ pub fn handle_inbox_update_pending_trade(bdata: &mut BehaviorData) -> bool {
                         ));
                     }
                 },
-                TradingBehavior::None | TradingBehavior::Infirmary { .. } => {
+                TradingBehavior::None
+                | TradingBehavior::Infirmary { .. }
+                | TradingBehavior::Departure => {
                     agent.behavior.unset(BehaviorState::TRADING);
                     agent.target = None;
                     emitters.emit(ProcessTradeActionEvent(

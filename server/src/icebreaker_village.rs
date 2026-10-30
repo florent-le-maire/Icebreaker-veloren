@@ -131,9 +131,9 @@ mod tests {
         assert_eq!(start, (0..config.maisons_au_depart).collect::<Vec<_>>());
         assert!(start.len() >= Building::ALL.len());
 
-        // Saved: houses 0, 1 and 9; the buildings (0 to 3) always stand.
+        // Saved: houses 0, 1 and 9; the buildings (0 to 4) always stand.
         let saved = standing_ranks(&config, Some("(construites: [9, 1, 0])"));
-        assert_eq!(saved, vec![0, 1, 2, 3, 9]);
+        assert_eq!(saved, vec![0, 1, 2, 3, 4, 9]);
     }
 
     #[test]

@@ -97,6 +97,7 @@ pub struct Data<'a> {
     icebreaker_warehouse: Read<'a, crate::icebreaker_warehouse::IcebreakerWarehouse>,
     icebreaker_treasury: Read<'a, crate::icebreaker_treasury::IcebreakerTreasury>,
     icebreaker_services: Read<'a, crate::icebreaker_services::IcebreakerServices>,
+    icebreaker_expedition: Read<'a, crate::icebreaker_expedition::IcebreakerExpedition>,
 }
 
 /// This system will handle loading generated chunks and unloading
@@ -210,6 +211,9 @@ impl<'a> System<'a> for Sys {
                         .flatten(),
                     (data.icebreaker_services.healer_chunk() == Some(key))
                         .then(|| data.icebreaker_services.healer())
+                        .flatten(),
+                    (data.icebreaker_expedition.leader_chunk() == Some(key))
+                        .then(|| data.icebreaker_expedition.leader())
                         .flatten(),
                 ];
                 for (npc, pos) in village_npcs.into_iter().flatten() {

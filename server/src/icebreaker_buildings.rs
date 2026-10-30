@@ -27,15 +27,18 @@ pub enum Building {
     Treasury,
     Intendance,
     Infirmary,
+    /// Where the expeditions leave from (V.7).
+    Departure,
 }
 
 impl Building {
     /// In the order of the village's houses, nearest to the square first.
-    pub const ALL: [Building; 4] = [
+    pub const ALL: [Building; 5] = [
         Building::Warehouse,
         Building::Treasury,
         Building::Intendance,
         Building::Infirmary,
+        Building::Departure,
     ];
 
     fn name(self) -> &'static str {
@@ -44,6 +47,7 @@ impl Building {
             Building::Treasury => "Caisse",
             Building::Intendance => "Intendance",
             Building::Infirmary => "Infirmerie",
+            Building::Departure => "Départ",
         }
     }
 }
@@ -154,6 +158,21 @@ fn panel(
             )),
             plain("L'infirmier, à la porte, soigne (E).".to_string()),
         ],
+        Building::Departure => std::iter::once(plain(
+            "Le chef d'expédition, à la porte, organise les départs (E) :".to_string(),
+        ))
+        .chain(
+            crate::icebreaker_expedition::destinations()
+                .into_iter()
+                .map(|(_, lieu)| {
+                    plain(if lieu.actif {
+                        format!("- {}", lieu.nom)
+                    } else {
+                        format!("- {} (pas encore ouvert)", lieu.nom)
+                    })
+                }),
+        )
+        .collect(),
     };
     (plain(building.name().to_string()), lines)
 }

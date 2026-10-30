@@ -143,7 +143,7 @@ fn coins() -> Arc<ItemDef> {
     Arc::<ItemDef>::load_cloned(crate::icebreaker_treasury::COINS).expect("coins item")
 }
 
-fn say(controller: &mut Controller, player: Uid, id: DialogueId, kind: DialogueKind) {
+pub(crate) fn say(controller: &mut Controller, player: Uid, id: DialogueId, kind: DialogueKind) {
     controller.push_event(ControlEvent::Dialogue(player, Dialogue { id, kind }));
 }
 

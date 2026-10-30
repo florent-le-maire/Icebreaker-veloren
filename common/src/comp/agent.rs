@@ -163,15 +163,25 @@ pub enum TradingBehavior {
     /// Icebreaker: the village healer does not trade, but heals for `price`
     /// coins by dialogue.
     Infirmary { price: u32 },
+    /// Icebreaker: the village's expedition leader does not trade, but offers
+    /// the destinations of expeditions by dialogue.
+    Departure,
 }
 
 impl TradingBehavior {
+    /// Icebreaker: a village NPC who talks by dialogue (not an rtsim actor).
+    pub fn is_icebreaker_dialogue(&self) -> bool {
+        matches!(self, TradingBehavior::Infirmary { .. } | TradingBehavior::Departure)
+    }
+
     fn can_trade(&self, alignment: Option<Alignment>, counterparty: Uid) -> bool {
         match self {
             TradingBehavior::RequireBalanced { .. } => true,
             TradingBehavior::AcceptFood => alignment == Some(Alignment::Owned(counterparty)),
             TradingBehavior::Storage | TradingBehavior::Treasury => true,
-            TradingBehavior::None | TradingBehavior::Infirmary { .. } => false,
+            TradingBehavior::None
+            | TradingBehavior::Infirmary { .. }
+            | TradingBehavior::Departure => false,
         }
     }
 }

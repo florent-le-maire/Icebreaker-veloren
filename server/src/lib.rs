@@ -18,6 +18,7 @@ mod data_dir;
 pub mod error;
 pub mod events;
 pub mod icebreaker_buildings;
+pub mod icebreaker_expedition;
 pub mod icebreaker_mission;
 pub mod icebreaker_return;
 pub mod icebreaker_services;
@@ -559,8 +560,8 @@ impl Server {
         let spawn_point = SpawnPoint::default();
 
         // Icebreaker: the village buildings (warehouse, treasury, intendance,
-        // infirmary, in `Building::ALL` order) are the houses nearest to the
-        // square, their NPC standing at the door; on the square, at the setting's
+        // infirmary, departure, in `Building::ALL` order) are the houses nearest
+        // to the square, their NPC standing at the door; on the square, at the setting's
         // offset from the spawn point, if the town lacks houses.
         #[cfg(feature = "worldgen")]
         let (village_posts, village) = {
@@ -569,6 +570,7 @@ impl Server {
                 settings.icebreaker.treasurer_offset,
                 settings.icebreaker.intendant_offset,
                 settings.icebreaker.healer_offset,
+                settings.icebreaker.departure_offset,
             ];
             let square = spawn_point.0.xy().as_::<i32>();
             let houses = instance_site
@@ -601,7 +603,7 @@ impl Server {
             (posts, village)
         };
         #[cfg(not(feature = "worldgen"))]
-        let (village_posts, village) = (vec![None; 4], icebreaker_village::IcebreakerVillage::default());
+        let (village_posts, village) = (vec![None; 5], icebreaker_village::IcebreakerVillage::default());
         let village_npc_pos = |i: usize| village_posts[i].map(|(pos, _)| pos);
         state
             .ecs_mut()
@@ -639,6 +641,10 @@ impl Server {
                 village_npc_pos(3),
                 settings.icebreaker.heal_price,
             ));
+        // Icebreaker: the expedition leader, at the door of the « Départ » house.
+        state
+            .ecs_mut()
+            .insert(icebreaker_expedition::IcebreakerExpedition::new(village_npc_pos(4)));
 
         // Icebreaker: a generated dungeon's mission is won by killing its leader;
         // some of its creatures sleep.

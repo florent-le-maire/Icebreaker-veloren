@@ -156,19 +156,22 @@ impl ServerEvent for DialogueEvent {
         ): Self::SystemData<'_>,
     ) {
         for DialogueEvent(sender, target, mut dialogue) in events {
-            // Icebreaker: the village healer is not an rtsim actor but talks.
-            let is_healer = |entity| {
-                agents.get(entity).is_some_and(|agent| {
-                    matches!(
-                        agent.behavior.trading_behavior,
-                        comp::agent::TradingBehavior::Infirmary { .. }
-                    )
-                })
+            // Icebreaker: the village healer and expedition leader are not rtsim
+            // actors but talk.
+            let talks = |entity| {
+                agents
+                    .get(entity)
+                    .is_some_and(|agent| agent.behavior.trading_behavior.is_icebreaker_dialogue())
             };
-            let to_healer = is_healer(target);
+            let to_healer = agents.get(target).is_some_and(|agent| {
+                matches!(
+                    agent.behavior.trading_behavior,
+                    comp::agent::TradingBehavior::Infirmary { .. }
+                )
+            });
             // Both have to be actors to perform dialogs.
             if !(actors.get(sender).is_some() && actors.get(target).is_some())
-                && !(to_healer || is_healer(sender))
+                && !(talks(target) || talks(sender))
             {
                 continue;
             }
