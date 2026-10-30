@@ -92,6 +92,30 @@ pub struct Settings {
     pub keys: Vec<KeySettings>,
     /// How asleep creatures wake up.
     pub sleep: SleepSettings,
+    /// How lit the rooms are, by their inhabitants.
+    pub lighting: LightingSettings,
+}
+
+/// Lights of the dungeon: the chance that a free floor cell holds one, by role
+/// of room (`default` for the others), in corridors, and how much less in a
+/// room without creatures; the share of wall torches (the rest are braziers).
+#[derive(Clone, Debug, Deserialize)]
+pub struct LightingSettings {
+    pub roles: BTreeMap<String, f32>,
+    pub default: f32,
+    pub corridors: f32,
+    pub empty_factor: f32,
+    pub wall_torches: f32,
+}
+
+impl LightingSettings {
+    /// The chance of a light on a free floor cell of a room of this role
+    /// (`None`: a corridor) with or without creatures.
+    pub fn chance(&self, role: Option<&str>, inhabited: bool) -> f32 {
+        let Some(role) = role else { return self.corridors };
+        let chance = self.roles.get(role).copied().unwrap_or(self.default);
+        if inhabited { chance } else { chance * self.empty_factor }
+    }
 }
 
 /// How asleep creatures wake up (distances in blocks, time in seconds).
@@ -192,6 +216,9 @@ impl Settings {
             .chain(settings.rules.roles.values().flat_map(|r| &r.next_to))
             .chain(settings.goal_roles.values())
         {
+            role(name, &mut errors);
+        }
+        for name in settings.lighting.roles.keys() {
             role(name, &mut errors);
         }
         for (name, population) in &settings.population {

@@ -112,6 +112,21 @@ impl IcebreakerDungeon {
         if along_x { (1, 0) } else { (0, 1) }
     }
 
+    /// A light of a cell (G.10): a torch on the wall toward `torch`, near the
+    /// ceiling, facing the room; otherwise a brazier in the middle.
+    fn light(&self, cell: plan::Cell, torch: Option<(i32, i32)>) -> (Vec3<i32>, SpriteKind, u8) {
+        match torch {
+            Some((dx, dy)) => {
+                let wall = Vec2::new(dx, dy);
+                let c = self.render.cell_size;
+                let pos = (self.spot(cell).xy() + wall * (c / 2)).with_z(self.cell_min(cell).z + 3);
+                let facing = common::util::Dir2::from_vec2(-wall).sprite_ori_legacy();
+                (pos, SpriteKind::WallSconce, facing)
+            },
+            None => (self.spot(cell), SpriteKind::FireBowlGround, 0),
+        }
+    }
+
     /// The keyhole of a locked door, in the middle of its passage.
     fn keyhole_pos(&self, cell: plan::Cell) -> Vec3<i32> { self.spot(cell) + Vec3::unit_z() }
 
@@ -181,6 +196,18 @@ impl IcebreakerDungeon {
             let pos = self.spot(*cell);
             if block_at(pos).and_then(|b| b.get_sprite()).is_none_or(|s| !s.is_defined_as_container()) {
                 problems.push(format!("{cell:?} : pas de coffre à clé en {pos:?}"));
+            }
+        }
+        // The lights (G.10): a torch hangs on a solid wall.
+        for (cell, torch) in &self.dungeon.lights {
+            let (pos, sprite, _) = self.light(*cell, *torch);
+            if let Some((dx, dy)) = torch
+                && !block_at(pos + Vec2::new(*dx, *dy).with_z(0)).is_some_and(|b| b.is_solid())
+            {
+                problems.push(format!("{cell:?} : torche sans mur en {pos:?}"));
+            }
+            if block_at(pos).and_then(|b| b.get_sprite()) != Some(sprite) {
+                problems.push(format!("{cell:?} : pas de lumière en {pos:?}"));
             }
         }
         problems
@@ -361,16 +388,10 @@ impl Structure for IcebreakerDungeon {
         }
         self.render_tunnel(land, painter, &rock);
 
-        // Some light here and there on the floors.
-        for (cell, symbol) in &plan.cells {
-            if *symbol == '.' && RandomField::new(7).get(Vec3::new(cell.x, cell.y, cell.level)) % 6 == 0
-            {
-                let min = self.cell_min(*cell);
-                painter.sprite(
-                    (min.xy() + c / 2).with_z(min.z + 1),
-                    SpriteKind::FireBowlGround,
-                );
-            }
+        // Lights by the inhabitants (G.10): torches on the walls, braziers on the floors.
+        for (cell, torch) in &self.dungeon.lights {
+            let (pos, sprite, ori) = self.light(*cell, *torch);
+            painter.rotated_sprite(pos, sprite, ori);
         }
 
         // The people and the chests of the plan.
@@ -477,6 +498,9 @@ impl Site {
         for (cell, key) in &plot.dungeon.keys {
             info!(chest = ?plot.spot(*cell), key = key.item, "Icebreaker dungeon key");
         }
+        let lights = &plot.dungeon.lights;
+        let torches = lights.iter().filter(|(_, t)| t.is_some()).count();
+        info!(torches, braziers = lights.len() - torches, "Icebreaker dungeon lights");
         let bounds = plot.bounds();
         let tile_size = TILE_SIZE as i32;
         let aabr = Aabr {

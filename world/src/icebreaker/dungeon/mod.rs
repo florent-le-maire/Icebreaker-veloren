@@ -50,6 +50,47 @@ pub struct Dungeon {
     pub keys: Vec<(Cell, settings::KeySettings)>,
     /// How its asleep creatures (uppercase markers) wake up.
     pub sleep: settings::SleepSettings,
+    /// Lights on free floor cells: a torch on the wall toward (dx, dy), or a
+    /// brazier (`None`).
+    pub lights: Vec<(Cell, Option<(i32, i32)>)>,
+}
+
+/// The lights of a dungeon by its inhabitants (Icebreaker G.10): on the free
+/// floor cells (`.`, not a key) of each room, with the chance of its role,
+/// lower without creatures; fewer in the corridors. A cell along a wall gets
+/// a torch on that wall `wall_torches` of the time, otherwise a brazier.
+fn place_lights(
+    plan: &Plan,
+    rooms: &[(&str, Vec<Cell>)],
+    keys: &[(Cell, settings::KeySettings)],
+    lighting: &settings::LightingSettings,
+    seed: u64,
+) -> Vec<(Cell, Option<(i32, i32)>)> {
+    use rand::{RngExt, SeedableRng};
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(seed ^ 0x11_6874);
+    let mut chances = std::collections::BTreeMap::new();
+    for (role, cells) in rooms {
+        let inhabited = cells.iter().any(|c| populate::kind_of(plan.get(*c)).is_some());
+        let chance = lighting.chance(Some(role), inhabited);
+        chances.extend(cells.iter().map(|c| (*c, chance)));
+    }
+    let mut lights = Vec::new();
+    for (cell, symbol) in &plan.cells {
+        if *symbol != '.' || keys.iter().any(|(k, _)| k == cell) {
+            continue;
+        }
+        let chance = chances.get(cell).copied().unwrap_or_else(|| lighting.chance(None, false));
+        if !rng.random_bool(chance.clamp(0.0, 1.0) as f64) {
+            continue;
+        }
+        let walls: Vec<(i32, i32)> = plan::DIRECTIONS
+            .into_iter()
+            .filter(|(dx, dy)| plan.get(cell.offset(*dx, *dy, 0)) == '#')
+            .collect();
+        let torch = !walls.is_empty() && rng.random_bool(lighting.wall_torches.clamp(0.0, 1.0) as f64);
+        lights.push((*cell, torch.then(|| walls[rng.random_range(0..walls.len())])));
+    }
+    lights
 }
 
 /// Marks the tunnel in front of `door` (a wall cell of a room, opening toward
@@ -108,6 +149,9 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
         })
         .ok_or("pas de place pour le tunnel d'entrée")?;
     close_connectors(&mut plan);
+    let role = room.roles.first().map_or("hall", |r| r.name());
+    let cells: Vec<Cell> = room.plan.cells.keys().copied().collect();
+    let lights = place_lights(&plan, &[(role, cells)], &[], &settings.lighting, 0);
     Ok(Dungeon {
         plan,
         tunnel,
@@ -120,6 +164,7 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
         locks: Vec::new(),
         keys: Vec::new(),
         sleep: settings.sleep.clone(),
+        lights,
     })
 }
 
@@ -176,6 +221,13 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 .iter()
                 .map(|r| format!("{} {}", graph.rooms[r.graph_room].role.name(), r.template.id))
                 .collect();
+            let keys = with_keys(&assembled.keys)?;
+            let room_cells: Vec<(&str, Vec<Cell>)> = assembled
+                .rooms
+                .iter()
+                .map(|r| (graph.rooms[r.graph_room].role.name(), r.footprint().collect()))
+                .collect();
+            let lights = place_lights(&assembled.plan, &room_cells, &keys, &settings.lighting, seed);
             return Ok(Dungeon {
                 plan: assembled.plan,
                 tunnel: assembled.tunnel,
@@ -191,8 +243,9 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 ),
                 faction: resolved.faction.clone(),
                 locks: with_keys(&assembled.locks)?,
-                keys: with_keys(&assembled.keys)?,
+                keys,
                 sleep: settings.sleep.clone(),
+                lights,
             });
         }
     }
@@ -264,6 +317,42 @@ mod tests {
                 assert!(path.exists(), "faction {name} : {asset} introuvable");
             }
         }
+    }
+
+    #[test]
+    fn lights_follow_the_inhabitants() {
+        let settings = Settings::load().unwrap();
+        // Three rooms of 20 × 20 floor cells, side by side, walls around: a nest
+        // and a guard room with a creature each, an empty guard room.
+        let mut plan = Plan::default();
+        let mut rooms = Vec::new();
+        for (r, role) in ["nest", "guardRoom", "guardRoom"].into_iter().enumerate() {
+            let x0 = r as i32 * 22;
+            let mut cells = Vec::new();
+            for y in -1..=20 {
+                for x in x0 - 1..=x0 + 20 {
+                    let inside = (0..20).contains(&y) && (x0..x0 + 20).contains(&x);
+                    let cell = Cell::new(x, y, 0);
+                    plan.cells.insert(cell, if inside { '.' } else { '#' });
+                    cells.push(cell);
+                }
+            }
+            if r < 2 {
+                plan.cells.insert(Cell::new(x0 + 5, 5, 0), 'b');
+            }
+            rooms.push((role, cells));
+        }
+        let lights = place_lights(&plan, &rooms, &[], &settings.lighting, 7);
+        let in_room = |r: i32| lights.iter().filter(|(c, _)| c.x / 22 == r).count();
+        assert_eq!(in_room(0), 0, "un nid éclairé");
+        assert!(in_room(1) > 2 * in_room(2), "salle habitée {} / vide {}", in_room(1), in_room(2));
+        for (cell, torch) in &lights {
+            assert_eq!(plan.get(*cell), '.');
+            if let Some((dx, dy)) = torch {
+                assert_eq!(plan.get(cell.offset(*dx, *dy, 0)), '#', "torche loin du mur");
+            }
+        }
+        assert!(lights.iter().any(|(_, t)| t.is_some()) && lights.iter().any(|(_, t)| t.is_none()));
     }
 
     #[test]

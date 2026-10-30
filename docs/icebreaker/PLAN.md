@@ -149,9 +149,11 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   endormies à 12 blocs avec elles (`generation.ron` → `sleep`). Vérifié (client texte) : couchées, endormies à 12
   blocs, la caserne se réveille à 4 blocs, le nid à l'explosion. Pas vu dans le vrai client (pose : à moitié dans
   le sol ?), approche accroupie non testée. — e0355bd6d5
-- [ ] **G.10 Éclairage selon les habitants** — torches et braseros dans les salles occupées, plus sombre dans les
-  nids et les salles vides (réglages dans `generation.ron`).
-  *Fin* : la différence entre une caserne et un nid se voit.
+- [x] **G.10 Éclairage selon les habitants** — chance de lumière par case de sol selon le rôle de la salle (nid :
+  aucune ; garde, cuisine, chef : beaucoup ; caserne : peu), ×0,3 sans créature, peu dans les couloirs ; moitié
+  torches au mur, moitié braseros (`generation.ron` → `lighting`). Vérifié : test (nid noir, salle habitée bien plus
+  éclairée que vide, torches contre un mur), contrôle des blocs pour 4 graines, serveur lancé (graine 1234 : 27
+  torches, 45 braseros). Pas vu en jeu (sens des torches à vérifier). — *hash à venir*
 
 **Donjons avancés (idées, à découper le moment venu)** — aujourd'hui un seul lieu, le souterrain. Lieux envisagés
 (le projet Icebreaker en décrit déjà quelques-uns : `design/generation.md`, « Derrière les murs et lieux ») :

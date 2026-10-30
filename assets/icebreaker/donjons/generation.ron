@@ -194,4 +194,28 @@
         alert_radius: 12.0,
         zzz_interval: 5.0,
     ),
+    // Éclairage selon les habitants (tâche G.10) : chance qu'une case de sol libre porte une lumière, selon le rôle de
+    // la salle (default pour les autres rôles) ; corridors : hors des salles ; empty_factor : facteur pour une salle
+    // sans créature ; wall_torches : part des lumières en torches au mur (case contre un mur), le reste en braseros.
+    // Les bêtes des nids vivent dans le noir ; gardes, cuisiniers et chef s'éclairent.
+    lighting: (
+        roles: {
+            "entrance": 0.3,
+            "guardRoom": 0.35,
+            "barracks": 0.12,
+            "kitchen": 0.4,
+            "storage": 0.15,
+            "nest": 0.0,
+            "treasure": 0.25,
+            "chiefLair": 0.4,
+            "prison": 0.1,
+            "vault": 0.2,
+            "sanctum": 0.35,
+            "bossLair": 0.3,
+        },
+        default: 0.15,
+        corridors: 0.06,
+        empty_factor: 0.3,
+        wall_torches: 0.5,
+    ),
 )
