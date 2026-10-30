@@ -1,0 +1,9 @@
+// Icebreaker : la campagne en un seul serveur (décision 0016, `icebreaker.ps1 campagne`).
+// Le village au centre du monde et, loin de lui et les uns des autres, des emplacements de donjon :
+// une expédition prend un emplacement libre de sa destination. Nom de site comme `icebreaker.ps1 -Site`.
+(
+    emplacements: [
+        ("Gnarling", 2),
+        ("Genere", 2),
+    ],
+)

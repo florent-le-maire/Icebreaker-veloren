@@ -1,11 +1,14 @@
-// Icebreaker : lieux de la campagne proposés au menu (voxygen/src/menu/main/ui/icebreaker.rs).
-// Un bouton par lieu : il lance `icebreaker.ps1 <arguments> -Port <port>` si rien n'écoute sur ce
-// port, puis s'y connecte (le client réessaie toutes les 5 s pendant que le monde se génère).
-// Un port par lieu : le donjon généré ne doit pas tomber sur un serveur Gnarling déjà ouvert.
-// Le port suivant (port + 1) est pris par l'interface web du serveur.
-// `actif: false` : bouton grisé (lieu pas encore fait).
+// Icebreaker : lieux de la campagne.
+// - Menu principal (voxygen/src/menu/main/ui/icebreaker.rs) : un bouton par lieu `au_menu: true` ; il lance
+//   `icebreaker.ps1 <arguments> -Port <port>` si rien n'écoute sur ce port, puis s'y connecte (le client réessaie
+//   toutes les 5 s pendant que le monde se génère). Décision 0016 : la campagne tient en un seul serveur.
+// - Chef d'expédition (maison « Départ ») : les destinations sont les autres lieux ; dans la campagne, leur site
+//   (`-Site`) choisit l'emplacement de donjon (assets/icebreaker/campagne.ron). Lancés seuls (sans la campagne),
+//   ces lieux restent utiles pour tester un donjon.
+// Un port par lieu ; le port suivant (port + 1) est pris par l'interface web du serveur.
+// `actif: false` : lieu pas encore fait.
 [
-    (nom: "Village", arguments: ["village"], port: 14100, actif: true),
+    (nom: "Campagne", arguments: ["campagne"], port: 14100, actif: true, au_menu: true),
     (nom: "Donjon", arguments: ["donjon", "-Site", "Gnarling"], port: 14110, actif: true),
     (nom: "Donjon généré", arguments: ["donjon", "-Site", "Genere"], port: 14130, actif: true),
     (nom: "Route", arguments: ["route"], port: 14120, actif: false),

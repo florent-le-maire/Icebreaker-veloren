@@ -22,6 +22,7 @@ pub mod icebreaker_expedition;
 pub mod icebreaker_mission;
 pub mod icebreaker_return;
 pub mod icebreaker_services;
+pub mod icebreaker_slots;
 pub mod icebreaker_treasury;
 pub mod icebreaker_village;
 pub mod icebreaker_warehouse;
@@ -526,23 +527,16 @@ impl Server {
                     Some(town.tile_center_wpos(town.plot(plaza).root_tile()))
                 })
                 .inspect(|spawn| info!(?spawn, "Icebreaker village spawn"));
-            // Icebreaker: at a dungeon of our generator, out of its entrance tunnel.
-            let generated_entrance = instance_site
-                .and_then(|site| world::icebreaker::dungeon_entrance(&index.sites[site]))
-                .inspect(|spawn| info!(?spawn, "Icebreaker generated dungeon spawn"));
             // Icebreaker: in a dungeon instance, players start in front of its
-            // dungeon, just outside the site, on the side facing the map center.
-            let instance_spawn = village_square.or(generated_entrance).or_else(|| instance_site_area.map(|(origin, radius)| {
-                const MARGIN: f32 = 24.0;
-                let center_wpos = TerrainChunkSize::center_wpos(center_chunk);
-                let toward_center = (center_wpos - origin)
-                    .as_::<f32>()
-                    .try_normalized()
-                    .unwrap_or(Vec2::unit_y());
-                let spawn = origin + (toward_center * (radius + MARGIN)).as_::<i32>();
-                info!(?spawn, dungeon = ?origin, radius, "Icebreaker instance spawn");
-                spawn
-            }));
+            // dungeon (out of the entrance tunnel of a dungeon of our generator).
+            let instance_spawn = village_square.or_else(|| {
+                instance_site.map(|site| {
+                    let center_wpos = TerrainChunkSize::center_wpos(center_chunk);
+                    let spawn = icebreaker_slots::arrival(&index.sites[site], center_wpos);
+                    info!(?spawn, "Icebreaker instance spawn");
+                    spawn
+                })
+            });
             let spawn_wpos = instance_spawn.unwrap_or_else(|| {
                 let spawn_chunk = world
                     .civs()
@@ -674,17 +668,30 @@ impl Server {
         // Set the spawn point we calculated above
         state.ecs_mut().insert(spawn_point);
 
-        // Icebreaker: players can't leave the area of an encounter instance.
+        // Icebreaker: the dungeon slots of the campaign (decision 0016).
         #[cfg(feature = "worldgen")]
-        let zone = instance_site_area.map(|(origin, radius)| sys::icebreaker_zone::Zone {
-            center: origin.as_(),
-            radius: radius + settings.icebreaker.zone_margin,
-        });
+        let slots = icebreaker_slots::IcebreakerSlots::new(&world, index.as_index_ref());
         #[cfg(not(feature = "worldgen"))]
-        let zone = None;
+        let slots = icebreaker_slots::IcebreakerSlots::default();
+
+        // Icebreaker: players can't leave the area of an encounter instance; in
+        // the campaign, of the village or of the dungeon slot they are in.
+        #[cfg(feature = "worldgen")]
+        let zones = instance_site_area
+            .map(|(origin, radius)| (origin.as_(), radius))
+            .into_iter()
+            .chain(slots.0.iter().map(|slot| (slot.center, slot.radius)))
+            .map(|(center, radius)| sys::icebreaker_zone::Zone {
+                center,
+                radius: radius + settings.icebreaker.zone_margin,
+            })
+            .collect();
+        #[cfg(not(feature = "worldgen"))]
+        let zones = Vec::new();
         state
             .ecs_mut()
-            .insert(sys::icebreaker_zone::IcebreakerZone::new(zone));
+            .insert(sys::icebreaker_zone::IcebreakerZone::new(zones));
+        state.ecs_mut().insert(slots);
 
         // Insert a default AABB for the world
         // TODO: prevent this from being deleted

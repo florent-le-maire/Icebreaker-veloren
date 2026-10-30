@@ -24,6 +24,10 @@ pub struct Lieu {
     pub arguments: Vec<String>,
     pub port: u16,
     pub actif: bool,
+    /// Whether the main menu offers it (decision 0016: the campaign only;
+    /// the other places are the destinations of expeditions).
+    #[serde(default)]
+    pub au_menu: bool,
 }
 
 pub fn lieux() -> AssetHandle<Ron<Vec<Lieu>>> {
@@ -88,7 +92,7 @@ mod tests {
             .read()
             .0
             .clone();
-        assert!(lieux.iter().any(|l| l.nom == "Village" && l.actif));
+        assert!(lieux.iter().any(|l| l.au_menu && l.actif));
         let mut ports: Vec<u16> = lieux.iter().flat_map(|l| [l.port, l.port + 1]).collect();
         ports.sort_unstable();
         ports.dedup();

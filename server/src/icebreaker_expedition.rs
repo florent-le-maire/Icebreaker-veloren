@@ -78,13 +78,31 @@ pub fn lieux() -> Vec<Lieu> {
         .clone()
 }
 
+impl Lieu {
+    /// Whether it is where expeditions leave from: the village, alone or in
+    /// the campaign.
+    pub fn is_home(&self) -> bool {
+        self.arguments
+            .first()
+            .is_some_and(|lieu| lieu == "village" || lieu == "campagne")
+    }
+
+    /// Its site (`-Site`), which chooses the dungeon slot in the campaign.
+    pub fn site(&self) -> Option<&str> {
+        self.arguments
+            .windows(2)
+            .find(|w| w[0] == "-Site")
+            .map(|w| w[1].as_str())
+    }
+}
+
 /// The destinations of expeditions: the places other than the village, with
 /// their index in `lieux.ron`.
 pub fn destinations() -> Vec<(usize, Lieu)> {
     lieux()
         .into_iter()
         .enumerate()
-        .filter(|(_, place)| place.arguments.first().is_none_or(|lieu| lieu != "village"))
+        .filter(|(_, lieu)| !lieu.is_home())
         .collect()
 }
 
@@ -381,11 +399,12 @@ fn tick_on(
     (None, announce)
 }
 
-/// The village, where `/rentrer` leads.
+/// The village (or the campaign), where `/rentrer` leads from a place run
+/// alone.
 pub fn village() -> Option<Lieu> {
     lieux()
         .into_iter()
-        .find(|lieu| lieu.arguments.first().is_some_and(|lieu| lieu == "village"))
+        .find(Lieu::is_home)
 }
 
 /// Starts the server of `lieu` if nothing listens on its port yet, from the
@@ -417,7 +436,7 @@ pub fn ensure_running(lieu: &Lieu) -> Result<(), String> {
             .arg("icebreaker.sh")
             .args(lieu.arguments.first())
             .env("ICEBREAKER_PORT", lieu.port.to_string());
-        if let Some(site) = lieu.arguments.windows(2).find(|w| w[0] == "-Site").map(|w| &w[1]) {
+        if let Some(site) = lieu.site() {
             command.env("ICEBREAKER_SITE", site);
         }
         command
@@ -451,7 +470,7 @@ mod tests {
             destinations
                 .iter()
                 .all(|(index, place)| place.nom == lieux()[*index].nom
-                    && place.arguments[0] != "village")
+                    && !place.is_home())
         );
         assert!(village().is_some_and(|village| village.actif));
     }

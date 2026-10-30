@@ -1,5 +1,7 @@
 # Icebreaker : lance un serveur pour un lieu de la campagne.
 #
+#   .\icebreaker.ps1 campagne                (port 14100 ; la campagne en un seul serveur, décision 0016 : le
+#                                             village et des emplacements de donjon, assets\icebreaker\campagne.ron)
 #   .\icebreaker.ps1 donjon -Site Gnarling   (port 14110)
 #   .\icebreaker.ps1 donjon -Site Genere     (port 14110 ; donjon de notre générateur, jalon G ; mission :
 #                                             -Taille -Objectif -Region -Saison -Menace -Ennemis -Faction)
@@ -14,13 +16,14 @@
 # Dans le jeu : Multijoueur, serveur « localhost:<port> », n'importe quel pseudo.
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("village", "donjon", "route", "mod")]
+    [ValidateSet("campagne", "village", "donjon", "route", "mod")]
     [string]$Lieu,
     # Site autour duquel le lieu est généré (par défaut : Gnarling au donjon, Town au village).
     [string]$Site,
     # Taille de la ville du village (Town seulement), de 0.03 (hameau) à 1.0 (grande ville).
     [double]$TailleVille = 1.0,
-    [int]$Lg = 6,
+    # Taille du monde (2^Lg tronçons de côté) : 7 par défaut pour la campagne, 6 pour un lieu seul.
+    [int]$Lg = 0,
     [int]$Seed = (Get-Random -Maximum 1000000),
     # Durée d'une journée en minutes réelles (1 min réelle = 30 min de carte).
     [double]$DayLength = 48.0,
@@ -55,24 +58,27 @@ if ($Lieu -eq "mod") {
     exit 0
 }
 
-$ports = @{ village = 14100; donjon = 14110; route = 14120 }
+$ports = @{ campagne = 14100; village = 14100; donjon = 14110; route = 14120 }
 if ($Lieu -eq "route") {
     Write-Host "Le lieu « $Lieu » n'est pas encore fait (voir docs/icebreaker/PLAN.md)."
     exit 1
 }
-if (-not $Site) { $Site = @{ village = "Town"; donjon = "Gnarling" }[$Lieu] }
+if (-not $Site) { $Site = @{ campagne = "Town"; village = "Town"; donjon = "Gnarling" }[$Lieu] }
+if (-not $Lg) { $Lg = if ($Lieu -eq "campagne") { 7 } else { 6 } }
 
 $root = "$repo\userdata-icebreaker"
-$ud = "$root\$Lieu"
+# Le monde de la campagne a son dossier à lui, à côté de « campagne » (personnages, caisse, entrepôt…).
+$ud = if ($Lieu -eq "campagne") { "$root\monde" } else { "$root\$Lieu" }
 $port = if ($Port) { $Port } else { $ports[$Lieu] }
 
 # Monde neuf à chaque lancement ; les personnages restent dans la campagne.
 Remove-Item -Recurse -Force "$ud\server\rtsim" -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force "$ud\server\server_config", "$ud\server-cli", "$root\campagne" | Out-Null
 
-# Le village garde sa graine pour toute la campagne : ses maisons (bâties ou à bâtir) restent à leur place.
-$graineVillage = "$root\campagne\village-graine.txt"
-if ($Lieu -eq "village" -and -not $PSBoundParameters.ContainsKey("Seed")) {
+# Le village (seul ou dans la campagne) garde sa graine pour toute la campagne : ses maisons (bâties ou à bâtir)
+# restent à leur place.
+$graineVillage = "$root\campagne\$Lieu-graine.txt"
+if ($Lieu -in "village", "campagne" -and -not $PSBoundParameters.ContainsKey("Seed")) {
     if (Test-Path $graineVillage) { $Seed = [int](Get-Content $graineVillage -TotalCount 1) }
     else { Set-Content -Path $graineVillage -Value $Seed -Encoding ascii }
 }
@@ -99,6 +105,7 @@ $utf8 = New-Object Text.UTF8Encoding($false)
 $env:VELOREN_USERDATA = $ud
 $env:ICEBREAKER_CAMPAIGN_DIR = "$root\campagne"
 $env:ICEBREAKER_INSTANCE_SITE = $Site
+$env:ICEBREAKER_CAMPAGNE = if ($Lieu -eq "campagne") { "1" } else { $null }
 $env:ICEBREAKER_TOWN_SIZE = $TailleVille.ToString([Globalization.CultureInfo]::InvariantCulture)
 $env:ICEBREAKER_DONJON_SALLE = $Salle
 $env:ICEBREAKER_DONJON_TAILLE = $Taille

@@ -8,12 +8,17 @@ use crate::site::{
     Site, SiteKind,
     plot::{Plot, PlotKind},
 };
-use common::store::Id;
+use common::{assets::AssetExt, store::Id};
 use std::{collections::HashSet, sync::RwLock};
 use tracing::{info, warn};
 
 const INSTANCE_SITE_VAR: &str = "ICEBREAKER_INSTANCE_SITE";
 const TOWN_SIZE_VAR: &str = "ICEBREAKER_TOWN_SIZE";
+const CAMPAIGN_VAR: &str = "ICEBREAKER_CAMPAGNE";
+
+/// How far apart (in chunks) the village and the dungeon slots of the
+/// campaign are placed, so that their zones and views stay apart.
+pub const SLOT_DISTANCE: i32 = 32;
 
 /// How many places are tried for the village's town.
 pub const TOWN_PLACE_ATTEMPTS: usize = 12;
@@ -27,7 +32,41 @@ pub fn is_instance() -> bool { std::env::var_os(INSTANCE_SITE_VAR).is_some() }
 /// for the village, a town (e.g. `Town`).
 pub fn instance_site() -> Option<SiteKind> {
     let name = std::env::var(INSTANCE_SITE_VAR).ok()?;
-    let kind = match name.as_str() {
+    let kind = site_kind(&name);
+    if kind.is_none() {
+        warn!(?name, "Unknown {INSTANCE_SITE_VAR}, no site placed");
+    }
+    kind
+}
+
+/// Whether this server runs the whole campaign (decision 0016): the village
+/// and, far from it, slots of dungeons that expeditions go to.
+pub fn is_campaign() -> bool { std::env::var_os(CAMPAIGN_VAR).is_some() && is_village() }
+
+/// The dungeon slots of the campaign: their site names (as in
+/// `icebreaker.ps1 -Site`), from `assets/icebreaker/campagne.ron`.
+pub fn campaign_slot_names() -> Vec<String> {
+    if !is_campaign() {
+        return Vec::new();
+    }
+    common::assets::Ron::<CampaignConfig>::load_expect("icebreaker.campagne")
+        .read()
+        .0
+        .emplacements
+        .iter()
+        .flat_map(|(site, count)| std::iter::repeat_n(site.clone(), *count))
+        .collect()
+}
+
+#[derive(Clone, Debug, serde::Deserialize)]
+struct CampaignConfig {
+    /// Dungeon slots: site name, how many.
+    emplacements: Vec<(String, usize)>,
+}
+
+/// The site kind of a name of `icebreaker.ps1 -Site`.
+pub fn site_kind(name: &str) -> Option<SiteKind> {
+    let kind = match name {
         "Town" => SiteKind::Refactor,
         "CliffTown" => SiteKind::CliffTown,
         "DesertCity" => SiteKind::DesertCity,
@@ -44,10 +83,7 @@ pub fn instance_site() -> Option<SiteKind> {
         "ChapelSite" => SiteKind::ChapelSite,
         "VampireCastle" => SiteKind::VampireCastle,
         "Genere" => SiteKind::IcebreakerDungeon,
-        _ => {
-            warn!(?name, "Unknown {INSTANCE_SITE_VAR}, no site placed");
-            return None;
-        },
+        _ => return None,
     };
     Some(kind)
 }

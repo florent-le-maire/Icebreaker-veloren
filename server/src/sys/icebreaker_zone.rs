@@ -30,17 +30,30 @@ impl Zone {
     }
 }
 
-/// Icebreaker: the zone of this server, if it runs an encounter instance.
+/// Where a player at `pos` must be put back, if outside every zone: on the
+/// edge of the nearest one (the campaign has a zone per place, decision 0016).
+pub fn push_back_into(zones: &[Zone], pos: Vec2<f32>) -> Option<Vec2<f32>> {
+    let pushes = zones
+        .iter()
+        .map(|zone| zone.push_back(pos))
+        .collect::<Option<Vec<_>>>()?;
+    pushes
+        .into_iter()
+        .min_by(|a, b| a.distance_squared(pos).total_cmp(&b.distance_squared(pos)))
+}
+
+/// Icebreaker: the zones of this server, if it runs an encounter instance or
+/// the campaign.
 #[derive(Default)]
 pub struct IcebreakerZone {
-    zone: Option<Zone>,
+    zones: Vec<Zone>,
     last_notified: HashMap<Entity, f64>,
 }
 
 impl IcebreakerZone {
-    pub fn new(zone: Option<Zone>) -> Self {
+    pub fn new(zones: Vec<Zone>) -> Self {
         Self {
-            zone,
+            zones,
             last_notified: HashMap::new(),
         }
     }
@@ -78,9 +91,9 @@ impl<'a> System<'a> for Sys {
             mut force_updates,
         ): Self::SystemData,
     ) {
-        let Some(area) = zone.zone else {
+        if zone.zones.is_empty() {
             return;
-        };
+        }
 
         for (entity, _, client, pos, vel) in (
             &entities,
@@ -91,7 +104,7 @@ impl<'a> System<'a> for Sys {
         )
             .join()
         {
-            let Some(inside) = area.push_back(pos.0.xy()) else {
+            let Some(inside) = push_back_into(&zone.zones, pos.0.xy()) else {
                 continue;
             };
             pos.0 = inside.with_z(pos.0.z);
@@ -127,5 +140,25 @@ mod tests {
             zone.push_back(Vec2::new(200.0, 100.0)),
             Some(Vec2::new(149.0, 100.0))
         );
+    }
+
+    #[test]
+    fn with_several_zones_players_stay_in_any_and_go_back_to_the_nearest() {
+        let zones = [
+            Zone {
+                center: Vec2::new(100.0, 100.0),
+                radius: 50.0,
+            },
+            Zone {
+                center: Vec2::new(1000.0, 100.0),
+                radius: 50.0,
+            },
+        ];
+        assert_eq!(push_back_into(&zones, Vec2::new(1020.0, 100.0)), None);
+        assert_eq!(
+            push_back_into(&zones, Vec2::new(900.0, 100.0)),
+            Some(Vec2::new(951.0, 100.0))
+        );
+        assert_eq!(push_back_into(&[], Vec2::zero()), None);
     }
 }

@@ -330,6 +330,29 @@ impl Civs {
                 },
                 None => warn!(?kind, "Icebreaker instance site could not be placed"),
             }
+            // Icebreaker: the dungeon slots of the campaign (decision 0016), far
+            // from the village and from one another.
+            for name in crate::icebreaker::campaign_slot_names() {
+                let Some(kind) = crate::icebreaker::site_kind(&name) else {
+                    warn!(?name, "Icebreaker: unknown dungeon slot site");
+                    continue;
+                };
+                let far = ProximityRequirementsBuilder::new()
+                    .avoid_all_of(this.sites().map(|s| s.center), crate::icebreaker::SLOT_DISTANCE)
+                    .finalize(&world_dims);
+                match find_site_loc(&mut ctx, &far, &kind) {
+                    Some(loc) => {
+                        info!(?kind, ?loc, "Icebreaker dungeon slot placed");
+                        this.establish_site(&mut ctx.reseed(), loc, |place| Site {
+                            kind,
+                            center: loc,
+                            place,
+                            site_tmp: None,
+                        });
+                    },
+                    None => warn!(?kind, "Icebreaker dungeon slot could not be placed"),
+                }
+            }
         }
         let random_site_attempts = if instance_site.is_some() {
             0
@@ -712,7 +735,7 @@ impl Civs {
             });
             sim_site.site_tmp = Some(site);
             let site_ref = &index.sites[site];
-            if crate::icebreaker::is_village() {
+            if crate::icebreaker::is_village() && crate::icebreaker::is_town(sim_site.kind) {
                 info!(plots = site_ref.plots().len(), "Icebreaker village town generated");
             }
 

@@ -467,6 +467,8 @@ fn campagne<'a>(
             .iter_mut()
             .zip(&lieux)
             .enumerate()
+            // Only the places marked `au_menu` (decision 0016: the campaign).
+            .filter(|(_, (_, lieu))| lieu.au_menu)
             .map(|(index, (state, lieu))| {
                 Container::new(neat_button(
                     state,
