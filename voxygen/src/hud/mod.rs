@@ -344,6 +344,11 @@ widget_ids! {
         icebreaker_panel_buttons[],
         icebreaker_building_rects[],
         icebreaker_building_names[],
+        // Icebreaker: ring on the locked enemy
+        icebreaker_lock_ring,
+        icebreaker_lock_halo,
+        icebreaker_lock_dot,
+        icebreaker_lock_ticks[],
 
         // Camera clamp indicator
         camera_clamp_txt,
@@ -673,6 +678,8 @@ pub struct HudInfo<'a> {
     pub mutable_viewpoint: bool,
     pub target_entity: Option<specs::Entity>,
     pub selected_entity: Option<(specs::Entity, Instant)>,
+    /// Icebreaker: the locked enemy (Dark Souls).
+    pub icebreaker_lock_target: Option<specs::Entity>,
     pub persistence_load_error: Option<SkillsPersistenceError>,
     pub key_state: &'a KeyState,
 }
@@ -2080,6 +2087,59 @@ impl Hud {
             let mut sct_walker = self.ids.scts.walk();
             let mut sct_bg_walker = self.ids.sct_bgs.walk();
             let pulse = self.pulse;
+
+            // Icebreaker: a ring on the locked enemy (Dark Souls), over everything.
+            if let Some(target) = info.icebreaker_lock_target
+                && let Some(target_pos) = interpolated
+                    .get(target)
+                    .map(|i| i.pos)
+                    .or_else(|| pos.get(target).map(|p| p.0))
+            {
+                let height = bodies.get(target).map_or(1.8, |b| b.height())
+                    * scales.get(target).map_or(1.0, |s| s.0);
+                let center = target_pos + Vec3::unit_z() * height * 0.5;
+                let breath = 1.0 + 0.08 * f64::from((pulse * 4.0).sin());
+                let gold = Color::Rgba(1.0, 0.82, 0.4, 0.95);
+                widget::Circle::outline_styled(
+                    13.0 * breath,
+                    widget::line::Style::solid().thickness(2.5),
+                )
+                .color(gold)
+                .position_ingame(center)
+                .set(self.ids.icebreaker_lock_ring, ui_widgets);
+                widget::Circle::outline_styled(
+                    19.0 * breath,
+                    widget::line::Style::solid().thickness(1.0),
+                )
+                .color(gold.alpha(0.45))
+                .position_ingame(center)
+                .set(self.ids.icebreaker_lock_halo, ui_widgets);
+                widget::Circle::fill(3.0)
+                    .color(Color::Rgba(1.0, 0.97, 0.88, 1.0))
+                    .position_ingame(center)
+                    .set(self.ids.icebreaker_lock_dot, ui_widgets);
+                // Four ticks around the ring, at the cardinal points.
+                if self.ids.icebreaker_lock_ticks.len() < 4 {
+                    self.ids
+                        .icebreaker_lock_ticks
+                        .resize(4, &mut ui_widgets.widget_id_generator());
+                }
+                let r = 24.0 * breath;
+                for (i, (x, y, w, h)) in [
+                    (0.0, r, 2.0, 7.0),
+                    (0.0, -r, 2.0, 7.0),
+                    (r, 0.0, 7.0, 2.0),
+                    (-r, 0.0, 7.0, 2.0),
+                ]
+                .into_iter()
+                .enumerate()
+                {
+                    Rectangle::fill_with([w, h], gold)
+                        .x_y(x, y)
+                        .position_ingame(center)
+                        .set(self.ids.icebreaker_lock_ticks[i], ui_widgets);
+                }
+            }
 
             let make_overitem =
                 |item: &PickupItem, pos, distance, properties, fonts, interaction_options| {
