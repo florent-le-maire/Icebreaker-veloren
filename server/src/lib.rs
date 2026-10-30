@@ -670,7 +670,11 @@ impl Server {
 
         // Icebreaker: the dungeon slots of the campaign (decision 0016).
         #[cfg(feature = "worldgen")]
-        let slots = icebreaker_slots::IcebreakerSlots::new(&world, index.as_index_ref());
+        let slots = icebreaker_slots::IcebreakerSlots::new(
+            &world,
+            index.as_index_ref(),
+            settings.icebreaker.zone_margin,
+        );
         #[cfg(not(feature = "worldgen"))]
         let slots = icebreaker_slots::IcebreakerSlots::default();
 

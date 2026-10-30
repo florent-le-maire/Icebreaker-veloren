@@ -1,18 +1,19 @@
 //! Icebreaker: `/rentrer`, leaving an encounter instance for the village (V.5).
 //!
 //! The summary is what the character carries more than when it arrived in the
-//! instance (coins, then items), told to every player of the instance. The
-//! player then goes back to the village by itself (V.8), its server started if
-//! needed; the character, saved on disconnect, keeps what it carries since
+//! instance (coins, then items), told to every player of the instance. In the
+//! campaign (decision 0016), the player is teleported back to the village
+//! square; from a place run alone, the player goes back to the village by
+//! itself (V.8), its server started if needed; the character, saved on disconnect, keeps what it carries since
 //! characters are shared by every instance (I.3).
 
-use crate::{Server, icebreaker_treasury::COINS};
+use crate::{Server, SpawnPoint, icebreaker_slots::IcebreakerSlots, icebreaker_treasury::COINS};
 use common::{
     comp::{
         self, ChatType, Content, Inventory, Item, LocalizationArg,
         item::{ItemDefinitionIdOwned, ItemDesc, ItemI18n},
     },
-    event::{ClientDisconnectEvent, EventBus},
+    event::{ClientDisconnectEvent, EventBus, TeleportToPositionEvent},
 };
 use common_net::msg::{DisconnectReason, ServerGeneral};
 use common::cmd::ServerChatCommand;
@@ -75,10 +76,21 @@ pub(crate) fn handle_rentrer(
     _args: Vec<String>,
     _action: &ServerChatCommand,
 ) -> Result<(), Content> {
-    if !world::icebreaker::is_instance() || world::icebreaker::is_village() {
+    let ecs = server.state.ecs();
+    // In the campaign (decision 0016), from a dungeon slot of this server.
+    let campaign = world::icebreaker::is_campaign();
+    let in_slot = ecs
+        .read_storage::<comp::Pos>()
+        .get(client)
+        .is_some_and(|pos| ecs.read_resource::<IcebreakerSlots>().at(pos.0.xy()).is_some());
+    let away = if campaign {
+        in_slot
+    } else {
+        world::icebreaker::is_instance() && !world::icebreaker::is_village()
+    };
+    if !away {
         return Err(Content::Plain("Tu es déjà au village.".to_string()));
     }
-    let ecs = server.state.ecs();
     let (Some(arrival), Some(inventory)) = (
         ecs.read_storage::<Arrival>().get(client).cloned(),
         ecs.read_storage::<Inventory>().get(client).cloned(),
@@ -111,6 +123,25 @@ pub(crate) fn handle_rentrer(
     }));
     for line in summary {
         server.notify_players(ServerGeneral::server_msg(ChatType::Meta, line));
+    }
+
+    // In the campaign: back on the village square, counting from there again.
+    if campaign {
+        let square = server.state.ecs().read_resource::<SpawnPoint>().0;
+        server
+            .state
+            .ecs()
+            .write_storage::<Arrival>()
+            .insert(client, Arrival::of(&inventory))
+            .ok();
+        server
+            .state
+            .mut_resource::<EventBus<TeleportToPositionEvent>>()
+            .emit_now(TeleportToPositionEvent {
+                entity: client,
+                position: square,
+            });
+        return Ok(());
     }
 
     // The client goes to the village by itself (V.8); disconnecting it here too

@@ -354,16 +354,22 @@ fn answer_to(
 }
 
 /// Each tick: members gone (`present` false: disconnected, or too far from
-/// the leader) leave the expedition; once its time has come, it leaves:
-/// returns where to, and who. Also what to tell everyone.
-pub fn tick(now: f64, present: impl Fn(Uid) -> bool) -> (Option<(Lieu, Vec<Uid>)>, Vec<String>) {
-    tick_on(&mut expedition(), now, present)
+/// the leader) leave the expedition; once its time has come, it leaves if its
+/// destination `has_room` (a free dungeon slot, in the campaign): returns
+/// where to, and who. Also what to tell everyone.
+pub fn tick(
+    now: f64,
+    present: impl Fn(Uid) -> bool,
+    has_room: impl Fn(&Lieu) -> bool,
+) -> (Option<(Lieu, Vec<Uid>)>, Vec<String>) {
+    tick_on(&mut expedition(), now, present, has_room)
 }
 
 fn tick_on(
     expedition: &mut Option<Expedition>,
     now: f64,
     present: impl Fn(Uid) -> bool,
+    has_room: impl Fn(&Lieu) -> bool,
 ) -> (Option<(Lieu, Vec<Uid>)>, Vec<String>) {
     let mut announce = Vec::new();
     let Some(exp) = expedition.as_mut() else {
@@ -386,6 +392,19 @@ fn tick_on(
         exp.update_departure(now, &mut announce);
     }
     if exp.departure.is_some_and(|departure| now >= departure) {
+        // No room there: everyone waits and says again when ready.
+        if let Some(lieu) = lieux().get(exp.destination)
+            && !has_room(lieu)
+        {
+            announce.push(format!(
+                "Pas de place libre à {} : les autres expéditions y sont encore. Redites « Je suis \
+                 prêt » plus tard.",
+                lieu.nom
+            ));
+            exp.departure = None;
+            exp.members.iter_mut().for_each(|m| m.ready = false);
+            return (None, announce);
+        }
         let exp = expedition.take().expect("checked above");
         let lieu = lieux().get(exp.destination).cloned();
         if let Some(lieu) = lieu {
@@ -519,8 +538,14 @@ mod tests {
         answer_to(&mut exp, sayanel, "Sayanel", READY, 5.0);
 
         // Not yet time; then both leave.
-        assert!(tick_on(&mut exp, 6.0, |_| true).0.is_none());
-        let (departure, _) = tick_on(&mut exp, 5.0 + DEPARTURE_DELAY, |_| true);
+        assert!(tick_on(&mut exp, 6.0, |_| true, |_| true).0.is_none());
+        // No room there: nobody leaves, everyone is to be ready again.
+        let (departure, _) = tick_on(&mut exp, 5.0 + DEPARTURE_DELAY, |_| true, |_| false);
+        assert!(departure.is_none());
+        assert!(exp.as_ref().unwrap().members.iter().all(|m| !m.ready));
+        answer_to(&mut exp, flo, "Flo", READY, 20.0);
+        answer_to(&mut exp, sayanel, "Sayanel", READY, 20.0);
+        let (departure, _) = tick_on(&mut exp, 20.0 + DEPARTURE_DELAY, |_| true, |_| true);
         let (lieu, members) = departure.unwrap();
         assert_eq!(lieu.nom, lieux()[usize::from(donjon)].nom);
         assert_eq!(members, vec![flo, sayanel]);
@@ -541,7 +566,7 @@ mod tests {
         answer_to(&mut exp, flo, "Flo", READY, 0.0);
 
         // Sayanel, not ready, goes away: Flo, ready, is left alone and leaves.
-        let (_, announce) = tick_on(&mut exp, 1.0, |uid| uid == flo);
+        let (_, announce) = tick_on(&mut exp, 1.0, |uid| uid == flo, |_| true);
         assert!(announce.iter().any(|line| line.contains("Sayanel")));
         assert_eq!(exp.as_ref().unwrap().departure, Some(1.0 + DEPARTURE_DELAY));
 
