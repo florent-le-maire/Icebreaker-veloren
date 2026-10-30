@@ -127,6 +127,22 @@ fn main() {
                         println!("Sac : {} x {:?}", item.amount(), item.item_definition_id());
                     }
                 }
+            } else if msg == "!voisins" {
+                // Icebreaker : les PNJ à moins de 40 blocs, leur position et leur haut
+                // (couché : le haut n'est plus vertical).
+                use veloren_client::{Join, WorldExt};
+                let ecs = client.state().ecs();
+                let me = ecs.read_storage::<comp::Pos>().get(client.entity()).map(|p| p.0);
+                for (pos, ori, _) in (
+                    &ecs.read_storage::<comp::Pos>(),
+                    &ecs.read_storage::<comp::Ori>(),
+                    &ecs.read_storage::<comp::Body>(),
+                )
+                    .join()
+                    .filter(|(pos, _, _)| me.is_some_and(|me| me.distance(pos.0) < 40.0 && me != pos.0))
+                {
+                    println!("Voisin en {:?} : haut {:?}", pos.0.map(|e| e.round()), ori.up().map(|e| (e * 10.0).round() / 10.0));
+                }
             } else if let Some((action, pos)) = msg.split_once(' ').and_then(|(action, rest)| {
                 let mut xyz = rest.split_whitespace().filter_map(|w| w.parse().ok());
                 Some((action, vek::Vec3::new(xyz.next()?, xyz.next()?, xyz.next()?)))

@@ -90,6 +90,17 @@ pub struct Settings {
     /// The keys of the locked doors, one for each lock of a dungeon (in the
     /// order of the locks).
     pub keys: Vec<KeySettings>,
+    /// How asleep creatures wake up.
+    pub sleep: SleepSettings,
+}
+
+/// How asleep creatures wake up (distances in blocks, time in seconds).
+#[derive(Clone, Debug, Deserialize)]
+pub struct SleepSettings {
+    pub wake_radius: f32,
+    pub wake_radius_sneaking: f32,
+    pub alert_radius: f32,
+    pub zzz_interval: f64,
 }
 
 /// A key of a locked door: the Veloren item its keyhole consumes, and the loot

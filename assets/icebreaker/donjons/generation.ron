@@ -81,7 +81,7 @@
         margin: 6,              // marge autour du donjon où un couloir peut passer
     ),
     // Habitants et butin selon le rôle de la salle (tâche G.5). creatures : nombre par sorte (brute, archer, lookout,
-    // chief, boss) ; chests : coffres ; awake : éveillées (false : endormies, noté dans le plan, sans effet dans Veloren).
+    // chief, boss) ; chests : coffres ; awake : éveillées (false : endormies, voir `sleep`).
     // Rôle absent : salle vide. Le chef garde toujours la salle de l'objectif.
     population: {
         "hall": (creatures: {"lookout": (0, 1)}),
@@ -184,4 +184,14 @@
         (item: "common.items.keys.vampire_key", loot: "common.loot_tables.icebreaker.cle_vampire"),
         (item: "common.items.keys.haniwa_key", loot: "common.loot_tables.icebreaker.cle_haniwa"),
     ],
+    // Créatures endormies (tâche G.9, salles `awake: false`) : couchées, immobiles, des « Zzz » au-dessus d'elles.
+    // Elles se réveillent si on les frappe, si un combat s'entend près d'elles, ou si un joueur approche à moins de
+    // wake_radius blocs (wake_radius_sneaking s'il avance accroupi) ; une créature qui se réveille réveille les
+    // endormies à moins de alert_radius blocs. zzz_interval : secondes entre deux « Zzz ».
+    sleep: (
+        wake_radius: 6.0,
+        wake_radius_sneaking: 2.5,
+        alert_radius: 12.0,
+        zzz_interval: 5.0,
+    ),
 )

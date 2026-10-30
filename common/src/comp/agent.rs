@@ -663,6 +663,9 @@ pub struct Agent {
     pub stay_pos: Option<Pos>,
     /// Inputs sent up to rtsim
     pub rtsim_outbox: Option<VecDeque<NpcInput>>,
+    /// Icebreaker: asleep in a generated dungeon, the agent does nothing until
+    /// it wakes up (`server/src/sys/icebreaker_sleep.rs`).
+    pub icebreaker_asleep: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -777,6 +780,7 @@ impl Agent {
             stay_pos: None,
             awareness: Awareness::new(0.0),
             rtsim_outbox: None,
+            icebreaker_asleep: false,
         }
     }
 

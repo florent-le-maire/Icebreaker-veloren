@@ -48,6 +48,8 @@ pub struct Dungeon {
     /// the key of each.
     pub locks: Vec<(Cell, settings::KeySettings)>,
     pub keys: Vec<(Cell, settings::KeySettings)>,
+    /// How its asleep creatures (uppercase markers) wake up.
+    pub sleep: settings::SleepSettings,
 }
 
 /// Marks the tunnel in front of `door` (a wall cell of a room, opening toward
@@ -117,6 +119,7 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
             .ok_or("faction par défaut inconnue")?,
         locks: Vec::new(),
         keys: Vec::new(),
+        sleep: settings.sleep.clone(),
     })
 }
 
@@ -189,6 +192,7 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 faction: resolved.faction.clone(),
                 locks: with_keys(&assembled.locks)?,
                 keys: with_keys(&assembled.keys)?,
+                sleep: settings.sleep.clone(),
             });
         }
     }

@@ -20,12 +20,15 @@ use tracing::{error, info};
 use vek::*;
 
 /// See [`IcebreakerDungeon::mission_targets`].
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct MissionTargets {
     /// Where the leader appears, and its kind (`chief` or `boss`).
     pub leader: Option<(Vec3<i32>, String)>,
     pub creatures: Vec<Vec3<i32>>,
     pub chests: Vec<Vec3<i32>>,
+    /// Where the asleep creatures appear (Icebreaker G.9), and how they wake.
+    pub sleepers: Vec<Vec3<i32>>,
+    pub sleep: dungeon::settings::SleepSettings,
 }
 
 pub struct IcebreakerDungeon {
@@ -72,7 +75,13 @@ impl IcebreakerDungeon {
     pub fn mission_targets(&self) -> MissionTargets {
         let faction = &self.dungeon.faction;
         let rank = |kind: &str| ["chief", "boss"].iter().position(|k| *k == kind);
-        let mut targets = MissionTargets::default();
+        let mut targets = MissionTargets {
+            leader: None,
+            creatures: Vec::new(),
+            chests: Vec::new(),
+            sleepers: Vec::new(),
+            sleep: self.dungeon.sleep.clone(),
+        };
         for (cell, symbol) in &self.dungeon.plan.cells {
             let spot = self.spot(*cell);
             if *symbol == '$' {
@@ -81,6 +90,9 @@ impl IcebreakerDungeon {
                 && faction.creatures.get(kind).is_some_and(|a| !a.is_empty())
             {
                 targets.creatures.push(spot);
+                if symbol.is_ascii_uppercase() {
+                    targets.sleepers.push(spot);
+                }
                 if rank(kind) > targets.leader.as_ref().and_then(|(_, k)| rank(k)) {
                     targets.leader = Some((spot, kind.to_string()));
                 }

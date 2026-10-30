@@ -628,18 +628,30 @@ impl Server {
                 settings.icebreaker.heal_price,
             ));
 
-        // Icebreaker: a generated dungeon's mission is won by killing its leader.
+        // Icebreaker: a generated dungeon's mission is won by killing its leader;
+        // some of its creatures sleep.
         #[cfg(feature = "worldgen")]
-        let mission = instance_site
+        let (mission, sleep) = instance_site
             .and_then(|site| world::icebreaker::dungeon_mission(&index.sites[site]))
             .inspect(|t| {
-                let (creatures, chests) = (t.creatures.len(), t.chests.len());
-                info!(leader = ?t.leader, creatures, chests, "Icebreaker dungeon mission");
+                let (creatures, chests, asleep) = (t.creatures.len(), t.chests.len(), t.sleepers.len());
+                info!(leader = ?t.leader, creatures, chests, asleep, sleepers = ?t.sleepers, "Icebreaker dungeon mission");
             })
-            .map(|t| icebreaker_mission::IcebreakerMission::new(t.leader, t.creatures, t.chests));
+            .map(|t| {
+                let rules = sys::icebreaker_sleep::SleepRules {
+                    wake_radius: t.sleep.wake_radius,
+                    wake_radius_sneaking: t.sleep.wake_radius_sneaking,
+                    alert_radius: t.sleep.alert_radius,
+                    zzz_interval: t.sleep.zzz_interval,
+                };
+                let sleep = sys::icebreaker_sleep::IcebreakerSleep::new(t.sleepers.iter().copied().collect(), rules);
+                (icebreaker_mission::IcebreakerMission::new(t.leader, t.creatures, t.chests), sleep)
+            })
+            .unzip();
         #[cfg(not(feature = "worldgen"))]
-        let mission = None;
+        let (mission, sleep) = (None, None);
         state.ecs_mut().insert(mission.unwrap_or_default());
+        state.ecs_mut().insert(sleep.unwrap_or_default());
 
         // Set the spawn point we calculated above
         state.ecs_mut().insert(spawn_point);

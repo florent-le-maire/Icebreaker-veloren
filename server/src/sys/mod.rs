@@ -3,6 +3,7 @@ pub mod chunk_send;
 pub mod chunk_serialize;
 pub mod entity_sync;
 pub mod icebreaker_clock;
+pub mod icebreaker_sleep;
 pub mod icebreaker_zone;
 pub mod invite_timeout;
 pub mod item;
@@ -22,7 +23,7 @@ pub mod waypoint;
 pub mod wiring;
 
 use common_ecs::{System, dispatch, run_now};
-use common_systems::{melee, projectile};
+use common_systems::{character_behavior, melee, phys, projectile};
 use specs::DispatcherBuilder;
 use std::{
     marker::PhantomData,
@@ -39,6 +40,11 @@ pub fn add_server_systems(dispatch_builder: &mut DispatcherBuilder) {
     dispatch::<waypoint::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_zone::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_clock::Sys>(dispatch_builder, &[]);
+    // Icebreaker: after the movements, so that sleepers keep lying.
+    dispatch::<icebreaker_sleep::Sys>(dispatch_builder, &[
+        &phys::Sys::sys_name(),
+        &character_behavior::Sys::sys_name(),
+    ]);
     dispatch::<teleporter::Sys>(dispatch_builder, &[]);
     dispatch::<invite_timeout::Sys>(dispatch_builder, &[]);
     dispatch::<persistence::Sys>(dispatch_builder, &[]);

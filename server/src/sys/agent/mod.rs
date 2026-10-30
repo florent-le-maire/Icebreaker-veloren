@@ -103,6 +103,13 @@ impl<'a> System<'a> for Sys {
                         return;
                     }
 
+                    // Icebreaker: an asleep creature does nothing (sys/icebreaker_sleep.rs).
+                    if agent.icebreaker_asleep {
+                        controller.reset();
+                        controller.inputs.look_dir = ori.look_dir();
+                        return;
+                    }
+
                     // The entity that is moving, if riding it's the mount, otherwise it's itself
                     let moving_entity = is_rider
                         .and_then(|is_rider| {
