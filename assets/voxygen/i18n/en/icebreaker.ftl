@@ -8,3 +8,4 @@ command-batir-desc = Build a house on a plot of the village, with the gold of th
 command-caisse-desc = Give gold to the village treasury (an amount, or "tout")
 command-soigner-desc = Be healed at the village infirmary, for gold
 command-expedition-desc = Prepare an expedition: <destination number>, rejoindre, pret, attendre or quitter
+command-echanger-desc = Trade with the village warehouse or intendance, from afar

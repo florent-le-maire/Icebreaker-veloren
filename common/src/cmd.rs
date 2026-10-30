@@ -393,6 +393,8 @@ pub enum ServerChatCommand {
     Dismount,
     DropAll,
     Dummy,
+    /// Icebreaker: trade with the village warehouse or intendance from afar (V.12).
+    Echanger,
     /// Icebreaker: prepare an expedition at the village (V.11).
     Expedition,
     Explosion,
@@ -678,6 +680,15 @@ impl ServerChatCommand {
                 vec![],
                 Content::localized("command-dummy-desc"),
                 Some(Admin),
+            ),
+            ServerChatCommand::Echanger => cmd(
+                vec![Enum(
+                    "batiment",
+                    vec!["entrepot".to_owned(), "intendance".to_owned()],
+                    Required,
+                )],
+                Content::localized("command-echanger-desc"),
+                None,
             ),
             ServerChatCommand::Expedition => cmd(
                 vec![Any("choix", Required)],
@@ -1223,6 +1234,7 @@ impl ServerChatCommand {
             ServerChatCommand::DisconnectAllPlayers => "disconnect_all_players",
             ServerChatCommand::DropAll => "dropall",
             ServerChatCommand::Dummy => "dummy",
+            ServerChatCommand::Echanger => "echanger",
             ServerChatCommand::Expedition => "expedition",
             ServerChatCommand::Explosion => "explosion",
             ServerChatCommand::Faction => "faction",

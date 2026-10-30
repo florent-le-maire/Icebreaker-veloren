@@ -106,8 +106,17 @@ impl ServerEvent for InitiateInviteEvent {
                             character_states.get(entity),
                         )
                 };
+                // Icebreaker: the village warehouse and intendance trade from afar,
+                // from the top view of the village (V.12).
+                let from_afar = agents.get(invitee).is_some_and(|agent| {
+                    matches!(
+                        agent.behavior.trading_behavior,
+                        comp::agent::TradingBehavior::Storage
+                    ) || agent.mark == Some(comp::agent::Mark::Intendant)
+                });
                 // Check whether the inviter is in range of the invitee or dead
-                if !within_trading_range(positions.get(inviter), positions.get(invitee))
+                if !(from_afar
+                    || within_trading_range(positions.get(inviter), positions.get(invitee)))
                     || !is_alive_and_well(inviter)
                     || !is_alive_and_well(invitee)
                 {

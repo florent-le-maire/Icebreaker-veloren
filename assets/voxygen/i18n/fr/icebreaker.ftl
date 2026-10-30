@@ -8,3 +8,4 @@ command-batir-desc = Bâtir une maison sur un terrain du village, avec l'or de l
 command-caisse-desc = Verser de l'or à la caisse du village (un montant, ou « tout »)
 command-soigner-desc = Se faire soigner à l'infirmerie du village, contre de l'or
 command-expedition-desc = Préparer une expédition : <numéro de destination>, rejoindre, pret, attendre ou quitter
+command-echanger-desc = Échanger avec l'entrepôt ou l'intendance du village, de loin

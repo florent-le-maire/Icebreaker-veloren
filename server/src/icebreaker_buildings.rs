@@ -172,9 +172,10 @@ fn panel(
             );
         },
     };
-    let mut actions = Vec::new();
+    let actions;
     let lines = match building {
         Building::Warehouse => {
+            actions = vec![button("Ouvrir l'échange", &["echanger", "entrepot"])];
             let items = warehouse.load_items();
             if items.is_empty() {
                 vec![plain("L'entrepôt est vide.".to_string())]
@@ -203,10 +204,13 @@ fn panel(
                 plain("Elle paie les chantiers du village.".to_string()),
             ]
         },
-        Building::Intendance => vec![
-            plain("Potions et vivres, aux prix de la ville.".to_string()),
-            plain("L'intendant, à la porte, vend et rachète (T).".to_string()),
-        ],
+        Building::Intendance => {
+            actions = vec![button("Ouvrir l'échange", &["echanger", "intendance"])];
+            vec![
+                plain("Potions et vivres, aux prix de la ville.".to_string()),
+                plain("L'intendant vend, et rachète ce que vous rapportez.".to_string()),
+            ]
+        },
         Building::Infirmary => {
             let price = services.heal_price();
             actions = vec![button(format!("Me soigner ({price} or)"), &["soigner"])];
@@ -286,6 +290,45 @@ impl ServerEvent for IcebreakerBuildingEvent {
             }
         }
     }
+}
+
+/// `/echanger <entrepot|intendance>` (the panels of the top view, V.12):
+/// opens the trade window with the storekeeper or the intendant, wherever the
+/// player is in the village.
+pub(crate) fn handle_echanger(
+    server: &mut crate::Server,
+    client: specs::Entity,
+    _target: specs::Entity,
+    args: Vec<String>,
+    _action: &common::cmd::ServerChatCommand,
+) -> Result<(), Content> {
+    use common::{
+        comp::{
+            Agent,
+            agent::{Mark, TradingBehavior},
+            invite::InviteKind,
+        },
+        event::{EventBus, InitiateInviteEvent},
+    };
+    use specs::{Join, WorldExt};
+    let wanted = |agent: &Agent| match args.first().map(String::as_str) {
+        Some("entrepot") => matches!(agent.behavior.trading_behavior, TradingBehavior::Storage),
+        Some("intendance") => agent.mark == Some(Mark::Intendant),
+        _ => false,
+    };
+    let ecs = server.state.ecs();
+    let npc = (&ecs.read_storage::<Agent>(), &ecs.read_storage::<Uid>())
+        .join()
+        .find(|(agent, _)| wanted(agent))
+        .map(|(_, uid)| *uid);
+    let Some(npc) = npc else {
+        return Err(Content::Plain(
+            "Personne à ce bâtiment pour l'instant (au village seulement).".to_string(),
+        ));
+    };
+    ecs.read_resource::<EventBus<InitiateInviteEvent>>()
+        .emit_now(InitiateInviteEvent(client, npc, InviteKind::Trade));
+    Ok(())
 }
 
 #[cfg(test)]

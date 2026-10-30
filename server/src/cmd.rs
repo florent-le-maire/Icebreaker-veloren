@@ -172,6 +172,7 @@ fn do_command(
         ServerChatCommand::DisconnectAllPlayers => handle_disconnect_all_players,
         ServerChatCommand::DropAll => handle_drop_all,
         ServerChatCommand::Dummy => handle_spawn_training_dummy,
+        ServerChatCommand::Echanger => crate::icebreaker_buildings::handle_echanger,
         ServerChatCommand::Expedition => crate::icebreaker_expedition::handle_expedition,
         ServerChatCommand::Explosion => handle_explosion,
         ServerChatCommand::Faction => handle_faction,

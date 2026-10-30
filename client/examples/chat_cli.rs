@@ -118,6 +118,9 @@ fn main() {
             } else if msg == "!jouer" {
                 client.load_character_list();
                 joining = true;
+            } else if msg == "!echange" {
+                // Icebreaker : l'échange en cours, s'il y en a un.
+                println!("Échange en cours : {}", client.pending_trade().is_some());
             } else if msg == "!sac" {
                 // Icebreaker : ce que porte le personnage.
                 use veloren_client::WorldExt;
