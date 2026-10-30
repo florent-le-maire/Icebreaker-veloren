@@ -83,6 +83,15 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   *Fin* : donjon → `/rentrer` → village, avec le butin.
   Bilan à tous (or, puis « 3 × objet ») de ce que le personnage porte de plus qu'à son arrivée, puis déconnexion ;
   on rejoint le village par le menu. Testé (bilan, commande reçue) ; pas encore en jeu avec du butin. — 046140d4fb
+- [x] **V.7 Maison « Départ »** — 5e bâtiment, « Chef d'expédition » à la porte : sur E, les destinations de
+  `lieux.ron` (sauf le village). Village de départ à 7 maisons. Testé (démarrage, place du chef) ; dialogue pas
+  encore vu en jeu. — fc773b6a5e
+- [ ] **V.8 Voyage automatique** — choisir une destination fait partir le joueur : le serveur village lance le
+  serveur du lieu s'il ne tourne pas, le jeu s'y connecte seul ; `/rentrer` ramène au village de même.
+  *Fin* : village → donjon → `/rentrer` → village sans passer par le menu.
+- [ ] **V.9 Départ groupé** — le premier inscrit choisit la destination, les autres rejoignent ; « Prêt » ; quand
+  tous sont prêts, 5 s annoncées puis départ ensemble ; s'éloigner ou se déconnecter désinscrit.
+  *Fin* : deux joueurs arrivent ensemble dans le donjon.
 
 ## Jalon C — Le village qui grandit (Flo, 2026-10-28)
 
