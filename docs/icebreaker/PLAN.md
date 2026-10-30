@@ -123,7 +123,7 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   projet Icebreaker : écarts qui s'ajoutent, facteurs qui se multiplient, chef et boss uniques). Le résumé du
   journal donne les paramètres appliqués. Vérifié : graine 1234, menace 1 = 8 salles, 7 créatures ; menace 5 = 14
   salles, un étage de plus, 36 créatures ; toutes les combinaisons région × saison × objectif se génèrent ; serveur
-  lancé avec `-Menace 5 -Faction adlet -Region mountain`. — (hash à venir)
+  lancé avec `-Menace 5 -Faction adlet -Region mountain`. — 4f3b3482b1
 
 ## Jalon 4 — Démo à l'équipe
 
