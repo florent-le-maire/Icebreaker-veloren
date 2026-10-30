@@ -135,6 +135,8 @@ pub enum Event {
     Dialogue(Uid, rtsim::Dialogue<true>),
     /// Icebreaker: the panel of a village building (title, lines).
     IcebreakerPanel(comp::Content, Vec<comp::Content>),
+    /// Icebreaker: the village buildings (name, bounds in world coordinates).
+    IcebreakerBuildings(Vec<(comp::Content, Aabr<i32>)>),
     Gizmos(Vec<Gizmos>),
 }
 
@@ -2139,8 +2141,9 @@ impl Client {
         }
     }
 
-    /// Icebreaker: asks for the panel of the village building at `wpos`.
-    pub fn request_icebreaker_building(&mut self, wpos: Vec2<f32>) {
+    /// Icebreaker: asks for the panel of the village building at `wpos`, or for
+    /// the buildings (`None`).
+    pub fn request_icebreaker_building(&mut self, wpos: Option<Vec2<f32>>) {
         self.send_msg(ClientGeneral::IcebreakerBuilding(wpos))
     }
 
@@ -2991,6 +2994,9 @@ impl Client {
                 if let Some(rich) = self.sites.get_mut(&economy.id) {
                     rich.economy = Some(economy);
                 }
+            },
+            ServerGeneral::IcebreakerBuildings(buildings) => {
+                frontend_events.push(Event::IcebreakerBuildings(buildings));
             },
             ServerGeneral::IcebreakerPanel(title, lines) => {
                 frontend_events.push(Event::IcebreakerPanel(title, lines));

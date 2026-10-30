@@ -341,6 +341,8 @@ widget_ids! {
         icebreaker_hint,
         icebreaker_panel_bg,
         icebreaker_panel_txt,
+        icebreaker_building_rects[],
+        icebreaker_building_names[],
 
         // Camera clamp indicator
         camera_clamp_txt,
@@ -1355,6 +1357,9 @@ pub struct Hud {
     /// the last building clicked there (title, lines).
     icebreaker_top_view: bool,
     icebreaker_panel: Option<(comp::Content, Vec<comp::Content>)>,
+    /// Icebreaker: the buildings on screen in the top view (name, rectangle
+    /// from -1 to 1 with y up, whether under the cursor).
+    icebreaker_buildings: Vec<(comp::Content, Aabr<f32>, bool)>,
     force_chat_input: Option<String>,
     force_chat_cursor: Option<Index>,
     tab_complete: Option<String>,
@@ -1461,6 +1466,7 @@ impl Hud {
             force_ungrab: false,
             icebreaker_top_view: false,
             icebreaker_panel: None,
+            icebreaker_buildings: Vec::new(),
             force_chat_input: None,
             force_chat_cursor: None,
             tab_complete: None,
@@ -4147,6 +4153,35 @@ impl Hud {
 
         // Icebreaker: top view of the village, and the panel of the clicked building.
         if self.icebreaker_top_view {
+            // The buildings, named, the one under the cursor highlighted.
+            let count = self.icebreaker_buildings.len();
+            if self.ids.icebreaker_building_rects.len() < count {
+                let ids = &mut ui_widgets.widget_id_generator();
+                self.ids.icebreaker_building_rects.resize(count, ids);
+                self.ids.icebreaker_building_names.resize(count, ids);
+            }
+            let half_win = Vec2::new(ui_widgets.win_w, ui_widgets.win_h) / 2.0;
+            for (i, (name, rect, hovered)) in self.icebreaker_buildings.iter().enumerate() {
+                let min = rect.min.as_::<f64>() * half_win;
+                let max = rect.max.as_::<f64>() * half_win;
+                let center = (min + max) / 2.0;
+                let (fill, font_size) = if *hovered {
+                    ((1.0, 0.85, 0.3, 0.45), 26)
+                } else {
+                    ((1.0, 1.0, 1.0, 0.15), 18)
+                };
+                Rectangle::fill([(max.x - min.x).abs(), (max.y - min.y).abs()])
+                    .rgba(fill.0, fill.1, fill.2, fill.3)
+                    .x_y(center.x, center.y)
+                    .set(self.ids.icebreaker_building_rects[i], ui_widgets);
+                Text::new(&i18n.get_content(name))
+                    .color(if *hovered { TEXT_COLOR } else { TEXT_COLOR.alpha(0.85) })
+                    .x_y(center.x, center.y)
+                    .font_id(self.fonts.cyri.conrod_id)
+                    .font_size(self.fonts.cyri.scale(font_size))
+                    .set(self.ids.icebreaker_building_names[i], ui_widgets);
+            }
+
             let key = global_state
                 .settings
                 .controls
@@ -5400,10 +5435,15 @@ impl Hud {
     pub fn icebreaker_top_view(&mut self, on: bool) {
         self.icebreaker_top_view = on;
         self.icebreaker_panel = None;
+        self.icebreaker_buildings.clear();
     }
 
     pub fn icebreaker_panel(&mut self, panel: Option<(comp::Content, Vec<comp::Content>)>) {
         self.icebreaker_panel = panel;
+    }
+
+    pub fn icebreaker_buildings(&mut self, buildings: Vec<(comp::Content, Aabr<f32>, bool)>) {
+        self.icebreaker_buildings = buildings;
     }
 
     /// Start showing a temporary notification ([ChangeNotification]) that zoom

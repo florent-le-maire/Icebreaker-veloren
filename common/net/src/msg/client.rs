@@ -107,9 +107,10 @@ pub enum ClientGeneral {
     },
     UnlockSkill(Skill),
     RequestSiteInfo(SiteId),
-    /// Icebreaker: the player clicked this world position in the top view of
-    /// the village; the server answers with the panel of the building there.
-    IcebreakerBuilding(Vec2<f32>),
+    /// Icebreaker: in the top view of the village, the player clicked this world
+    /// position (the server answers with the panel of the building there), or
+    /// asks for the buildings (`None`).
+    IcebreakerBuilding(Option<Vec2<f32>>),
     UpdateMapMarker(comp::MapMarkerChange),
     SetBattleMode(BattleMode),
 

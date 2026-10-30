@@ -1,6 +1,7 @@
 //! Icebreaker: the village buildings (V.6). Each is one of the town's houses
 //! nearest to the square, its NPC standing at the door. In the top view of the
-//! village, a click on a building asks for its panel.
+//! village, the client asks for the buildings (to show their names and
+//! highlight the one under the cursor), and a click on one for its panel.
 
 use crate::{
     client::Client,
@@ -133,11 +134,25 @@ impl ServerEvent for IcebreakerBuildingEvent {
         (clients, buildings, warehouse, treasury, services): Self::SystemData<'_>,
     ) {
         for event in events {
-            if let Some(client) = clients.get(event.entity)
-                && let Some(building) = buildings.at(event.wpos)
-            {
-                let (title, lines) = panel(building, &warehouse, &treasury, &services);
-                client.send_fallible(ServerGeneral::IcebreakerPanel(title, lines));
+            let Some(client) = clients.get(event.entity) else {
+                continue;
+            };
+            match event.wpos {
+                Some(wpos) => {
+                    if let Some(building) = buildings.at(wpos) {
+                        let (title, lines) = panel(building, &warehouse, &treasury, &services);
+                        client.send_fallible(ServerGeneral::IcebreakerPanel(title, lines));
+                    }
+                },
+                None => client.send_fallible(ServerGeneral::IcebreakerBuildings(
+                    buildings
+                        .0
+                        .iter()
+                        .map(|(building, bounds)| {
+                            (Content::Plain(building.name().to_string()), *bounds)
+                        })
+                        .collect(),
+                )),
             }
         }
     }
