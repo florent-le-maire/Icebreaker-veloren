@@ -55,8 +55,10 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   *Fin* : village → donjon → village sans changer de serveur.
   Pas de place libre : on attend. Testé (logique ; `/rentrer` depuis un emplacement au client texte) ; départ par
   le chef pas encore vu en jeu. — e1cdcaee54
-- [ ] **I.9 Remise à neuf** — quand le dernier membre rentre, terrain regénéré, créatures et coffres de retour.
+- [x] **I.9 Remise à neuf** — quand le dernier membre rentre, terrain regénéré, créatures et coffres de retour.
   *Fin* : une deuxième expédition retrouve monstres et coffres.
+  Traces de la zone oubliées, tronçons regénérés. Testé (client texte : créatures revenues) ; tués au combat et
+  coffres pas encore vus en jeu. — 89e9fd2fb3
 
 ## Jalon 2 — Le village (première version)
 
