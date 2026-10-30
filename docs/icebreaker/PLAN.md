@@ -84,6 +84,28 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   l'entrepôt.
   *Fin* : un convoi pillé rapporte or et matériaux au village.
 
+## Jalon G — Donjon généré (hors démo, branche `icebreaker-donjon`)
+
+Le générateur du projet Icebreaker (graphe de mission, salles préfaites, assemblage, peuplement, paramètres :
+`design/generation.md`) traduit en Rust (`world/src/icebreaker/dungeon/`) et dessiné avec les blocs et les créatures
+de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/icebreaker/donjons/`.
+
+- [x] **G.1 Lieu « Genere » minimal** — `icebreaker.ps1 donjon -Site Genere` : une salle sous terre, un tunnel en
+  marches qui remonte à la surface au centre du site, apparition à sa sortie. Une case = 5 × 5 blocs, un étage = 5
+  blocs (`generation.ron` → `render`). `-Port` pour lancer deux serveurs du même lieu. Vérifié : génération, apparition
+  devant le tunnel ; pas encore descendu en jeu. — (hash à venir)
+- [ ] **G.2 Lecture des salles** — salles texte d'Icebreaker dans `assets/icebreaker/donjons/salles/`, vérifiées
+  comme dans le projet (portes, fosses, accès).
+  *Fin* : les 16 salles se lisent, les tests passent, G.1 dessine n'importe laquelle.
+- [ ] **G.3 Graphe de mission** — chemin principal, branches, verrous, boucles, chutes, règles de voisinage.
+  *Fin* : sur 1000 graines par taille, l'objectif est atteignable et l'on peut toujours revenir à l'entrée.
+- [ ] **G.4 Assemblage** — salles posées étage par étage, couloirs et escaliers creusés.
+  *Fin* : un donjon `medium` se parcourt de l'entrée à l'antre du chef.
+- [ ] **G.5 Peuplement** — créatures et coffres de Veloren selon le rôle des salles, un seul chef au fond.
+  *Fin* : on traverse le donjon et on tue le chef.
+- [ ] **G.6 Paramètres de mission** — taille, objectif, région, saison, menace, ennemis passés par le lanceur.
+  *Fin* : même graine, menace 1 et menace 5 donnent des donjons visiblement différents.
+
 ## Jalon 4 — Démo à l'équipe
 
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
@@ -92,7 +114,7 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
 ## Plus tard (à découper le moment venu)
 
 - Passage automatique du client d'une instance à l'autre.
-- Notre générateur de donjon à partir des briques de Veloren (région, saison, menace, objectif).
+- Donjon généré : verrous et clés effectifs, créatures endormies, éclairage selon les habitants.
 - Biome imposé pour terracotta, myrmidons et sahagins.
 - IA : alerte, embuscades, fuite et appel à l'aide (`design/creatures.md`, `design/menace.md`).
 - Classes (`decisions/0010-classes-et-combos.md`) : capacités en fichiers de données.

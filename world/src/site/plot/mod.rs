@@ -24,6 +24,8 @@ mod glider_platform;
 mod glider_ring;
 mod gnarling;
 mod haniwa;
+// Icebreaker: the dungeon of our generator.
+mod icebreaker_dungeon;
 mod house;
 mod jungle_ruin;
 mod myrmidon_arena;
@@ -73,6 +75,7 @@ pub use self::{
     glider_ring::GliderRing,
     gnarling::GnarlingFortification,
     haniwa::Haniwa,
+    icebreaker_dungeon::IcebreakerDungeon,
     house::House,
     jungle_ruin::JungleRuin,
     myrmidon_arena::MyrmidonArena,
@@ -192,6 +195,8 @@ pub enum PlotKind {
     MyrmidonArena(MyrmidonArena),
     MyrmidonHouse(MyrmidonHouse),
     Building(Building),
+    // Icebreaker: the dungeon of our generator.
+    IcebreakerDungeon(IcebreakerDungeon),
 }
 
 /// # Syntax
@@ -249,6 +254,7 @@ macro_rules! foreach_plot {
             PlotKind::MyrmidonArena($x) => $y,
             PlotKind::MyrmidonHouse($x) => $y,
             PlotKind::Building($x) => $y,
+            PlotKind::IcebreakerDungeon($x) => $y,
         }
     };
 }

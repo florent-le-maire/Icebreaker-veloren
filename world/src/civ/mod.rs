@@ -683,6 +683,12 @@ impl Civs {
                     SiteKind::Haniwa => {
                         WorldSite::generate_haniwa(&Land::from_sim(ctx.sim), &mut rng, wpos)
                     },
+                    // Icebreaker: a dungeon of our generator.
+                    SiteKind::IcebreakerDungeon => WorldSite::generate_icebreaker_dungeon(
+                        &Land::from_sim(ctx.sim),
+                        &mut rng,
+                        wpos,
+                    ),
                     SiteKind::Cultist => {
                         WorldSite::generate_cultist(&Land::from_sim(ctx.sim), &mut rng, wpos)
                     },
@@ -1929,6 +1935,8 @@ impl SiteKind {
                         && on_flat_terrain()
                         && (-0.3..0.4).contains(&chunk.temp)
                 },
+                // Icebreaker: underground, it only needs a place for its entrance.
+                SiteKind::IcebreakerDungeon => on_land() && on_flat_terrain(),
                 SiteKind::GiantTree => {
                     on_land()
                         && on_flat_terrain()
@@ -2044,6 +2052,7 @@ impl Site {
                 | SiteKind::Cultist
                 | SiteKind::Sahagin
                 | SiteKind::VampireCastle
+                | SiteKind::IcebreakerDungeon
         )
     }
 

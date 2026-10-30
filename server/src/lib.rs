@@ -519,9 +519,13 @@ impl Server {
                     Some(town.tile_center_wpos(town.plot(plaza).root_tile()))
                 })
                 .inspect(|spawn| info!(?spawn, "Icebreaker village spawn"));
+            // Icebreaker: at a dungeon of our generator, out of its entrance tunnel.
+            let generated_entrance = instance_site
+                .and_then(|site| world::icebreaker::dungeon_entrance(&index.sites[site]))
+                .inspect(|spawn| info!(?spawn, "Icebreaker generated dungeon spawn"));
             // Icebreaker: in a dungeon instance, players start in front of its
             // dungeon, just outside the site, on the side facing the map center.
-            let instance_spawn = village_square.or_else(|| instance_site_area.map(|(origin, radius)| {
+            let instance_spawn = village_square.or(generated_entrance).or_else(|| instance_site_area.map(|(origin, radius)| {
                 const MARGIN: f32 = 24.0;
                 let center_wpos = TerrainChunkSize::center_wpos(center_chunk);
                 let toward_center = (center_wpos - origin)

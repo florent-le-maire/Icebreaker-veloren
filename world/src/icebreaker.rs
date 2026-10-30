@@ -2,7 +2,9 @@
 //! `ICEBREAKER_INSTANCE_SITE` set generates a small world around one chosen
 //! site, without the wildlife and roaming monsters of a whole living world.
 
-use crate::site::SiteKind;
+pub mod dungeon;
+
+use crate::site::{Site, SiteKind, plot::PlotKind};
 use tracing::warn;
 
 const INSTANCE_SITE_VAR: &str = "ICEBREAKER_INSTANCE_SITE";
@@ -36,12 +38,22 @@ pub fn instance_site() -> Option<SiteKind> {
         "DwarvenMine" => SiteKind::DwarvenMine,
         "ChapelSite" => SiteKind::ChapelSite,
         "VampireCastle" => SiteKind::VampireCastle,
+        "Genere" => SiteKind::IcebreakerDungeon,
         _ => {
             warn!(?name, "Unknown {INSTANCE_SITE_VAR}, no site placed");
             return None;
         },
     };
     Some(kind)
+}
+
+/// Where players arrive at a dungeon of our generator: out of its entrance
+/// tunnel.
+pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
+    site.plots().find_map(|plot| match plot.kind() {
+        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.entrance()),
+        _ => None,
+    })
 }
 
 /// Whether the instance is the village (built around a town).

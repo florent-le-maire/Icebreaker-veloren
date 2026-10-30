@@ -1,6 +1,7 @@
 # Icebreaker : lance un serveur pour un lieu de la campagne.
 #
 #   .\icebreaker.ps1 donjon -Site Gnarling   (port 14110)
+#   .\icebreaker.ps1 donjon -Site Genere     (port 14110 ; donjon de notre générateur, jalon G)
 #   .\icebreaker.ps1 route                   (port 14120, pas encore fait : P.1)
 #   .\icebreaker.ps1 village                 (port 14100 ; -Site Town, CliffTown, DesertCity,
 #                                             SavannahTown ou CoastalTown, Town par défaut)
@@ -21,7 +22,9 @@ param(
     [int]$Lg = 6,
     [int]$Seed = (Get-Random -Maximum 1000000),
     # Durée d'une journée en minutes réelles (1 min réelle = 30 min de carte).
-    [double]$DayLength = 48.0
+    [double]$DayLength = 48.0,
+    # Port du serveur, à la place de celui du lieu (pour lancer deux serveurs du même lieu).
+    [int]$Port = 0
 )
 
 $repo = $PSScriptRoot
@@ -50,7 +53,7 @@ if (-not $Site) { $Site = @{ village = "Town"; donjon = "Gnarling" }[$Lieu] }
 
 $root = "$repo\userdata-icebreaker"
 $ud = "$root\$Lieu"
-$port = $ports[$Lieu]
+$port = if ($Port) { $Port } else { $ports[$Lieu] }
 
 # Monde neuf à chaque lancement ; les personnages restent dans la campagne.
 Remove-Item -Recurse -Force "$ud\server\rtsim" -ErrorAction SilentlyContinue
