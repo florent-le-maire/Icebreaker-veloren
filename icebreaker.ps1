@@ -2,7 +2,8 @@
 #
 #   .\icebreaker.ps1 donjon -Site Gnarling   (port 14110)
 #   .\icebreaker.ps1 route                   (port 14120, pas encore fait : P.1)
-#   .\icebreaker.ps1 village                 (port 14100, pas encore fait : V.1)
+#   .\icebreaker.ps1 village                 (port 14100 ; -Site Town, CliffTown, DesertCity,
+#                                             SavannahTown ou CoastalTown, Town par défaut)
 #
 # Chaque lieu génère son propre petit monde à chaque lancement (graine au hasard, ou -Seed).
 # Les personnages sont communs à tous les lieux : ils vivent dans userdata-icebreaker\campagne.
@@ -11,7 +12,8 @@ param(
     [Parameter(Mandatory = $true, Position = 0)]
     [ValidateSet("village", "donjon", "route")]
     [string]$Lieu,
-    [string]$Site = "Gnarling",
+    # Site autour duquel le lieu est généré (par défaut : Gnarling au donjon, Town au village).
+    [string]$Site,
     [int]$Lg = 6,
     [int]$Seed = (Get-Random -Maximum 1000000),
     # Durée d'une journée en minutes réelles (1 min réelle = 30 min de carte).
@@ -19,10 +21,11 @@ param(
 )
 
 $ports = @{ village = 14100; donjon = 14110; route = 14120 }
-if ($Lieu -ne "donjon") {
+if ($Lieu -eq "route") {
     Write-Host "Le lieu « $Lieu » n'est pas encore fait (voir docs/icebreaker/PLAN.md)."
     exit 1
 }
+if (-not $Site) { $Site = @{ village = "Town"; donjon = "Gnarling" }[$Lieu] }
 
 $repo = $PSScriptRoot
 $root = "$repo\userdata-icebreaker"

@@ -10,10 +10,16 @@ const INSTANCE_SITE_VAR: &str = "ICEBREAKER_INSTANCE_SITE";
 /// Whether this server runs an encounter instance.
 pub fn is_instance() -> bool { std::env::var_os(INSTANCE_SITE_VAR).is_some() }
 
-/// The dungeon kind the instance is built around (e.g. `Haniwa`).
+/// The site kind the instance is built around: a dungeon (e.g. `Haniwa`) or,
+/// for the village, a town (e.g. `Town`).
 pub fn instance_site() -> Option<SiteKind> {
     let name = std::env::var(INSTANCE_SITE_VAR).ok()?;
     let kind = match name.as_str() {
+        "Town" => SiteKind::Refactor,
+        "CliffTown" => SiteKind::CliffTown,
+        "DesertCity" => SiteKind::DesertCity,
+        "SavannahTown" => SiteKind::SavannahTown,
+        "CoastalTown" => SiteKind::CoastalTown,
         "Gnarling" => SiteKind::Gnarling,
         "Adlet" => SiteKind::Adlet,
         "Haniwa" => SiteKind::Haniwa,
@@ -30,4 +36,19 @@ pub fn instance_site() -> Option<SiteKind> {
         },
     };
     Some(kind)
+}
+
+/// Whether the instance is the village (built around a town).
+pub fn is_village() -> bool { instance_site().is_some_and(is_town) }
+
+/// Whether `kind` is a town.
+pub fn is_town(kind: SiteKind) -> bool {
+    matches!(
+        kind,
+        SiteKind::Refactor
+            | SiteKind::CliffTown
+            | SiteKind::DesertCity
+            | SiteKind::SavannahTown
+            | SiteKind::CoastalTown
+    )
 }

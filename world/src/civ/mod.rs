@@ -248,7 +248,13 @@ impl Civs {
             this.name_biomes(&mut name_ctx);
         }
 
-        let initial_civ_count = initial_civ_count(sim.map_size_lg());
+        // Icebreaker: the village instance holds one town only, placed below.
+        let instance_site = crate::icebreaker::instance_site();
+        let initial_civ_count = if instance_site.is_some_and(crate::icebreaker::is_town) {
+            0
+        } else {
+            initial_civ_count(sim.map_size_lg())
+        };
         let mut ctx = GenCtx { sim, rng };
 
         // info!("starting cave generation");
@@ -272,8 +278,8 @@ impl Civs {
         let world_dims = ctx.sim.get_aabr();
 
         // Icebreaker: an encounter instance is a small world holding one chosen
-        // dungeon near its center, instead of randomly placed sites.
-        let instance_site = crate::icebreaker::instance_site();
+        // site (a dungeon, or the village's town) near its center, instead of
+        // randomly placed sites.
         if let Some(kind) = instance_site {
             let center = world_dims.center();
             let near_center = ProximityRequirementsBuilder::new()
@@ -285,12 +291,19 @@ impl Civs {
             {
                 Some(loc) => {
                     info!(?kind, ?loc, ?center, "Icebreaker instance site placed");
-                    this.establish_site(&mut ctx.reseed(), loc, |place| Site {
+                    let site = this.establish_site(&mut ctx.reseed(), loc, |place| Site {
                         kind,
                         center: loc,
                         place,
                         site_tmp: None,
                     });
+                    // As in `birth_civ`, a town is the capital of a civilisation.
+                    if crate::icebreaker::is_town(kind) {
+                        this.civs.insert(Civ {
+                            capital: site,
+                            homeland: this.sites.get(site).place,
+                        });
+                    }
                 },
                 None => warn!(?kind, "Icebreaker instance site could not be placed"),
             }

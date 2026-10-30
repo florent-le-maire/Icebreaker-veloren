@@ -491,11 +491,12 @@ impl Server {
 
         // Icebreaker: the site an encounter instance is built around (origin, radius).
         #[cfg(feature = "worldgen")]
-        let instance_site_area = world::icebreaker::is_instance()
-            .then(|| world.civs().sites().find(|site| site.is_dungeon()))
-            .flatten()
-            .and_then(|site| site.site_tmp)
-            .map(|site| (index.sites[site].origin, index.sites[site].radius()));
+        let instance_site = world::icebreaker::instance_site()
+            .and_then(|kind| world.civs().sites().find(|site| site.kind == kind))
+            .and_then(|site| site.site_tmp);
+        #[cfg(feature = "worldgen")]
+        let instance_site_area =
+            instance_site.map(|site| (index.sites[site].origin, index.sites[site].radius()));
 
         #[cfg(feature = "worldgen")]
         let spawn_point = SpawnPoint({
@@ -507,9 +508,18 @@ impl Server {
             // Search for town defined by spawn_town server setting. If this fails, or is
             // None, set spawn to the nearest town to the centre of the world
             let center_chunk = world.sim().map_size_lg().chunks().map(i32::from) / 2;
-            // Icebreaker: in an encounter instance, players start in front of its
+            // Icebreaker: in the village, players start on the town's main square.
+            let village_square = instance_site
+                .filter(|_| world::icebreaker::is_village())
+                .and_then(|site| {
+                    let town = &index.sites[site];
+                    let plaza = town.plazas().next()?;
+                    Some(town.tile_center_wpos(town.plot(plaza).root_tile()))
+                })
+                .inspect(|spawn| info!(?spawn, "Icebreaker village spawn"));
+            // Icebreaker: in a dungeon instance, players start in front of its
             // dungeon, just outside the site, on the side facing the map center.
-            let instance_dungeon = instance_site_area.map(|(origin, radius)| {
+            let instance_spawn = village_square.or_else(|| instance_site_area.map(|(origin, radius)| {
                 const MARGIN: f32 = 24.0;
                 let center_wpos = TerrainChunkSize::center_wpos(center_chunk);
                 let toward_center = (center_wpos - origin)
@@ -519,8 +529,8 @@ impl Server {
                 let spawn = origin + (toward_center * (radius + MARGIN)).as_::<i32>();
                 info!(?spawn, dungeon = ?origin, radius, "Icebreaker instance spawn");
                 spawn
-            });
-            let spawn_wpos = instance_dungeon.unwrap_or_else(|| {
+            }));
+            let spawn_wpos = instance_spawn.unwrap_or_else(|| {
                 let spawn_chunk = world
                     .civs()
                     .sites()

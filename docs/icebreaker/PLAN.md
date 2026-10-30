@@ -37,7 +37,7 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   recréé à chaque lancement ; en instance, le waypoint sauvé (d'un autre monde) est ignoré. Vérifié : deux lancements
   successifs utilisent la même base ; pas encore vérifié en jeu avec un objet ramassé. — 159c42400d
 - [x] **I.4 Lanceur unique** — `icebreaker.ps1 village | donjon <type> | route` : dossier et ports par lieu, graine au
-  hasard, journée de 48 min. `donjon` marche (port 14110) ; `village` et `route` arrivent avec V.1 et P.1. — 159c42400d
+  hasard, journée de 48 min. `donjon` (port 14110) et `village` (14100, V.1) marchent ; `route` arrive avec P.1. — 159c42400d
 - [x] **I.5 Temps de carte** — 1 min réelle = 30 min de carte (journée de 48 min, I.4) ; horloge dans
   `campagne/horloge.ron`, écrite par l'instance qui a des joueurs (toutes les `icebreaker.clock_save_interval`, 5 s,
   et au départ du dernier), reprise par une instance vide à l'arrivée de son premier joueur : l'heure suit les joueurs
@@ -46,8 +46,10 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
 
 ## Jalon 2 — Le village (première version)
 
-- [ ] **V.1 Instance village** — une ville Veloren seule, sans hostiles, apparition sur la place.
-  *Fin* : on arrive au village, on peut s'y promener.
+- [x] **V.1 Instance village** — `icebreaker.ps1 village` (port 14100, `-Site Town` par défaut, ou CliffTown,
+  DesertCity, SavannahTown, CoastalTown) : une seule ville au centre du petit monde, sans autre site ni faune ;
+  apparition sur sa place principale ; zone fermée autour (I.2). Habitants : gardes, marchands, aventuriers, chats
+  et chiens. Vérifié : génération, apparition sur la place, connexion, horloge reprise ; pas encore promené en jeu.
 - [ ] **V.2 Entrepôt commun** — un coffre du village dont le contenu est partagé et sauvegardé dans la campagne.
   *Fin* : un joueur y dépose un objet, un autre le retrouve après redémarrage.
 - [ ] **V.3 Caisse commune** — chaque joueur garde son or (règle de butin) et peut en verser dans la caisse.
