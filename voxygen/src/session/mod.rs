@@ -394,8 +394,8 @@ impl SessionState {
                         view.buildings = buildings;
                     }
                 },
-                client::Event::IcebreakerPanel(title, lines, action) => {
-                    self.hud.icebreaker_panel(Some((title, lines, action)));
+                client::Event::IcebreakerPanel(title, lines, actions) => {
+                    self.hud.icebreaker_panel(Some((title, lines, actions)));
                 },
                 // Icebreaker: off to another place of the campaign, through the main
                 // menu, with the same character.
@@ -2459,6 +2459,11 @@ struct IcebreakerTopView {
     /// The buildings and plots to build on (name, bounds in world coordinates,
     /// whether a plot), once the server sent them.
     buildings: Vec<(comp::Content, Aabr<i32>, bool)>,
+    /// Where the last click was, and when its panel and the buildings were last
+    /// asked for: they are asked for again every second (chantiers, treasury,
+    /// expedition change).
+    last_click: Option<Vec2<f32>>,
+    last_refresh: std::time::Instant,
 }
 
 /// How high above the character the top view starts.
@@ -2484,6 +2489,8 @@ impl SessionState {
                 ori,
                 plane_z: pos.z + ICEBREAKER_TOP_VIEW_PLANE,
                 buildings: Vec::new(),
+                last_click: None,
+                last_refresh: std::time::Instant::now(),
             });
             self.hud.icebreaker_top_view(true);
             self.client.borrow_mut().request_icebreaker_building(None);
@@ -2519,10 +2526,17 @@ impl SessionState {
 
     /// Asks for the panel of the building under the cursor.
     fn click_icebreaker_top_view(&mut self, global_state: &GlobalState) {
+        // Not through the HUD (the panel's buttons).
+        if !self.hud.icebreaker_cursor_free() {
+            return;
+        }
         let Some(view) = &self.icebreaker_top_view else {
             return;
         };
         let wpos = self.icebreaker_ndc_to_world(view, Self::icebreaker_cursor_ndc(global_state));
+        if let Some(view) = &mut self.icebreaker_top_view {
+            view.last_click = Some(wpos);
+        }
         self.client
             .borrow_mut()
             .request_icebreaker_building(Some(wpos));
@@ -2531,6 +2545,16 @@ impl SessionState {
     /// Where the buildings are on screen this frame, for the HUD: name, screen
     /// rectangle (-1 to 1, y up), whether the cursor is over it, whether a plot.
     fn update_icebreaker_top_view(&mut self, global_state: &GlobalState) {
+        if let Some(view) = &mut self.icebreaker_top_view
+            && view.last_refresh.elapsed() > std::time::Duration::from_secs(1)
+        {
+            view.last_refresh = std::time::Instant::now();
+            let mut client = self.client.borrow_mut();
+            client.request_icebreaker_building(None);
+            if let Some(wpos) = view.last_click {
+                client.request_icebreaker_building(Some(wpos));
+            }
+        }
         let Some(view) = &self.icebreaker_top_view else {
             return;
         };

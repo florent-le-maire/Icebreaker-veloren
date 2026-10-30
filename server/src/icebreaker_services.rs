@@ -139,7 +139,7 @@ fn intendant_loadout(
     )
 }
 
-fn coins() -> Arc<ItemDef> {
+pub(crate) fn coins() -> Arc<ItemDef> {
     Arc::<ItemDef>::load_cloned(crate::icebreaker_treasury::COINS).expect("coins item")
 }
 
@@ -211,6 +211,52 @@ pub fn answer_healing(
 
 /// The coins of a healing are not kept: the healer's inventory never fills.
 pub fn drop_payment(healer: &mut comp::Inventory) { healer.drain().for_each(|_: Item| {}); }
+
+/// `/soigner` (the infirmary's panel, V.10): heals fully for the healer's
+/// price, paid from the player's coins.
+pub(crate) fn handle_soigner(
+    server: &mut crate::Server,
+    client: specs::Entity,
+    _target: specs::Entity,
+    _args: Vec<String>,
+    _action: &common::cmd::ServerChatCommand,
+) -> Result<(), Content> {
+    use specs::WorldExt;
+    if !world::icebreaker::is_village() {
+        return Err(Content::Plain("L'infirmerie est au village.".to_string()));
+    }
+    let ecs = server.state.ecs();
+    let price = ecs.read_resource::<IcebreakerServices>().heal_price();
+    let hurt = ecs
+        .read_storage::<comp::Health>()
+        .get(client)
+        .is_some_and(|health| health.current() < health.maximum());
+    if !hurt {
+        return Err(Content::Plain("Tu n'es pas blessé.".to_string()));
+    }
+    let coins = crate::icebreaker_services::coins();
+    let has = ecs
+        .read_storage::<comp::Inventory>()
+        .get(client)
+        .map_or(0, |inventory| inventory.item_count(&coins));
+    if has < u64::from(price) {
+        return Err(Content::Plain(format!(
+            "Il te faut {price} pièces d'or pour les soins (tu en as {has})."
+        )));
+    }
+    crate::icebreaker_treasury::take_coins(ecs, client, Some(u64::from(price)));
+    if let Some(mut health) = ecs.write_storage::<comp::Health>().get_mut(client) {
+        health.set_fraction(1.0);
+    }
+    server.notify_client(
+        client,
+        common_net::msg::ServerGeneral::server_msg(
+            comp::ChatType::Meta,
+            Content::Plain(format!("L'infirmier te soigne ({price} or).")),
+        ),
+    );
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {

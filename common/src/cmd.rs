@@ -379,6 +379,8 @@ pub enum ServerChatCommand {
     Body,
     Buff,
     Build,
+    /// Icebreaker: give coins to the village treasury (V.10).
+    Caisse,
     Campfire,
     ClearPersistedTerrain,
     CreateLocation,
@@ -453,6 +455,8 @@ pub enum ServerChatCommand {
     Site,
     SkillPoint,
     SkillPreset,
+    /// Icebreaker: be healed at the village infirmary, for coins (V.10).
+    Soigner,
     Spawn,
     Spot,
     Sudo,
@@ -616,6 +620,11 @@ impl ServerChatCommand {
                 ],
                 Content::localized("command-area_remove-desc"),
                 Some(Admin),
+            ),
+            ServerChatCommand::Caisse => cmd(
+                vec![Any("montant", Required)],
+                Content::localized("command-caisse-desc"),
+                None,
             ),
             ServerChatCommand::Campfire => cmd(
                 vec![],
@@ -989,6 +998,9 @@ impl ServerChatCommand {
                 Content::localized("command-skill_preset-desc"),
                 Some(Admin),
             ),
+            ServerChatCommand::Soigner => {
+                cmd(vec![], Content::localized("command-soigner-desc"), None)
+            },
             ServerChatCommand::Spawn => cmd(
                 vec![
                     Enum("alignment", ALIGNMENTS.clone(), Required),
@@ -1195,6 +1207,7 @@ impl ServerChatCommand {
             ServerChatCommand::Body => "body",
             ServerChatCommand::Buff => "buff",
             ServerChatCommand::Build => "build",
+            ServerChatCommand::Caisse => "caisse",
             ServerChatCommand::Campfire => "campfire",
             ServerChatCommand::ClearPersistedTerrain => "clear_persisted_terrain",
             ServerChatCommand::DeathEffect => "death_effect",
@@ -1252,6 +1265,7 @@ impl ServerChatCommand {
             ServerChatCommand::Site => "site",
             ServerChatCommand::SkillPoint => "skill_point",
             ServerChatCommand::SkillPreset => "skill_preset",
+            ServerChatCommand::Soigner => "soigner",
             ServerChatCommand::Spawn => "spawn",
             ServerChatCommand::Spot => "spot",
             ServerChatCommand::Sudo => "sudo",

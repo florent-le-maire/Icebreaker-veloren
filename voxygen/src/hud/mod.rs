@@ -341,7 +341,7 @@ widget_ids! {
         icebreaker_hint,
         icebreaker_panel_bg,
         icebreaker_panel_txt,
-        icebreaker_panel_button,
+        icebreaker_panel_buttons[],
         icebreaker_building_rects[],
         icebreaker_building_names[],
 
@@ -678,11 +678,11 @@ pub struct HudInfo<'a> {
 }
 
 /// Icebreaker: the panel of a village building in the top view: title, lines,
-/// and a button (label, and the chat command it sends).
+/// and buttons (label, and the chat command it sends).
 pub type IcebreakerPanel = (
     comp::Content,
     Vec<comp::Content>,
-    Option<(comp::Content, Vec<String>)>,
+    Vec<(comp::Content, Vec<String>)>,
 );
 
 #[derive(Clone)]
@@ -4208,17 +4208,20 @@ impl Hud {
             .font_size(self.fonts.cyri.scale(20))
             .set(self.ids.icebreaker_hint, ui_widgets);
         }
-        // The command of the panel's button, if clicked.
+        // The command of the panel's button clicked, if any.
         let mut icebreaker_command = None;
         if self.icebreaker_top_view {
-            if let Some((title, lines, action)) = &self.icebreaker_panel {
+            if let Some((title, lines, actions)) = &self.icebreaker_panel {
                 let text = std::iter::once(title)
                     .chain(lines)
                     .map(|content| i18n.get_content(content))
                     .collect::<Vec<_>>()
                     .join("\n");
-                let button_height = if action.is_some() { 50.0 } else { 0.0 };
-                let height = 30.0 + 24.0 * (lines.len() + 1) as f64 + button_height;
+                // Buttons two by two under the text.
+                const BUTTON: [f64; 2] = [190.0, 34.0];
+                let button_rows = actions.len().div_ceil(2);
+                let height =
+                    30.0 + 24.0 * (lines.len() + 1) as f64 + button_rows as f64 * (BUTTON[1] + 8.0);
                 Rectangle::fill([420.0, height])
                     .rgba(0.0, 0.0, 0.0, 0.7)
                     .top_left_with_margins_on(ui_widgets.window, 120.0, 20.0)
@@ -4229,22 +4232,32 @@ impl Hud {
                     .font_id(self.fonts.cyri.conrod_id)
                     .font_size(self.fonts.cyri.scale(18))
                     .set(self.ids.icebreaker_panel_txt, ui_widgets);
-                // The panel's action: a button sending its chat command.
-                if let Some((label, command)) = action
-                    && Button::image(self.imgs.button)
-                        .w_h(200.0, 36.0)
+                if self.ids.icebreaker_panel_buttons.len() < actions.len() {
+                    self.ids
+                        .icebreaker_panel_buttons
+                        .resize(actions.len(), &mut ui_widgets.widget_id_generator());
+                }
+                for (i, (label, command)) in actions.iter().enumerate() {
+                    let row = (button_rows - 1 - i / 2) as f64;
+                    if Button::image(self.imgs.button)
+                        .w_h(BUTTON[0], BUTTON[1])
                         .hover_image(self.imgs.button_hover)
                         .press_image(self.imgs.button_press)
-                        .bottom_left_with_margins_on(self.ids.icebreaker_panel_bg, 10.0, 15.0)
+                        .bottom_left_with_margins_on(
+                            self.ids.icebreaker_panel_bg,
+                            10.0 + row * (BUTTON[1] + 8.0),
+                            15.0 + (i % 2) as f64 * (BUTTON[0] + 10.0),
+                        )
                         .label(&i18n.get_content(label))
                         .label_font_id(self.fonts.cyri.conrod_id)
-                        .label_font_size(self.fonts.cyri.scale(16))
+                        .label_font_size(self.fonts.cyri.scale(15))
                         .label_color(TEXT_COLOR)
-                        .set(self.ids.icebreaker_panel_button, ui_widgets)
+                        .set(self.ids.icebreaker_panel_buttons[i], ui_widgets)
                         .was_clicked()
-                    && let Some((name, args)) = command.split_first()
-                {
-                    icebreaker_command = Some(Event::SendCommand(name.clone(), args.to_vec()));
+                        && let Some((name, args)) = command.split_first()
+                    {
+                        icebreaker_command = Some(Event::SendCommand(name.clone(), args.to_vec()));
+                    }
                 }
             }
         }
@@ -5472,6 +5485,10 @@ impl Hud {
         self.icebreaker_panel = None;
         self.icebreaker_buildings.clear();
     }
+
+    /// Icebreaker: whether the cursor is over no widget (a click there is on
+    /// the village of the top view).
+    pub fn icebreaker_cursor_free(&self) -> bool { self.ui.no_widget_capturing_mouse() }
 
     pub fn icebreaker_panel(&mut self, panel: Option<IcebreakerPanel>) {
         self.icebreaker_panel = panel;

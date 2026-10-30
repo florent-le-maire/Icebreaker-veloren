@@ -115,8 +115,16 @@ fn plot_name(config: &VillageConfig, chantier: Option<Chantier>, now: f64) -> St
     }
 }
 
-/// What a panel shows: title, lines, and a button (label, command) if any.
-type Panel = (Content, Vec<Content>, Option<(Content, Vec<String>)>);
+/// What a panel shows: title, lines, and buttons (label, chat command).
+type Panel = (Content, Vec<Content>, Vec<(Content, Vec<String>)>);
+
+/// A button sending the chat command `command`.
+fn button(label: impl Into<String>, command: &[&str]) -> (Content, Vec<String>) {
+    (
+        Content::Plain(label.into()),
+        command.iter().map(|word| word.to_string()).collect(),
+    )
+}
 
 /// The panel of `place` at map time `now`.
 fn panel(
@@ -139,7 +147,7 @@ fn panel(
                         "Une maison est en construction : finie dans {:.1} h de carte.",
                         hours_left(chantier.fin, now)
                     ))],
-                    None,
+                    Vec::new(),
                 );
             }
             return (
@@ -155,13 +163,14 @@ fn panel(
                         config.heures_chantier
                     )),
                 ],
-                Some((
-                    plain(format!("Bâtir ({} or)", config.prix_maison)),
-                    vec!["batir".to_string(), rank.to_string()],
-                )),
+                vec![button(format!("Bâtir ({} or)", config.prix_maison), &[
+                    "batir",
+                    &rank.to_string(),
+                ])],
             );
         },
     };
+    let mut actions = Vec::new();
     let lines = match building {
         Building::Warehouse => {
             let items = warehouse.load_items();
@@ -180,21 +189,27 @@ fn panel(
                     .collect()
             }
         },
-        Building::Treasury => vec![
-            plain(format!("La caisse du village : {} pièces d'or.", treasury.coins())),
-            plain("Le trésorier, à la porte, prend l'or (T).".to_string()),
-        ],
+        Building::Treasury => {
+            actions = vec![
+                button("Verser 10 or", &["caisse", "10"]),
+                button("Verser 50 or", &["caisse", "50"]),
+                button("Verser 100 or", &["caisse", "100"]),
+                button("Verser tout mon or", &["caisse", "tout"]),
+            ];
+            vec![
+                plain(format!("La caisse du village : {} pièces d'or.", treasury.coins())),
+                plain("Elle paie les chantiers du village.".to_string()),
+            ]
+        },
         Building::Intendance => vec![
             plain("Potions et vivres, aux prix de la ville.".to_string()),
             plain("L'intendant, à la porte, vend et rachète (T).".to_string()),
         ],
-        Building::Infirmary => vec![
-            plain(format!(
-                "Soin complet : {} pièces d'or.",
-                services.heal_price()
-            )),
-            plain("L'infirmier, à la porte, soigne (E).".to_string()),
-        ],
+        Building::Infirmary => {
+            let price = services.heal_price();
+            actions = vec![button(format!("Me soigner ({price} or)"), &["soigner"])];
+            vec![plain(format!("Soin complet : {price} pièces d'or."))]
+        },
         Building::Departure => std::iter::once(plain(
             "Le chef d'expédition, à la porte, organise les départs (E) :".to_string(),
         ))
@@ -211,7 +226,7 @@ fn panel(
         )
         .collect(),
     };
-    (plain(building.name().to_string()), lines, None)
+    (plain(building.name().to_string()), lines, actions)
 }
 
 impl ServerEvent for IcebreakerBuildingEvent {

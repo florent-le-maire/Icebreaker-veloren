@@ -127,6 +127,97 @@ impl IcebreakerTreasury {
     }
 }
 
+impl IcebreakerTreasury {
+    /// Puts `amount` coins in the treasury (`/caisse`, V.10).
+    pub fn deposit(&mut self, amount: u64) {
+        self.coins += amount;
+        self.save();
+    }
+}
+
+/// Renames the treasurer after the treasury.
+pub fn refresh_treasurer_name(ecs: &specs::World) {
+    use specs::{LendJoin, WorldExt};
+    let name = ecs.read_resource::<IcebreakerTreasury>().treasurer_name();
+    let agents = ecs.read_storage::<comp::Agent>();
+    let mut stats = ecs.write_storage::<comp::Stats>();
+    let mut treasurers = (&agents, &mut stats).lend_join();
+    while let Some((agent, mut stats)) = treasurers.next() {
+        if matches!(agent.behavior.trading_behavior, TradingBehavior::Treasury) {
+            stats.name = Content::Plain(name.clone());
+        }
+    }
+}
+
+/// Takes up to `amount` coins (all of them for `None`) from the inventory of
+/// `entity`; returns how many.
+pub fn take_coins(ecs: &specs::World, entity: specs::Entity, amount: Option<u64>) -> u64 {
+    use common::comp::{item::MaterialStatManifest, tool::AbilityMap};
+    use specs::WorldExt;
+    let coins = crate::icebreaker_services::coins();
+    let mut inventories = ecs.write_storage::<Inventory>();
+    let Some(mut inventory) = inventories.get_mut(entity) else {
+        return 0;
+    };
+    let has = inventory.item_count(&coins);
+    let amount = amount.map_or(has, |amount| amount.min(has));
+    let Ok(amount32) = u32::try_from(amount) else {
+        return 0;
+    };
+    if amount32 == 0 {
+        return 0;
+    }
+    let taken = inventory.remove_item_amount(
+        &coins,
+        amount32,
+        &ecs.read_resource::<AbilityMap>(),
+        &ecs.read_resource::<MaterialStatManifest>(),
+    );
+    if taken.is_some() { amount } else { 0 }
+}
+
+/// `/caisse <montant|tout>` (the treasury's panel, V.10): gives coins to the
+/// village treasury.
+pub(crate) fn handle_caisse(
+    server: &mut crate::Server,
+    client: specs::Entity,
+    _target: specs::Entity,
+    args: Vec<String>,
+    _action: &common::cmd::ServerChatCommand,
+) -> Result<(), Content> {
+    use specs::WorldExt;
+    if !world::icebreaker::is_village() {
+        return Err(Content::Plain("La caisse est au village.".to_string()));
+    }
+    let amount = match args.first().map(String::as_str) {
+        Some("tout") => None,
+        Some(n) => Some(n.parse::<u64>().map_err(|_| {
+            Content::Plain("Combien ? (/caisse <montant> ou /caisse tout)".to_string())
+        })?),
+        None => return Err(Content::Plain("Combien ? (/caisse <montant> ou /caisse tout)".to_string())),
+    };
+    let ecs = server.state.ecs();
+    let given = take_coins(ecs, client, amount);
+    if given == 0 {
+        return Err(Content::Plain("Tu n'as pas d'or sur toi.".to_string()));
+    }
+    let alias = ecs
+        .read_storage::<comp::Player>()
+        .get(client)
+        .map_or_else(|| "Quelqu'un".to_string(), |player| player.alias.clone());
+    let message = {
+        let mut treasury = ecs.write_resource::<IcebreakerTreasury>();
+        treasury.deposit(given);
+        treasury.gift_message(&alias, given)
+    };
+    refresh_treasurer_name(ecs);
+    server.notify_players(common_net::msg::ServerGeneral::server_msg(
+        comp::ChatType::Meta,
+        message,
+    ));
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

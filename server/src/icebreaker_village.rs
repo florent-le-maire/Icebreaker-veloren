@@ -206,7 +206,7 @@ pub(crate) fn handle_batir(
 ) -> Result<(), common::comp::Content> {
     use crate::icebreaker_treasury::IcebreakerTreasury;
     use common::comp::{self, Content};
-    use specs::{LendJoin, WorldExt};
+    use specs::WorldExt;
 
     let Some(rang) = args.first().and_then(|arg| arg.parse::<usize>().ok()) else {
         return Err(Content::Plain("Quel terrain ? (/batir <numéro>)".to_string()));
@@ -225,17 +225,9 @@ pub(crate) fn handle_batir(
                 treasury.coins()
             )));
         }
-        // The treasurer's name shows the treasury.
-        let name = treasury.treasurer_name();
-        let agents = ecs.read_storage::<comp::Agent>();
-        let mut stats = ecs.write_storage::<comp::Stats>();
-        let mut treasurers = (&agents, &mut stats).lend_join();
-        while let Some((agent, mut stats)) = treasurers.next() {
-            if matches!(agent.behavior.trading_behavior, comp::agent::TradingBehavior::Treasury) {
-                stats.name = Content::Plain(name.clone());
-            }
-        }
     }
+    // The treasurer's name shows the treasury.
+    crate::icebreaker_treasury::refresh_treasurer_name(ecs);
     let now = ecs.read_resource::<common::resources::TimeOfDay>().0;
     ecs.write_resource::<IcebreakerVillage>().build(rang, now);
     let alias = ecs

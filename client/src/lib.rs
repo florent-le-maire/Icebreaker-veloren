@@ -133,9 +133,9 @@ pub enum Event {
     SpectatePosition(Vec3<f32>),
     PluginDataReceived(Vec<u8>),
     Dialogue(Uid, rtsim::Dialogue<true>),
-    /// Icebreaker: the panel of a village building (title, lines, and a button:
+    /// Icebreaker: the panel of a village building (title, lines, and buttons:
     /// label, and the chat command it sends).
-    IcebreakerPanel(comp::Content, Vec<comp::Content>, Option<(comp::Content, Vec<String>)>),
+    IcebreakerPanel(comp::Content, Vec<comp::Content>, Vec<(comp::Content, Vec<String>)>),
     /// Icebreaker: go to the place of the campaign listening on this port.
     IcebreakerTravel(u16),
     /// Icebreaker: the village buildings and plots to build on (name, bounds in
@@ -3005,8 +3005,8 @@ impl Client {
             ServerGeneral::IcebreakerTravel(port) => {
                 frontend_events.push(Event::IcebreakerTravel(port));
             },
-            ServerGeneral::IcebreakerPanel(title, lines, action) => {
-                frontend_events.push(Event::IcebreakerPanel(title, lines, action));
+            ServerGeneral::IcebreakerPanel(title, lines, actions) => {
+                frontend_events.push(Event::IcebreakerPanel(title, lines, actions));
             },
             ServerGeneral::MapMarker(event) => {
                 frontend_events.push(Event::MapMarker(event));
