@@ -112,8 +112,10 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
 - [x] **V.10 Panneaux à boutons** (menu village en vue U, Flo) — plusieurs boutons par panneau, panneau redemandé
   chaque seconde ; Caisse : verser 10/50/100/tout (`/caisse`) ; Infirmerie : se soigner (`/soigner`). Testé (client
   texte) ; boutons pas encore vus en jeu. — c8fb316e52
-- [ ] **V.11 Départ depuis la vue U** — boutons du chef (destination, rejoindre, prêt/attendre, se désinscrire) ;
+- [x] **V.11 Départ depuis la vue U** — boutons du chef (destination, rejoindre, prêt/attendre, se désinscrire) ;
   liste des inscrits (et qui est prêt) à gauche, en direct, pour tout le village ; inscrit tant qu'on est au village.
+  Commande `/expedition`. Testé (client texte : inscription, prêt, départ, retour) ; boutons et liste pas encore vus
+  en jeu. — 16423be9bb
 - [ ] **V.12 Échanges à distance** — Entrepôt et Intendance : « Ouvrir l'échange » depuis le panneau, sans aller au PNJ.
 
 ## Jalon C — Le village qui grandit (Flo, 2026-10-28)
