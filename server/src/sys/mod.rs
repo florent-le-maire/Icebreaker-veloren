@@ -2,6 +2,7 @@ pub mod agent;
 pub mod chunk_send;
 pub mod chunk_serialize;
 pub mod entity_sync;
+pub mod icebreaker_clock;
 pub mod icebreaker_zone;
 pub mod invite_timeout;
 pub mod item;
@@ -37,6 +38,7 @@ pub fn add_server_systems(dispatch_builder: &mut DispatcherBuilder) {
     dispatch::<terrain::Sys>(dispatch_builder, &[&msg::terrain::Sys::sys_name()]);
     dispatch::<waypoint::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_zone::Sys>(dispatch_builder, &[]);
+    dispatch::<icebreaker_clock::Sys>(dispatch_builder, &[]);
     dispatch::<teleporter::Sys>(dispatch_builder, &[]);
     dispatch::<invite_timeout::Sys>(dispatch_builder, &[]);
     dispatch::<persistence::Sys>(dispatch_builder, &[]);

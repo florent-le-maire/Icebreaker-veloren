@@ -582,6 +582,16 @@ impl Server {
         // Set starting time for the server.
         state.ecs_mut().write_resource::<TimeOfDay>().0 = settings.world.start_time;
 
+        // Icebreaker: the map clock goes on from one instance of the campaign to the next.
+        let clock = sys::icebreaker_clock::IcebreakerClock::new(
+            std::env::var_os("ICEBREAKER_CAMPAIGN_DIR").map(std::path::PathBuf::from),
+            settings.icebreaker.clock_save_interval,
+        );
+        if let Some(time_of_day) = clock.load() {
+            state.ecs_mut().write_resource::<TimeOfDay>().0 = time_of_day;
+        }
+        state.ecs_mut().insert(clock);
+
         // Register trackers
         sys::sentinel::UpdateTrackers::register(state.ecs_mut());
 

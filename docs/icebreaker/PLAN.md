@@ -38,9 +38,11 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   successifs utilisent la même base ; pas encore vérifié en jeu avec un objet ramassé. — 159c42400d
 - [x] **I.4 Lanceur unique** — `icebreaker.ps1 village | donjon <type> | route` : dossier et ports par lieu, graine au
   hasard, journée de 48 min. `donjon` marche (port 14110) ; `village` et `route` arrivent avec V.1 et P.1. — 159c42400d
-- [ ] **I.5 Temps de carte** — 1 min réelle = 30 min de carte (journée de 48 min), horloge gardée dans la campagne et
-  reprise d'une instance à l'autre.
-  *Fin* : l'heure affichée continue d'une instance à la suivante.
+- [x] **I.5 Temps de carte** — 1 min réelle = 30 min de carte (journée de 48 min, I.4) ; horloge dans
+  `campagne/horloge.ron`, écrite par l'instance qui a des joueurs (toutes les `icebreaker.clock_save_interval`, 5 s,
+  et au départ du dernier), reprise par une instance vide à l'arrivée de son premier joueur : l'heure suit les joueurs
+  et s'arrête quand personne ne joue. Vérifié avec le client texte : reprise à l'arrivée, ×30, continuité après
+  relance. Deux instances jouées en même temps s'écrasent l'horloge (la dernière écrite gagne).
 
 ## Jalon 2 — Le village (première version)
 
