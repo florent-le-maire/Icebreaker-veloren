@@ -63,6 +63,8 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   serveur qui démarre ; pas encore vérifié en jeu (dépôt par un joueur, retrait par un autre après redémarrage). — 20b7b6a616
 - [x] **V.3 Caisse commune** — « Trésorier » sur la place (touche T) : n'accepte que l'or, total dans
   `campagne/caisse.ron`, affiché dans son nom et annoncé à tous. Testé (logique, démarrage) ; pas encore en jeu. — 9e06774934
+  Correctif (premier essai en jeu : T « pending invite » après E) : les deux PNJ peuvent parler (SPEAK) et disent sur
+  E qu'on échange avec T. Pas encore revérifié en jeu. — f7e8721149
 - [ ] **V.4 Bâtiments par dialogue** — un PNJ par bâtiment, ses choix ouvrent l'action (Veloren a déjà des dialogues
   à questions et réponses) : intendance (achat et vente, avec le commerce de Veloren), infirmerie (soin payant).
   *Fin* : on achète une potion à l'intendant et on se fait soigner à l'infirmerie.
