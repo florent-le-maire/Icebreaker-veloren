@@ -86,9 +86,7 @@ pub fn handle_inbox_dialogue(bdata: &mut BehaviorData) -> bool {
     if agent.behavior.trading_behavior.is_icebreaker_dialogue() {
         if let Some(AgentEvent::Dialogue(sender, dialogue)) = agent.inbox.pop_front() {
             if matches!(agent.behavior.trading_behavior, TradingBehavior::Departure) {
-                crate::icebreaker_expedition::answer_destination(
-                    controller, agent_data, agent, emitters, sender, &dialogue,
-                );
+                crate::icebreaker_expedition::close(controller, sender, &dialogue);
             } else {
                 crate::icebreaker_services::answer_healing(
                     controller, agent_data, agent, emitters, sender, &dialogue,
@@ -168,7 +166,7 @@ pub fn handle_inbox_talk(bdata: &mut BehaviorData) -> bool {
                 return true;
             }
             if matches!(agent.behavior.trading_behavior, TradingBehavior::Departure) {
-                crate::icebreaker_expedition::offer_destinations(controller, by);
+                crate::icebreaker_expedition::offer(controller, by);
                 return true;
             }
             let greeting = match agent.behavior.trading_behavior {

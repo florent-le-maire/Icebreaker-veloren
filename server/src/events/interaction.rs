@@ -2,7 +2,7 @@ use std::{f32::consts::PI, ops::Mul};
 
 use common::{comp::loot_owner::ONWERSHIP_TIMEOUT_FAST, rtsim::DialogueKind};
 use common_state::{BlockChange, ScheduledBlockChange};
-use specs::{DispatcherBuilder, Join, ReadExpect, ReadStorage, WriteExpect, WriteStorage};
+use specs::{DispatcherBuilder, Join, Read, ReadExpect, ReadStorage, WriteExpect, WriteStorage};
 use tracing::error;
 use vek::*;
 
@@ -138,6 +138,8 @@ impl ServerEvent for DialogueEvent {
         ReadExpect<'a, MaterialStatManifest>,
         WriteStorage<'a, comp::InventoryUpdateBuffer>,
         WriteStorage<'a, comp::Health>,
+        ReadStorage<'a, comp::Player>,
+        Read<'a, common::resources::Time>,
     );
 
     fn handle(
@@ -153,6 +155,8 @@ impl ServerEvent for DialogueEvent {
             msm,
             mut inventory_update_buffers,
             mut healths,
+            players,
+            time,
         ): Self::SystemData<'_>,
     ) {
         for DialogueEvent(sender, target, mut dialogue) in events {
@@ -252,18 +256,40 @@ impl ServerEvent for DialogueEvent {
 
                 let dialogue = dialogue.into_validated_unchecked();
 
-                // Icebreaker: a destination chosen at the expedition leader sends the
-                // player there.
+                // Icebreaker: an answer to the expedition leader registers the player,
+                // makes them ready… (the departure itself: sys::icebreaker_expedition).
                 if agents.get(target).is_some_and(|agent| {
                     matches!(
                         agent.behavior.trading_behavior,
                         comp::agent::TradingBehavior::Departure
                     )
                 }) && let DialogueKind::Response { response_id, .. } = &dialogue.kind
-                    && let Some(lieu) = crate::icebreaker_expedition::chosen_destination(*response_id)
-                    && let Some(client) = clients.get(sender)
                 {
-                    crate::icebreaker_expedition::travel(client, &lieu);
+                    let alias = players
+                        .get(sender)
+                        .map_or_else(|| "Quelqu'un".to_string(), |p| p.alias.clone());
+                    let outcome = crate::icebreaker_expedition::answer(
+                        *sender_uid,
+                        &alias,
+                        *response_id,
+                        time.0,
+                    );
+                    if let Some(reply) = outcome.reply
+                        && let Some(client) = clients.get(sender)
+                    {
+                        client.send_fallible(ServerGeneral::server_msg(
+                            comp::ChatType::Meta,
+                            comp::Content::Plain(reply),
+                        ));
+                    }
+                    for line in outcome.announce {
+                        for client in (&clients).join() {
+                            client.send_fallible(ServerGeneral::server_msg(
+                                comp::ChatType::Meta,
+                                comp::Content::Plain(line.clone()),
+                            ));
+                        }
+                    }
                 }
 
                 if let Some(agent) = agents.get_mut(target) {

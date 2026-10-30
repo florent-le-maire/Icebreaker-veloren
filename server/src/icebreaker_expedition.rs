@@ -12,17 +12,17 @@ use crate::{
 };
 use common::{
     assets::{AssetExt, Ron},
-    comp::{self, Agent, ChatType, Content, Controller, agent::TradingBehavior},
+    comp::{self, ChatType, Content, Controller, agent::TradingBehavior},
     event::NpcBuilder,
     rtsim::{Dialogue, DialogueId, DialogueKind, Response},
     uid::Uid,
 };
 use common_net::msg::ServerGeneral;
 use serde::Deserialize;
-use server_agent::data::{AgentData, AgentEmitters};
 use std::{
     net::{Ipv4Addr, SocketAddr, TcpStream},
     process::Command,
+    sync::{Mutex, MutexGuard},
     time::Duration,
 };
 use tracing::{info, warn};
@@ -41,6 +41,8 @@ impl IcebreakerExpedition {
         }
         Self { leader_pos }
     }
+
+    pub fn leader_pos(&self) -> Option<Vec3<f32>> { self.leader_pos }
 
     pub fn leader_chunk(&self) -> Option<Vec2<i32>> { self.leader_pos.map(chunk_of) }
 
@@ -86,62 +88,297 @@ pub fn destinations() -> Vec<(usize, Lieu)> {
         .collect()
 }
 
-/// On talk: asks `player` where the expedition goes.
-pub fn offer_destinations(controller: &mut Controller, player: Uid) {
+/// The answers to the expedition leader, besides a destination (its index).
+pub const JOIN: u16 = 1000;
+pub const READY: u16 = 1001;
+pub const WAIT: u16 = 1002;
+pub const LEAVE: u16 = 1003;
+
+/// How long the expedition waits, once everyone is ready, before leaving.
+pub const DEPARTURE_DELAY: f64 = 5.0;
+/// How far from the expedition leader a member may go before leaving the
+/// expedition (blocks).
+pub const LEAVE_RANGE: f32 = 60.0;
+
+/// The expedition being prepared (V.9): the first player to register chooses
+/// the destination, the others join; it leaves `DEPARTURE_DELAY` after all of
+/// its members are ready.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Expedition {
+    /// Index in `lieux.ron`.
+    pub destination: usize,
+    pub members: Vec<Member>,
+    /// When it leaves, once everyone is ready.
+    pub departure: Option<f64>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Member {
+    pub uid: Uid,
+    pub alias: String,
+    pub ready: bool,
+}
+
+impl Expedition {
+    fn destination_name(&self) -> String {
+        lieux()
+            .get(self.destination)
+            .map_or_else(|| "?".to_string(), |lieu| lieu.nom.clone())
+    }
+
+    fn member(&self, uid: Uid) -> Option<&Member> { self.members.iter().find(|m| m.uid == uid) }
+
+    fn roll(&self) -> String {
+        self.members
+            .iter()
+            .map(|m| {
+                if m.ready {
+                    format!("{} (prêt)", m.alias)
+                } else {
+                    m.alias.clone()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+
+    /// Starts the countdown if everyone is ready, stops it otherwise; what to
+    /// tell everyone.
+    fn update_departure(&mut self, now: f64, announce: &mut Vec<String>) {
+        let all_ready = !self.members.is_empty() && self.members.iter().all(|m| m.ready);
+        match (all_ready, self.departure) {
+            (true, None) => {
+                self.departure = Some(now + DEPARTURE_DELAY);
+                announce.push(format!(
+                    "Tous prêts : départ vers {} dans {DEPARTURE_DELAY} s !",
+                    self.destination_name()
+                ));
+            },
+            (false, Some(_)) => {
+                self.departure = None;
+                announce.push("Départ suspendu : tout le monde n'est pas prêt.".to_string());
+            },
+            _ => {},
+        }
+    }
+}
+
+static EXPEDITION: Mutex<Option<Expedition>> = Mutex::new(None);
+
+fn expedition() -> MutexGuard<'static, Option<Expedition>> {
+    EXPEDITION.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// On talk: asks `player` where the expedition goes, whether to join it, or
+/// whether they are ready.
+pub fn offer(controller: &mut Controller, player: Uid) {
+    let (msg, responses) = question(expedition().as_ref(), player);
     let id = DialogueId(rand::random());
-    let mut responses = destinations()
-        .into_iter()
-        .map(|(index, place)| {
-            let msg = if place.actif {
-                place.nom
-            } else {
-                format!("{} (pas encore ouvert)", place.nom)
-            };
-            (index as u16, Response::from(Content::Plain(msg)))
-        })
-        .collect::<Vec<_>>();
-    responses.push((NOT_NOW, Content::Plain("Pas maintenant".to_string()).into()));
     say(controller, player, id, DialogueKind::Start);
     say(controller, player, id, DialogueKind::Question {
         tag: 0,
-        msg: Content::Plain("Je prépare les expéditions. Où veux-tu partir ?".to_string()),
-        responses,
+        msg: Content::Plain(msg),
+        responses: responses
+            .into_iter()
+            .map(|(id, text)| (id, Response::from(Content::Plain(text))))
+            .collect(),
     });
 }
 
-/// On the player's answer to [`offer_destinations`].
-pub fn answer_destination(
-    controller: &mut Controller,
-    agent_data: &AgentData,
-    agent: &Agent,
-    emitters: &mut AgentEmitters,
-    player: Uid,
-    dialogue: &Dialogue<true>,
-) {
-    let DialogueKind::Response { response_id, .. } = dialogue.kind else {
-        return;
-    };
-    let place = lieux().get(usize::from(response_id)).cloned();
-    let reply = match place {
-        _ if response_id == NOT_NOW => "Reviens quand tu seras prêt.".to_string(),
-        Some(place) if !place.actif => {
-            format!("{} n'est pas encore ouvert.", place.nom)
+/// The question for `player`, and its answers.
+fn question(expedition: Option<&Expedition>, player: Uid) -> (String, Vec<(u16, String)>) {
+    let not_now = (NOT_NOW, "Pas maintenant".to_string());
+    match expedition {
+        None => {
+            let mut answers = destinations()
+                .into_iter()
+                .map(|(index, lieu)| {
+                    let text = if lieu.actif {
+                        lieu.nom
+                    } else {
+                        format!("{} (pas encore ouvert)", lieu.nom)
+                    };
+                    (index as u16, text)
+                })
+                .collect::<Vec<_>>();
+            answers.push(not_now);
+            ("Je prépare les expéditions. Où veux-tu partir ?".to_string(), answers)
         },
-        // The travel itself is started by the dialogue event (`travel`).
-        Some(place) => format!("En route vers {} !", place.nom),
-        None => return,
-    };
-    agent_data.chat_npc_if_allowed_to_speak(Content::Plain(reply), agent, emitters);
-    say(controller, player, dialogue.id, DialogueKind::End);
+        Some(exp) => match exp.member(player) {
+            None => (
+                format!(
+                    "Une expédition se prépare vers {} (inscrits : {}). La rejoindre ?",
+                    exp.destination_name(),
+                    exp.roll()
+                ),
+                vec![(JOIN, "Rejoindre l'expédition".to_string()), not_now],
+            ),
+            Some(member) => (
+                format!(
+                    "Expédition vers {} (inscrits : {}).",
+                    exp.destination_name(),
+                    exp.roll()
+                ),
+                vec![
+                    if member.ready {
+                        (WAIT, "Attendre encore".to_string())
+                    } else {
+                        (READY, "Je suis prêt".to_string())
+                    },
+                    (LEAVE, "Me désinscrire".to_string()),
+                    (NOT_NOW, "Rien".to_string()),
+                ],
+            ),
+        },
+    }
 }
 
-/// The destination chosen by this answer to the expedition leader, if one
-/// can be gone to.
-pub fn chosen_destination(response_id: u16) -> Option<Lieu> {
-    destinations()
-        .into_iter()
-        .find(|(index, lieu)| *index == usize::from(response_id) && lieu.actif)
-        .map(|(_, lieu)| lieu)
+/// On the player's answer, the dialogue ends (the dialogue event applied the
+/// answer: [`answer`]).
+pub fn close(controller: &mut Controller, player: Uid, dialogue: &Dialogue<true>) {
+    if matches!(dialogue.kind, DialogueKind::Response { .. }) {
+        say(controller, player, dialogue.id, DialogueKind::End);
+    }
+}
+
+/// What an answer to the expedition leader says: to the player, and to
+/// everyone.
+#[derive(Debug, Default, PartialEq)]
+pub struct Outcome {
+    pub reply: Option<String>,
+    pub announce: Vec<String>,
+}
+
+/// Applies the answer `response_id` of `player` (`alias`) at time `now`.
+pub fn answer(player: Uid, alias: &str, response_id: u16, now: f64) -> Outcome {
+    answer_to(&mut expedition(), player, alias, response_id, now)
+}
+
+fn answer_to(
+    expedition: &mut Option<Expedition>,
+    player: Uid,
+    alias: &str,
+    response_id: u16,
+    now: f64,
+) -> Outcome {
+    let mut outcome = Outcome::default();
+    match (expedition.as_mut(), response_id) {
+        (_, NOT_NOW) => {},
+        (None, index) => match lieux().get(usize::from(index)) {
+            Some(lieu) if !lieu.actif => {
+                outcome.reply = Some(format!("{} n'est pas encore ouvert.", lieu.nom));
+            },
+            Some(lieu) => {
+                outcome.reply = Some(format!(
+                    "Tu es inscrit pour {}. Reviens me dire quand tu es prêt.",
+                    lieu.nom
+                ));
+                outcome.announce.push(format!(
+                    "{alias} prépare une expédition vers {} : parlez au chef d'expédition \
+                     (maison « Départ ») pour la rejoindre.",
+                    lieu.nom
+                ));
+                *expedition = Some(Expedition {
+                    destination: usize::from(index),
+                    members: vec![Member {
+                        uid: player,
+                        alias: alias.to_string(),
+                        ready: false,
+                    }],
+                    departure: None,
+                });
+            },
+            None => {},
+        },
+        (Some(exp), JOIN) if exp.member(player).is_none() => {
+            exp.members.push(Member {
+                uid: player,
+                alias: alias.to_string(),
+                ready: false,
+            });
+            outcome.announce.push(format!(
+                "{alias} rejoint l'expédition vers {}.",
+                exp.destination_name()
+            ));
+            exp.update_departure(now, &mut outcome.announce);
+        },
+        (Some(exp), READY | WAIT) => {
+            if let Some(member) = exp.members.iter_mut().find(|m| m.uid == player) {
+                member.ready = response_id == READY;
+                outcome.announce.push(if member.ready {
+                    format!("{alias} est prêt.")
+                } else {
+                    format!("{alias} attend encore.")
+                });
+                exp.update_departure(now, &mut outcome.announce);
+            }
+        },
+        (Some(exp), LEAVE) => {
+            exp.members.retain(|m| m.uid != player);
+            outcome.announce.push(format!("{alias} quitte l'expédition."));
+            if exp.members.is_empty() {
+                outcome.announce.push("Expédition annulée.".to_string());
+                *expedition = None;
+            } else {
+                exp.update_departure(now, &mut outcome.announce);
+            }
+        },
+        // A destination while an expedition is being prepared (the question
+        // was asked before), or joining twice.
+        (Some(exp), _) => {
+            outcome.reply = Some(format!(
+                "Une expédition vers {} se prépare déjà : parle-moi de nouveau.",
+                exp.destination_name()
+            ));
+        },
+    }
+    outcome
+}
+
+/// Each tick: members gone (`present` false: disconnected, or too far from
+/// the leader) leave the expedition; once its time has come, it leaves:
+/// returns where to, and who. Also what to tell everyone.
+pub fn tick(now: f64, present: impl Fn(Uid) -> bool) -> (Option<(Lieu, Vec<Uid>)>, Vec<String>) {
+    tick_on(&mut expedition(), now, present)
+}
+
+fn tick_on(
+    expedition: &mut Option<Expedition>,
+    now: f64,
+    present: impl Fn(Uid) -> bool,
+) -> (Option<(Lieu, Vec<Uid>)>, Vec<String>) {
+    let mut announce = Vec::new();
+    let Some(exp) = expedition.as_mut() else {
+        return (None, announce);
+    };
+    let before = exp.members.len();
+    exp.members.retain(|m| {
+        let stays = present(m.uid);
+        if !stays {
+            announce.push(format!("{} quitte l'expédition (parti ou trop loin).", m.alias));
+        }
+        stays
+    });
+    if exp.members.is_empty() {
+        announce.push("Expédition annulée.".to_string());
+        *expedition = None;
+        return (None, announce);
+    }
+    if exp.members.len() != before {
+        exp.update_departure(now, &mut announce);
+    }
+    if exp.departure.is_some_and(|departure| now >= departure) {
+        let exp = expedition.take().expect("checked above");
+        let lieu = lieux().get(exp.destination).cloned();
+        if let Some(lieu) = lieu {
+            announce.push(format!("L'expédition part vers {} !", lieu.nom));
+            return (
+                Some((lieu, exp.members.into_iter().map(|m| m.uid).collect())),
+                announce,
+            );
+        }
+    }
+    (None, announce)
 }
 
 /// The village, where `/rentrer` leads.
@@ -207,6 +444,19 @@ mod tests {
     use super::*;
 
     #[test]
+    fn the_destinations_are_the_places_but_the_village() {
+        let destinations = destinations();
+        assert!(!destinations.is_empty());
+        assert!(
+            destinations
+                .iter()
+                .all(|(index, place)| place.nom == lieux()[*index].nom
+                    && place.arguments[0] != "village")
+        );
+        assert!(village().is_some_and(|village| village.actif));
+    }
+
+    #[test]
     fn a_place_already_listening_is_not_started_again() {
         let listener = std::net::TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
         let lieu = Lieu {
@@ -217,19 +467,67 @@ mod tests {
             actif: true,
         };
         assert_eq!(ensure_running(&lieu), Ok(()));
-        assert!(village().is_some_and(|village| village.actif));
-        assert!(chosen_destination(NOT_NOW).is_none());
     }
 
     #[test]
-    fn the_destinations_are_the_places_but_the_village() {
-        let destinations = destinations();
-        assert!(!destinations.is_empty());
-        assert!(
-            destinations
-                .iter()
-                .all(|(index, place)| place.nom == lieux()[*index].nom
-                    && place.arguments[0] != "village")
-        );
+    fn two_players_leave_together_once_both_are_ready() {
+        let uid = |n| Uid(std::num::NonZeroU64::new(n).unwrap());
+        let (flo, sayanel) = (uid(1), uid(2));
+        let (donjon, _) = destinations()
+            .into_iter()
+            .find(|(_, lieu)| lieu.actif)
+            .unwrap();
+        let donjon = donjon as u16;
+        let mut exp = None;
+
+        // Flo chooses the destination, Sayanel joins.
+        let outcome = answer_to(&mut exp, flo, "Flo", donjon, 0.0);
+        assert!(outcome.reply.is_some() && outcome.announce.len() == 1);
+        assert_eq!(question(exp.as_ref(), sayanel).1[0].0, JOIN);
+        answer_to(&mut exp, sayanel, "Sayanel", JOIN, 1.0);
+        assert_eq!(exp.as_ref().unwrap().members.len(), 2);
+
+        // Flo is ready: no departure yet.
+        answer_to(&mut exp, flo, "Flo", READY, 2.0);
+        assert_eq!(exp.as_ref().unwrap().departure, None);
+        assert_eq!(question(exp.as_ref(), flo).1[0].0, WAIT);
+
+        // Sayanel is ready: departure in 5 s; Sayanel waits: suspended; ready again.
+        answer_to(&mut exp, sayanel, "Sayanel", READY, 3.0);
+        assert_eq!(exp.as_ref().unwrap().departure, Some(3.0 + DEPARTURE_DELAY));
+        answer_to(&mut exp, sayanel, "Sayanel", WAIT, 4.0);
+        assert_eq!(exp.as_ref().unwrap().departure, None);
+        answer_to(&mut exp, sayanel, "Sayanel", READY, 5.0);
+
+        // Not yet time; then both leave.
+        assert!(tick_on(&mut exp, 6.0, |_| true).0.is_none());
+        let (departure, _) = tick_on(&mut exp, 5.0 + DEPARTURE_DELAY, |_| true);
+        let (lieu, members) = departure.unwrap();
+        assert_eq!(lieu.nom, lieux()[usize::from(donjon)].nom);
+        assert_eq!(members, vec![flo, sayanel]);
+        assert_eq!(exp, None);
+    }
+
+    #[test]
+    fn a_member_gone_leaves_and_the_last_one_cancels() {
+        let uid = |n| Uid(std::num::NonZeroU64::new(n).unwrap());
+        let (flo, sayanel) = (uid(1), uid(2));
+        let (donjon, _) = destinations()
+            .into_iter()
+            .find(|(_, lieu)| lieu.actif)
+            .unwrap();
+        let mut exp = None;
+        answer_to(&mut exp, flo, "Flo", donjon as u16, 0.0);
+        answer_to(&mut exp, sayanel, "Sayanel", JOIN, 0.0);
+        answer_to(&mut exp, flo, "Flo", READY, 0.0);
+
+        // Sayanel, not ready, goes away: Flo, ready, is left alone and leaves.
+        let (_, announce) = tick_on(&mut exp, 1.0, |uid| uid == flo);
+        assert!(announce.iter().any(|line| line.contains("Sayanel")));
+        assert_eq!(exp.as_ref().unwrap().departure, Some(1.0 + DEPARTURE_DELAY));
+
+        // Flo leaves the expedition: cancelled.
+        answer_to(&mut exp, flo, "Flo", LEAVE, 2.0);
+        assert_eq!(exp, None);
     }
 }
