@@ -52,7 +52,7 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   et chiens. Vérifié : génération, apparition sur la place, connexion, horloge reprise ; pas encore promené en jeu. — 5237f6c353
   Correctif (premier essai en jeu : place vide) : ville en taille maximale (`-TailleVille`, 1.0) et emplacement
   choisi parmi plusieurs essais (près du centre, sinon ailleurs) selon le nombre de parcelles construites ; 15
-  graines essayées, toutes entre 131 et 170 parcelles.
+  graines essayées, toutes entre 131 et 170 parcelles. — a25deefcf2
 - [ ] **V.2 Entrepôt commun** — un coffre du village dont le contenu est partagé et sauvegardé dans la campagne.
   *Fin* : un joueur y dépose un objet, un autre le retrouve après redémarrage.
 - [ ] **V.3 Caisse commune** — chaque joueur garde son or (règle de butin) et peut en verser dans la caisse.
