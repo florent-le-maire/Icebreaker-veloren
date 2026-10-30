@@ -1,0 +1,17 @@
+; Sanctuaire : un puits au centre descend vers une crypte (échelle pour remonter).
+@roles: sanctum
+[étage 0]
+####+####
+#O.....O#
+#.......#
+#..._...#
+#.......#
+#O.....O#
+####+####
+
+[étage -1]
+
+
+  #####
+  #.H$#
+  #####

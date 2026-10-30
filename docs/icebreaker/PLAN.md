@@ -93,10 +93,13 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
 - [x] **G.1 Lieu « Genere » minimal** — `icebreaker.ps1 donjon -Site Genere` : une salle sous terre, un tunnel en
   marches qui remonte à la surface au centre du site, apparition à sa sortie. Une case = 5 × 5 blocs, un étage = 5
   blocs (`generation.ron` → `render`). `-Port` pour lancer deux serveurs du même lieu. Vérifié : génération, apparition
-  devant le tunnel ; pas encore descendu en jeu. — (hash à venir)
-- [ ] **G.2 Lecture des salles** — salles texte d'Icebreaker dans `assets/icebreaker/donjons/salles/`, vérifiées
-  comme dans le projet (portes, fosses, accès).
-  *Fin* : les 16 salles se lisent, les tests passent, G.1 dessine n'importe laquelle.
+  devant le tunnel ; pas encore descendu en jeu. — 5339dea359
+- [x] **G.2 Lecture des salles** — les 16 salles d'Icebreaker (copiées le 2026-10-28, b7a3308) dans
+  `assets/icebreaker/donjons/salles/`, vérifiées comme dans le projet (rôles, portes `+`, fosses `*`, accès depuis
+  chaque connecteur) ; `-Salle <nom>` dessine une seule salle. Contrôle des blocs : `cargo run -p veloren-world
+  --example icebreaker_dungeon -- <graine>` génère le petit monde et vérifie que chaque case accessible a un sol et de
+  la place au-dessus, marches du tunnel comprises. Vérifié : 16 salles valides ; entrée, antre du chef, sanctuaire,
+  poste de garde, hall à escalier, réserve sans problème de blocs. — (hash à venir)
 - [ ] **G.3 Graphe de mission** — chemin principal, branches, verrous, boucles, chutes, règles de voisinage.
   *Fin* : sur 1000 graines par taille, l'objectif est atteignable et l'on peut toujours revenir à l'entrée.
 - [ ] **G.4 Assemblage** — salles posées étage par étage, couloirs et escaliers creusés.

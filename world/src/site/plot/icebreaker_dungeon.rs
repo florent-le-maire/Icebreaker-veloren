@@ -9,7 +9,7 @@ use crate::{
     site::namegen::NameGen,
     util::{RandomField, Sampler},
 };
-use common::terrain::{BlockKind, SpriteKind};
+use common::terrain::{Block, BlockKind, SpriteKind};
 use rand::prelude::*;
 use tracing::{error, info};
 use vek::*;
@@ -36,7 +36,7 @@ impl IcebreakerDungeon {
             + Vec2::new(dx, dy) * (c / 2);
         let base = origin - mouth_rel;
         let rise = tunnel.cells.len() as i32 * c - 1;
-        let floor0 = land.get_alt_approx(origin) as i32 - rise;
+        let floor0 = land.get_alt_approx(origin) as i32 - rise - last.level * render.level_height;
         Self {
             dungeon,
             render,
@@ -48,6 +48,55 @@ impl IcebreakerDungeon {
 
     /// Where players arrive, on the surface just outside the tunnel.
     pub fn entrance(&self) -> Vec2<i32> { self.entrance }
+
+    pub fn dungeon(&self) -> &Dungeon { &self.dungeon }
+
+    /// Checks the drawn blocks (`block_at`) against the plan: every cell one
+    /// can reach from the tunnel has a solid floor and room above it. Returns
+    /// the problems found.
+    pub fn check_blocks(&self, mut block_at: impl FnMut(Vec3<i32>) -> Option<Block>) -> Vec<String> {
+        let plan = &self.dungeon.plan;
+        let c = self.render.cell_size;
+        let top = *self.dungeon.tunnel.cells.last().expect("a tunnel has cells");
+        let mut problems = Vec::new();
+        for cell in plan.reachable(top) {
+            let symbol = plan.get(cell);
+            let min = self.cell_min(cell);
+            // Where to look in the cell, and the height of what one stands on.
+            let (spot, ground) = match symbol {
+                '~' | '_' => continue,
+                'D' => (min.xy() + c / 2, min.z),
+                // In the middle of the steps: step c / 2 is c / 2 + 1 above the floor.
+                s if s == 'H' || plan::stairs_direction(s).is_some() => {
+                    (min.xy() + c / 2, min.z + 1 + c / 2)
+                },
+                _ => (min.xy(), min.z),
+            };
+            let solid = |b: Option<Block>| b.is_some_and(|b| b.is_solid());
+            if !solid(block_at(spot.with_z(ground))) {
+                problems.push(format!("{cell:?} '{symbol}' : pas de sol en {:?}", spot.with_z(ground)));
+            }
+            if (1..=2).any(|dz| solid(block_at(spot.with_z(ground + dz)))) {
+                problems.push(format!(
+                    "{cell:?} '{symbol}' : bouché au-dessus de {:?}",
+                    spot.with_z(ground)
+                ));
+            }
+        }
+        // The steps of the tunnel, up to the surface.
+        let tunnel = &self.dungeon.tunnel;
+        let start = self.cell_min(tunnel.cells[0]).z;
+        for (k, cell) in tunnel.cells.iter().enumerate() {
+            for u in 0..c {
+                let step = self.slice(*cell, tunnel.dir, u, 1).center().with_z(start + k as i32 * c + u);
+                let solid = |b: Option<Block>| b.is_some_and(|b| b.is_solid());
+                if !solid(block_at(step)) || (1..=2).any(|dz| solid(block_at(step + Vec3::unit_z() * dz))) {
+                    problems.push(format!("tunnel : marche ratée en {step:?}"));
+                }
+            }
+        }
+        problems
+    }
 
     /// The blocks covered by the plan (including the tunnel).
     pub fn bounds(&self) -> Aabr<i32> {
@@ -98,10 +147,11 @@ impl IcebreakerDungeon {
     fn render_tunnel(&self, land: &Land, painter: &Painter, rock: &Fill) {
         let c = self.render.cell_size;
         let tunnel = &self.dungeon.tunnel;
+        let start = self.cell_min(tunnel.cells[0]).z;
         for (k, cell) in tunnel.cells.iter().enumerate() {
             for u in 0..c {
                 let t = k as i32 * c + u;
-                let floor = self.floor0 + t;
+                let floor = start + t;
                 let slice = self.slice(*cell, tunnel.dir, u, 1);
                 let surface = land.get_alt_approx(slice.center()) as i32;
                 // A trench open to the sky where the rock above gets thin.
@@ -112,7 +162,7 @@ impl IcebreakerDungeon {
                 };
                 painter
                     .aabb(Aabb {
-                        min: slice.min.with_z(self.floor0 - 1),
+                        min: slice.min.with_z(start),
                         max: slice.max.with_z(floor + 1),
                     })
                     .fill(rock.clone());
@@ -156,7 +206,7 @@ impl Structure for IcebreakerDungeon {
 
         // Solid first: every cell of the plan is rock, floors included.
         for (cell, symbol) in &plan.cells {
-            if !matches!(symbol, ' ' | 'w' | '~') {
+            if !matches!(symbol, ' ' | '%' | '~') {
                 painter.aabb(self.cell_aabb(*cell, 0, h, 0)).fill(rock.clone());
             }
         }

@@ -1,0 +1,12 @@
+; Antre du chef de guerre orque : grande arène dégagée pour ses charges, quatre piliers où l'écraser (étourdi),
+; des entrées sur trois côtés par où arrivent ses renforts.
+@roles: bossLair
+@boss: orcchief
+#####+####
+#........#
+#.O....O.#
++........+
+#....x...#
+#.O....O.#
+#........#
+#####+####

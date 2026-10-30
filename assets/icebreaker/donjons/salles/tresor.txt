@@ -1,0 +1,7 @@
+; Petite salle au trésor, une seule entrée.
+@roles: treasure
+#####
+#$.$#
+#...#
+#$.$#
+##+##

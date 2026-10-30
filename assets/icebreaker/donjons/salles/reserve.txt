@@ -1,0 +1,13 @@
+; Réserve avec un grenier : on y monte par l'échelle.
+@roles: storage
+[étage 1]
+#######
+#_....#
+#..$..+
+#######
+
+[étage 0]
+#######
+#H....#
++.....+
+#######

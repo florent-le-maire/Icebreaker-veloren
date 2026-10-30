@@ -1,0 +1,9 @@
+; Cuisine : tables et fourneaux (piliers).
+@roles: kitchen
+#######+#
+#.......#
+#.OO....#
++.......+
+#....OO.#
+#.......#
+###+#####

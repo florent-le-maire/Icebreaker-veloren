@@ -1,0 +1,8 @@
+; Prison : des cellules derrière des portes.
+@roles: prison
+#########
+#.#.#.#.#
+#D#D#D#D#
++.......+
+#.......#
+####+####

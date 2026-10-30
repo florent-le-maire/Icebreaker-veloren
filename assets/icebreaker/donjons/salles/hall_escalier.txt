@@ -1,0 +1,14 @@
+; Salle haute qui relie deux étages : on entre en bas à l'ouest, on ressort en haut à l'est.
+; La mezzanine (étage 1) surplombe le fond de la salle ; on en redescend en sautant dans le vide.
+@roles: hall
+[étage 1]
+#######
+#__...+
+#__...#
+#######
+
+[étage 0]
+#######
++.>...#
+#.....#
+###+###

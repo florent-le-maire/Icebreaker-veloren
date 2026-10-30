@@ -1,0 +1,9 @@
+; Salle de passage à piliers, quatre portes possibles.
+@roles: hall
+####+####
+#.......#
+#.O...O.#
++.......+
+#.O...O.#
+#.......#
+####+####

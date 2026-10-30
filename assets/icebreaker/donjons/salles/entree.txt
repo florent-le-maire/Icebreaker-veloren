@@ -1,0 +1,10 @@
+; Entrée : là où le groupe arrive. Une case = 4 m.
+; +  porte possible (reste un mur si le générateur ne s'en sert pas)
+@roles: entrance
+#####+#####
+#.........#
+#..SSSSS..#
+#..SSSSS..#
++.........+
+#.........#
+###########

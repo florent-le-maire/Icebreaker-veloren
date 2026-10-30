@@ -1,0 +1,9 @@
+; Nid de créatures, avec une fosse possible vers les profondeurs.
+; *  fosse possible (reste du sol si le générateur ne s'en sert pas)
+@roles: nest
+####+####
+#.......#
+#..*....#
++.......+
+#....b..#
+#########

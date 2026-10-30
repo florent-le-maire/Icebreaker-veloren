@@ -56,6 +56,44 @@ pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
     })
 }
 
+/// Generates the chunks of the dungeon of our generator in `world` and checks
+/// its blocks against its plan (`examples/icebreaker_dungeon.rs`). `None` if
+/// the world has no such dungeon; otherwise the plan and the problems found.
+pub fn check_generated_dungeon(
+    world: &crate::World,
+    index: crate::IndexRef,
+) -> Option<(String, Vec<String>)> {
+    use common::terrain::{BlockKind, TerrainChunkSize};
+    use common::vol::{ReadVol, RectVolSize};
+    use std::collections::HashMap;
+
+    let site = world
+        .civs()
+        .sites()
+        .filter_map(|site| site.site_tmp)
+        .map(|id| &index.sites[id])
+        .find(|site| site.kind == Some(SiteKind::IcebreakerDungeon))?;
+    let dungeon = site.plots().find_map(|plot| match plot.kind() {
+        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon),
+        _ => None,
+    })?;
+    let chunk_size = TerrainChunkSize::RECT_SIZE.map(|e| e as i32);
+    let mut chunks = HashMap::new();
+    let problems = dungeon.check_blocks(|wpos| {
+        let key = wpos.xy().map2(chunk_size, |e, s| e.div_euclid(s));
+        let chunk = chunks.entry(key).or_insert_with(|| {
+            world
+                .generate_chunk(index, key, None, || false, None)
+                .ok()
+                .map(|(chunk, _)| chunk)
+        });
+        let chunk = chunk.as_ref()?;
+        let local = wpos - (key * chunk_size).with_z(0);
+        Some(chunk.get(local).copied().unwrap_or(common::terrain::Block::new(BlockKind::Air, Default::default())))
+    });
+    Some((dungeon.dungeon().plan.to_text(), problems))
+}
+
 /// Whether the instance is the village (built around a town).
 pub fn is_village() -> bool { instance_site().is_some_and(is_town) }
 

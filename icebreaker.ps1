@@ -24,7 +24,9 @@ param(
     # Durée d'une journée en minutes réelles (1 min réelle = 30 min de carte).
     [double]$DayLength = 48.0,
     # Port du serveur, à la place de celui du lieu (pour lancer deux serveurs du même lieu).
-    [int]$Port = 0
+    [int]$Port = 0,
+    # Lieu « Genere » : une seule salle à regarder (nom de fichier de assets\icebreaker\donjons\salles).
+    [string]$Salle = ""
 )
 
 $repo = $PSScriptRoot
@@ -82,6 +84,7 @@ $env:VELOREN_USERDATA = $ud
 $env:ICEBREAKER_CAMPAIGN_DIR = "$root\campagne"
 $env:ICEBREAKER_INSTANCE_SITE = $Site
 $env:ICEBREAKER_TOWN_SIZE = $TailleVille.ToString([Globalization.CultureInfo]::InvariantCulture)
+$env:ICEBREAKER_DONJON_SALLE = $Salle
 Write-Host "Icebreaker : $Lieu ($Site), graine $Seed, port $port"
 Set-Location $repo
 & ".\target\debug\veloren-server-cli.exe" --no-auth

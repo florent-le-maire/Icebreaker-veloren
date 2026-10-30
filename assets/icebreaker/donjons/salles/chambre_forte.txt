@@ -1,0 +1,8 @@
+; Chambre forte : le trésor du donjon.
+@roles: vault, treasure
+###+###
+#$...$#
+#.O.O.#
+#..$..#
+#.O.O.#
+###+###

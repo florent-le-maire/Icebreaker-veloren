@@ -1,0 +1,19 @@
+; Antre du chef : salle haute, archers sur la mezzanine du fond (escalier à gauche).
+@roles: chiefLair
+[étage 1]
+###########
+#a.......a+
+#.________#
+#_________#
+#_________#
+#_________#
+###########
+
+[étage 0]
+###########
++.........#
+#.........#
+#^........#
+#....c....#
+#.........#
+#####+#####

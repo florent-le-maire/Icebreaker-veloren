@@ -1,0 +1,8 @@
+; Salle de garde : les gardes surveillent le passage.
+@roles: guardRoom
+###+###
+#.....#
+#.b.b.#
++.....+
+#.....#
+###+###
