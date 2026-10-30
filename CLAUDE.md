@@ -63,6 +63,6 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   chat (`/commande args` part en commande). Laisser ~40 s entre deux connexions coupées net : le serveur n'accepte
   la suivante qu'une fois la précédente expirée. Avec `ICEBREAKER_JOUER=1`, la ligne `!jouer` entre dans le monde
   avec un personnage (pour `/goto`, `/explosion`… ; admin : `veloren-server-cli --no-auth admin add <pseudo> admin`
-  avec le même `VELOREN_USERDATA`).
+  avec le même `VELOREN_USERDATA`) ; puis `!ouvrir x y z` (serrure, coffre), `!bloc x y z`, `!sac`.
 - Lancer depuis la racine du dépôt (le jeu y cherche `assets/`). Un serveur qui tourne verrouille son `.exe` :
   le renommer avant de recompiler plutôt que d'arrêter un serveur qu'on n'a pas lancé.

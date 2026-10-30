@@ -10,8 +10,9 @@ use crate::{
     util::{RandomField, Sampler},
 };
 use common::{
+    comp::item::ItemDefinitionIdOwned,
     generation::EntityInfo,
-    terrain::{Block, BlockKind, SpriteKind},
+    terrain::{Block, BlockKind, SpriteCfg, SpriteKind, UnlockKind},
 };
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -73,7 +74,7 @@ impl IcebreakerDungeon {
         let rank = |kind: &str| ["chief", "boss"].iter().position(|k| *k == kind);
         let mut targets = MissionTargets::default();
         for (cell, symbol) in &self.dungeon.plan.cells {
-            let spot = self.spawn_pos(*cell).map(|e| e.floor() as i32);
+            let spot = self.spot(*cell);
             if *symbol == '$' {
                 targets.chests.push(spot);
             } else if let Some(kind) = populate::kind_of(*symbol)
@@ -87,6 +88,20 @@ impl IcebreakerDungeon {
         }
         targets
     }
+
+    /// The block in the middle of a cell, just above its floor (where its
+    /// creature or chest stands).
+    fn spot(&self, cell: plan::Cell) -> Vec3<i32> { self.spawn_pos(cell).map(|e| e.floor() as i32) }
+
+    /// The direction of the passage through a door cell.
+    fn door_dir(&self, cell: plan::Cell) -> (i32, i32) {
+        let plan = &self.dungeon.plan;
+        let along_x = (-1..=1).step_by(2).any(|d| plan::is_walkable(plan.get(cell.offset(d, 0, 0))));
+        if along_x { (1, 0) } else { (0, 1) }
+    }
+
+    /// The keyhole of a locked door, in the middle of its passage.
+    fn keyhole_pos(&self, cell: plan::Cell) -> Vec3<i32> { self.spot(cell) + Vec3::unit_z() }
 
     /// Where the creature of a marker cell appears.
     pub fn spawn_pos(&self, cell: plan::Cell) -> Vec3<f32> {
@@ -115,7 +130,12 @@ impl IcebreakerDungeon {
                 },
                 _ => (min.xy(), min.z),
             };
-            let solid = |b: Option<Block>| b.is_some_and(|b| b.is_solid());
+            // A locked door opens with its key: it doesn't block the way.
+            let solid = |b: Option<Block>| {
+                b.is_some_and(|b| {
+                    b.is_solid() && !matches!(b.get_sprite(), Some(SpriteKind::KeyDoor | SpriteKind::Keyhole))
+                })
+            };
             if !solid(block_at(spot.with_z(ground))) {
                 problems.push(format!("{cell:?} '{symbol}' : pas de sol en {:?}", spot.with_z(ground)));
             }
@@ -136,6 +156,19 @@ impl IcebreakerDungeon {
                 if !solid(block_at(step)) || (1..=2).any(|dz| solid(block_at(step + Vec3::unit_z() * dz))) {
                     problems.push(format!("tunnel : marche ratée en {step:?}"));
                 }
+            }
+        }
+        // The locked doors and the chests of their keys.
+        for (cell, _) in &self.dungeon.locks {
+            let pos = self.keyhole_pos(*cell);
+            if block_at(pos).and_then(|b| b.get_sprite()) != Some(SpriteKind::Keyhole) {
+                problems.push(format!("{cell:?} : pas de serrure en {pos:?}"));
+            }
+        }
+        for (cell, _) in &self.dungeon.keys {
+            let pos = self.spot(*cell);
+            if block_at(pos).and_then(|b| b.get_sprite()).is_none_or(|s| !s.is_defined_as_container()) {
+                problems.push(format!("{cell:?} : pas de coffre à clé en {pos:?}"));
             }
         }
         problems
@@ -270,10 +303,7 @@ impl Structure for IcebreakerDungeon {
                 '_' => painter.aabb(self.cell_aabb(cell, 0, h, 0)).clear(),
                 'D' => {
                     // A passage through the wall, along the floors on both sides.
-                    let along_x = (-1..=1).step_by(2).any(|d| {
-                        plan::is_walkable(plan.get(cell.offset(d, 0, 0)))
-                    });
-                    let dir = if along_x { (1, 0) } else { (0, 1) };
+                    let dir = self.door_dir(cell);
                     painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(floor.clone());
                     for u in 0..c {
                         let slice = self.slice(cell, dir, u, 1);
@@ -357,6 +387,37 @@ impl Structure for IcebreakerDungeon {
                 );
             }
         }
+
+        // Icebreaker G.8: a locked door is a wall of key door blocks across its
+        // passage, its keyhole in the middle, which consumes the key of this
+        // door; the key lies in a chest where the generator put it.
+        for (cell, key) in &self.dungeon.locks {
+            let dir = self.door_dir(*cell);
+            let slice = self.slice(*cell, dir, c / 2, 1);
+            let z = self.cell_min(*cell).z;
+            painter
+                .aabb(Aabb {
+                    min: slice.min.with_z(z + 1),
+                    max: slice.max.with_z(z + h.min(4)),
+                })
+                .fill(Fill::Block(Block::air(SpriteKind::KeyDoor)));
+            let unlock = UnlockKind::Consumes(ItemDefinitionIdOwned::Simple(key.item.clone()));
+            painter.rotated_sprite_with_cfg(
+                self.keyhole_pos(*cell),
+                SpriteKind::Keyhole,
+                if dir.0 != 0 { 2 } else { 0 },
+                SpriteCfg {
+                    unlock: Some(unlock),
+                    ..SpriteCfg::default()
+                },
+            );
+        }
+        for (cell, key) in &self.dungeon.keys {
+            painter.rotated_sprite_with_cfg(self.spot(*cell), chest, 0, SpriteCfg {
+                loot_table: Some(key.loot.clone()),
+                ..SpriteCfg::default()
+            });
+        }
     }
 }
 
@@ -397,6 +458,13 @@ impl Site {
         };
         info!("Icebreaker dungeon: {}\n{}", dungeon.summary, dungeon.plan.to_text());
         let plot = IcebreakerDungeon::new(dungeon, settings.render, land, origin);
+        for (cell, key) in &plot.dungeon.locks {
+            let (keyhole, dir) = (plot.keyhole_pos(*cell), plot.door_dir(*cell));
+            info!(?keyhole, ?dir, key = key.item, "Icebreaker dungeon locked door");
+        }
+        for (cell, key) in &plot.dungeon.keys {
+            info!(chest = ?plot.spot(*cell), key = key.item, "Icebreaker dungeon key");
+        }
         let bounds = plot.bounds();
         let tile_size = TILE_SIZE as i32;
         let aabr = Aabr {

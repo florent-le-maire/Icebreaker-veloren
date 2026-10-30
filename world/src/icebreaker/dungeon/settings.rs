@@ -87,6 +87,17 @@ pub struct Settings {
     pub default_faction: String,
     /// What region, season, threat, enemies and objective change.
     pub parameters: Parameters,
+    /// The keys of the locked doors, one for each lock of a dungeon (in the
+    /// order of the locks).
+    pub keys: Vec<KeySettings>,
+}
+
+/// A key of a locked door: the Veloren item its keyhole consumes, and the loot
+/// table of the chest holding it.
+#[derive(Clone, Debug, Deserialize)]
+pub struct KeySettings {
+    pub item: String,
+    pub loot: String,
 }
 
 /// People and loot of a room: creatures by kind (`brute`, `archer`,
@@ -154,6 +165,13 @@ impl Settings {
             if shape.max_branches_per_room == 0 {
                 errors.push(format!("sizes.{name}.max_branches_per_room : au moins 1"));
             }
+            if shape.locks.1.max(0) as usize > settings.keys.len() {
+                errors.push(format!("sizes.{name}.locks : plus de verrous que de clés (keys)"));
+            }
+        }
+        let items: std::collections::BTreeSet<&String> = settings.keys.iter().map(|k| &k.item).collect();
+        if items.len() < settings.keys.len() {
+            errors.push("keys : une clé différente par porte, deux fois le même objet".into());
         }
         for name in settings
             .branch_roles

@@ -44,6 +44,10 @@ pub struct Dungeon {
     pub summary: String,
     /// Who lives there.
     pub faction: settings::Faction,
+    /// Locked doors (door cells), and the cells where their keys lie, with
+    /// the key of each.
+    pub locks: Vec<(Cell, settings::KeySettings)>,
+    pub keys: Vec<(Cell, settings::KeySettings)>,
 }
 
 /// Marks the tunnel in front of `door` (a wall cell of a room, opening toward
@@ -111,6 +115,8 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
             .get(&settings.default_faction)
             .cloned()
             .ok_or("faction par défaut inconnue")?,
+        locks: Vec::new(),
+        keys: Vec::new(),
     })
 }
 
@@ -139,6 +145,16 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
     if !missing.is_empty() {
         return Err(format!("aucune salle pour : {}", missing.join(", ")));
     }
+    // Each lock has its own key (`keys` of the settings, in the order of the locks).
+    let with_keys = |cells: &[(Cell, usize)]| {
+        cells
+            .iter()
+            .map(|(cell, lock)| {
+                let key = settings.keys.get(*lock).ok_or(format!("pas de clé pour le verrou {lock}"))?;
+                Ok((*cell, key.clone()))
+            })
+            .collect::<Result<Vec<_>, String>>()
+    };
     let mut failures = Vec::new();
     for seed in mission.seed..mission.seed + SEED_TRIES {
         let graph = graph::generate(&resolved, seed);
@@ -171,6 +187,8 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                     graph.describe()
                 ),
                 faction: resolved.faction.clone(),
+                locks: with_keys(&assembled.locks)?,
+                keys: with_keys(&assembled.keys)?,
             });
         }
     }
@@ -180,6 +198,7 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::BTreeSet;
 
     #[test]
     fn settings_load() { Settings::load().unwrap(); }
@@ -241,6 +260,40 @@ mod tests {
                 assert!(path.exists(), "faction {name} : {asset} introuvable");
             }
         }
+    }
+
+    #[test]
+    fn each_locked_door_has_its_own_key() {
+        let settings = Settings::load().unwrap();
+        for key in &settings.keys {
+            for asset in [&key.item, &key.loot] {
+                let path = common::assets::ASSETS_PATH.join(asset.replace('.', "/") + ".ron");
+                assert!(path.exists(), "clé : {asset} introuvable");
+            }
+        }
+        let mut locked = 0;
+        for size in ["small", "medium", "large"] {
+            for seed in 0..30 {
+                let mission = Mission {
+                    seed,
+                    size: size.into(),
+                    ..Mission::default()
+                };
+                let dungeon = generate(&settings, &mission).unwrap();
+                let items: BTreeSet<_> = dungeon.locks.iter().map(|(_, k)| &k.item).collect();
+                assert_eq!(items.len(), dungeon.locks.len(), "{size} {seed} : deux portes, même clé");
+                let keys: BTreeSet<_> = dungeon.keys.iter().map(|(_, k)| &k.item).collect();
+                assert_eq!(items, keys, "{size} {seed} : clés et portes ne vont pas ensemble");
+                for (cell, _) in &dungeon.locks {
+                    assert_eq!(dungeon.plan.get(*cell), 'D', "{size} {seed} : porte fermée hors d'une porte");
+                }
+                for (cell, _) in &dungeon.keys {
+                    assert_eq!(dungeon.plan.get(*cell), '.', "{size} {seed} : clé hors du sol libre");
+                }
+                locked += dungeon.locks.len();
+            }
+        }
+        assert!(locked > 0, "aucune porte fermée en 90 donjons");
     }
 
     #[test]

@@ -495,6 +495,19 @@ impl ServerEvent for InventoryManipEvent {
                                         break;
                                     }
                                 }
+                                // Icebreaker: an opened door stays open (its key is gone).
+                                #[cfg(feature = "worldgen")]
+                                for pos in destroyed {
+                                    if crate::rtsim::RtSim::is_dungeon_chunk(
+                                        &data.world,
+                                        data.index.as_index_ref(),
+                                        common::terrain::CoordinateConversions::wpos_to_cpos(
+                                            &pos.xy(),
+                                        ),
+                                    ) {
+                                        data.rtsim.hook_dungeon_sprite_collected(pos);
+                                    }
+                                }
                             }
                         } else {
                             debug!(

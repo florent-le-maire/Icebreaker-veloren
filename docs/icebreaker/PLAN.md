@@ -134,11 +134,13 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
 - [x] **G.7 Victoire** — tuer le chef (ou le boss) annonce à tous « Mission accomplie » avec le bilan (créatures
   tuées, coffres ouverts, d'après les traces du donjon). Vérifié avec le client texte (`!jouer`, `/goto` chez le
   chef, `/explosion`) : message reçu. Pas encore descendu à pied jusqu'au chef en jeu. — b8c0371170
-- [ ] **G.8 Verrous et clés** — chaque porte verrouillée devient une porte à clé de Veloren, sa clé posée où le
-  générateur l'a mise, consommée à l'ouverture.
-  *Fin* : la porte refuse sans la clé et s'ouvre avec ; le donjon reste finissable (contrôle des blocs).
-- [ ] **G.9 Créatures endormies** — les créatures notées endormies restent immobiles et peu vigilantes ; frappées,
-  ou réveillées par le bruit ou l'alerte d'un voisin, elles se lèvent.
+- [x] **G.8 Verrous et clés** — porte verrouillée = mur de blocs de porte à clé avec sa serrure au milieu ; une clé
+  différente par porte (`generation.ron` → `keys`), dans un coffre posé où le générateur l'a mise, consommée à
+  l'ouverture ; une porte ouverte le reste. Vérifié (client texte) : sans clé et avec une autre clé, refus ; avec la
+  bonne, la porte s'ouvre et la clé disparaît ; le coffre donne la clé ; contrôle des blocs, 4 graines. Pas encore
+  ouvert à la main en jeu. — *hash à venir*
+- [ ] **G.9 Créatures endormies** — les créatures notées endormies sont couchées, immobiles, avec des « Zzz »
+  au-dessus d'elles ; frappées, ou réveillées par le bruit ou l'alerte d'un voisin, elles se lèvent.
   *Fin* : on traverse une caserne sans réveiller personne ; frapper une créature réveille la salle.
 - [ ] **G.10 Éclairage selon les habitants** — torches et braseros dans les salles occupées, plus sombre dans les
   nids et les salles vides (réglages dans `generation.ron`).
@@ -165,9 +167,9 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
 2. **Village** : une vraie ville Veloren où l'on marche, **plus une vue de dessus façon 2D** où l'on clique sur les
    bâtiments pour voir les stocks et agir (V.6).
 3. **Butin du convoi** : chacun garde ce qu'il ramène (règle de butin habituelle).
+4. **Clés du donjon généré** : une clé différente par porte (G.8).
+5. **Sommeil** : les endormis sont couchés, avec des « Zzz » au-dessus d'eux (G.9).
 
 ## Questions ouvertes
 
-- **G.8, clés** : une clé différente par porte (proposé : sinon on peut se bloquer en ouvrant la mauvaise porte),
-  ou une seule clé qui ouvre n'importe quelle porte ?
-- **G.9, sommeil** : immobiles et peu vigilantes suffit pour le prototype (proposé), ou une vraie pose couchée ?
+(aucune pour l'instant)

@@ -118,6 +118,29 @@ fn main() {
             } else if msg == "!jouer" {
                 client.load_character_list();
                 joining = true;
+            } else if msg == "!sac" {
+                // Icebreaker : ce que porte le personnage.
+                use veloren_client::WorldExt;
+                let inventories = client.state().ecs().read_storage::<comp::Inventory>();
+                if let Some(inventory) = inventories.get(client.entity()) {
+                    for item in inventory.slots().flatten() {
+                        println!("Sac : {} x {:?}", item.amount(), item.item_definition_id());
+                    }
+                }
+            } else if let Some((action, pos)) = msg.split_once(' ').and_then(|(action, rest)| {
+                let mut xyz = rest.split_whitespace().filter_map(|w| w.parse().ok());
+                Some((action, vek::Vec3::new(xyz.next()?, xyz.next()?, xyz.next()?)))
+            }) && matches!(action, "!ouvrir" | "!bloc")
+            {
+                // Icebreaker : `!ouvrir x y z` ramasse ou ouvre le bloc (serrure,
+                // coffre), `!bloc x y z` dit ce que le client y voit.
+                if action == "!ouvrir" {
+                    client.collect_block(pos);
+                } else {
+                    use common::vol::ReadVol;
+                    let block = client.state().terrain().get(pos).ok().copied();
+                    println!("Bloc {pos:?} : {:?}", block.map(|b| (b.kind(), b.get_sprite())));
+                }
             } else if let Some(command) = msg.strip_prefix('/') {
                 let mut words = command.split_whitespace().map(str::to_string);
                 if let Some(name) = words.next() {

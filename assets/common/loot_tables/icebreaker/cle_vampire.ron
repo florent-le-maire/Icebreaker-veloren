@@ -1,0 +1,4 @@
+// Icebreaker : le coffre qui garde une clé de porte du donjon généré (generation.ron, keys).
+[
+    (1.0, Item("common.items.keys.vampire_key")),
+]

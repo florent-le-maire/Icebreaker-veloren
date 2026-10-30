@@ -175,4 +175,13 @@
             "bossLair": (name: "Antre de boss", creature_factor: 0.8),
         },
     ),
+    // Clés des portes verrouillées (tâche G.8) : une différente par porte, dans l'ordre des verrous (au moins autant
+    // que le plus grand nombre de verrous de `sizes`). item : la clé de Veloren que la serrure consomme ; loot : la
+    // table de butin du coffre qui la garde, posé où le générateur a mis la clé (assets/common/loot_tables/icebreaker).
+    keys: [
+        (item: "common.items.keys.bone_key", loot: "common.loot_tables.icebreaker.cle_bone"),
+        (item: "common.items.keys.glass_key", loot: "common.loot_tables.icebreaker.cle_glass"),
+        (item: "common.items.keys.vampire_key", loot: "common.loot_tables.icebreaker.cle_vampire"),
+        (item: "common.items.keys.haniwa_key", loot: "common.loot_tables.icebreaker.cle_haniwa"),
+    ],
 )
