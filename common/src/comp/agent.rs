@@ -63,6 +63,8 @@ pub enum Alignment {
 pub enum Mark {
     Merchant,
     Guard,
+    /// Icebreaker: the village intendant (a merchant who says so on talk).
+    Intendant,
 }
 
 impl Alignment {
@@ -158,6 +160,9 @@ pub enum TradingBehavior {
     Storage,
     /// Icebreaker: the village treasurer takes coins for the shared treasury.
     Treasury,
+    /// Icebreaker: the village healer does not trade, but heals for `price`
+    /// coins by dialogue.
+    Infirmary { price: u32 },
 }
 
 impl TradingBehavior {
@@ -166,7 +171,7 @@ impl TradingBehavior {
             TradingBehavior::RequireBalanced { .. } => true,
             TradingBehavior::AcceptFood => alignment == Some(Alignment::Owned(counterparty)),
             TradingBehavior::Storage | TradingBehavior::Treasury => true,
-            TradingBehavior::None => false,
+            TradingBehavior::None | TradingBehavior::Infirmary { .. } => false,
         }
     }
 }

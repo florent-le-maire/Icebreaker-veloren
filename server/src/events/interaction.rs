@@ -137,6 +137,7 @@ impl ServerEvent for DialogueEvent {
         ReadExpect<'a, AbilityMap>,
         ReadExpect<'a, MaterialStatManifest>,
         WriteStorage<'a, comp::InventoryUpdateBuffer>,
+        WriteStorage<'a, comp::Health>,
     );
 
     fn handle(
@@ -151,11 +152,24 @@ impl ServerEvent for DialogueEvent {
             ability_map,
             msm,
             mut inventory_update_buffers,
+            mut healths,
         ): Self::SystemData<'_>,
     ) {
-        for DialogueEvent(sender, target, dialogue) in events {
+        for DialogueEvent(sender, target, mut dialogue) in events {
+            // Icebreaker: the village healer is not an rtsim actor but talks.
+            let is_healer = |entity| {
+                agents.get(entity).is_some_and(|agent| {
+                    matches!(
+                        agent.behavior.trading_behavior,
+                        comp::agent::TradingBehavior::Infirmary { .. }
+                    )
+                })
+            };
+            let to_healer = is_healer(target);
             // Both have to be actors to perform dialogs.
-            if !(actors.get(sender).is_some() && actors.get(target).is_some()) {
+            if !(actors.get(sender).is_some() && actors.get(target).is_some())
+                && !(to_healer || is_healer(sender))
+            {
                 continue;
             }
 
@@ -185,9 +199,11 @@ impl ServerEvent for DialogueEvent {
                     | DialogueKind::Ack { .. } => None,
                     DialogueKind::Statement { given_item, .. } => given_item.as_ref(),
                     DialogueKind::Response { response, .. } => response.given_item.as_ref(),
-                };
+                }
+                // Icebreaker: owned, so that the healer can rewrite the answer.
+                .cloned();
                 // If the response requires an item to be given, perform exchange (or exit)
-                if let Some((item_def, amount)) = given_item {
+                if let Some((item_def, amount)) = &given_item {
                     // Check that the target's inventory has enough space for the item
                     if let Some(target_inv) = inventories.get(target)
                         && target_inv.has_space_for(item_def, *amount)
@@ -213,6 +229,18 @@ impl ServerEvent for DialogueEvent {
                                 buf.push(item_event);
                             }
                         }
+                        // Icebreaker: paid healing, the coins are not kept.
+                        if to_healer {
+                            crate::icebreaker_services::drop_payment(&mut target_inv);
+                            if let Some(mut health) = healths.get_mut(sender) {
+                                health.set_fraction(1.0);
+                            }
+                        }
+                    } else if to_healer
+                        && let DialogueKind::Response { response_id, .. } = &mut dialogue.kind
+                    {
+                        // Icebreaker: the healer tells the player they could not pay.
+                        *response_id = crate::icebreaker_services::NOT_PAID;
                     } else {
                         // TODO: Respond with error message on failure?
                         continue;

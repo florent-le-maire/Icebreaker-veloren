@@ -18,6 +18,7 @@ mod data_dir;
 pub mod error;
 pub mod events;
 pub mod icebreaker_mission;
+pub mod icebreaker_services;
 pub mod icebreaker_treasury;
 pub mod icebreaker_warehouse;
 pub mod input;
@@ -577,6 +578,22 @@ impl Server {
             .insert(icebreaker_treasury::IcebreakerTreasury::new(
                 campaign_dir,
                 village_npc_pos(settings.icebreaker.treasurer_offset),
+            ));
+        // Icebreaker: the intendant (trading with the town's economy) and the
+        // healer.
+        #[cfg(feature = "worldgen")]
+        let town_economy = instance_site
+            .filter(|_| world::icebreaker::is_village())
+            .and_then(|site| index.sites[site].trade_information(site));
+        #[cfg(not(feature = "worldgen"))]
+        let town_economy = None;
+        state
+            .ecs_mut()
+            .insert(icebreaker_services::IcebreakerServices::new(
+                village_npc_pos(settings.icebreaker.intendant_offset),
+                town_economy,
+                village_npc_pos(settings.icebreaker.healer_offset),
+                settings.icebreaker.heal_price,
             ));
 
         // Icebreaker: a generated dungeon's mission is won by killing its leader.

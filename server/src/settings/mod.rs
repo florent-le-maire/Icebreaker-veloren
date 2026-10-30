@@ -225,6 +225,11 @@ pub struct IcebreakerSettings {
     pub storekeeper_offset: (f32, f32),
     /// Where the village treasurer stands, from the spawn point (in blocks).
     pub treasurer_offset: (f32, f32),
+    /// Where the village intendant and healer stand, from the spawn point.
+    pub intendant_offset: (f32, f32),
+    pub healer_offset: (f32, f32),
+    /// What the healer asks (in coins) to heal fully.
+    pub heal_price: u32,
 }
 
 impl Default for IcebreakerSettings {
@@ -234,6 +239,9 @@ impl Default for IcebreakerSettings {
             clock_save_interval: 5.0,
             storekeeper_offset: (5.0, 0.0),
             treasurer_offset: (-5.0, 0.0),
+            intendant_offset: (0.0, 5.0),
+            healer_offset: (0.0, -5.0),
+            heal_price: 60,
         }
     }
 }

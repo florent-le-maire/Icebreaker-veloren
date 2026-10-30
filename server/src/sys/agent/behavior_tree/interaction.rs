@@ -2,7 +2,7 @@ use common::{
     comp::{
         BehaviorState, Content, ControlAction, Item, TradingBehavior, UnresolvedChatMsg,
         UtteranceKind,
-        agent::{AgentEvent, Target, TimerAction},
+        agent::{AgentEvent, Mark, Target, TimerAction},
         inventory::item::{ItemDefinitionIdOwned, ItemTag, MaterialStatManifest},
         invite::InviteResponse,
         tool::AbilityMap,
@@ -70,11 +70,29 @@ pub fn increment_timer_deltatime(bdata: &mut BehaviorData) -> bool {
 
 pub fn handle_inbox_dialogue(bdata: &mut BehaviorData) -> bool {
     let BehaviorData {
-        agent, read_data, ..
+        agent,
+        agent_data,
+        read_data,
+        emitters,
+        controller,
+        ..
     } = bdata;
 
     if !matches!(agent.inbox.front(), Some(AgentEvent::Dialogue(_, _))) {
         return false;
+    }
+
+    // Icebreaker: the healer answers the player's choice.
+    if matches!(
+        agent.behavior.trading_behavior,
+        TradingBehavior::Infirmary { .. }
+    ) {
+        if let Some(AgentEvent::Dialogue(sender, dialogue)) = agent.inbox.pop_front() {
+            crate::icebreaker_services::answer_healing(
+                controller, agent_data, agent, emitters, sender, &dialogue,
+            );
+        }
+        return true;
     }
 
     if let Some(AgentEvent::Dialogue(sender, dialogue)) = agent.inbox.pop_front()
@@ -95,6 +113,7 @@ pub fn handle_inbox_talk(bdata: &mut BehaviorData) -> bool {
         agent_data,
         read_data,
         emitters,
+        controller,
         ..
     } = bdata;
 
@@ -128,7 +147,23 @@ pub fn handle_inbox_talk(bdata: &mut BehaviorData) -> bool {
             // We're always aware of someone we're talking to
             agent.awareness.set_maximally_aware();
 
-            // Icebreaker: the storekeeper and the treasurer say what they do.
+            // Icebreaker: the village NPCs say what they do; the healer offers
+            // to heal.
+            if let TradingBehavior::Infirmary { price } = agent.behavior.trading_behavior {
+                let hurt = read_data
+                    .healths
+                    .get(target)
+                    .is_some_and(|health| health.current() < health.maximum());
+                crate::icebreaker_services::offer_healing(
+                    controller,
+                    agent_data,
+                    agent,
+                    emitters,
+                    by,
+                    hurt.then_some(price),
+                );
+                return true;
+            }
             let greeting = match agent.behavior.trading_behavior {
                 TradingBehavior::Storage => Some(
                     "Je tiens l'entrepôt du village. Appuie sur T pour déposer ou reprendre des \
@@ -137,6 +172,10 @@ pub fn handle_inbox_talk(bdata: &mut BehaviorData) -> bool {
                 TradingBehavior::Treasury => Some(
                     "Je tiens la caisse du village. Appuie sur T pour y verser de l'or ; elle \
                      ne rend rien.",
+                ),
+                _ if agent.mark == Some(Mark::Intendant) => Some(
+                    "Je tiens l'intendance : potions et vivres. Appuie sur T pour acheter, ou \
+                     pour me vendre ce que tu rapportes.",
                 ),
                 _ => None,
             };
@@ -445,7 +484,7 @@ pub fn handle_inbox_update_pending_trade(bdata: &mut BehaviorData) -> bool {
                         ));
                     }
                 },
-                TradingBehavior::None => {
+                TradingBehavior::None | TradingBehavior::Infirmary { .. } => {
                     agent.behavior.unset(BehaviorState::TRADING);
                     agent.target = None;
                     emitters.emit(ProcessTradeActionEvent(
