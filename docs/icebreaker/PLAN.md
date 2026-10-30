@@ -57,7 +57,7 @@ français) ; on coche avec le hash. Le jeu doit rester lançable après chaque t
   d'apparition) ; touche T : fenêtre d'échange de Veloren, son inventaire est l'entrepôt (36 cases), il accepte
   tout échange sans regarder la valeur. Contenu dans `campagne/entrepot.ron`, écrit après chaque échange, rendu au
   magasinier quand il réapparaît avec son tronçon de terrain. Vérifié : test aller-retour (objets et quantités),
-  serveur qui démarre ; pas encore vérifié en jeu (dépôt par un joueur, retrait par un autre après redémarrage).
+  serveur qui démarre ; pas encore vérifié en jeu (dépôt par un joueur, retrait par un autre après redémarrage). — 20b7b6a616
 - [ ] **V.3 Caisse commune** — chaque joueur garde son or (règle de butin) et peut en verser dans la caisse.
   *Fin* : versement visible par tous, gardé au redémarrage.
 - [ ] **V.4 Bâtiments par dialogue** — un PNJ par bâtiment, ses choix ouvrent l'action (Veloren a déjà des dialogues
