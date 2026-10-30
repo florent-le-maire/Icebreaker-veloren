@@ -40,40 +40,17 @@ impl IcebreakerWarehouse {
     }
 
     /// The chunk the storekeeper spawns with.
-    pub fn storekeeper_chunk(&self) -> Option<Vec2<i32>> {
-        self.storekeeper_pos.map(|pos| {
-            pos.xy()
-                .as_::<i32>()
-                .map2(TerrainChunkSize::RECT_SIZE, |e, sz| e.div_euclid(sz as i32))
-        })
-    }
+    pub fn storekeeper_chunk(&self) -> Option<Vec2<i32>> { self.storekeeper_pos.map(chunk_of) }
 
     /// The storekeeper, holding the warehouse content.
     pub fn storekeeper(&self) -> Option<(NpcBuilder, comp::Pos)> {
         let pos = self.storekeeper_pos?;
-        let body = Body::Humanoid(comp::humanoid::Body::random());
-        let loadout = comp::inventory::loadout_builder::LoadoutBuilder::from_default(&body).build();
-        let mut inventory = Inventory::with_loadout(loadout, body);
-        for item in self.load_items() {
-            if let Err((item, _)) = inventory.push(item) {
-                warn!(item = ?item.item_definition_id(), "Icebreaker: warehouse full, item lost");
-            }
-        }
-
-        let mut agent = Agent::from_body(&body)
-            .with_patrol_origin(pos)
-            .with_idle_wander_factor(0.0);
-        agent.behavior.allow(comp::agent::BehaviorCapability::TRADE);
-        agent.behavior.trading_behavior = TradingBehavior::Storage;
-
-        let npc = NpcBuilder::new(
-            comp::Stats::new(Content::Plain("Magasinier".to_string()), body),
-            body,
-            Alignment::Npc,
-        )
-        .with_health(comp::Health::new(body))
-        .with_inventory(inventory)
-        .with_agent(agent);
+        let npc = village_npc(
+            "Magasinier".to_string(),
+            pos,
+            TradingBehavior::Storage,
+            self.load_items(),
+        );
         Some((npc, comp::Pos(pos)))
     }
 
@@ -96,19 +73,63 @@ impl IcebreakerWarehouse {
             return;
         };
         let items = inventory.slots().flatten().collect::<Vec<_>>();
-        let result = ron::to_string(&items)
-            .map_err(std::io::Error::other)
-            .and_then(|text| {
-                // Written aside then renamed, so that a crash never leaves half a file.
-                let tmp = path.with_extension("ron.tmp");
-                std::fs::write(&tmp, text)?;
-                std::fs::rename(&tmp, path)
-            });
-        match result {
+        match write_campaign_file(path, &items) {
             Ok(()) => info!(items = items.len(), "Icebreaker: warehouse saved"),
             Err(err) => warn!(?err, ?path, "Icebreaker: could not save the warehouse"),
         }
     }
+}
+
+/// The chunk holding `pos`.
+pub(crate) fn chunk_of(pos: Vec3<f32>) -> Vec2<i32> {
+    pos.xy()
+        .as_::<i32>()
+        .map2(TerrainChunkSize::RECT_SIZE, |e, sz| e.div_euclid(sz as i32))
+}
+
+/// An NPC of the village standing at `pos`, trading as `trading`, holding
+/// `items`.
+pub(crate) fn village_npc(
+    name: String,
+    pos: Vec3<f32>,
+    trading: TradingBehavior,
+    items: Vec<Item>,
+) -> NpcBuilder {
+    let body = Body::Humanoid(comp::humanoid::Body::random());
+    let loadout = comp::inventory::loadout_builder::LoadoutBuilder::from_default(&body).build();
+    let mut inventory = Inventory::with_loadout(loadout, body);
+    for item in items {
+        if let Err((item, _)) = inventory.push(item) {
+            warn!(item = ?item.item_definition_id(), %name, "Icebreaker: inventory full, item lost");
+        }
+    }
+
+    let mut agent = Agent::from_body(&body)
+        .with_patrol_origin(pos)
+        .with_idle_wander_factor(0.0);
+    agent.behavior.allow(comp::agent::BehaviorCapability::TRADE);
+    agent.behavior.trading_behavior = trading;
+
+    NpcBuilder::new(
+        comp::Stats::new(Content::Plain(name), body),
+        body,
+        Alignment::Npc,
+    )
+    .with_health(comp::Health::new(body))
+    .with_inventory(inventory)
+    .with_agent(agent)
+}
+
+/// Writes `value` in RON to `path`, aside then renamed, so that a crash never
+/// leaves half a file.
+pub(crate) fn write_campaign_file(
+    path: &std::path::Path,
+    value: &impl serde::Serialize,
+) -> std::io::Result<()> {
+    let text = ron::to_string(value).map_err(std::io::Error::other)?;
+    let tmp = path.with_extension("ron.tmp");
+    std::fs::write(&tmp, text)?;
+    std::fs::rename(&tmp, path)
 }
 
 #[cfg(test)]

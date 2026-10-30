@@ -112,10 +112,6 @@ pub(super) fn handle_process_trade_action(
                 if entry.get().should_commit() {
                     let result = commit_trade(server.state.ecs(), entry.get());
                     entry.remove();
-                    // Icebreaker: an exchange with the storekeeper changed the warehouse.
-                    if matches!(result, TradeResult::Completed) {
-                        save_warehouse(server.state.ecs(), &parties);
-                    }
                     for party in parties.iter() {
                         if let Some(e) = server.state.ecs().entity_from_uid(*party) {
                             server.notify_client(e, ServerGeneral::FinishedTrade(result.clone()));
@@ -126,6 +122,12 @@ pub(super) fn handle_process_trade_action(
                             );
                         }
                         trades.entity_trades.remove_entry(party);
+                    }
+                    // Icebreaker: an exchange with the storekeeper or the treasurer
+                    // changed the warehouse or the treasury.
+                    if matches!(result, TradeResult::Completed) {
+                        drop(trades);
+                        after_village_trade(server, &parties);
                     }
                 } else {
                     let mut entities: [Option<specs::Entity>; 2] = [None, None];
@@ -190,19 +192,43 @@ pub(super) fn handle_process_trade_action(
     }
 }
 
-/// Icebreaker: saves the warehouse if one of `parties` is the storekeeper.
-fn save_warehouse(ecs: &specs::World, parties: &[Uid; 2]) {
-    let agents = ecs.read_storage::<Agent>();
-    let inventories = ecs.read_storage::<Inventory>();
-    for party in parties {
-        if let Some(entity) = ecs.entity_from_uid(*party)
-            && let Some(agent) = agents.get(entity)
-            && matches!(agent.behavior.trading_behavior, comp::agent::TradingBehavior::Storage)
-            && let Some(inventory) = inventories.get(entity)
-        {
-            ecs.read_resource::<crate::icebreaker_warehouse::IcebreakerWarehouse>()
-                .save(inventory);
+/// Icebreaker: after an exchange with the storekeeper, saves the warehouse;
+/// after one with the treasurer, moves the coins into the treasury and tells
+/// everyone.
+fn after_village_trade(server: &mut Server, parties: &[Uid; 2]) {
+    use comp::agent::TradingBehavior;
+    let ecs = server.state.ecs();
+    let entities = parties.map(|party| ecs.entity_from_uid(party));
+    let mut gift = None;
+    {
+        let agents = ecs.read_storage::<Agent>();
+        let mut inventories = ecs.write_storage::<Inventory>();
+        for (i, entity) in entities.iter().enumerate() {
+            let Some(entity) = *entity else { continue };
+            let Some(agent) = agents.get(entity) else { continue };
+            let Some(mut inventory) = inventories.get_mut(entity) else { continue };
+            match agent.behavior.trading_behavior {
+                TradingBehavior::Storage => ecs
+                    .read_resource::<crate::icebreaker_warehouse::IcebreakerWarehouse>()
+                    .save(&inventory),
+                TradingBehavior::Treasury => {
+                    let mut treasury =
+                        ecs.write_resource::<crate::icebreaker_treasury::IcebreakerTreasury>();
+                    let given = treasury.collect(&mut inventory);
+                    if let Some(mut stats) = ecs.write_storage::<comp::Stats>().get_mut(entity) {
+                        stats.name = comp::Content::Plain(treasury.treasurer_name());
+                    }
+                    let giver = entities[1 - i]
+                        .and_then(|e| ecs.read_storage::<comp::Player>().get(e).map(|p| p.alias.clone()))
+                        .unwrap_or_else(|| "Quelqu'un".to_string());
+                    gift = (given > 0).then(|| treasury.gift_message(&giver, given));
+                },
+                _ => {},
+            }
         }
+    }
+    if let Some(message) = gift {
+        server.notify_players(ServerGeneral::server_msg(comp::ChatType::Meta, message));
     }
 }
 

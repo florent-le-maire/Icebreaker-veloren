@@ -156,6 +156,8 @@ pub enum TradingBehavior {
     /// Icebreaker: the village storekeeper accepts any exchange, its inventory
     /// being the shared warehouse.
     Storage,
+    /// Icebreaker: the village treasurer takes coins for the shared treasury.
+    Treasury,
 }
 
 impl TradingBehavior {
@@ -163,7 +165,7 @@ impl TradingBehavior {
         match self {
             TradingBehavior::RequireBalanced { .. } => true,
             TradingBehavior::AcceptFood => alignment == Some(Alignment::Owned(counterparty)),
-            TradingBehavior::Storage => true,
+            TradingBehavior::Storage | TradingBehavior::Treasury => true,
             TradingBehavior::None => false,
         }
     }

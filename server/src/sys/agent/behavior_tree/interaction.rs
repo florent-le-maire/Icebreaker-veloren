@@ -3,7 +3,7 @@ use common::{
         BehaviorState, Content, ControlAction, Item, TradingBehavior, UnresolvedChatMsg,
         UtteranceKind,
         agent::{AgentEvent, Target, TimerAction},
-        inventory::item::{ItemTag, MaterialStatManifest},
+        inventory::item::{ItemDefinitionIdOwned, ItemTag, MaterialStatManifest},
         invite::InviteResponse,
         tool::AbilityMap,
     },
@@ -379,6 +379,41 @@ pub fn handle_inbox_update_pending_trade(bdata: &mut BehaviorData) -> bool {
                 // Icebreaker: the storekeeper accepts any exchange with the warehouse.
                 TradingBehavior::Storage => {
                     if !pending.accept_flags[who] && !pending.is_empty_trade() {
+                        emitters.emit(ProcessTradeActionEvent(
+                            *agent_data.entity,
+                            tradeid,
+                            TradeAction::Accept(pending.phase),
+                        ));
+                    }
+                },
+                // Icebreaker: the treasurer takes coins, and gives nothing back.
+                TradingBehavior::Treasury => {
+                    let only_coins = inventories[1 - who].as_ref().is_some_and(|ri| {
+                        pending.offers[1 - who].keys().all(|slot| {
+                            ri.inventory.get(slot).is_some_and(|item| {
+                                matches!(
+                                    &item.name,
+                                    ItemDefinitionIdOwned::Simple(id)
+                                        if id == crate::icebreaker_treasury::COINS
+                                )
+                            })
+                        })
+                    });
+                    if !only_coins || !pending.offers[who].is_empty() {
+                        message(Content::Plain(
+                            "Je ne prends que les pièces d'or, et la caisse ne rend rien."
+                                .to_string(),
+                        ));
+                        if pending.phase != TradePhase::Mutate {
+                            agent.behavior.unset(BehaviorState::TRADING);
+                            agent.target = None;
+                            emitters.emit(ProcessTradeActionEvent(
+                                *agent_data.entity,
+                                tradeid,
+                                TradeAction::Decline,
+                            ));
+                        }
+                    } else if !pending.accept_flags[who] && !pending.is_empty_trade() {
                         emitters.emit(ProcessTradeActionEvent(
                             *agent_data.entity,
                             tradeid,

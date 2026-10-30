@@ -223,6 +223,8 @@ pub struct IcebreakerSettings {
     pub clock_save_interval: f64,
     /// Where the village storekeeper stands, from the spawn point (in blocks).
     pub storekeeper_offset: (f32, f32),
+    /// Where the village treasurer stands, from the spawn point (in blocks).
+    pub treasurer_offset: (f32, f32),
 }
 
 impl Default for IcebreakerSettings {
@@ -231,6 +233,7 @@ impl Default for IcebreakerSettings {
             zone_margin: 120.0,
             clock_save_interval: 5.0,
             storekeeper_offset: (5.0, 0.0),
+            treasurer_offset: (-5.0, 0.0),
         }
     }
 }

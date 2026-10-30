@@ -95,6 +95,7 @@ pub struct Data<'a> {
     waypoints: WriteStorage<'a, Waypoint>,
     time: ReadExpect<'a, Time>,
     icebreaker_warehouse: Read<'a, crate::icebreaker_warehouse::IcebreakerWarehouse>,
+    icebreaker_treasury: Read<'a, crate::icebreaker_treasury::IcebreakerTreasury>,
 }
 
 /// This system will handle loading generated chunks and unloading
@@ -193,11 +194,17 @@ impl<'a> System<'a> for Sys {
                 data.rtsim
                     .hook_load_chunk(key, supplement.rtsim_max_resources, &data.world);
 
-                // Icebreaker: the village storekeeper comes and goes with its chunk,
-                // the warehouse content staying in the campaign.
-                if data.icebreaker_warehouse.storekeeper_chunk() == Some(key)
-                    && let Some((npc, pos)) = data.icebreaker_warehouse.storekeeper()
-                {
+                // Icebreaker: the village storekeeper and treasurer come and go with
+                // their chunk, the warehouse and treasury staying in the campaign.
+                let village_npcs = [
+                    (data.icebreaker_warehouse.storekeeper_chunk() == Some(key))
+                        .then(|| data.icebreaker_warehouse.storekeeper())
+                        .flatten(),
+                    (data.icebreaker_treasury.treasurer_chunk() == Some(key))
+                        .then(|| data.icebreaker_treasury.treasurer())
+                        .flatten(),
+                ];
+                for (npc, pos) in village_npcs.into_iter().flatten() {
                     emitters.emit(CreateNpcEvent {
                         pos,
                         ori: comp::Ori::default(),
