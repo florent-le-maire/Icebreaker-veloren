@@ -26,6 +26,16 @@ impl DungeonTraces {
     pub fn collected_where(&self, filter: impl Fn(Vec3<i32>) -> bool) -> Vec<Vec3<i32>> {
         self.collected.iter().copied().filter(|p| filter(*p)).collect()
     }
+
+    /// Forgets what was done where `area` holds (a dungeon made new again for
+    /// another expedition, Icebreaker decision 0016).
+    /// Returns how many kills and collected sprites were forgotten.
+    pub fn forget_where(&mut self, area: impl Fn(Vec3<i32>) -> bool) -> (usize, usize) {
+        let before = (self.killed.len(), self.collected.len());
+        self.killed.retain(|slot| !area(slot.wpos));
+        self.collected.retain(|wpos| !area(*wpos));
+        (before.0 - self.killed.len(), before.1 - self.collected.len())
+    }
 }
 
 #[cfg(test)]
@@ -51,5 +61,28 @@ mod tests {
             12, -4, 120
         )]);
         assert!(loaded.collected_where(|p| p.x < 0).is_empty());
+    }
+
+    #[test]
+    fn a_dungeon_made_new_forgets_its_traces_only() {
+        let mut traces = DungeonTraces::default();
+        let here = DungeonSlot {
+            wpos: Vec3::new(10, 0, 100),
+            nth: 0,
+        };
+        let there = DungeonSlot {
+            wpos: Vec3::new(5000, 0, 100),
+            nth: 0,
+        };
+        traces.record_kill(here);
+        traces.record_kill(there);
+        traces.record_collected(Vec3::new(12, 0, 100));
+        traces.record_collected(Vec3::new(5002, 0, 100));
+
+        assert_eq!(traces.forget_where(|p| p.x < 1000), (1, 1));
+        assert!(!traces.is_killed(&here));
+        assert!(traces.is_killed(&there));
+        assert!(!traces.is_collected(Vec3::new(12, 0, 100)));
+        assert!(traces.is_collected(Vec3::new(5002, 0, 100)));
     }
 }

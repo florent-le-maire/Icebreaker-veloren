@@ -22,6 +22,9 @@ pub struct Slot {
     pub zone_radius: f32,
     /// Where the expedition arrives.
     pub arrival: Vec3<f32>,
+    /// Whether a player was in its zone at the last tick (it is made new
+    /// again when the last one leaves, I.9).
+    pub occupied: bool,
 }
 
 /// The dungeon slots (none outside the campaign).
@@ -77,6 +80,7 @@ impl IcebreakerSlots {
                     radius: site.radius(),
                     zone_radius: site.radius() + zone_margin,
                     arrival,
+                    occupied: false,
                 };
                 info!(?slot.name, ?slot.center, ?slot.arrival, "Icebreaker dungeon slot");
                 slot
@@ -111,6 +115,7 @@ mod tests {
             radius: 50.0,
             zone_radius: 100.0,
             arrival: Vec3::new(x, 60.0, 0.0),
+            occupied: false,
         };
         let slots = IcebreakerSlots(vec![
             slot("Gnarling", 0.0),

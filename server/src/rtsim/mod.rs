@@ -215,6 +215,12 @@ impl RtSim {
         self.state.data().dungeon_traces.is_collected(wpos)
     }
 
+    /// Icebreaker: forgets the traces of the dungeon where `area` holds (made
+    /// new again for another expedition).
+    pub fn forget_dungeon_traces(&mut self, area: impl Fn(Vec3<i32>) -> bool) -> (usize, usize) {
+        self.state.data_mut().dungeon_traces.forget_where(area)
+    }
+
     pub fn dungeon_collected_in_chunk(&self, key: Vec2<i32>) -> Vec<Vec3<i32>> {
         self.state
             .data()
