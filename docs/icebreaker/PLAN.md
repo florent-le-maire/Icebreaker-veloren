@@ -235,9 +235,9 @@ que Veloren fait déjà (vue, ouïe, combat, fuite). G.11 à G.14 d'abord ; G.15
 
 ## Jalon L — Combat létal (Flo, 2026-10-30)
 
-- [ ] **L.1 Dégâts façon Dark Souls** — `assets/icebreaker/combat.ron` multiplie les dégâts des attaques selon la
+- [x] **L.1 Dégâts façon Dark Souls** — `assets/icebreaker/combat.ron` multiplie les dégâts des attaques selon la
   cible : une arme de départ tue un gnarling en ~3 coups, un gnarling tue un joueur en 3 à 4 coups ; une créature
-  plus forte encaisse plus. La mise à terre des humanoïdes reste. — *en cours : Veloren-combat, 2026-10-30*
+  plus forte encaisse plus. La mise à terre des humanoïdes reste. Testé : tests ciblés, le donjon Gnarling démarre ; nombre de coups en jeu, autres armes et boss pas vérifiés. — 373c5671c8
 
 ## Jalon 4 — Démo à l'équipe
 
