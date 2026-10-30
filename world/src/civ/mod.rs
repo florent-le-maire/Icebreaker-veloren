@@ -270,7 +270,38 @@ impl Civs {
         report_stage(WorldCivStage::SiteGeneration);
         prof_span!(guard, "find locations and establish sites");
         let world_dims = ctx.sim.get_aabr();
-        for _ in 0..initial_civ_count * 3 {
+
+        // Icebreaker: an encounter instance is a small world holding one chosen
+        // dungeon near its center, instead of randomly placed sites.
+        let instance_site = instance_site_from_env();
+        if let Some(kind) = instance_site {
+            let center = world_dims.center();
+            let near_center = ProximityRequirementsBuilder::new()
+                .close_to_one_of(std::iter::once(center), 8)
+                .finalize(&world_dims);
+            let anywhere = ProximityRequirementsBuilder::new().finalize(&world_dims);
+            match find_site_loc(&mut ctx, &near_center, &kind)
+                .or_else(|| find_site_loc(&mut ctx, &anywhere, &kind))
+            {
+                Some(loc) => {
+                    info!(?kind, ?loc, ?center, "Icebreaker instance site placed");
+                    this.establish_site(&mut ctx.reseed(), loc, |place| Site {
+                        kind,
+                        center: loc,
+                        place,
+                        site_tmp: None,
+                    });
+                },
+                None => warn!(?kind, "Icebreaker instance site could not be placed"),
+            }
+        }
+        let random_site_attempts = if instance_site.is_some() {
+            0
+        } else {
+            initial_civ_count * 3
+        };
+
+        for _ in 0..random_site_attempts {
             attempt(5, || {
                 let (loc, kind) = match ctx.rng.random_range(0..116) {
                     0..=4 => (
@@ -1562,6 +1593,29 @@ fn loc_suitable_for_walking(sim: &WorldSim, loc: Vec2<i32>) -> bool {
     } else {
         false
     }
+}
+
+/// Icebreaker: the dungeon kind an encounter instance is built around, read
+/// from `ICEBREAKER_INSTANCE_SITE` (e.g. `Haniwa`). Unset means a normal world.
+fn instance_site_from_env() -> Option<SiteKind> {
+    let name = std::env::var("ICEBREAKER_INSTANCE_SITE").ok()?;
+    let kind = match name.as_str() {
+        "Gnarling" => SiteKind::Gnarling,
+        "Adlet" => SiteKind::Adlet,
+        "Haniwa" => SiteKind::Haniwa,
+        "Terracotta" => SiteKind::Terracotta,
+        "Myrmidon" => SiteKind::Myrmidon,
+        "Sahagin" => SiteKind::Sahagin,
+        "Cultist" => SiteKind::Cultist,
+        "DwarvenMine" => SiteKind::DwarvenMine,
+        "ChapelSite" => SiteKind::ChapelSite,
+        "VampireCastle" => SiteKind::VampireCastle,
+        _ => {
+            warn!(?name, "Unknown ICEBREAKER_INSTANCE_SITE, generating a normal world");
+            return None;
+        },
+    };
+    Some(kind)
 }
 
 /// Attempt to search for a location that's suitable for site construction

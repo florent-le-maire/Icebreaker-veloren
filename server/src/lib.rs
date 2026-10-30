@@ -499,13 +499,19 @@ impl Server {
             // Search for town defined by spawn_town server setting. If this fails, or is
             // None, set spawn to the nearest town to the centre of the world
             let center_chunk = world.sim().map_size_lg().chunks().map(i32::from) / 2;
-            let spawn_chunk = world
-                .civs()
-                .sites()
-                .filter(|site| site.is_settlement())
-                .map(|site| site.center)
-                .min_by_key(|site_pos| site_pos.distance_squared(center_chunk))
-                .unwrap_or(center_chunk);
+            // Icebreaker: in an encounter instance, players start at its dungeon.
+            let instance_dungeon = std::env::var_os("ICEBREAKER_INSTANCE_SITE")
+                .and_then(|_| world.civs().sites().find(|site| site.is_dungeon()))
+                .map(|site| site.center);
+            let spawn_chunk = instance_dungeon.unwrap_or_else(|| {
+                world
+                    .civs()
+                    .sites()
+                    .filter(|site| site.is_settlement())
+                    .map(|site| site.center)
+                    .min_by_key(|site_pos| site_pos.distance_squared(center_chunk))
+                    .unwrap_or(center_chunk)
+            });
 
             world.find_accessible_pos(index, TerrainChunkSize::center_wpos(spawn_chunk), false)
         });
