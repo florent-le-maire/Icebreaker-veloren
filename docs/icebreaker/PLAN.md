@@ -94,7 +94,7 @@ bâtir. On y paie des chantiers avec l'or de la caisse ; la maison sort de terre
   maison bâtie. Graine du village gardée pour la campagne. Testé (démarrage, maison bâtie / terrain vide au client
   texte) ; pas encore vu en jeu. — 0df322747c
 - [x] **C.2 Terrains à bâtir** — en vue de dessus, les terrains libres (« Terrain à bâtir », prix), cliquables.
-  Les 6 maisons libres les plus proches de la place, en vert ; panneau : prix, durée. Pas encore vu en jeu. — fcf1f53733
+  Les 6 maisons libres les plus proches de la place, en vert ; panneau : prix, durée. Pas encore vu en jeu. — 7e714733a2
 - [ ] **C.3 Commander un chantier** — bouton « Bâtir (300 or) » dans le panneau d'un terrain, payé par la caisse ;
   chantier et fin (temps de carte) dans la campagne.
 - [ ] **C.4 Chantier visible** — la maison sort de terre au fil du temps de carte, sans relancer.
