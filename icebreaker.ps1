@@ -14,6 +14,8 @@ param(
     [string]$Lieu,
     # Site autour duquel le lieu est généré (par défaut : Gnarling au donjon, Town au village).
     [string]$Site,
+    # Taille de la ville du village (Town seulement), de 0.03 (hameau) à 1.0 (grande ville).
+    [double]$TailleVille = 1.0,
     [int]$Lg = 6,
     [int]$Seed = (Get-Random -Maximum 1000000),
     # Durée d'une journée en minutes réelles (1 min réelle = 30 min de carte).
@@ -58,6 +60,7 @@ $utf8 = New-Object Text.UTF8Encoding($false)
 $env:VELOREN_USERDATA = $ud
 $env:ICEBREAKER_CAMPAIGN_DIR = "$root\campagne"
 $env:ICEBREAKER_INSTANCE_SITE = $Site
+$env:ICEBREAKER_TOWN_SIZE = $TailleVille.ToString([Globalization.CultureInfo]::InvariantCulture)
 Write-Host "Icebreaker : $Lieu ($Site), graine $Seed, port $port"
 Set-Location $repo
 & ".\target\debug\veloren-server-cli.exe" --no-auth

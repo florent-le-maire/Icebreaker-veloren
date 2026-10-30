@@ -286,7 +286,30 @@ impl Civs {
                 .close_to_one_of(std::iter::once(center), 8)
                 .finalize(&world_dims);
             let anywhere = ProximityRequirementsBuilder::new().finalize(&world_dims);
-            match find_site_loc(&mut ctx, &near_center, &kind)
+            // A town may find no room to build around its square: try a few
+            // places and keep the one where the town grows the most.
+            let mut town_loc: Option<(Vec2<i32>, usize)> = None;
+            if crate::icebreaker::is_town(kind) {
+                // Near the center first, anywhere if no place there suits a town.
+                let attempts = std::iter::repeat_n(&near_center, crate::icebreaker::TOWN_PLACE_ATTEMPTS)
+                    .chain(std::iter::repeat_n(&anywhere, crate::icebreaker::TOWN_PLACE_ATTEMPTS));
+                for requirements in attempts {
+                    let Some(loc) = find_site_loc(&mut ctx, requirements, &kind) else {
+                        continue;
+                    };
+                    let plots = icebreaker_town_plots(kind, loc, ctx.sim, index, calendar);
+                    debug!(?loc, plots, "Icebreaker village place tried");
+                    if town_loc.is_none_or(|(_, best)| plots > best) {
+                        town_loc = Some((loc, plots));
+                    }
+                    if plots >= crate::icebreaker::TOWN_ENOUGH_PLOTS {
+                        break;
+                    }
+                }
+            }
+            match town_loc
+                .map(|(loc, _)| loc)
+                .or_else(|| find_site_loc(&mut ctx, &near_center, &kind))
                 .or_else(|| find_site_loc(&mut ctx, &anywhere, &kind))
             {
                 Some(loc) => {
@@ -534,6 +557,8 @@ impl Civs {
                 match &sim_site.kind {
                     SiteKind::Refactor => {
                         let size = Lerp::lerp(0.03, 1.0, rng.random_range(0.0..1f32).powi(5));
+                        // Icebreaker: the village's town has the size it was given.
+                        let size = crate::icebreaker::village_town_size().unwrap_or(size);
                         WorldSite::generate_city(
                             &Land::from_sim(ctx.sim),
                             index_ref,
@@ -681,6 +706,9 @@ impl Civs {
             });
             sim_site.site_tmp = Some(site);
             let site_ref = &index.sites[site];
+            if crate::icebreaker::is_village() {
+                info!(plots = site_ref.plots().len(), "Icebreaker village town generated");
+            }
 
             let radius_chunks =
                 (site_ref.radius() / TerrainChunkSize::RECT_SIZE.x as f32).ceil() as usize;
@@ -1646,6 +1674,47 @@ fn find_site_loc(
 
     debug!("Failed to place site {:?}.", site_kind);
     None
+}
+
+/// Icebreaker: how many plots a town of `kind` would have at `loc` (a chunk),
+/// built on trial and thrown away.
+fn icebreaker_town_plots(
+    kind: SiteKind,
+    loc: Vec2<i32>,
+    sim: &WorldSim,
+    index: &Index,
+    calendar: Option<&Calendar>,
+) -> usize {
+    let wpos = loc.map2(TerrainChunkSize::RECT_SIZE, |e, sz: u32| {
+        e * sz as i32 + sz as i32 / 2
+    });
+    let land = Land::from_sim(sim);
+    let index = IndexRef {
+        colors: &index.colors(),
+        features: &index.features(),
+        index,
+    };
+    let mut rng = ChaChaRng::seed_from_u64(((loc.x as u64) << 32) | loc.y as u32 as u64);
+    let mut meta = SitesGenMeta::new(0);
+    let town = match kind {
+        SiteKind::CliffTown => {
+            WorldSite::generate_cliff_town(&land, index, &mut rng, wpos, &mut meta)
+        },
+        SiteKind::SavannahTown => {
+            WorldSite::generate_savannah_town(&land, index, &mut rng, wpos, &mut meta)
+        },
+        SiteKind::CoastalTown => {
+            WorldSite::generate_coastal_town(&land, index, &mut rng, wpos, &mut meta)
+        },
+        SiteKind::DesertCity => {
+            WorldSite::generate_desert_city(&land, index, &mut rng, wpos, &mut meta)
+        },
+        _ => {
+            let size = crate::icebreaker::village_town_size().unwrap_or(1.0);
+            WorldSite::generate_city(&land, index, &mut rng, wpos, size, calendar, &mut meta)
+        },
+    };
+    town.plots().len()
 }
 
 fn town_attributes_of_site(loc: Vec2<i32>, sim: &WorldSim) -> Option<TownSiteAttributes> {
