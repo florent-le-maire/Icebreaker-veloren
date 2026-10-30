@@ -93,37 +93,37 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
 - [x] **G.1 Lieu « Genere » minimal** — `icebreaker.ps1 donjon -Site Genere` : une salle sous terre, un tunnel en
   marches qui remonte à la surface au centre du site, apparition à sa sortie. Une case = 5 × 5 blocs, un étage = 5
   blocs (`generation.ron` → `render`). `-Port` pour lancer deux serveurs du même lieu. Vérifié : génération, apparition
-  devant le tunnel ; pas encore descendu en jeu. — 5339dea359
+  devant le tunnel ; pas encore descendu en jeu. — 4a74ba8402
 - [x] **G.2 Lecture des salles** — les 16 salles d'Icebreaker (copiées le 2026-10-28, b7a3308) dans
   `assets/icebreaker/donjons/salles/`, vérifiées comme dans le projet (rôles, portes `+`, fosses `*`, accès depuis
   chaque connecteur) ; `-Salle <nom>` dessine une seule salle. Contrôle des blocs : `cargo run -p veloren-world
   --example icebreaker_dungeon -- <graine>` génère le petit monde et vérifie que chaque case accessible a un sol et de
   la place au-dessus, marches du tunnel comprises. Vérifié : 16 salles valides ; entrée, antre du chef, sanctuaire,
-  poste de garde, hall à escalier, réserve sans problème de blocs. — f539365558
+  poste de garde, hall à escalier, réserve sans problème de blocs. — 78b128ebe8
 - [x] **G.3 Graphe de mission** — `MissionGraphGenerator.cs` traduit (`graph.rs`) : chemin principal découpé en étages,
   verrous avec leur clé dans une branche avant eux, branches, boucles et chutes dans une même zone, règles de
   voisinage ; réglages `sizes`, `branch_roles`, `rules`, `goal_roles` de `generation.ron`. Vérifié : sur 1000 graines
   par taille, objectif atteignable, retour toujours possible, chef unique et au plus profond, maximums, garde avant
-  chaque verrou, casernes après l'entrée ou une garde, nids loin du chemin principal. — c6e8b4ef5f
+  chaque verrou, casernes après l'entrée ou une garde, nids loin du chemin principal. — 9e42282351
 - [x] **G.4 Assemblage** — `DungeonAssembler.cs` traduit (`assemble.rs`, sans les murs communs des châteaux) : salles
   posées depuis l'entrée, couloirs creusés par A* avec escaliers, boucles et puits de chute ; le tunnel de surface prend
   une porte de l'entrée (nouvelle salle `entree_quatre_portes`). Le serveur génère un donjon `medium` « tuer le chef »
   (graine du monde) et l'écrit dans son journal. Vérifié : 100 graines par taille assemblées et finissables (tout
   accessible depuis le tunnel, retour toujours possible, chef au plus profond) ; contrôle des blocs sans problème pour
-  les graines 1234, 7 et 99 ; pas encore parcouru en jeu. — 8bbfde656f
+  les graines 1234, 7 et 99 ; pas encore parcouru en jeu. — 64b42945d5
 - [x] **G.5 Peuplement** — `DungeonPopulator.cs` traduit (`populate.rs`) : créatures et coffres par rôle de salle
   (`population`), d'abord sur les propositions des salles, jamais devant une porte ; le chef garde toujours la salle
   de l'objectif. Créatures et coffres de Veloren par faction (`factions` : gnarling par défaut, adlet, cultist ;
   coffres et butin de Veloren). Les endormies sont notées dans le plan (majuscules) mais apparaissent éveillées.
   Vérifié : tests (un seul chef, dans la salle de l'objectif ; personne devant une porte ; donjon toujours
   finissable) ; contrôle des blocs et des apparitions (une créature par marqueur, 11 à 20 par donjon) pour 5 graines.
-  Pas encore joué : à vérifier en jeu que le chef se tue au fond. — 99ec6f363a
+  Pas encore joué : à vérifier en jeu que le chef se tue au fond. — dee9e5fca1
 - [x] **G.6 Paramètres de mission** — `icebreaker.ps1 donjon -Site Genere -Taille -Objectif -Region -Saison -Menace
   -Ennemis -Faction` (variables `ICEBREAKER_DONJON_*`) ; effets dans `generation.ron` → `parameters` (valeurs du
   projet Icebreaker : écarts qui s'ajoutent, facteurs qui se multiplient, chef et boss uniques). Le résumé du
   journal donne les paramètres appliqués. Vérifié : graine 1234, menace 1 = 8 salles, 7 créatures ; menace 5 = 14
   salles, un étage de plus, 36 créatures ; toutes les combinaisons région × saison × objectif se génèrent ; serveur
-  lancé avec `-Menace 5 -Faction adlet -Region mountain`. — 4f3b3482b1
+  lancé avec `-Menace 5 -Faction adlet -Region mountain`. — 7cc1eff81c
 
 ## Jalon 4 — Démo à l'équipe
 
