@@ -14,6 +14,7 @@ use super::{ServerEvent, event_dispatch};
 
 pub(super) fn register_event_systems(builder: &mut DispatcherBuilder) {
     event_dispatch::<RequestSiteInfoEvent>(builder, &[]);
+    event_dispatch::<common::event::IcebreakerBuildingEvent>(builder, &[]);
     #[cfg(feature = "plugins")]
     event_dispatch::<common::event::RequestPluginsEvent>(builder, &[]);
 }

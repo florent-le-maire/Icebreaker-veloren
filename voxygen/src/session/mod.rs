@@ -109,6 +109,8 @@ pub struct SessionState {
     walk_right_dir: Vec2<f32>,
     free_look: bool,
     freecam_pos: Vec3<f32>,
+    /// Icebreaker: the top view of the village, when on.
+    icebreaker_top_view: Option<IcebreakerTopView>,
     auto_walk: bool,
     walking_speed: bool,
     camera_clamp: bool,
@@ -184,6 +186,7 @@ impl SessionState {
             walk_right_dir,
             free_look: false,
             freecam_pos: Vec3::zero(),
+            icebreaker_top_view: None,
             auto_walk: false,
             walking_speed: false,
             camera_clamp: false,
@@ -385,6 +388,9 @@ impl SessionState {
                             _ => {},
                         };
                     }
+                },
+                client::Event::IcebreakerPanel(title, lines) => {
+                    self.hud.icebreaker_panel(Some((title, lines)));
                 },
                 client::Event::Dialogue(sender_uid, dialogue) => {
                     if let Some(sender) = client.state().ecs().entity_from_uid(sender_uid) {
@@ -1334,6 +1340,9 @@ impl PlayState for SessionState {
                                     .walking_speed_behavior
                                     .update(state, &mut self.walking_speed, |_| {});
                             },
+                            GameInput::IcebreakerTopView if state => {
+                                self.toggle_icebreaker_top_view();
+                            },
                             _ => {},
                         }
                     },
@@ -1362,6 +1371,16 @@ impl PlayState for SessionState {
                         if delta.abs() > ZOOM_LOCK_SCROLL_DELTA_INTENT {
                             self.hud.zoom_lock_reminder();
                         }
+                    },
+
+                    // Icebreaker: in the top view, a click asks for the building under it.
+                    Event::MouseButton(
+                        crate::window::MouseButton::Left,
+                        crate::window::PressState::Pressed,
+                    )
+                        if self.icebreaker_top_view.is_some() =>
+                    {
+                        self.click_icebreaker_top_view(global_state);
                     },
 
                     // Pass all other events to the scene
@@ -2402,4 +2421,62 @@ fn auto_glide(
     };
 
     Dir::from_unnormalized(dir)
+}
+
+/// Icebreaker: the top view of the village. The camera, free of the character,
+/// looks straight down from above where it was; the cursor is free to click on
+/// a building (the movement keys move the view).
+struct IcebreakerTopView {
+    /// The camera orientation to go back to.
+    ori: Vec3<f32>,
+    /// The height of the ground under the view (the character's, at the start).
+    ground_z: f32,
+}
+
+/// How high above the character the top view starts.
+const ICEBREAKER_TOP_VIEW_HEIGHT: f32 = 90.0;
+
+impl SessionState {
+    fn toggle_icebreaker_top_view(&mut self) {
+        let camera = self.scene.camera_mut();
+        if let Some(view) = self.icebreaker_top_view.take() {
+            camera.set_mode(CameraMode::ThirdPerson);
+            camera.set_orientation_instant(view.ori);
+            self.hud.icebreaker_top_view(false);
+        } else if let Some(pos) = self.client.borrow().position() {
+            let ori = camera.get_orientation();
+            camera.set_mode(CameraMode::Freefly);
+            camera.set_orientation_instant(Vec3::new(0.0, std::f32::consts::FRAC_PI_2, 0.0));
+            camera.force_focus_pos(pos + Vec3::unit_z() * ICEBREAKER_TOP_VIEW_HEIGHT);
+            self.icebreaker_top_view = Some(IcebreakerTopView {
+                ori,
+                ground_z: pos.z,
+            });
+            self.hud.icebreaker_top_view(true);
+        }
+    }
+
+    /// Asks for the building under the cursor: looking straight down, screen
+    /// right is +x and screen up is +y.
+    fn click_icebreaker_top_view(&mut self, global_state: &GlobalState) {
+        let Some(view) = &self.icebreaker_top_view else {
+            return;
+        };
+        let size = global_state.window.window().inner_size();
+        let cursor = global_state.window.cursor_position();
+        let ndc = Vec2::new(
+            2.0 * cursor.x / f64::from(size.width.max(1)) - 1.0,
+            1.0 - 2.0 * cursor.y / f64::from(size.height.max(1)),
+        )
+        .as_::<f32>();
+        let camera = self.scene.camera();
+        let cam = camera.get_focus_pos();
+        let half_height = (camera.get_effective_fov() / 2.0).tan() * (cam.z - view.ground_z);
+        let wpos = cam.xy()
+            + Vec2::new(
+                ndc.x * half_height * camera.get_aspect_ratio(),
+                ndc.y * half_height,
+            );
+        self.client.borrow_mut().request_icebreaker_building(wpos);
+    }
 }

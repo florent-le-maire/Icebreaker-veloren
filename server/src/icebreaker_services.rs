@@ -106,6 +106,8 @@ impl IcebreakerServices {
         Some((npc, pos))
     }
 
+    pub fn heal_price(&self) -> u32 { self.heal_price }
+
     pub fn healer_chunk(&self) -> Option<Vec2<i32>> { self.healer_pos.map(chunk_of) }
 
     pub fn healer(&self) -> Option<(NpcBuilder, comp::Pos)> {

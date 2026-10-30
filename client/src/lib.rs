@@ -133,6 +133,8 @@ pub enum Event {
     SpectatePosition(Vec3<f32>),
     PluginDataReceived(Vec<u8>),
     Dialogue(Uid, rtsim::Dialogue<true>),
+    /// Icebreaker: the panel of a village building (title, lines).
+    IcebreakerPanel(comp::Content, Vec<comp::Content>),
     Gizmos(Vec<Gizmos>),
 }
 
@@ -1145,6 +1147,7 @@ impl Client {
                     | ClientGeneral::PlayerPhysics { .. }
                     | ClientGeneral::UnlockSkill(_)
                     | ClientGeneral::RequestSiteInfo(_)
+                    | ClientGeneral::IcebreakerBuilding(_)
                     | ClientGeneral::RequestPlayerPhysics { .. }
                     | ClientGeneral::RequestLossyTerrainCompression { .. }
                     | ClientGeneral::UpdateMapMarker(_)
@@ -2136,6 +2139,11 @@ impl Client {
         }
     }
 
+    /// Icebreaker: asks for the panel of the village building at `wpos`.
+    pub fn request_icebreaker_building(&mut self, wpos: Vec2<f32>) {
+        self.send_msg(ClientGeneral::IcebreakerBuilding(wpos))
+    }
+
     pub fn request_site_economy(&mut self, id: SiteId) {
         self.send_msg(ClientGeneral::RequestSiteInfo(id))
     }
@@ -2983,6 +2991,9 @@ impl Client {
                 if let Some(rich) = self.sites.get_mut(&economy.id) {
                     rich.economy = Some(economy);
                 }
+            },
+            ServerGeneral::IcebreakerPanel(title, lines) => {
+                frontend_events.push(Event::IcebreakerPanel(title, lines));
             },
             ServerGeneral::MapMarker(event) => {
                 frontend_events.push(Event::MapMarker(event));

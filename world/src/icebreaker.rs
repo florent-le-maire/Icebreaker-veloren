@@ -56,6 +56,44 @@ pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
     })
 }
 
+/// The `count` houses of the village nearest to `square` (world position),
+/// for its buildings: (in front of the door, bounds), in world coordinates.
+/// Fewer if the town has fewer houses (its other kinds have no `House` plots).
+pub fn village_houses(
+    site: &Site,
+    square: vek::Vec2<i32>,
+    count: usize,
+) -> Vec<(vek::Vec2<i32>, vek::Aabr<i32>)> {
+    let mut houses = site
+        .plots()
+        .filter_map(|plot| match plot.kind() {
+            PlotKind::House(house) => {
+                let tiles = plot.find_bounds();
+                // The door tile is the house's; its neighbour out of the house is
+                // the road in front.
+                let front = [
+                    vek::Vec2::unit_x(),
+                    -vek::Vec2::unit_x(),
+                    vek::Vec2::unit_y(),
+                    -vek::Vec2::unit_y(),
+                ]
+                .into_iter()
+                .map(|dir| house.door_tile + dir)
+                .find(|tile| !plot.tiles().any(|t| t == *tile))
+                .unwrap_or(house.door_tile);
+                Some((site.tile_center_wpos(front), vek::Aabr {
+                    min: site.tile_wpos(tiles.min),
+                    max: site.tile_wpos(tiles.max + 1),
+                }))
+            },
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    houses.sort_by_key(|(door, _)| door.distance_squared(square));
+    houses.truncate(count);
+    houses
+}
+
 /// What the mission of a dungeon of our generator counts: its leader,
 /// creatures and chests.
 pub fn dungeon_mission(site: &Site) -> Option<crate::site::plot::MissionTargets> {

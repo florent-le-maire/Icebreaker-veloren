@@ -221,11 +221,12 @@ pub struct IcebreakerSettings {
     /// How often (in seconds) an instance with players saves the map clock in
     /// the campaign directory.
     pub clock_save_interval: f64,
-    /// Where the village storekeeper stands, from the spawn point (in blocks).
+    /// Where the village storekeeper stands, from the spawn point (in blocks), if
+    /// the town has too few houses for the buildings (else at its house door).
     pub storekeeper_offset: (f32, f32),
     /// Where the village treasurer stands, from the spawn point (in blocks).
     pub treasurer_offset: (f32, f32),
-    /// Where the village intendant and healer stand, from the spawn point.
+    /// Where the village intendant and healer stand, likewise.
     pub intendant_offset: (f32, f32),
     pub healer_offset: (f32, f32),
     /// What the healer asks (in coins) to heal fully.

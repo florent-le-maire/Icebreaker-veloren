@@ -9,7 +9,8 @@ pub use common::event::{
     InitializeCharacterEvent, InitializeSpectatorEvent, InitiateInviteEvent, InventoryManipEvent,
     InviteResponseEvent, KillEvent, KnockbackEvent, LandOnGroundEvent, MakeAdminEvent,
     MineBlockEvent, MountEvent, NpcInteractEvent, ParryHookEvent, PoiseChangeEvent, PossessEvent,
-    ProcessTradeActionEvent, RegrowHeadEvent, RemoveLightEmitterEvent, RequestSiteInfoEvent,
+    IcebreakerBuildingEvent, ProcessTradeActionEvent, RegrowHeadEvent, RemoveLightEmitterEvent,
+    RequestSiteInfoEvent,
     RespawnEvent, SetBattleModeEvent, SetLanternEvent, SetPetStayEvent, ShockwaveEvent, ShootEvent,
     SoundEvent, StartInteractionEvent, StartTeleportingEvent, SummonBeamPillarsEvent, TamePetEvent,
     TeleportToEvent, TeleportToPositionEvent, ThrowEvent, ToggleSpriteLightEvent, TransformEvent,
@@ -70,6 +71,7 @@ macro_rules! server_events {
             ComboChangeEvent
             ParryHookEvent
             RequestSiteInfoEvent
+            IcebreakerBuildingEvent
             MineBlockEvent
             TeleportToEvent
             SoundEvent

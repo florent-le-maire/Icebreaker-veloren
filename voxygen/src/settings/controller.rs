@@ -511,6 +511,7 @@ impl ControllerSettings {
             GameInput::MuteSfx => Some(Button::Simple(GilButton::Unknown)),
             GameInput::MuteAmbience => Some(Button::Simple(GilButton::Unknown)),
             GameInput::ToggleWalk => Some(Button::Simple(GilButton::Unknown)),
+            GameInput::IcebreakerTopView => Some(Button::Simple(GilButton::Unknown)),
         }
     }
 
@@ -918,6 +919,11 @@ impl ControllerSettings {
                 mod2: Button::Simple(GilButton::Unknown),
             }),
             GameInput::ToggleWalk => Some(LayerEntry {
+                button: Button::Simple(GilButton::Unknown),
+                mod1: Button::Simple(GilButton::Unknown),
+                mod2: Button::Simple(GilButton::Unknown),
+            }),
+            GameInput::IcebreakerTopView => Some(LayerEntry {
                 button: Button::Simple(GilButton::Unknown),
                 mod1: Button::Simple(GilButton::Unknown),
                 mod2: Button::Simple(GilButton::Unknown),

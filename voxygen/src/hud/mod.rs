@@ -337,6 +337,11 @@ widget_ids! {
         zoom_lock_txt,
         zoom_lock_bg,
 
+        // Icebreaker: top view of the village
+        icebreaker_hint,
+        icebreaker_panel_bg,
+        icebreaker_panel_txt,
+
         // Camera clamp indicator
         camera_clamp_txt,
         camera_clamp_bg,
@@ -1346,6 +1351,10 @@ pub struct Hud {
     pub show: Show,
     to_focus: Option<Option<widget::Id>>,
     force_ungrab: bool,
+    /// Icebreaker: whether the top view of the village is on, and the panel of
+    /// the last building clicked there (title, lines).
+    icebreaker_top_view: bool,
+    icebreaker_panel: Option<(comp::Content, Vec<comp::Content>)>,
     force_chat_input: Option<String>,
     force_chat_cursor: Option<Index>,
     tab_complete: Option<String>,
@@ -1450,6 +1459,8 @@ impl Hud {
             show: Show::new(),
             to_focus: None,
             force_ungrab: false,
+            icebreaker_top_view: false,
+            icebreaker_panel: None,
             force_chat_input: None,
             force_chat_cursor: None,
             tab_complete: None,
@@ -4134,6 +4145,41 @@ impl Hud {
                 .set(self.ids.zoom_lock_txt, ui_widgets);
         }
 
+        // Icebreaker: top view of the village, and the panel of the clicked building.
+        if self.icebreaker_top_view {
+            let key = global_state
+                .settings
+                .controls
+                .get_binding(GameInput::IcebreakerTopView)
+                .map_or_else(String::new, |key| key.display_string());
+            Text::new(&format!(
+                "Vue du village : cliquer sur un bâtiment ({key} pour revenir)"
+            ))
+            .color(TEXT_COLOR)
+            .mid_top_with_margin_on(ui_widgets.window, indicator_offset)
+            .font_id(self.fonts.cyri.conrod_id)
+            .font_size(self.fonts.cyri.scale(20))
+            .set(self.ids.icebreaker_hint, ui_widgets);
+            if let Some((title, lines)) = &self.icebreaker_panel {
+                let text = std::iter::once(title)
+                    .chain(lines)
+                    .map(|content| i18n.get_content(content))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                let height = 30.0 + 24.0 * (lines.len() + 1) as f64;
+                Rectangle::fill([420.0, height])
+                    .rgba(0.0, 0.0, 0.0, 0.7)
+                    .top_left_with_margins_on(ui_widgets.window, 120.0, 20.0)
+                    .set(self.ids.icebreaker_panel_bg, ui_widgets);
+                Text::new(&text)
+                    .color(TEXT_COLOR)
+                    .top_left_with_margins_on(self.ids.icebreaker_panel_bg, 15.0, 15.0)
+                    .font_id(self.fonts.cyri.conrod_id)
+                    .font_size(self.fonts.cyri.scale(18))
+                    .set(self.ids.icebreaker_panel_txt, ui_widgets);
+            }
+        }
+
         // Camera clamp indicator
         if let Some(cameraclamp_key) = global_state
             .settings
@@ -5203,10 +5249,10 @@ impl Hud {
             },
             _ => false,
         };
-        // Handle cursor grab.
-        global_state
-            .window
-            .grab_cursor(!self.force_ungrab && self.show.want_grab);
+        // Handle cursor grab (Icebreaker: free in the top view of the village).
+        global_state.window.grab_cursor(
+            !self.force_ungrab && !self.icebreaker_top_view && self.show.want_grab,
+        );
 
         handled
     }
@@ -5347,6 +5393,17 @@ impl Hud {
         if self.show.zoom_lock.reason.is_none() {
             self.show.zoom_lock = ChangeNotification::from_reason(NotificationReason::Remind);
         }
+    }
+
+    /// Icebreaker: the top view of the village frees the cursor and shows the
+    /// panel of the building clicked.
+    pub fn icebreaker_top_view(&mut self, on: bool) {
+        self.icebreaker_top_view = on;
+        self.icebreaker_panel = None;
+    }
+
+    pub fn icebreaker_panel(&mut self, panel: Option<(comp::Content, Vec<comp::Content>)>) {
+        self.icebreaker_panel = panel;
     }
 
     /// Start showing a temporary notification ([ChangeNotification]) that zoom

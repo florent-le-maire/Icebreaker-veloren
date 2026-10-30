@@ -48,6 +48,7 @@ event_emitters! {
     struct Events[Emitters] {
         exit_ingame: event::ExitIngameEvent,
         request_site_info: event::RequestSiteInfoEvent,
+        icebreaker_building: event::IcebreakerBuildingEvent,
         update_map_marker: event::UpdateMapMarkerEvent,
         client_disconnect: event::ClientDisconnectEvent,
         set_battle_mode: event::SetBattleModeEvent,
@@ -221,6 +222,9 @@ impl Sys {
                         SkillSet::unlock_skill_cow(skill_set, skill, |skill_set| skill_set.to_mut())
                     })
                     .transpose();
+            },
+            ClientGeneral::IcebreakerBuilding(wpos) => {
+                emitters.emit(event::IcebreakerBuildingEvent { entity, wpos });
             },
             ClientGeneral::RequestSiteInfo(id) => {
                 emitters.emit(event::RequestSiteInfoEvent { entity, id });

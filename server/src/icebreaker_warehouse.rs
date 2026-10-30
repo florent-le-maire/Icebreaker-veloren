@@ -54,7 +54,7 @@ impl IcebreakerWarehouse {
         Some((npc, comp::Pos(pos)))
     }
 
-    fn load_items(&self) -> Vec<Item> {
+    pub(crate) fn load_items(&self) -> Vec<Item> {
         let Some(path) = &self.path else {
             return Vec::new();
         };

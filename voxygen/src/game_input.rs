@@ -71,6 +71,9 @@ pub enum GameInput {
     Mount,
     #[strum(serialize = "gameinput-stayfollow")]
     StayFollow,
+    /// Icebreaker: top view of the village.
+    #[strum(serialize = "gameinput-icebreaker-topview")]
+    IcebreakerTopView,
     #[strum(serialize = "gameinput-togglewalk")]
     ToggleWalk,
     #[strum(serialize = "gameinput-autowalk")]

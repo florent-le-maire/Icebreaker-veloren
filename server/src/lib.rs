@@ -17,6 +17,7 @@ pub mod connection_handler;
 mod data_dir;
 pub mod error;
 pub mod events;
+pub mod icebreaker_buildings;
 pub mod icebreaker_mission;
 pub mod icebreaker_return;
 pub mod icebreaker_services;
@@ -556,30 +557,59 @@ impl Server {
         #[cfg(not(feature = "worldgen"))]
         let spawn_point = SpawnPoint::default();
 
-        // Icebreaker: the village storekeeper and treasurer stand on the square,
-        // next to the spawn point, and hold the warehouse and treasury shared by
-        // the campaign.
+        // Icebreaker: the village buildings (warehouse, treasury, intendance,
+        // infirmary, in `Building::ALL` order) are the houses nearest to the
+        // square, their NPC standing at the door; on the square, at the setting's
+        // offset from the spawn point, if the town lacks houses.
         #[cfg(feature = "worldgen")]
-        let village_npc_pos = |offset: (f32, f32)| {
-            world::icebreaker::is_village().then(|| {
-                let wpos = (spawn_point.0.xy() + Vec2::from(offset)).as_::<i32>();
-                world.find_accessible_pos(index.as_index_ref(), wpos, false)
-            })
+        let village_posts = {
+            let offsets = [
+                settings.icebreaker.storekeeper_offset,
+                settings.icebreaker.treasurer_offset,
+                settings.icebreaker.intendant_offset,
+                settings.icebreaker.healer_offset,
+            ];
+            let square = spawn_point.0.xy().as_::<i32>();
+            let houses = instance_site
+                .filter(|_| world::icebreaker::is_village())
+                .map(|site| world::icebreaker::village_houses(&index.sites[site], square, 4));
+            offsets
+                .iter()
+                .enumerate()
+                .map(|(i, offset)| {
+                    let houses = houses.as_ref()?;
+                    let (door, bounds) = houses.get(i).copied().unwrap_or_else(|| {
+                        let wpos = square + Vec2::<f32>::from(*offset).as_::<i32>();
+                        (wpos, Aabr {
+                            min: wpos - 6,
+                            max: wpos + 6,
+                        })
+                    });
+                    let pos = world.find_accessible_pos(index.as_index_ref(), door, false);
+                    Some((pos, bounds))
+                })
+                .collect::<Vec<_>>()
         };
         #[cfg(not(feature = "worldgen"))]
-        let village_npc_pos = |_: (f32, f32)| None;
+        let village_posts = vec![None; 4];
+        let village_npc_pos = |i: usize| village_posts[i].map(|(pos, _)| pos);
+        state
+            .ecs_mut()
+            .insert(icebreaker_buildings::IcebreakerBuildings::new(
+                village_posts.iter().map(|post| post.map(|(_, bounds)| bounds)),
+            ));
         let campaign_dir = std::env::var_os("ICEBREAKER_CAMPAIGN_DIR").map(std::path::PathBuf::from);
         state
             .ecs_mut()
             .insert(icebreaker_warehouse::IcebreakerWarehouse::new(
                 campaign_dir.clone(),
-                village_npc_pos(settings.icebreaker.storekeeper_offset),
+                village_npc_pos(0),
             ));
         state
             .ecs_mut()
             .insert(icebreaker_treasury::IcebreakerTreasury::new(
                 campaign_dir,
-                village_npc_pos(settings.icebreaker.treasurer_offset),
+                village_npc_pos(1),
             ));
         // Icebreaker: the intendant (trading with the town's economy) and the
         // healer.
@@ -592,9 +622,9 @@ impl Server {
         state
             .ecs_mut()
             .insert(icebreaker_services::IcebreakerServices::new(
-                village_npc_pos(settings.icebreaker.intendant_offset),
+                village_npc_pos(2),
                 town_economy,
-                village_npc_pos(settings.icebreaker.healer_offset),
+                village_npc_pos(3),
                 settings.icebreaker.heal_price,
             ));
 

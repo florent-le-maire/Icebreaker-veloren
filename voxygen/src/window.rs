@@ -927,6 +927,10 @@ impl Window {
 
     pub fn is_cursor_grabbed(&self) -> bool { self.cursor_grabbed }
 
+    /// Icebreaker: where the free cursor is, in physical pixels (for the top
+    /// view of the village).
+    pub fn cursor_position(&self) -> winit::dpi::PhysicalPosition<f64> { self.cursor_position }
+
     pub fn grab_cursor(&mut self, grab: bool) {
         use winit::window::CursorGrabMode;
 
