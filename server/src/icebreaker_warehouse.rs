@@ -108,6 +108,9 @@ pub(crate) fn village_npc(
         .with_patrol_origin(pos)
         .with_idle_wander_factor(0.0);
     agent.behavior.allow(comp::agent::BehaviorCapability::TRADE);
+    // Without SPEAK, a talk (key E) stays first in the agent's inbox and blocks
+    // the trade invites behind it; it would also silence their messages.
+    agent.behavior.allow(comp::agent::BehaviorCapability::SPEAK);
     agent.behavior.trading_behavior = trading;
 
     NpcBuilder::new(

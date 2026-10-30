@@ -91,7 +91,11 @@ pub fn handle_inbox_dialogue(bdata: &mut BehaviorData) -> bool {
 /// Handles Talk event if the front of the agent's inbox contains one
 pub fn handle_inbox_talk(bdata: &mut BehaviorData) -> bool {
     let BehaviorData {
-        agent, read_data, ..
+        agent,
+        agent_data,
+        read_data,
+        emitters,
+        ..
     } = bdata;
 
     if !matches!(agent.inbox.front(), Some(AgentEvent::Talk(_))) {
@@ -123,6 +127,26 @@ pub fn handle_inbox_talk(bdata: &mut BehaviorData) -> bool {
             ));
             // We're always aware of someone we're talking to
             agent.awareness.set_maximally_aware();
+
+            // Icebreaker: the storekeeper and the treasurer say what they do.
+            let greeting = match agent.behavior.trading_behavior {
+                TradingBehavior::Storage => Some(
+                    "Je tiens l'entrepôt du village. Appuie sur T pour déposer ou reprendre des \
+                     objets.",
+                ),
+                TradingBehavior::Treasury => Some(
+                    "Je tiens la caisse du village. Appuie sur T pour y verser de l'or ; elle \
+                     ne rend rien.",
+                ),
+                _ => None,
+            };
+            if let Some(greeting) = greeting {
+                agent_data.chat_npc_if_allowed_to_speak(
+                    Content::Plain(greeting.to_string()),
+                    agent,
+                    emitters,
+                );
+            }
         }
     }
     true
