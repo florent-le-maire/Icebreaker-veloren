@@ -112,6 +112,10 @@ pub(super) fn handle_process_trade_action(
                 if entry.get().should_commit() {
                     let result = commit_trade(server.state.ecs(), entry.get());
                     entry.remove();
+                    // Icebreaker: an exchange with the storekeeper changed the warehouse.
+                    if matches!(result, TradeResult::Completed) {
+                        save_warehouse(server.state.ecs(), &parties);
+                    }
                     for party in parties.iter() {
                         if let Some(e) = server.state.ecs().entity_from_uid(*party) {
                             server.notify_client(e, ServerGeneral::FinishedTrade(result.clone()));
@@ -182,6 +186,22 @@ pub(super) fn handle_process_trade_action(
                     }
                 }
             }
+        }
+    }
+}
+
+/// Icebreaker: saves the warehouse if one of `parties` is the storekeeper.
+fn save_warehouse(ecs: &specs::World, parties: &[Uid; 2]) {
+    let agents = ecs.read_storage::<Agent>();
+    let inventories = ecs.read_storage::<Inventory>();
+    for party in parties {
+        if let Some(entity) = ecs.entity_from_uid(*party)
+            && let Some(agent) = agents.get(entity)
+            && matches!(agent.behavior.trading_behavior, comp::agent::TradingBehavior::Storage)
+            && let Some(inventory) = inventories.get(entity)
+        {
+            ecs.read_resource::<crate::icebreaker_warehouse::IcebreakerWarehouse>()
+                .save(inventory);
         }
     }
 }

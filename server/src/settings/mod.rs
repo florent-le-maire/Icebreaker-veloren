@@ -221,6 +221,8 @@ pub struct IcebreakerSettings {
     /// How often (in seconds) an instance with players saves the map clock in
     /// the campaign directory.
     pub clock_save_interval: f64,
+    /// Where the village storekeeper stands, from the spawn point (in blocks).
+    pub storekeeper_offset: (f32, f32),
 }
 
 impl Default for IcebreakerSettings {
@@ -228,6 +230,7 @@ impl Default for IcebreakerSettings {
         Self {
             zone_margin: 120.0,
             clock_save_interval: 5.0,
+            storekeeper_offset: (5.0, 0.0),
         }
     }
 }

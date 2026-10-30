@@ -376,6 +376,16 @@ pub fn handle_inbox_update_pending_trade(bdata: &mut BehaviorData) -> bool {
                         ));
                     }
                 },
+                // Icebreaker: the storekeeper accepts any exchange with the warehouse.
+                TradingBehavior::Storage => {
+                    if !pending.accept_flags[who] && !pending.is_empty_trade() {
+                        emitters.emit(ProcessTradeActionEvent(
+                            *agent_data.entity,
+                            tradeid,
+                            TradeAction::Accept(pending.phase),
+                        ));
+                    }
+                },
                 TradingBehavior::None => {
                     agent.behavior.unset(BehaviorState::TRADING);
                     agent.target = None;

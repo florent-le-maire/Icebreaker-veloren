@@ -17,6 +17,7 @@ pub mod connection_handler;
 mod data_dir;
 pub mod error;
 pub mod events;
+pub mod icebreaker_warehouse;
 pub mod input;
 pub mod location;
 pub mod lod;
@@ -545,6 +546,23 @@ impl Server {
         });
         #[cfg(not(feature = "worldgen"))]
         let spawn_point = SpawnPoint::default();
+
+        // Icebreaker: the village storekeeper stands on the square, next to the
+        // spawn point, and holds the warehouse shared by the campaign.
+        #[cfg(feature = "worldgen")]
+        let storekeeper_pos = world::icebreaker::is_village().then(|| {
+            let offset = Vec2::from(settings.icebreaker.storekeeper_offset);
+            let wpos = (spawn_point.0.xy() + offset).as_::<i32>();
+            world.find_accessible_pos(index.as_index_ref(), wpos, false)
+        });
+        #[cfg(not(feature = "worldgen"))]
+        let storekeeper_pos = None;
+        state
+            .ecs_mut()
+            .insert(icebreaker_warehouse::IcebreakerWarehouse::new(
+                std::env::var_os("ICEBREAKER_CAMPAIGN_DIR").map(std::path::PathBuf::from),
+                storekeeper_pos,
+            ));
 
         // Set the spawn point we calculated above
         state.ecs_mut().insert(spawn_point);

@@ -94,6 +94,7 @@ pub struct Data<'a> {
     forced_updates: WriteStorage<'a, ForceUpdate>,
     waypoints: WriteStorage<'a, Waypoint>,
     time: ReadExpect<'a, Time>,
+    icebreaker_warehouse: Read<'a, crate::icebreaker_warehouse::IcebreakerWarehouse>,
 }
 
 /// This system will handle loading generated chunks and unloading
@@ -191,6 +192,18 @@ impl<'a> System<'a> for Sys {
                 #[cfg(feature = "worldgen")]
                 data.rtsim
                     .hook_load_chunk(key, supplement.rtsim_max_resources, &data.world);
+
+                // Icebreaker: the village storekeeper comes and goes with its chunk,
+                // the warehouse content staying in the campaign.
+                if data.icebreaker_warehouse.storekeeper_chunk() == Some(key)
+                    && let Some((npc, pos)) = data.icebreaker_warehouse.storekeeper()
+                {
+                    emitters.emit(CreateNpcEvent {
+                        pos,
+                        ori: comp::Ori::default(),
+                        npc: npc.with_anchor(comp::Anchor::Chunk(key)),
+                    });
+                }
             }
 
             // Dungeon NPCs are identified by their spawn position (and rank at that
