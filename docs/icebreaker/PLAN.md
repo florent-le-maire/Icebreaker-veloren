@@ -255,6 +255,12 @@ que Veloren fait déjà (vue, ouïe, combat, fuite). G.11 à G.14 d'abord ; G.15
 - [x] **L.4 Cercle sur la cible** — anneau doré qui respire, halo, point et quatre traits, par-dessus tout, au milieu
   du corps de la cible verrouillée. Testé : le client compile ; rendu pas vérifié en jeu. — 9c2b1d8a77
 
+## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
+
+Ce qui rend l'enchaînement village → donjon → village intéressant (risque, butin, besoins du village) : règles et
+tâches B.1 à B.13 dans `PLAN-BOUCLES.md`. Ce qu'on fait en bas (ressources du donjon, sac à formes, foreuse, trous,
+garde et parade, monstres à coop) : tâches E.1 à E.16 dans `PLAN-DONJON.md`.
+
 ## Jalon 4 — Démo à l'équipe
 
 - [x] **S.1 Script de lancement Linux** — `icebreaker.sh`, même rôle que `icebreaker.ps1` (village, donjon), pour le
