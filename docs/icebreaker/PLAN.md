@@ -285,8 +285,8 @@ Reprendre ce que le vrai client a montré : robustesse et cohérence d'abord, le
 (cadres, boutons, icônes et sprites existants ; pas de nouvelles textures ni de portrait 3D). Ordre : X.1, X.7,
 X.2, X.3, X.8, X.4, X.5, X.6. Réglages dans `assets/icebreaker/vue_village.ron`, `village.ron`, `registre.ron`,
 `verrouillage.ron`.
-Fait le 2026-11-03 (branche `icebreaker-interface`, fusionnée) ; tout est vérifié au client texte ou au journal du vrai
-client : reste à **regarder en jeu** (rendu du panneau, couleurs et icônes de la vue U, enseignes, anneau, PNJ dedans).
+Fait le 2026-11-03 (branche `icebreaker-interface`, fusionnée), vérifié au client texte et au journal du vrai client,
+puis vu en jeu par Flo le soir même : « c'est cool ».
 - [x] **X.1 Vue U : entrée et sortie propres** — la vue se ferme d'elle-même quand le joueur s'éloigne
   (téléportation, `/rentrer`), meurt, ou que le serveur ne renvoie plus de bâtiments (hors du village : liste
   vide et message) ; hauteur, plan et rayon de sortie dans `vue_village.ron`. Vérifié au client texte (liste sur la
