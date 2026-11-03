@@ -1,0 +1,11 @@
+// Icebreaker : la vue du village de dessus (touche U par défaut,
+// `voxygen/src/session/icebreaker_vue.rs`). Distances en blocs.
+(
+    // Hauteur de la caméra au-dessus du personnage à l'entrée dans la vue.
+    hauteur: 90.0,
+    // Hauteur au-dessus du sol du plan visé (à mi-hauteur des maisons).
+    plan: 5.0,
+    // Distance de l'entrée au-delà de laquelle la vue se ferme d'elle-même
+    // (téléportation, retour au village).
+    rayon_sortie: 120.0,
+)

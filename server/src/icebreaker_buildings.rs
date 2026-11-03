@@ -12,10 +12,12 @@ use crate::{
     icebreaker_treasury::IcebreakerTreasury,
     icebreaker_village::{self, Chantier, IcebreakerVillage, VillageConfig},
     icebreaker_warehouse::IcebreakerWarehouse,
+    sys::icebreaker_zone::Zone,
 };
 use common::{
     comp::{
-        Content, LocalizationArg, Player, Presence, PresenceKind, item::ItemDesc, item::ItemI18n,
+        Content, LocalizationArg, Player, Pos, Presence, PresenceKind, item::ItemDesc,
+        item::ItemI18n,
     },
     event::IcebreakerBuildingEvent,
     resources::TimeOfDay,
@@ -70,15 +72,20 @@ pub enum Place {
 }
 
 /// Where each building is (none outside the village); the plots to build on
-/// come from the village, which changes as it grows.
+/// come from the village, which changes as it grows. The top view only works
+/// from inside the village's zone (X.1): elsewhere in the campaign (a dungeon
+/// slot), the list sent is empty and the client leaves the view.
 #[derive(Default)]
-pub struct IcebreakerBuildings(Vec<(Place, Aabr<i32>)>);
+pub struct IcebreakerBuildings {
+    places: Vec<(Place, Aabr<i32>)>,
+    zone: Option<Zone>,
+}
 
 impl IcebreakerBuildings {
     /// The buildings of `Building::ALL` with their bounds, if any.
     pub fn new(bounds: impl IntoIterator<Item = Option<Aabr<i32>>>) -> Self {
-        Self(
-            Building::ALL
+        Self {
+            places: Building::ALL
                 .into_iter()
                 .zip(bounds)
                 .filter_map(|(building, bounds)| Some((building, bounds?)))
@@ -87,7 +94,17 @@ impl IcebreakerBuildings {
                 })
                 .map(|(building, bounds)| (Place::Building(building), bounds))
                 .collect(),
-        )
+            zone: None,
+        }
+    }
+
+    /// The village's zone, out of which the top view does not work (none: no
+    /// limit, for a village alone).
+    pub fn with_zone(self, zone: Option<Zone>) -> Self { Self { zone, ..self } }
+
+    /// Whether a player at `pos` can see the village's top view.
+    pub fn in_village(&self, pos: Vec2<f32>) -> bool {
+        self.zone.is_none_or(|zone| zone.push_back(pos).is_none())
     }
 
     /// The buildings and the plots to build on (rank, bounds).
@@ -95,7 +112,7 @@ impl IcebreakerBuildings {
         &self,
         plots: impl IntoIterator<Item = (usize, Aabr<i32>)>,
     ) -> Vec<(Place, Aabr<i32>)> {
-        self.0
+        self.places
             .iter()
             .copied()
             .chain(plots.into_iter().map(|(rank, bounds)| (Place::Plot(rank), bounds)))
@@ -256,6 +273,7 @@ impl ServerEvent for IcebreakerBuildingEvent {
         Write<'a, IcebreakerRegistre>,
         ReadStorage<'a, Presence>,
         ReadStorage<'a, Player>,
+        ReadStorage<'a, Pos>,
     );
 
     fn handle(
@@ -272,6 +290,7 @@ impl ServerEvent for IcebreakerBuildingEvent {
             mut registre,
             presences,
             players,
+            positions,
         ): Self::SystemData<'_>,
     ) {
         let now = time_of_day.0;
@@ -280,7 +299,16 @@ impl ServerEvent for IcebreakerBuildingEvent {
             let Some(client) = clients.get(event.entity) else {
                 continue;
             };
+            // Out of the village (a dungeon slot of the campaign): no building,
+            // which makes the client leave the top view (X.1).
+            let in_village = positions
+                .get(event.entity)
+                .is_some_and(|pos| buildings.in_village(pos.0.xy()));
             match event.wpos {
+                Some(_) if !in_village => {},
+                None if !in_village => {
+                    client.send_fallible(ServerGeneral::IcebreakerBuildings(Vec::new()));
+                },
                 Some(wpos) => {
                     if let Some(Place::Building(Building::Charrette)) = place_at(&places, wpos) {
                         let panel = charrette_panel(
@@ -425,6 +453,18 @@ mod tests {
         assert_eq!(at(45.0, 1.0), Some(Place::Building(Building::Infirmary)));
         assert_eq!(at(65.0, 1.0), Some(Place::Plot(7)));
         assert_eq!(at(15.0, 5.0), None);
+    }
+
+    #[test]
+    fn the_top_view_only_works_inside_the_village_zone() {
+        let without_zone = IcebreakerBuildings::new([]);
+        assert!(without_zone.in_village(Vec2::new(5000.0, 0.0)));
+        let with_zone = IcebreakerBuildings::new([]).with_zone(Some(Zone {
+            center: Vec2::new(100.0, 100.0),
+            radius: 50.0,
+        }));
+        assert!(with_zone.in_village(Vec2::new(120.0, 100.0)));
+        assert!(!with_zone.in_village(Vec2::new(1000.0, 100.0)));
     }
 
     #[test]

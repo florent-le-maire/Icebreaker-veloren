@@ -605,11 +605,22 @@ impl Server {
             icebreaker_village::IcebreakerVillage::default(),
         );
         let village_npc_pos = |i: usize| village_posts[i].map(|(pos, _)| pos);
-        state
-            .ecs_mut()
-            .insert(icebreaker_buildings::IcebreakerBuildings::new(
+        // Icebreaker: the top view only works inside the village's zone (X.1).
+        #[cfg(feature = "worldgen")]
+        let village_zone = instance_site_area
+            .filter(|_| world::icebreaker::is_village())
+            .map(|(origin, radius)| sys::icebreaker_zone::Zone {
+                center: origin.as_(),
+                radius: radius + settings.icebreaker.zone_margin,
+            });
+        #[cfg(not(feature = "worldgen"))]
+        let village_zone = None;
+        state.ecs_mut().insert(
+            icebreaker_buildings::IcebreakerBuildings::new(
                 village_posts.iter().map(|post| post.map(|(_, bounds)| bounds)),
-            ));
+            )
+            .with_zone(village_zone),
+        );
         state.ecs_mut().insert(village);
         let campaign_dir = std::env::var_os("ICEBREAKER_CAMPAIGN_DIR").map(std::path::PathBuf::from);
         // Icebreaker: the cart and the common registry (jalon R).

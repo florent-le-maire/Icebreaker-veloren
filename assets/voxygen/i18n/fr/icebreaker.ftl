@@ -10,3 +10,4 @@ command-soigner-desc = Se faire soigner à l'infirmerie du village, contre de l'
 command-expedition-desc = Préparer une expédition : <numéro de destination>, rejoindre, pret, attendre ou quitter
 command-echanger-desc = Échanger avec l'entrepôt ou l'intendance du village, de loin
 command-registre-desc = La charrette et le registre : engager <rang>, jouer <numéro>, rendre, reserver <numéro>, liberer <numéro>
+icebreaker-vue-hors-village = Pas de village ici : la vue de dessus se ferme.

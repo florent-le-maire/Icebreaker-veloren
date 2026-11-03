@@ -257,6 +257,9 @@ fn main() {
                 Event::IcebreakerFantome => println!("Registre ouvert : !fantome pour entrer"),
                 Event::StartSpectate(pos) => println!("Fantôme en {:?}", pos.map(|e| e.round())),
                 Event::IcebreakerBuildings(buildings) => {
+                    if buildings.is_empty() {
+                        println!("Aucun bâtiment : pas de village ici");
+                    }
                     for (name, bounds, _) in buildings {
                         let center = bounds.center();
                         println!("Bâtiment {name:?} : centre {} {}", center.x, center.y);

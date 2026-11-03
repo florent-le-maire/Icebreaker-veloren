@@ -1,4 +1,5 @@
 mod icebreaker_lock;
+mod icebreaker_vue;
 pub mod interactable;
 pub mod settings_change;
 mod target;
@@ -115,6 +116,7 @@ pub struct SessionState {
     /// Icebreaker: the locked enemy (Dark Souls), when on.
     icebreaker_lock: Option<icebreaker_lock::Verrou>,
     icebreaker_lock_settings: icebreaker_lock::Reglages,
+    icebreaker_vue_settings: icebreaker_vue::Reglages,
     auto_walk: bool,
     walking_speed: bool,
     camera_clamp: bool,
@@ -193,6 +195,7 @@ impl SessionState {
             icebreaker_top_view: None,
             icebreaker_lock: None,
             icebreaker_lock_settings: icebreaker_lock::Reglages::charger(),
+            icebreaker_vue_settings: icebreaker_vue::Reglages::charger(),
             auto_walk: false,
             walking_speed: false,
             camera_clamp: false,
@@ -397,6 +400,8 @@ impl SessionState {
                 },
                 client::Event::IcebreakerBuildings(buildings) => {
                     if let Some(view) = &mut self.icebreaker_top_view {
+                        // No building: not in the village, the view closes (X.1).
+                        view.hors_village = buildings.is_empty();
                         view.buildings = buildings;
                     }
                 },
@@ -2482,6 +2487,11 @@ fn auto_glide(
 struct IcebreakerTopView {
     /// The camera orientation to go back to.
     ori: Vec3<f32>,
+    /// Where the character was when the view opened: the view closes if it
+    /// gets far from there (teleported away, X.1).
+    entree: Vec3<f32>,
+    /// Whether the server's last answer had no building (not in the village).
+    hors_village: bool,
     /// The height at which the screen meets the village: a little above the
     /// character's ground at the start, halfway up the houses.
     plane_z: f32,
@@ -2495,43 +2505,55 @@ struct IcebreakerTopView {
     last_refresh: std::time::Instant,
 }
 
-/// How high above the character the top view starts.
-const ICEBREAKER_TOP_VIEW_HEIGHT: f32 = 90.0;
-/// How high above the ground the houses are pointed at.
-const ICEBREAKER_TOP_VIEW_PLANE: f32 = 5.0;
-
 impl SessionState {
     fn toggle_icebreaker_top_view(&mut self) {
+        if self.icebreaker_top_view.is_some() {
+            self.quitter_icebreaker_top_view();
+            return;
+        }
         // Read apart: the client is borrowed again below to ask for the buildings.
         // A ghost of the registry (spectator, jalon R) looks from its camera.
         let spectator = self.client.borrow().presence() == Some(PresenceKind::Spectator);
         let position = self.client.borrow().position().or_else(|| {
             spectator.then(|| self.scene.camera().get_focus_pos() - Vec3::unit_z() * 20.0)
         });
+        let Some(pos) = position else {
+            return;
+        };
+        let reglages = &self.icebreaker_vue_settings;
         let camera = self.scene.camera_mut();
-        if let Some(view) = self.icebreaker_top_view.take() {
-            camera.set_mode(if spectator {
-                CameraMode::Freefly
-            } else {
-                CameraMode::ThirdPerson
-            });
-            camera.set_orientation_instant(view.ori);
-            self.hud.icebreaker_top_view(false);
-        } else if let Some(pos) = position {
-            let ori = camera.get_orientation();
-            camera.set_mode(CameraMode::Freefly);
-            camera.set_orientation_instant(Vec3::new(0.0, std::f32::consts::FRAC_PI_2, 0.0));
-            camera.force_focus_pos(pos + Vec3::unit_z() * ICEBREAKER_TOP_VIEW_HEIGHT);
-            self.icebreaker_top_view = Some(IcebreakerTopView {
-                ori,
-                plane_z: pos.z + ICEBREAKER_TOP_VIEW_PLANE,
-                buildings: Vec::new(),
-                last_click: None,
-                last_refresh: std::time::Instant::now(),
-            });
-            self.hud.icebreaker_top_view(true);
-            self.client.borrow_mut().request_icebreaker_building(None);
-        }
+        let ori = camera.get_orientation();
+        camera.set_mode(CameraMode::Freefly);
+        camera.set_orientation_instant(Vec3::new(0.0, std::f32::consts::FRAC_PI_2, 0.0));
+        camera.force_focus_pos(pos + Vec3::unit_z() * reglages.hauteur);
+        self.icebreaker_top_view = Some(IcebreakerTopView {
+            ori,
+            entree: pos,
+            hors_village: false,
+            plane_z: pos.z + reglages.plan,
+            buildings: Vec::new(),
+            last_click: None,
+            last_refresh: std::time::Instant::now(),
+        });
+        self.hud.icebreaker_top_view(true);
+        self.client.borrow_mut().request_icebreaker_building(None);
+    }
+
+    /// Back to the usual camera (a ghost keeps flying), panel and buildings
+    /// gone from the HUD.
+    fn quitter_icebreaker_top_view(&mut self) {
+        let Some(view) = self.icebreaker_top_view.take() else {
+            return;
+        };
+        let spectator = self.client.borrow().presence() == Some(PresenceKind::Spectator);
+        let camera = self.scene.camera_mut();
+        camera.set_mode(if spectator {
+            CameraMode::Freefly
+        } else {
+            CameraMode::ThirdPerson
+        });
+        camera.set_orientation_instant(view.ori);
+        self.hud.icebreaker_top_view(false);
     }
 
     /// The world position (x, y) under the screen point `ndc` (-1 to 1, y up):
@@ -2582,6 +2604,30 @@ impl SessionState {
     /// Where the buildings are on screen this frame, for the HUD: name, screen
     /// rectangle (-1 to 1, y up), whether the cursor is over it, whether a plot.
     fn update_icebreaker_top_view(&mut self, global_state: &GlobalState) {
+        // The view closes by itself once the player is not in the village any
+        // more (X.1): teleported away, dead, or no building sent by the server.
+        if let Some(view) = &self.icebreaker_top_view {
+            let (position, mort) = {
+                let client = self.client.borrow();
+                (client.position(), client.is_dead())
+            };
+            if let Some(sortie) = icebreaker_vue::sortie(
+                view.entree,
+                position,
+                mort,
+                view.hors_village,
+                self.icebreaker_vue_settings.rayon_sortie,
+            ) {
+                self.quitter_icebreaker_top_view();
+                if sortie == icebreaker_vue::Sortie::HorsVillage {
+                    self.hud.new_message(
+                        ChatType::CommandInfo
+                            .into_msg(Content::localized("icebreaker-vue-hors-village")),
+                    );
+                }
+                return;
+            }
+        }
         if let Some(view) = &mut self.icebreaker_top_view
             && view.last_refresh.elapsed() > std::time::Duration::from_secs(1)
         {
