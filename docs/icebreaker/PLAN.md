@@ -242,6 +242,50 @@ que Veloren fait déjà (vue, ouïe, combat, fuite). G.11 à G.14 d'abord ; G.15
 - **Le gouffre** (façon *Made in Abyss*) : un grand puits vertical, des salles accrochées à ses parois ; plus on
   descend, plus c'est dangereux et riche, et remonter coûte (fatigue, temps de carte, blessures ?).
 
+## Jalon F — Forme et vie du donjon généré (Flo, 2026-11-03)
+
+Constat de Flo après une descente : donjon **vide** (11 à 20 créatures, rien dans les couloirs), **immenses
+couloirs vides**, **tout petit** (5 blocs par case et par étage : la caméra sort du donjon), salles rectangulaires
+sans décor, escaliers qui débouchent sur un mur. Causes trouvées dans le code : portes hautes de 3 blocs quelle que
+soit l'échelle ; `place_child` ajoute la taille de la salle à la distance dès que la porte ne fait pas face ;
+`route` ne vérifie pas la case derrière le haut d'un escalier ; peuplement des salles seulement, `default_density:
+"low"` ; aucun décor. Réglages dans `generation.ron` ; worktree `Veloren-donjon`. Ordre : F.1 à F.6, F.7 si besoin.
+Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (jalon K), après F.
+
+- [ ] **F.1 Échelle** — `cell_size: 7`, `level_height: 7` (à passer à 8/8 si la caméra sort encore) ; portes et mur
+  de porte à clé hauts de `h - 1`, torche à `h - 2`, serrure à mi-hauteur ; `check_blocks` juste pour `c` pair ;
+  tunnel d'entrée praticable.
+  *Fin* : exemple `icebreaker_dungeon` sur 5 graines ; en jeu, la caméra reste dans une salle de garde.
+- [ ] **F.2 Couloirs courts, escaliers propres** — rotations et miroirs des salles dessinées (`orientations: 8`,
+  de `RoomVariety.cs`) ; porte en face du parent quand il y en a une et distance = `spacing` (1 à 3) + étages, la
+  taille de la salle n'est ajoutée qu'aux salles sans porte en face ; décalage latéral −1 à 1 ; `route` exige libre
+  la case derrière le haut des marches et `carve` la mure ; pas de lumière sur un palier ; `H` = puits avec un
+  `Ladder` décoratif (escalade de Veloren), plus de fausses marches.
+  *Fin* : sur 100 graines par taille, longueur moyenne des couloirs divisée par deux (test) ; aucun couloir voisin du
+  haut d'un escalier (test) ; toujours finissable.
+- [ ] **F.3 Donjon plus grand** — `sizes` : moyen chemin (7, 9), branches (3, 5), boucles (1, 2) ; grand chemin
+  (9, 12), branches (5, 8), étages (3, 4) ; `search_limit` et `margin` ajustés.
+  *Fin* : un donjon moyen fait 12 à 18 salles ; assemblage toujours vert sur 100 graines.
+- [ ] **F.4 Plus d'ennemis** — `population` relevée, couloirs peuplés (`corridors`, un guetteur toutes les N cases,
+  jamais sur un escalier ni devant une porte), entrée 0–1, sorte `beast` pour les nids (mandragora, hound,
+  frostfang) ; `default_density: "medium"` ou base ×2, pas les deux.
+  *Fin* : donjon moyen par défaut ≈ 30 à 40 créatures (test sur 40 graines), guetteurs dans les couloirs.
+- [ ] **F.5 Salles de formes variées** — `RoomShapes.cs` traduit (`shapes.rs`) : coins coupés, L, T, croix,
+  octogone, ellipse, grotte ; 2 à 4 portes sur les pans droits, garniture par rôle, part `share` 0,5 ; même gabarit
+  que les dessinées (8–12 × 6–10 cases, `min_bar` 2) ; réglages `variety` ; entrée, antres et sanctuaire restent
+  dessinés ; 3 ou 4 salles dessinées en plus (salle sur deux étages avec galerie, colonnade).
+  *Fin* : au moins 3 salles non rectangulaires par donjon moyen ; validité et contrôle des blocs sur 5 graines.
+- [ ] **F.6 Décor par rôle** — section `decor` de `generation.ron` : par rôle, sprites et emplacement (`wall`,
+  `center`, `scatter`), meubles à plusieurs blocs via `PainterSpriteExt` ; jamais sur un escalier, une porte, une
+  créature, un coffre, une clé, une lumière. Cuisine (marmite, chaudron, tonneaux, table), caserne (couchages,
+  caisses), réserve (tonneaux, étagères, sacs), nid (os, toiles, moisissure), garde (table, outils au mur), prison
+  (barreaux, chaînes), trésor (bougies, orbe), antre (feu, os, trophées), sanctuaire (bougies, sceau, tombe),
+  couloirs (os, pierres, toiles clairsemés).
+  *Fin* : en jeu, cuisine, caserne, nid et prison se reconnaissent ; aucun sprite ne bouche un passage (contrôle).
+- [ ] **F.7 Caméra en donjon** (si F.1 ne suffit pas) — mode « loin » de `camera.rs` : refuser un point de caméra
+  séparé du joueur par de la roche.
+  *Fin* : en couloir, dos au mur, la caméra ne sort jamais du donjon.
+
 ## Jalon L — Combat létal (Flo, 2026-10-30)
 
 - [x] **L.1 Dégâts façon Dark Souls** — `assets/icebreaker/combat.ron` multiplie les dégâts des attaques selon la
