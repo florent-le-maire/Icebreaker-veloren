@@ -279,13 +279,14 @@ Réglages : `assets/icebreaker/classes.ron`, `registre.ron` ; état : `campagne/
   `classes/competences/*.ron`. Testé (tests ; guerrier et archer engagés au client texte, compétences en base) ;
   mage en jeu et barre du vrai client pas vérifiés ; les recrues déjà créées n'en ont pas. — b75f07ff26
 
-## Jalon X — Interface et ergonomie du village (Flo, 2026-11-03) — *en cours : Veloren-interface*
+## Jalon X — Interface et ergonomie du village (Flo, 2026-11-03)
 
 Reprendre ce que le vrai client a montré : robustesse et cohérence d'abord, le visuel reste celui de Veloren
 (cadres, boutons, icônes et sprites existants ; pas de nouvelles textures ni de portrait 3D). Ordre : X.1, X.7,
 X.2, X.3, X.8, X.4, X.5, X.6. Réglages dans `assets/icebreaker/vue_village.ron`, `village.ron`, `registre.ron`,
 `verrouillage.ron`.
-
+Fait le 2026-11-03 (branche `icebreaker-interface`, fusionnée) ; tout est vérifié au client texte ou au journal du vrai
+client : reste à **regarder en jeu** (rendu du panneau, couleurs et icônes de la vue U, enseignes, anneau, PNJ dedans).
 - [x] **X.1 Vue U : entrée et sortie propres** — la vue se ferme d'elle-même quand le joueur s'éloigne
   (téléportation, `/rentrer`), meurt, ou que le serveur ne renvoie plus de bâtiments (hors du village : liste
   vide et message) ; hauteur, plan et rayon de sortie dans `vue_village.ron`. Vérifié au client texte (liste sur la
@@ -364,4 +365,8 @@ garde et parade, monstres à coop) : tâches E.1 à E.16 dans `PLAN-DONJON.md`.
    profonde ou une suite de descentes qu'on reprend où on s'était arrêté ?
 3. **Charrette** (jalon R) : engager est-il gratuit (un fantôme n'a pas d'or ; proposé pour la démo) ou payé par la
    caisse ? Combien de places au registre (proposé : 10), et peut-on renvoyer un personnage ? Que devient un
-   personnage du registre qui meurt (attendre B.3, ou il quitte le registre) ?
+. **Enseignes** (X.4) : le sprite `Sign` de Veloren n'a pas de texte ; une vraie enseigne nommée demanderait un
+   asset à nous. On s'en tient aux caisses, tonneaux et lanternes, ou on dessine un panneau par bâtiment ?
+5. **Recrues devant la charrette** (X.8) : leurs postes sont trouvés depuis le poste de la charrette, et sur le village
+   d'essai ils tombaient 8 blocs au-dessus de l'altitude de la maison (pente, ou toit voisin ?). Si elles sont mal
+   placées en jeu, les mettre sur le rebord des fondations comme les enseignes.
