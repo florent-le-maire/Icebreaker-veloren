@@ -264,16 +264,16 @@ Réglages : `assets/icebreaker/classes.ron`, `registre.ron` ; état : `campagne/
   `classes.ron` et `classes/*.ron`. Testé (tests, et au client texte : arme et armure portées). — 8b1854d
 - [x] **R.2 Arrivée en fantôme** — registre actif (`ICEBREAKER_REGISTRE`, campagne et village) : le jeu passe
   l'écran de personnages et entre en spectateur sur la place ; un fantôme ne part pas en expédition. Testé au
-  client texte ; vrai client compilé, pas lancé (vue U d'un fantôme, sortie de zone non bloquée). — HASH
+  client texte ; vrai client compilé, pas lancé (vue U d'un fantôme, sortie de zone non bloquée). — 9bd8d32d27
 - [x] **R.3 La charrette** — 6e bâtiment de la vue U (village de départ à 8 maisons) : recrues au hasard, « Engager »
   crée le personnage au registre et le fait jouer ; renouvelée chaque jour de carte, complétée au minimum au retour
   d'un donjon (`/rentrer`) et si un fantôme n'a rien à prendre. Commande `/registre`. Testé au client texte ;
-  retour de donjon pas essayé. — HASH
+  retour de donjon pas essayé. — 9bd8d32d27
 - [x] **R.4 Registre commun** — « Jouer » un libre (aussi d'un personnage à l'autre), « Rendre au registre » ; un
   joueur par personnage (lu des joueurs en jeu). Testé à deux au client texte (refus, reprise avec le même
-  inventaire) ; pas encore avec un objet ramassé. — HASH
+  inventaire) ; pas encore avec un objet ramassé. — 9bd8d32d27
 - [x] **R.5 Réserver** — « Réserver » / « Libérer », 5 par compte (`registre.ron`). Testé (tests ; refus à un autre
-  joueur au client texte). — HASH
+  joueur au client texte). — 9bd8d32d27
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
