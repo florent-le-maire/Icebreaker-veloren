@@ -275,8 +275,12 @@ fn main() {
                         other => format!("{other:?}"),
                     };
                     println!("Panneau « {} »", text(&title));
-                    for line in &lines {
-                        println!("  {}", text(line));
+                    for (line, icons) in &lines {
+                        if icons.is_empty() {
+                            println!("  {}", text(line));
+                        } else {
+                            println!("  {} (icônes : {icons:?})", text(line));
+                        }
                     }
                     for (label, command) in &actions {
                         println!("  [{}] /{}", text(label), command.join(" "));

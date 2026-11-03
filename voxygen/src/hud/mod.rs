@@ -128,6 +128,7 @@ use common::{
 use common_base::{prof_span, span};
 use common_net::{msg::world_msg::SiteId, sync::WorldSyncExt};
 use conrod_core::{
+    UiCell,
     Color, Colorable, Labelable, Positionable, Sizeable, Widget,
     text::cursor::Index,
     widget::{self, Button, Image, Rectangle, Text},
@@ -339,10 +340,17 @@ widget_ids! {
 
         // Icebreaker: top view of the village
         icebreaker_hint,
-        icebreaker_panel_bg,
-        icebreaker_panel_txt,
+        icebreaker_panel_top,
+        icebreaker_panel_mid,
+        icebreaker_panel_bot,
+        icebreaker_panel_title,
+        icebreaker_panel_close,
+        icebreaker_panel_lines[],
+        icebreaker_panel_icons[],
         icebreaker_panel_buttons[],
-        icebreaker_expedition_bg,
+        icebreaker_expedition_top,
+        icebreaker_expedition_mid,
+        icebreaker_expedition_bot,
         icebreaker_expedition_txt,
         icebreaker_building_rects[],
         icebreaker_building_names[],
@@ -686,11 +694,12 @@ pub struct HudInfo<'a> {
     pub key_state: &'a KeyState,
 }
 
-/// Icebreaker: the panel of a village building in the top view: title, lines,
-/// and buttons (label, and the chat command it sends).
+/// Icebreaker: the panel of a village building in the top view: title, lines
+/// (text, and the items drawn as icons before it), and buttons (label, and the
+/// chat command it sends).
 pub type IcebreakerPanel = (
     comp::Content,
-    Vec<comp::Content>,
+    Vec<(comp::Content, Vec<comp::ItemKey>)>,
     Vec<(comp::Content, Vec<String>)>,
 );
 
@@ -4265,90 +4274,179 @@ impl Hud {
                 .controls
                 .get_binding(GameInput::IcebreakerTopView)
                 .map_or_else(String::new, |key| key.display_string());
-            Text::new(&format!(
-                "Vue du village : cliquer sur un bâtiment ({key} pour revenir)"
-            ))
+            Text::new(&i18n.get_msg_ctx("icebreaker-vue-aide", &i18n::fluent_args! {
+                "key" => key,
+            }))
             .color(TEXT_COLOR)
             .mid_top_with_margin_on(ui_widgets.window, indicator_offset)
             .font_id(self.fonts.cyri.conrod_id)
             .font_size(self.fonts.cyri.scale(20))
             .set(self.ids.icebreaker_hint, ui_widgets);
         }
-        // The command of the panel's button clicked, if any.
+        // The building's panel (X.3): a window in Veloren's dialog frames, its
+        // title, a close button, lines with item icons, and buttons in a column.
+        // The command of the button clicked, if any.
         let mut icebreaker_command = None;
-        if self.icebreaker_top_view {
-            if let Some((title, lines, actions)) = &self.icebreaker_panel {
-                let text = std::iter::once(title)
-                    .chain(lines)
-                    .map(|content| i18n.get_content(content))
-                    .collect::<Vec<_>>()
-                    .join("\n");
-                // Buttons two by two under the text.
-                const BUTTON: [f64; 2] = [190.0, 34.0];
-                let button_rows = actions.len().div_ceil(2);
-                let height =
-                    30.0 + 24.0 * (lines.len() + 1) as f64 + button_rows as f64 * (BUTTON[1] + 8.0);
-                Rectangle::fill([420.0, height])
-                    .rgba(0.0, 0.0, 0.0, 0.7)
-                    .top_left_with_margins_on(ui_widgets.window, 120.0, 20.0)
-                    .set(self.ids.icebreaker_panel_bg, ui_widgets);
-                Text::new(&text)
-                    .color(TEXT_COLOR)
-                    .top_left_with_margins_on(self.ids.icebreaker_panel_bg, 15.0, 15.0)
-                    .font_id(self.fonts.cyri.conrod_id)
-                    .font_size(self.fonts.cyri.scale(18))
-                    .set(self.ids.icebreaker_panel_txt, ui_widgets);
-                if self.ids.icebreaker_panel_buttons.len() < actions.len() {
-                    self.ids
-                        .icebreaker_panel_buttons
-                        .resize(actions.len(), &mut ui_widgets.widget_id_generator());
+        let mut icebreaker_close = false;
+        const ICEBREAKER_PANEL_W: f64 = 420.0;
+        const ICEBREAKER_ICON: f64 = 22.0;
+        const ICEBREAKER_ICONS_PER_LINE: usize = 3;
+        const ICEBREAKER_GAP: f64 = 6.0;
+        const ICEBREAKER_BUTTON_H: f64 = 32.0;
+        let icebreaker_panel_shown = self.icebreaker_top_view && self.icebreaker_panel.is_some();
+        if self.icebreaker_top_view
+            && let Some((title, lines, actions)) = &self.icebreaker_panel
+        {
+            let ids = &mut self.ids;
+            if ids.icebreaker_panel_lines.len() < lines.len() {
+                let generator = &mut ui_widgets.widget_id_generator();
+                ids.icebreaker_panel_lines.resize(lines.len(), generator);
+                ids.icebreaker_panel_icons
+                    .resize(lines.len() * ICEBREAKER_ICONS_PER_LINE, generator);
+            }
+            if ids.icebreaker_panel_buttons.len() < actions.len() {
+                ids.icebreaker_panel_buttons
+                    .resize(actions.len(), &mut ui_widgets.widget_id_generator());
+            }
+            // The lines are laid out from their heights of the last frame (a
+            // wrapped text knows its height once drawn).
+            let line_h = |ui_widgets: &UiCell, id: widget::Id| {
+                ui_widgets.h_of(id).unwrap_or(20.0).max(ICEBREAKER_ICON) + ICEBREAKER_GAP
+            };
+            let lines_h: f64 = ids
+                .icebreaker_panel_lines
+                .iter()
+                .take(lines.len())
+                .map(|id| line_h(ui_widgets, *id))
+                .sum();
+            let mid_h = 10.0
+                + lines_h
+                + actions.len() as f64 * (ICEBREAKER_BUTTON_H + ICEBREAKER_GAP)
+                + 4.0;
+            Image::new(self.imgs.prompt_top)
+                .w_h(ICEBREAKER_PANEL_W, 24.0)
+                .top_left_with_margins_on(ui_widgets.window, 120.0, 20.0)
+                .color(Some(UI_HIGHLIGHT_0))
+                .set(ids.icebreaker_panel_top, ui_widgets);
+            Image::new(self.imgs.prompt_mid)
+                .w_h(ICEBREAKER_PANEL_W, mid_h)
+                .down_from(ids.icebreaker_panel_top, 0.0)
+                .color(Some(UI_HIGHLIGHT_0))
+                .set(ids.icebreaker_panel_mid, ui_widgets);
+            Image::new(self.imgs.prompt_bot)
+                .w_h(ICEBREAKER_PANEL_W, 35.0)
+                .down_from(ids.icebreaker_panel_mid, 0.0)
+                .color(Some(UI_HIGHLIGHT_0))
+                .set(ids.icebreaker_panel_bot, ui_widgets);
+            Text::new(&i18n.get_content(title))
+                .mid_top_with_margin_on(ids.icebreaker_panel_top, 0.0)
+                .font_id(self.fonts.alkhemi.conrod_id)
+                .font_size(self.fonts.alkhemi.scale(26))
+                .color(TEXT_COLOR)
+                .set(ids.icebreaker_panel_title, ui_widgets);
+            if Button::image(self.imgs.close_btn)
+                .w_h(24.0, 25.0)
+                .hover_image(self.imgs.close_btn_hover)
+                .press_image(self.imgs.close_btn_press)
+                .top_right_with_margins_on(ids.icebreaker_panel_top, 0.0, 4.0)
+                .set(ids.icebreaker_panel_close, ui_widgets)
+                .was_clicked()
+            {
+                icebreaker_close = true;
+            }
+            let mut y = 6.0;
+            for (i, (line, icons)) in lines.iter().enumerate() {
+                let icons = &icons[..icons.len().min(ICEBREAKER_ICONS_PER_LINE)];
+                for (k, key) in icons.iter().enumerate() {
+                    Image::new(animate_by_pulse(
+                        &self.item_imgs.img_ids_or_not_found_img(key.clone()),
+                        self.pulse,
+                    ))
+                    .w_h(ICEBREAKER_ICON, ICEBREAKER_ICON)
+                    .top_left_with_margins_on(
+                        ids.icebreaker_panel_mid,
+                        y,
+                        15.0 + k as f64 * (ICEBREAKER_ICON + 4.0),
+                    )
+                    .set(ids.icebreaker_panel_icons[i * ICEBREAKER_ICONS_PER_LINE + k], ui_widgets);
                 }
-                for (i, (label, command)) in actions.iter().enumerate() {
-                    let row = (button_rows - 1 - i / 2) as f64;
-                    if Button::image(self.imgs.button)
-                        .w_h(BUTTON[0], BUTTON[1])
-                        .hover_image(self.imgs.button_hover)
-                        .press_image(self.imgs.button_press)
-                        .bottom_left_with_margins_on(
-                            self.ids.icebreaker_panel_bg,
-                            10.0 + row * (BUTTON[1] + 8.0),
-                            15.0 + (i % 2) as f64 * (BUTTON[0] + 10.0),
-                        )
-                        .label(&i18n.get_content(label))
-                        .label_font_id(self.fonts.cyri.conrod_id)
-                        .label_font_size(self.fonts.cyri.scale(15))
-                        .label_color(TEXT_COLOR)
-                        .set(self.ids.icebreaker_panel_buttons[i], ui_widgets)
-                        .was_clicked()
-                        && let Some((name, args)) = command.split_first()
-                    {
-                        icebreaker_command = Some(Event::SendCommand(name.clone(), args.to_vec()));
-                    }
+                let icons_w = icons.len() as f64 * (ICEBREAKER_ICON + 4.0);
+                Text::new(&i18n.get_content(line))
+                    .w(ICEBREAKER_PANEL_W - 30.0 - icons_w)
+                    .wrap_by_word()
+                    .top_left_with_margins_on(ids.icebreaker_panel_mid, y + 2.0, 15.0 + icons_w)
+                    .font_id(self.fonts.cyri.conrod_id)
+                    .font_size(self.fonts.cyri.scale(16))
+                    .color(TEXT_COLOR)
+                    .set(ids.icebreaker_panel_lines[i], ui_widgets);
+                y += line_h(ui_widgets, ids.icebreaker_panel_lines[i]);
+            }
+            y += 4.0;
+            for (i, (label, command)) in actions.iter().enumerate() {
+                if Button::image(self.imgs.button)
+                    .w_h(ICEBREAKER_PANEL_W - 30.0, ICEBREAKER_BUTTON_H)
+                    .hover_image(self.imgs.button_hover)
+                    .press_image(self.imgs.button_press)
+                    .top_left_with_margins_on(
+                        ids.icebreaker_panel_mid,
+                        y + i as f64 * (ICEBREAKER_BUTTON_H + ICEBREAKER_GAP),
+                        15.0,
+                    )
+                    .label(&i18n.get_content(label))
+                    .label_font_id(self.fonts.cyri.conrod_id)
+                    .label_font_size(self.fonts.cyri.scale(15))
+                    .label_color(TEXT_COLOR)
+                    .set(ids.icebreaker_panel_buttons[i], ui_widgets)
+                    .was_clicked()
+                    && let Some((name, args)) = command.split_first()
+                {
+                    icebreaker_command = Some(Event::SendCommand(name.clone(), args.to_vec()));
                 }
             }
         }
+        if icebreaker_close {
+            self.icebreaker_panel = None;
+        }
         self.events.extend(icebreaker_command);
 
-        // Icebreaker: the expedition being prepared, on the left, for the village.
+        // Icebreaker: the expedition being prepared, for the village: under the
+        // panel in the top view, else top left (X.3).
         if let Some((title, members)) = &self.icebreaker_expedition {
+            const EXPEDITION_W: f64 = 300.0;
+            let pret = i18n.get_msg("icebreaker-expedition-pret");
             let text = std::iter::once(i18n.get_content(title))
                 .chain(members.iter().map(|(alias, ready)| {
                     if *ready {
-                        format!("  {alias} : prêt")
+                        format!("  {alias} : {pret}")
                     } else {
                         format!("  {alias}")
                     }
                 }))
                 .collect::<Vec<_>>()
-                .join("
-");
-            Rectangle::fill([320.0, 24.0 + 22.0 * (members.len() + 1) as f64])
-                .rgba(0.0, 0.0, 0.0, 0.6)
-                .mid_left_with_margin_on(ui_widgets.window, 10.0)
-                .set(self.ids.icebreaker_expedition_bg, ui_widgets);
+                .join("\n");
+            let top = Image::new(self.imgs.prompt_top)
+                .w_h(EXPEDITION_W, 24.0)
+                .color(Some(UI_HIGHLIGHT_0));
+            let top = if icebreaker_panel_shown {
+                top.down_from(self.ids.icebreaker_panel_bot, 16.0)
+                    .align_left_of(self.ids.icebreaker_panel_bot)
+            } else {
+                top.top_left_with_margins_on(ui_widgets.window, 120.0, 20.0)
+            };
+            top.set(self.ids.icebreaker_expedition_top, ui_widgets);
+            Image::new(self.imgs.prompt_mid)
+                .w_h(EXPEDITION_W, 8.0 + 20.0 * (members.len() + 1) as f64)
+                .down_from(self.ids.icebreaker_expedition_top, 0.0)
+                .color(Some(UI_HIGHLIGHT_0))
+                .set(self.ids.icebreaker_expedition_mid, ui_widgets);
+            Image::new(self.imgs.prompt_bot)
+                .w_h(EXPEDITION_W, 35.0)
+                .down_from(self.ids.icebreaker_expedition_mid, 0.0)
+                .color(Some(UI_HIGHLIGHT_0))
+                .set(self.ids.icebreaker_expedition_bot, ui_widgets);
             Text::new(&text)
                 .color(TEXT_COLOR)
-                .top_left_with_margins_on(self.ids.icebreaker_expedition_bg, 10.0, 12.0)
+                .top_left_with_margins_on(self.ids.icebreaker_expedition_mid, 4.0, 15.0)
                 .font_id(self.fonts.cyri.conrod_id)
                 .font_size(self.fonts.cyri.scale(16))
                 .set(self.ids.icebreaker_expedition_txt, ui_widgets);
@@ -5224,6 +5322,9 @@ impl Hud {
                 if self.typing() {
                     self.ui.focus_widget(None);
                     self.force_chat = false;
+                } else if self.icebreaker_panel.is_some() {
+                    // Icebreaker: Escape closes the building's panel first (X.3).
+                    self.icebreaker_panel = None;
                 } else if self.show.trade {
                     self.events.push(Event::TradeAction(TradeAction::Decline));
                 } else {

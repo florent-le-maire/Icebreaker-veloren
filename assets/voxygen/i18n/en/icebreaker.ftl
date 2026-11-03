@@ -13,3 +13,5 @@ command-registre-desc = The cart and the registry: engager <rank>, jouer <number
 icebreaker-vue-hors-village = No village here: the top view closes.
 icebreaker-menu-campagne = Campaign
 icebreaker-fantome-accueil = You arrive as a ghost on the village square: the "Village top view" key shows the buildings; at the cart, hire a recruit or play a character of the registry.
+icebreaker-vue-aide = Village view: click a building ({ $key } to go back)
+icebreaker-expedition-pret = ready

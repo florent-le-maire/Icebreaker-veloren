@@ -7,7 +7,7 @@ use common::{
     calendar::Calendar,
     character::{self, CharacterItem},
     comp::{
-        self, AdminRole, Content, body::Gender, gizmos::Gizmos, invite::InviteKind,
+        self, AdminRole, Content, ItemKey, body::Gender, gizmos::Gizmos, invite::InviteKind,
         item::MaterialStatManifest,
     },
     event::{PluginHash, UpdateCharacterMetadata},
@@ -224,7 +224,11 @@ pub enum ServerGeneral {
     SiteEconomy(EconomyInfo),
     /// Icebreaker: the panel of a village building (title, lines, and buttons:
     /// label, and the chat command it sends).
-    IcebreakerPanel(Content, Vec<Content>, Vec<(Content, Vec<String>)>),
+    IcebreakerPanel(
+        Content,
+        Vec<(Content, Vec<ItemKey>)>,
+        Vec<(Content, Vec<String>)>,
+    ),
     /// Icebreaker: go to the place of the campaign listening on this port, on the
     /// same host (the client leaves this server and connects there).
     IcebreakerTravel(u16),

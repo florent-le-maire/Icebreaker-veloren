@@ -135,7 +135,11 @@ pub enum Event {
     Dialogue(Uid, rtsim::Dialogue<true>),
     /// Icebreaker: the panel of a village building (title, lines, and buttons:
     /// label, and the chat command it sends).
-    IcebreakerPanel(comp::Content, Vec<comp::Content>, Vec<(comp::Content, Vec<String>)>),
+    IcebreakerPanel(
+        comp::Content,
+        Vec<(comp::Content, Vec<comp::ItemKey>)>,
+        Vec<(comp::Content, Vec<String>)>,
+    ),
     /// Icebreaker: go to the place of the campaign listening on this port.
     IcebreakerTravel(u16),
     /// Icebreaker: the registry is open, enter as a ghost (jalon R).

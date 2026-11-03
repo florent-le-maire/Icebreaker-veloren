@@ -13,3 +13,5 @@ command-registre-desc = La charrette et le registre : engager <rang>, jouer <num
 icebreaker-vue-hors-village = Pas de village ici : la vue de dessus se ferme.
 icebreaker-menu-campagne = Campagne
 icebreaker-fantome-accueil = Vous arrivez en fantôme sur la place du village : la touche « Vue du village de dessus » montre les bâtiments ; à la charrette, engagez une recrue ou jouez un personnage du registre.
+icebreaker-vue-aide = Vue du village : cliquer sur un bâtiment ({ $key } pour revenir)
+icebreaker-expedition-pret = prêt

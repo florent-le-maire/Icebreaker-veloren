@@ -16,8 +16,8 @@ use crate::{
 };
 use common::{
     comp::{
-        Content, LocalizationArg, Player, Pos, Presence, PresenceKind, item::ItemDesc,
-        item::ItemI18n,
+        Content, ItemKey, LocalizationArg, Player, Pos, Presence, PresenceKind,
+        item::ItemDesc, item::ItemI18n,
     },
     event::IcebreakerBuildingEvent,
     resources::TimeOfDay,
@@ -147,7 +147,9 @@ fn plot_name(config: &VillageConfig, chantier: Option<Chantier>, now: f64) -> St
 }
 
 /// What a panel shows: title, lines, and buttons (label, chat command).
-type Panel = (Content, Vec<Content>, Vec<(Content, Vec<String>)>);
+/// A line of a panel: its text, and the items drawn as icons before it (X.3).
+type Ligne = (Content, Vec<ItemKey>);
+type Panel = (Content, Vec<Ligne>, Vec<(Content, Vec<String>)>);
 
 /// A button sending the chat command `command`.
 fn button(label: impl Into<String>, command: &[&str]) -> (Content, Vec<String>) {
@@ -168,6 +170,7 @@ fn panel(
     player: Option<Uid>,
 ) -> Panel {
     let plain = |text: String| Content::Plain(text);
+    let ligne = |text: String| (Content::Plain(text), Vec::new());
     let building = match place {
         Place::Building(building) => building,
         Place::Plot(rank) => {
@@ -175,7 +178,7 @@ fn panel(
             if let Some(chantier) = village.chantier(rank) {
                 return (
                     plain("Chantier".to_string()),
-                    vec![plain(format!(
+                    vec![ligne(format!(
                         "Une maison est en construction : finie dans {:.1} h de carte.",
                         hours_left(chantier.fin, now)
                     ))],
@@ -185,12 +188,12 @@ fn panel(
             return (
                 plain("Terrain à bâtir".to_string()),
                 vec![
-                    plain(format!(
+                    ligne(format!(
                         "Une maison : {} pièces d'or de la caisse (la caisse en a {}).",
                         config.prix_maison,
                         treasury.coins()
                     )),
-                    plain(format!(
+                    ligne(format!(
                         "Chantier : {} h de carte, puis de nouveaux habitants.",
                         config.heures_chantier
                     )),
@@ -208,16 +211,19 @@ fn panel(
             actions = vec![button("Ouvrir l'échange", &["echanger", "entrepot"])];
             let items = warehouse.load_items();
             if items.is_empty() {
-                vec![plain("L'entrepôt est vide.".to_string())]
+                vec![ligne("L'entrepôt est vide.".to_string())]
             } else {
                 let i18n = ItemI18n::new_expect();
                 items
                     .iter()
                     .map(|item| {
-                        Content::localized_with_args("icebreaker-bilan-item", [
-                            ("amount", LocalizationArg::from(u64::from(item.amount()))),
-                            ("item", LocalizationArg::from(item.i18n(&i18n).0)),
-                        ])
+                        (
+                            Content::localized_with_args("icebreaker-bilan-item", [
+                                ("amount", LocalizationArg::from(u64::from(item.amount()))),
+                                ("item", LocalizationArg::from(item.i18n(&i18n).0)),
+                            ]),
+                            vec![ItemKey::from(item)],
+                        )
                     })
                     .collect()
             }
@@ -230,21 +236,21 @@ fn panel(
                 button("Verser tout mon or", &["caisse", "tout"]),
             ];
             vec![
-                plain(format!("La caisse du village : {} pièces d'or.", treasury.coins())),
-                plain("Elle paie les chantiers du village.".to_string()),
+                ligne(format!("La caisse du village : {} pièces d'or.", treasury.coins())),
+                ligne("Elle paie les chantiers du village.".to_string()),
             ]
         },
         Building::Intendance => {
             actions = vec![button("Ouvrir l'échange", &["echanger", "intendance"])];
             vec![
-                plain("Potions et vivres, aux prix de la ville.".to_string()),
-                plain("L'intendant vend, et rachète ce que vous rapportez.".to_string()),
+                ligne("Potions et vivres, aux prix de la ville.".to_string()),
+                ligne("L'intendant vend, et rachète ce que vous rapportez.".to_string()),
             ]
         },
         Building::Infirmary => {
             let price = services.heal_price();
             actions = vec![button(format!("Me soigner ({price} or)"), &["soigner"])];
-            vec![plain(format!("Soin complet : {price} pièces d'or."))]
+            vec![ligne(format!("Soin complet : {price} pièces d'or."))]
         },
         // The expedition leader's question and answers, as buttons (V.11).
         Building::Departure => {
@@ -256,7 +262,7 @@ fn panel(
                 .into_iter()
                 .map(|(label, command)| (plain(label), command))
                 .collect();
-            vec![plain(question)]
+            vec![ligne(question)]
         },
         // Built by the event handler, which knows the registry.
         Building::Charrette => {
@@ -327,7 +333,11 @@ impl ServerEvent for IcebreakerBuildingEvent {
                         );
                         client.send_fallible(ServerGeneral::IcebreakerPanel(
                             Content::Plain(Building::Charrette.name().to_string()),
-                            panel.0.into_iter().map(Content::Plain).collect(),
+                            panel
+                                .0
+                                .into_iter()
+                                .map(|line| (Content::Plain(line), Vec::new()))
+                                .collect(),
                             panel
                                 .1
                                 .into_iter()
