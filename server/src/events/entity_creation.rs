@@ -74,6 +74,16 @@ pub fn handle_initialize_spectator(server: &mut Server, ev: InitializeSpectatorE
         server.notify_client(ev.0, ServerGeneral::SetViewDistance(clamped_vds.terrain));
     }
     sys::subscription::initialize_region_subscription(server.state.ecs(), ev.0);
+    // Icebreaker: a ghost of the registry is told what to do (X.7).
+    if crate::icebreaker_registre::active() {
+        server.notify_client(
+            ev.0,
+            ServerGeneral::server_msg(
+                comp::ChatType::Meta,
+                comp::Content::localized("icebreaker-fantome-accueil"),
+            ),
+        );
+    }
 }
 
 pub fn handle_loaded_character_data(server: &mut Server, ev: UpdateCharacterDataEvent) {

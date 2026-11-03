@@ -263,6 +263,10 @@ pub struct Controls {
     time: f64,
 
     screen: Screen,
+    /// Icebreaker: a place of the campaign was clicked: the username goes
+    /// without a prompt (X.7), and the event it makes waits for `maintain`.
+    icebreaker_auto_credentials: bool,
+    icebreaker_pending: Vec<Event>,
 }
 
 #[derive(Clone)]
@@ -365,6 +369,8 @@ impl Controls {
             time: 0.0,
 
             screen,
+            icebreaker_auto_credentials: false,
+            icebreaker_pending: Vec::new(),
         }
     }
 
@@ -477,6 +483,8 @@ impl Controls {
             connection_state: ConnectionState::InProgress,
             init_stage: DetailedInitializationStage::StartingMultiplayer,
         };
+        self.icebreaker_auto_credentials = true;
+        crate::icebreaker::campagne_attendue();
         Event::LoginAttempt { server_address }
     }
 
@@ -723,6 +731,20 @@ impl Controls {
             ..
         } = &mut self.screen
         {
+            // Icebreaker: a place of the campaign (no authentication server) takes
+            // the username as it is, without a prompt (X.7).
+            let username = self.login_info.username.trim().to_string();
+            if std::mem::take(&mut self.icebreaker_auto_credentials)
+                && auth_server.is_none()
+                && validate_username(&username, &self.i18n).is_ok()
+            {
+                *connection_state = ConnectionState::InProgress;
+                self.icebreaker_pending.push(Event::CredentialsProvided(
+                    None,
+                    Ok(Credentials::Username(username)),
+                ));
+                return;
+            }
             screen.credentials.error = None;
             screen.credentials.focus_username();
             *connection_state = ConnectionState::CredentialsPrompt { auth_server };
@@ -856,6 +878,24 @@ impl MainMenuUi {
         self.controls.icebreaker_connect(&mut self.ui, server_address)
     }
 
+    /// Icebreaker: as a click on the first « Campagne » button (X.7, for the
+    /// tests): launches the place if needed and connects to it.
+    pub fn icebreaker_campagne_auto(&mut self) -> Option<Event> {
+        let lieu = icebreaker::lieux()
+            .read()
+            .0
+            .iter()
+            .find(|lieu| lieu.au_menu && lieu.actif)
+            .cloned()?;
+        match icebreaker::lancer(&lieu) {
+            Ok(server_address) => Some(self.controls.icebreaker_connect(&mut self.ui, server_address)),
+            Err(error) => {
+                self.controls.connection_error(error);
+                None
+            },
+        }
+    }
+
     pub fn cancel_connection(&mut self) { self.controls.exit_connect_screen(); }
 
     pub fn handle_event(&mut self, event: window::Event) -> bool {
@@ -920,6 +960,8 @@ impl MainMenuUi {
             self.controls
                 .update(message, &mut events, &global_state.settings, &mut self.ui)
         });
+        // Icebreaker: the credentials given without a prompt (X.7).
+        events.append(&mut self.controls.icebreaker_pending);
 
         events
     }

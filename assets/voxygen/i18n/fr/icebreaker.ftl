@@ -11,3 +11,5 @@ command-expedition-desc = Préparer une expédition : <numéro de destination>, 
 command-echanger-desc = Échanger avec l'entrepôt ou l'intendance du village, de loin
 command-registre-desc = La charrette et le registre : engager <rang>, jouer <numéro>, rendre, reserver <numéro>, liberer <numéro>
 icebreaker-vue-hors-village = Pas de village ici : la vue de dessus se ferme.
+icebreaker-menu-campagne = Campagne
+icebreaker-fantome-accueil = Vous arrivez en fantôme sur la place du village : la touche « Vue du village de dessus » montre les bâtiments ; à la charrette, engagez une recrue ou jouez un personnage du registre.

@@ -432,7 +432,7 @@ impl LoginBanner {
             .height(Length::Units(200))
             .spacing(8)
             .into(),
-            campagne(&mut self.campagne_buttons, fonts, button_style),
+            campagne(&mut self.campagne_buttons, fonts, button_style, i18n),
         ])
         .width(Length::Fill)
         .align_items(Align::Center);
@@ -450,6 +450,7 @@ fn campagne<'a>(
     buttons: &'a mut Vec<button::State>,
     fonts: &Fonts,
     button_style: style::button::Style,
+    i18n: &Localization,
 ) -> Element<'a, Message> {
     const BUTTON_HEIGHT: u16 = 40;
     const SPACING: u16 = 6;
@@ -458,7 +459,7 @@ fn campagne<'a>(
 
     let mut children = vec![
         Space::new(Length::Fill, Length::Units(12)).into(),
-        Text::new("Campagne")
+        Text::new(i18n.get_msg("icebreaker-menu-campagne"))
             .size(fonts.cyri.scale(INPUT_TEXT_SIZE))
             .into(),
     ];

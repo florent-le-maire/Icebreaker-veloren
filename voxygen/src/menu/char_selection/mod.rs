@@ -27,6 +27,8 @@ pub struct CharSelectionState {
     client: Rc<RefCell<Client>>,
     persisted_state: Rc<RefCell<hud::PersistedHudState>>,
     scene: Scene,
+    /// Icebreaker: the server said to enter as a ghost, not acted on yet (X.7).
+    icebreaker_fantome: bool,
 }
 
 impl CharSelectionState {
@@ -50,6 +52,7 @@ impl CharSelectionState {
             client,
             persisted_state,
             scene,
+            icebreaker_fantome: false,
         }
     }
 
@@ -274,7 +277,9 @@ impl PlayState for CharSelectionState {
                 Ok(events) => {
                     let mut join_metadata = None;
                     // Icebreaker: the registry is open, enter as a ghost (jalon R).
-                    let mut fantome = false;
+                    // Remembered until acted on (X.7): a travel still pending that
+                    // tick must not leave the player on this screen for good.
+                    let mut fantome = self.icebreaker_fantome;
                     for event in events {
                         match event {
                             client::Event::SetViewDistance(_vd) => {},
@@ -333,14 +338,22 @@ impl PlayState for CharSelectionState {
                         }
                     }
 
+                    self.icebreaker_fantome = fantome;
+                    // The list is here and no ghost asked: a place without registry, the
+                    // usual screen (X.7).
+                    if !fantome && !self.client.borrow().character_list().loading {
+                        crate::icebreaker::campagne_fini();
+                    }
                     if fantome && let Some(id) = crate::icebreaker::take_jouer() {
                         // A character of the registry: the server loads it.
+                        self.icebreaker_fantome = false;
                         let graphics = &global_state.settings.graphics;
                         self.client.borrow_mut().request_character(id, common::ViewDistances {
                             terrain: graphics.terrain_view_distance,
                             entity: graphics.entity_view_distance,
                         });
                     } else if fantome && !crate::icebreaker::travelling() {
+                        self.icebreaker_fantome = false;
                         self.client
                             .borrow_mut()
                             .request_spectate(global_state.settings.graphics.view_distances());
@@ -407,7 +420,13 @@ impl PlayState for CharSelectionState {
         third_pass.draw_postprocess();
         // Draw the UI to the screen.
         if let Some(mut ui_drawer) = third_pass.draw_ui() {
-            self.char_selection_ui.render(&mut ui_drawer);
+            // Icebreaker: coming to the campaign, nothing to choose until the server
+            // says whether to enter as a ghost (X.7): a plain loading screen.
+            let attente = crate::icebreaker::en_campagne()
+                && (client.character_list().loading || self.icebreaker_fantome);
+            if !attente {
+                self.char_selection_ui.render(&mut ui_drawer);
+            }
         };
     }
 

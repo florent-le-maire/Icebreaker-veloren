@@ -11,3 +11,5 @@ command-expedition-desc = Prepare an expedition: <destination number>, rejoindre
 command-echanger-desc = Trade with the village warehouse or intendance, from afar
 command-registre-desc = The cart and the registry: engager <rank>, jouer <number>, rendre, reserver <number>, liberer <number>
 icebreaker-vue-hors-village = No village here: the top view closes.
+icebreaker-menu-campagne = Campaign
+icebreaker-fantome-accueil = You arrive as a ghost on the village square: the "Village top view" key shows the buildings; at the cart, hire a recruit or play a character of the registry.

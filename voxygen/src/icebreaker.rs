@@ -4,7 +4,10 @@
 //! which connects there; the character selection then plays that character.
 
 use common::character::CharacterId;
-use std::sync::Mutex;
+use std::sync::{
+    Mutex,
+    atomic::{AtomicBool, Ordering},
+};
 
 struct Travel {
     /// Where to connect, `host:port`; taken by the main menu.
@@ -52,3 +55,18 @@ pub fn travelling() -> bool { travel().as_ref().is_some_and(|t| t.character.is_s
 
 /// Who to play, if travelling.
 pub fn take_character() -> Option<CharacterId> { travel().take()?.character }
+
+/// Icebreaker: a travel that failed (no connection) is over, so that the next
+/// connection by hand starts clean (X.7).
+pub fn annuler() { *travel() = None; }
+
+/// Icebreaker: whether the player connected to a place of the campaign (X.7):
+/// the character screen then stays a plain loading screen until the server
+/// says whether to enter as a ghost.
+static CAMPAGNE: AtomicBool = AtomicBool::new(false);
+
+pub fn campagne_attendue() { CAMPAGNE.store(true, Ordering::Relaxed); }
+
+pub fn campagne_fini() { CAMPAGNE.store(false, Ordering::Relaxed); }
+
+pub fn en_campagne() -> bool { CAMPAGNE.load(Ordering::Relaxed) }

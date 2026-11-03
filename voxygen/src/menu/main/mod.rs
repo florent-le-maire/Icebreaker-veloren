@@ -82,6 +82,8 @@ pub struct MainMenuState {
     secure_service_rx: Option<mpsc::UnboundedReceiver<CredentialResponse>>,
     secure_service_tx: Option<mpsc::Sender<String>>,
     pending_credentials: Option<Credentials>,
+    /// Icebreaker: whether `ICEBREAKER_AUTO_CAMPAGNE` was acted on (once).
+    icebreaker_auto_tried: bool,
 }
 
 impl MainMenuState {
@@ -95,6 +97,7 @@ impl MainMenuState {
             secure_service_rx: None,
             secure_service_tx: None,
             pending_credentials: None,
+            icebreaker_auto_tried: false,
         }
     }
 }
@@ -294,6 +297,8 @@ impl PlayState for MainMenuState {
                 },
                 Some(InitOutMsg::Done(Err(e))) => {
                     self.init = InitState::None;
+                    // Icebreaker: a failed travel is over (X.7).
+                    crate::icebreaker::annuler();
                     error!(?e, "Client Init failed raw error");
                     let e = get_client_init_msg_error(e, &global_state.i18n);
                     // Stop secure service tasks.
@@ -440,6 +445,8 @@ impl PlayState for MainMenuState {
                     global_state.info_message =
                         Some(get_client_msg_error(err, None, &global_state.i18n.read()));
                     self.init = InitState::None;
+                    // Icebreaker: a failed travel is over (X.7).
+                    crate::icebreaker::annuler();
                 },
             }
         }
@@ -504,6 +511,16 @@ impl PlayState for MainMenuState {
             .then(crate::icebreaker::take_address)
             .flatten()
             .map(|address| self.main_menu_ui.icebreaker_travel(address));
+        // Icebreaker: `ICEBREAKER_AUTO_CAMPAGNE=1` clicks « Campagne » at once, for
+        // the tests (X.7).
+        let auto = (matches!(self.init, InitState::None)
+            && !self.icebreaker_auto_tried
+            && std::env::var_os("ICEBREAKER_AUTO_CAMPAGNE").is_some())
+        .then(|| {
+            self.icebreaker_auto_tried = true;
+            self.main_menu_ui.icebreaker_campagne_auto()
+        })
+        .flatten();
 
         // Maintain the UI.
         for event in self
@@ -511,6 +528,7 @@ impl PlayState for MainMenuState {
             .maintain(global_state, global_state.clock.real_dt())
             .into_iter()
             .chain(travel)
+            .chain(auto)
         {
             match event {
                 MainMenuEvent::LoginAttempt { server_address } => {
