@@ -263,9 +263,10 @@ Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (j
   d'un escalier de couloir, jamais de case praticable ; pas de lumière près d'un escalier ; `H` = puits dégagé avec
   des sprites `Ladder` au mur. Mesuré (test, 100 graines par taille) : 14 → 6 cases de couloir par salle. Testé :
   tests ciblés, exemple sur 5 graines, serveur Genere ; échelle et salles tournées pas encore vues en jeu. — 3a63b26e8b
-- [ ] **F.3 Donjon plus grand** — `sizes` : moyen chemin (7, 9), branches (3, 5), boucles (1, 2) ; grand chemin
-  (9, 12), branches (5, 8), étages (3, 4) ; `search_limit` et `margin` ajustés.
-  *Fin* : un donjon moyen fait 12 à 18 salles ; assemblage toujours vert sur 100 graines.
+- [x] **F.3 Donjon plus grand** — `sizes` : moyen chemin (7, 9), branches (3, 5), boucles (1, 2) ; grand chemin (9, 12),
+  branches (5, 8), étages (3, 4) ; `search_limit` et `margin` inchangés (ça suffit). Mesuré : 13,7 salles en moyenne en
+  moyen (test, 40 graines, au moins 10 chacun) ; assemblage vert sur 100 graines ; exemple sur 5 graines ; serveur
+  Genere lancé (graine 7). Pas encore vu en jeu.
 - [ ] **F.4 Plus d'ennemis** — `population` relevée, couloirs peuplés (`corridors`, un guetteur toutes les N cases,
   jamais sur un escalier ni devant une porte), entrée 0–1, sorte `beast` pour les nids (mandragora, hound,
   frostfang) ; `default_density: "medium"` ou base ×2, pas les deux.

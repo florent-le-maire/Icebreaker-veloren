@@ -766,4 +766,26 @@ mod tests {
             assert!(extras_dug * 10 >= extras, "{size} : {extras_dug} boucles et chutes creusées sur {extras}");
         }
     }
+
+    /// Icebreaker F.3: a medium dungeon has 12 to 18 rooms on average.
+    #[test]
+    fn medium_dungeons_are_big_enough() {
+        let settings = Settings::load().unwrap();
+        let catalog = RoomCatalog::load().unwrap().with_orientations(settings.variety.orientations).unwrap();
+        let resolved = settings.resolve(&Mission::default()).unwrap();
+        let (mut rooms, mut dungeons) = (0, 0);
+        for seed in 0..40 {
+            let graph = graph::generate(&resolved, seed);
+            if let Some(dungeon) =
+                assemble(&graph, &catalog, seed, &settings.assembly, settings.render.tunnel_cells, |_| {})
+            {
+                assert!(dungeon.rooms.len() >= 10, "graine {seed} : {} salles", dungeon.rooms.len());
+                rooms += dungeon.rooms.len();
+                dungeons += 1;
+            }
+        }
+        let mean = rooms as f32 / dungeons as f32;
+        println!("medium : {mean:.1} salles en moyenne sur {dungeons} donjons");
+        assert!((12.0..=18.0).contains(&mean), "medium : {mean:.1} salles en moyenne");
+    }
 }
