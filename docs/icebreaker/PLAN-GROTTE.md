@@ -49,12 +49,13 @@ réglages dans `assets/icebreaker/grottes/grotte.ron` ; exemple de contrôle `wo
   couche grottes de Veloren coupée dans toutes les instances. Rendu : une poche (ellipsoïde) sous la bouche et le boyau
   en pente qui y descend ; arrivée devant la bouche. Testé : tests, exemple `icebreaker_grotte` sur 3 graines (poche
   et boyau creux), serveur lancé (apparition devant la bouche) ; pas encore descendu en jeu. — 619d257d25
-- [ ] **K.2 Réseau de poches et de boyaux** — tracé déterministe par graine (`grotte.ron` : 6 à 10 poches, rayons
-  8 à 16, 3 niveaux de profondeur, boyaux de rayon 3 à 5, 1 à 2 culs-de-sac par poche) : chaque poche reliée à une
-  poche du niveau au-dessus, plus 1 ou 2 boucles ; poches en `superquadric`/`ellipsoid`, boyaux en `cubic_bezier`,
-  surfaces cassées au bruit de la position. Contrôle dans l'exemple : parcours en largeur des blocs d'air avec sol
-  dessous depuis l'entrée (pas d'un bloc, descentes libres).
-  *Fin* : 20 graines, toutes les poches atteignables ; en jeu, on traverse le réseau sans creuser.
+- [x] **K.2 Réseau de poches et de boyaux** — tracé déterministe par graine (`grotte.ron` → `reseau` : 6 à 10 poches,
+  3 niveaux à 22 blocs d'écart, boyaux de rayon 3 à 5, 1 à 2 boucles entre les poches les plus proches, 1 à 2
+  culs-de-sac par poche) : chaque poche accrochée à une poche du niveau au-dessus, jamais deux qui se chevauchent ;
+  poches en ellipsoïde, boyaux droits (`line`) ; le bruit des surfaces attend K.3. Contrôle dans l'exemple : marche
+  depuis la bouche (un bloc de montée, descentes libres), toutes les poches atteintes, culs-de-sac creux. Testé :
+  tests (20 graines : liées, sur plusieurs niveaux, sans chevauchement), exemple sur 25 graines (0 problème), serveur
+  lancé (graine 42 : 7 poches, 2 boucles). Pas encore parcouru en jeu.
 - [ ] **K.3 Relief et décor** — sol irrégulier, stalagmites et stalactites, `GlowingRock` dans les parois,
   champignons, mycélium au plafond, cristaux, os et toiles par `Fill::Sampling` ; trois ambiances en données
   (`-Ambiance`, variable `ICEBREAKER_GROTTE_AMBIANCE`, au hasard sinon).

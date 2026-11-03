@@ -1,7 +1,22 @@
 // Icebreaker : réglages de la grotte (lieu « Grotte », docs/icebreaker/PLAN-GROTTE.md, jalon K).
 (
-    // Entrée : un boyau de la bouche (en surface) au centre de la première poche.
+    // Entrée (K.1) : un boyau de la bouche (en surface) au centre de la première poche.
     entree: (profondeur: 20, longueur: 28, rayon: 2.5),
     // Poche : un ellipsoïde ; rayon horizontal et demi-hauteur en blocs (min, max).
     poche: (rayon: (10, 14), hauteur: (5, 7)),
+    // Réseau (K.2) : poches (la première comprise) réparties sur des niveaux de profondeur, chacune accrochée par un
+    // boyau à une poche du niveau au-dessus ; ecart : blocs entre les parois de deux poches liées ; boucles : boyaux
+    // en plus entre les poches les plus proches ; culs-de-sac : tubes étroits qui partent de chaque poche (les trous
+    // d'où sortent les bêtes), longueur et rayon en blocs.
+    reseau: (
+        poches: (6, 10),
+        niveaux: 3,
+        ecart_niveau: 22,
+        ecart: (10, 24),
+        rayon_boyau: (3, 5),
+        boucles: (1, 2),
+        culs_de_sac: (1, 2),
+        longueur_cul_de_sac: (8, 16),
+        rayon_cul_de_sac: 2.0,
+    ),
 )

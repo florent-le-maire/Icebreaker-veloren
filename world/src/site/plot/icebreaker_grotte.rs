@@ -60,7 +60,7 @@ impl Structure for IcebreakerGrotte {
         for pocket in &self.grotte.pockets {
             painter.ellipsoid(pocket.aabb()).clear();
         }
-        for bore in &self.grotte.bores {
+        for bore in self.grotte.bores.iter().chain(&self.grotte.dead_ends) {
             painter.line(bore.a, bore.b, bore.radius).clear();
         }
     }
