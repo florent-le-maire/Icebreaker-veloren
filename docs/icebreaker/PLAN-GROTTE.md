@@ -55,7 +55,7 @@ réglages dans `assets/icebreaker/grottes/grotte.ron` ; exemple de contrôle `wo
   poches en ellipsoïde, boyaux droits (`line`) ; le bruit des surfaces attend K.3. Contrôle dans l'exemple : marche
   depuis la bouche (un bloc de montée, descentes libres), toutes les poches atteintes, culs-de-sac creux. Testé :
   tests (20 graines : liées, sur plusieurs niveaux, sans chevauchement), exemple sur 25 graines (0 problème), serveur
-  lancé (graine 42 : 7 poches, 2 boucles). Pas encore parcouru en jeu.
+  lancé (graine 42 : 7 poches, 2 boucles). Pas encore parcouru en jeu. — bca9fee91b
 - [ ] **K.3 Relief et décor** — sol irrégulier, stalagmites et stalactites, `GlowingRock` dans les parois,
   champignons, mycélium au plafond, cristaux, os et toiles par `Fill::Sampling` ; trois ambiances en données
   (`-Ambiance`, variable `ICEBREAKER_GROTTE_AMBIANCE`, au hasard sinon).
