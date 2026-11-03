@@ -312,9 +312,9 @@ X.2, X.3, X.8, X.4, X.5, X.6. Réglages dans `assets/icebreaker/vue_village.ron`
 - [x] **X.5 Les PNJ dans leur maison** — magasinier, trésorier, intendant, infirmier et chef à l'intérieur
   (centre de la case de la porte, au plancher) ; la charrette et ses recrues restent dehors. Testé (client texte :
   les cinq dans l'emprise de leur maison, au plancher) ; E et T dedans pas encore essayés en jeu. — af89bed30e
-- [ ] **X.6 Anneau de verrouillage centré** — ancrage mesuré sur trois corps (gnarling, humanoïde, chef),
-  décalage relatif et tailles dans `verrouillage.ron`.
-  *Fin* : l'anneau est au milieu du corps, de près comme de loin.
+- [x] **X.6 Anneau de verrouillage centré** — cause trouvée : les cercles sans position explicite étaient placés
+  par conrod par rapport au widget dessiné avant ; posés en (0, 0) puis projetés ; `ancrage` et `rayon_anneau` dans
+  `verrouillage.ron`. Testé (tests, compilation) ; centrage pas encore vu en jeu (sinon : régler `ancrage`). — 30ed3cd7b3
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
