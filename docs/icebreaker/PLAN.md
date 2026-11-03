@@ -275,6 +275,43 @@ Réglages : `assets/icebreaker/classes.ron`, `registre.ron` ; état : `campagne/
 - [x] **R.5 Réserver** — « Réserver » / « Libérer », 5 par compte (`registre.ron`). Testé (tests ; refus à un autre
   joueur au client texte). — 9bd8d32d27
 
+## Jalon X — Interface et ergonomie du village (Flo, 2026-11-03) — *en cours : Veloren-interface*
+
+Reprendre ce que le vrai client a montré : robustesse et cohérence d'abord, le visuel reste celui de Veloren
+(cadres, boutons, icônes et sprites existants ; pas de nouvelles textures ni de portrait 3D). Ordre : X.1, X.7,
+X.2, X.3, X.8, X.4, X.5, X.6. Réglages dans `assets/icebreaker/vue_village.ron`, `village.ron`, `registre.ron`,
+`verrouillage.ron`.
+
+- [ ] **X.1 Vue U : entrée et sortie propres** — la vue se ferme d'elle-même quand le joueur s'éloigne
+  (téléportation, `/rentrer`), meurt, ou que le serveur ne renvoie plus de bâtiments (hors du village : liste
+  vide et message) ; hauteur, plan et rayon de sortie dans `vue_village.ron`.
+  *Fin* : partir en expédition depuis la vue U, ou `/rentrer`, rend une caméra et un personnage normaux.
+- [ ] **X.7 « Campagne » amène sur la place, en fantôme** — plus d'attente sur l'écran de personnages (simple
+  chargement quand le registre est actif), `TRAVEL` vidé hors voyage, message d'accueil du fantôme (U, la
+  charrette) ; « Campagne » et « Icebreaker » en `.ftl`.
+  *Fin* : clic sur « Campagne » → connexion → la place du village en fantôme.
+- [ ] **X.2 Clic juste en vue U** — le serveur envoie l'altitude de chaque bâtiment ; le client projette les
+  coins avec la vraie matrice de la caméra, survol et clic dans l'espace écran.
+  *Fin* : le rectangle surligné et la zone cliquée coïncident avec la maison, en pente comme sur la place.
+- [ ] **X.3 Un vrai panneau de bâtiment** — fenêtre à la Veloren (cadre, titre, croix, Échap), lignes avec
+  icônes d'objets (`(Content, Vec<String>)` : texte, ids d'objets), boutons en colonne ; liste d'expédition du
+  même style, sans chevauchement ; bandeau d'aide et « prêt » en `.ftl`.
+  *Fin* : cliquer sur l'entrepôt ouvre une fenêtre avec les icônes de son contenu.
+- [ ] **X.8 Charrette : voir les recrues** — chaque recrue et chaque fiche avec les icônes de son arme et de son
+  torse ; les recrues du jour debout devant la charrette, équipées et nommées (retirées quand engagées ou
+  renouvelées), E : « Engagez-moi à la charrette ».
+  *Fin* : on voit les recrues devant la charrette et leurs icônes dans le panneau.
+- [ ] **X.4 Identité visuelle des bâtiments** — en vue U, couleur de bord et icône du HUD par bâtiment
+  (`village.ron` → `apparence`) ; dans le village, sprites de Veloren autour de la porte à la génération
+  (caisses, tonneaux, coffre, lanterne, enseigne…), listés par bâtiment dans `village.ron`.
+  *Fin* : on reconnaît l'entrepôt et la charrette avant de lire le nom.
+- [ ] **X.5 Les PNJ dans leur maison** — magasinier, trésorier, intendant, infirmier et chef à l'intérieur
+  (case de la porte ou sa voisine, au plancher) ; la charrette et ses recrues restent dehors.
+  *Fin* : E et T marchent dans la maison ; échanges à distance et départ inchangés.
+- [ ] **X.6 Anneau de verrouillage centré** — ancrage mesuré sur trois corps (gnarling, humanoïde, chef),
+  décalage relatif et tailles dans `verrouillage.ron`.
+  *Fin* : l'anneau est au milieu du corps, de près comme de loin.
+
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
 Ce qui rend l'enchaînement village → donjon → village intéressant (risque, butin, besoins du village) : règles et
