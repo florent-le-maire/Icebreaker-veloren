@@ -691,7 +691,9 @@ pub struct HudInfo<'a> {
     pub target_entity: Option<specs::Entity>,
     pub selected_entity: Option<(specs::Entity, Instant)>,
     /// Icebreaker: the locked enemy (Dark Souls).
-    pub icebreaker_lock_target: Option<specs::Entity>,
+    /// Icebreaker: the locked enemy (Dark Souls), where on its body the ring
+    /// sits (0: feet, 1: head) and the ring's radius in pixels (X.6).
+    pub icebreaker_lock_target: Option<(specs::Entity, f32, f32)>,
     pub persistence_load_error: Option<SkillsPersistenceError>,
     pub key_state: &'a KeyState,
 }
@@ -2123,7 +2125,10 @@ impl Hud {
             let pulse = self.pulse;
 
             // Icebreaker: a ring on the locked enemy (Dark Souls), over everything.
-            if let Some(target) = info.icebreaker_lock_target
+            // Every piece is placed at (0, 0) explicitly, as Veloren's overheads
+            // do: without it, conrod sets it relative to the widget drawn before,
+            // and the ring drifts off the body (X.6).
+            if let Some((target, ancrage, rayon)) = info.icebreaker_lock_target
                 && let Some(target_pos) = interpolated
                     .get(target)
                     .map(|i| i.pos)
@@ -2131,25 +2136,29 @@ impl Hud {
             {
                 let height = bodies.get(target).map_or(1.8, |b| b.height())
                     * scales.get(target).map_or(1.0, |s| s.0);
-                let center = target_pos + Vec3::unit_z() * height * 0.5;
+                let center = target_pos + Vec3::unit_z() * height * ancrage;
                 let breath = 1.0 + 0.08 * f64::from((pulse * 4.0).sin());
+                let rayon = f64::from(rayon);
                 let gold = Color::Rgba(1.0, 0.82, 0.4, 0.95);
                 widget::Circle::outline_styled(
-                    13.0 * breath,
+                    rayon * breath,
                     widget::line::Style::solid().thickness(2.5),
                 )
                 .color(gold)
+                .x_y(0.0, 0.0)
                 .position_ingame(center)
                 .set(self.ids.icebreaker_lock_ring, ui_widgets);
                 widget::Circle::outline_styled(
-                    19.0 * breath,
+                    rayon * 1.5 * breath,
                     widget::line::Style::solid().thickness(1.0),
                 )
                 .color(gold.alpha(0.45))
+                .x_y(0.0, 0.0)
                 .position_ingame(center)
                 .set(self.ids.icebreaker_lock_halo, ui_widgets);
                 widget::Circle::fill(3.0)
                     .color(Color::Rgba(1.0, 0.97, 0.88, 1.0))
+                    .x_y(0.0, 0.0)
                     .position_ingame(center)
                     .set(self.ids.icebreaker_lock_dot, ui_widgets);
                 // Four ticks around the ring, at the cardinal points.
@@ -2158,7 +2167,7 @@ impl Hud {
                         .icebreaker_lock_ticks
                         .resize(4, &mut ui_widgets.widget_id_generator());
                 }
-                let r = 24.0 * breath;
+                let r = rayon * 1.85 * breath;
                 for (i, (x, y, w, h)) in [
                     (0.0, r, 2.0, 7.0),
                     (0.0, -r, 2.0, 7.0),

@@ -1812,7 +1812,10 @@ impl PlayState for SessionState {
                     mutable_viewpoint,
                     target_entity: self.target_entity,
                     selected_entity: self.selected_entity,
-                    icebreaker_lock_target: self.icebreaker_lock.as_ref().map(|lock| lock.cible),
+                    icebreaker_lock_target: self.icebreaker_lock.as_ref().map(|lock| {
+                        let reglages = &self.icebreaker_lock_settings;
+                        (lock.cible, reglages.ancrage, reglages.rayon_anneau)
+                    }),
                     persistence_load_error: self.metadata.skill_set_persistence_load_error,
                     key_state: &self.key_state,
                 },

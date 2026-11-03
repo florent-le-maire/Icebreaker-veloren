@@ -20,7 +20,17 @@ pub struct Reglages {
     pub vitesse_camera: f32,
     /// Temps minimum (s) entre deux changements de cible à la molette.
     pub delai_molette: f32,
+    /// Où le cercle se pose sur le corps de la cible : 0 aux pieds, 1 au sommet de la tête.
+    #[serde(default = "ancrage_defaut")]
+    pub ancrage: f32,
+    /// Rayon du cercle à l'écran (pixels) ; le halo et les traits en découlent.
+    #[serde(default = "rayon_anneau_defaut")]
+    pub rayon_anneau: f32,
 }
+
+fn ancrage_defaut() -> f32 { 0.5 }
+
+fn rayon_anneau_defaut() -> f32 { 13.0 }
 
 impl Reglages {
     pub fn charger() -> Self {
