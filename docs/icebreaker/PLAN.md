@@ -309,9 +309,9 @@ X.2, X.3, X.8, X.4, X.5, X.6. Réglages dans `assets/icebreaker/vue_village.ron`
   (`vue_village.ron` → `apparences`) ; dans le village, enseignes (sprites de Veloren) sur le rebord des fondations
   de part et d'autre de la porte (`village.ron` → `enseignes`). Testé (tests, enseignes vues au client texte) ;
   couleurs et icônes pas encore vues en jeu. — fe3400d39e
-- [ ] **X.5 Les PNJ dans leur maison** — magasinier, trésorier, intendant, infirmier et chef à l'intérieur
-  (case de la porte ou sa voisine, au plancher) ; la charrette et ses recrues restent dehors.
-  *Fin* : E et T marchent dans la maison ; échanges à distance et départ inchangés.
+- [x] **X.5 Les PNJ dans leur maison** — magasinier, trésorier, intendant, infirmier et chef à l'intérieur
+  (centre de la case de la porte, au plancher) ; la charrette et ses recrues restent dehors. Testé (client texte :
+  les cinq dans l'emprise de leur maison, au plancher) ; E et T dedans pas encore essayés en jeu. — af89bed30e
 - [ ] **X.6 Anneau de verrouillage centré** — ancrage mesuré sur trois corps (gnarling, humanoïde, chef),
   décalage relatif et tailles dans `verrouillage.ron`.
   *Fin* : l'anneau est au milieu du corps, de près comme de loin.
