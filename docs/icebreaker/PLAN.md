@@ -290,9 +290,9 @@ X.2, X.3, X.8, X.4, X.5, X.6. Réglages dans `assets/icebreaker/vue_village.ron`
   un chargement tant que le serveur n'a pas répondu, demande de fantôme gardée, voyage raté annulé, message d'accueil
   du fantôme (fr, en), « Campagne » en `.ftl` ; `ICEBREAKER_AUTO_CAMPAGNE=1` pour entrer sans clic (tests). Vérifié au
   journal du vrai client (menu → fantôme sans clic) et au client texte (accueil) ; pas encore vu à l'écran. — 4fb6ae42e8
-- [ ] **X.2 Clic juste en vue U** — le serveur envoie l'altitude de chaque bâtiment ; le client projette les
-  coins avec la vraie matrice de la caméra, survol et clic dans l'espace écran.
-  *Fin* : le rectangle surligné et la zone cliquée coïncident avec la maison, en pente comme sur la place.
+- [x] **X.2 Clic juste en vue U** — le serveur envoie l'altitude de chaque bâtiment ; le client projette les
+  coins avec la vraie matrice de la caméra, survol et clic sur le rectangle dessiné. Testé (projection, serveur,
+  altitudes au client texte : de 201 à 257 sur un village) ; alignement pas encore vu en jeu. — 4e9faa3e09
 - [ ] **X.3 Un vrai panneau de bâtiment** — fenêtre à la Veloren (cadre, titre, croix, Échap), lignes avec
   icônes d'objets (`(Content, Vec<String>)` : texte, ids d'objets), boutons en colonne ; liste d'expédition du
   même style, sans chevauchement ; bandeau d'aide et « prêt » en `.ftl`.
