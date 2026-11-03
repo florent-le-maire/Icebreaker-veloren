@@ -108,6 +108,9 @@ fn main() {
     // compte (créé s'il n'y en a pas), pour tester les commandes qui en veulent un.
     let mut joining = false;
     let mut created = false;
+    // Icebreaker : le personnage du registre à jouer (ou un fantôme) une fois sorti
+    // du monde (jalon R).
+    let mut registre_next: Option<Option<common::character::CharacterId>> = None;
 
     loop {
         for msg in rx.try_iter() {
@@ -118,6 +121,21 @@ fn main() {
             } else if msg == "!jouer" {
                 client.load_character_list();
                 joining = true;
+            } else if msg == "!fantome" {
+                // Icebreaker : entrer en fantôme (spectateur), comme au village avec le
+                // registre (jalon R).
+                client.request_spectate(common::ViewDistances {
+                    terrain: 5,
+                    entity: 5,
+                });
+            } else if msg == "!batiments" {
+                // Icebreaker : les bâtiments du village (nom, emprise), puis `!panneau x y`.
+                client.request_icebreaker_building(None);
+            } else if let Some(rest) = msg.strip_prefix("!panneau ") {
+                let mut xy = rest.split_whitespace().filter_map(|w| w.parse::<f32>().ok());
+                if let (Some(x), Some(y)) = (xy.next(), xy.next()) {
+                    client.request_icebreaker_building(Some(vek::Vec2::new(x, y)));
+                }
             } else if msg == "!echange" {
                 // Icebreaker : l'échange en cours, s'il y en a un.
                 println!("Échange en cours : {}", client.pending_trade().is_some());
@@ -128,6 +146,9 @@ fn main() {
                 if let Some(inventory) = inventories.get(client.entity()) {
                     for item in inventory.slots().flatten() {
                         println!("Sac : {} x {:?}", item.amount(), item.item_definition_id());
+                    }
+                    for item in inventory.equipped_items() {
+                        println!("Équipé : {:?}", item.item_definition_id());
                     }
                 }
             } else if msg == "!voisins" {
@@ -168,6 +189,23 @@ fn main() {
             } else {
                 client.send_chat(msg)
             }
+        }
+
+        if let Some(next) = registre_next
+            && client.presence().is_none()
+        {
+            let vd = common::ViewDistances {
+                terrain: 5,
+                entity: 5,
+            };
+            match next {
+                Some(id) => {
+                    println!("Registre : on joue le personnage {id:?}");
+                    client.request_character(id, vd);
+                },
+                None => client.request_spectate(vd),
+            }
+            registre_next = None;
         }
 
         if joining && !client.character_list().loading {
@@ -216,6 +254,31 @@ fn main() {
                     .1
                 ),
                 Event::Disconnect => {}, // TODO
+                Event::IcebreakerFantome => println!("Registre ouvert : !fantome pour entrer"),
+                Event::StartSpectate(pos) => println!("Fantôme en {:?}", pos.map(|e| e.round())),
+                Event::IcebreakerBuildings(buildings) => {
+                    for (name, bounds, _) in buildings {
+                        let center = bounds.center();
+                        println!("Bâtiment {name:?} : centre {} {}", center.x, center.y);
+                    }
+                },
+                Event::IcebreakerJouer(next) => {
+                    client.request_remove_character();
+                    registre_next = Some(next);
+                },
+                Event::IcebreakerPanel(title, lines, actions) => {
+                    let text = |c: &comp::Content| match c {
+                        comp::Content::Plain(s) => s.clone(),
+                        other => format!("{other:?}"),
+                    };
+                    println!("Panneau « {} »", text(&title));
+                    for line in &lines {
+                        println!("  {}", text(line));
+                    }
+                    for (label, command) in &actions {
+                        println!("  [{}] /{}", text(label), command.join(" "));
+                    }
+                },
                 Event::DisconnectionNotification(time) => {
                     let message = match time {
                         0 => String::from("Goodbye!"),

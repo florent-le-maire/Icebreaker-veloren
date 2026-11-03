@@ -806,6 +806,10 @@ pub fn check_character_limit(
     uuid: &str,
     transaction: &mut Transaction,
 ) -> Result<(), PersistenceError> {
+    // Icebreaker: the registry has its own limit (`registre.ron`, jalon R).
+    if uuid == crate::icebreaker_registre::REGISTRE_UUID {
+        return Ok(());
+    }
     let mut stmt = transaction.prepare_cached(
         "
         SELECT  COUNT(1)

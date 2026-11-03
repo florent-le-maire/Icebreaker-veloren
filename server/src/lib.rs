@@ -21,6 +21,7 @@ pub mod icebreaker_buildings;
 pub mod icebreaker_classes;
 pub mod icebreaker_expedition;
 pub mod icebreaker_mission;
+pub mod icebreaker_registre;
 pub mod icebreaker_return;
 pub mod icebreaker_services;
 pub mod icebreaker_slots;
@@ -555,7 +556,7 @@ impl Server {
         let spawn_point = SpawnPoint::default();
 
         // Icebreaker: the village buildings (warehouse, treasury, intendance,
-        // infirmary, departure, in `Building::ALL` order) are the houses nearest
+        // infirmary, departure, cart, in `Building::ALL` order) are the houses nearest
         // to the square, their NPC standing at the door; on the square, at the setting's
         // offset from the spawn point, if the town lacks houses.
         #[cfg(feature = "worldgen")]
@@ -566,6 +567,7 @@ impl Server {
                 settings.icebreaker.intendant_offset,
                 settings.icebreaker.healer_offset,
                 settings.icebreaker.departure_offset,
+                settings.icebreaker.charrette_offset,
             ];
             let square = spawn_point.0.xy().as_::<i32>();
             let houses = instance_site
@@ -598,7 +600,10 @@ impl Server {
             (posts, village)
         };
         #[cfg(not(feature = "worldgen"))]
-        let (village_posts, village) = (vec![None; 5], icebreaker_village::IcebreakerVillage::default());
+        let (village_posts, village) = (
+            vec![None; icebreaker_buildings::Building::ALL.len()],
+            icebreaker_village::IcebreakerVillage::default(),
+        );
         let village_npc_pos = |i: usize| village_posts[i].map(|(pos, _)| pos);
         state
             .ecs_mut()
@@ -607,6 +612,10 @@ impl Server {
             ));
         state.ecs_mut().insert(village);
         let campaign_dir = std::env::var_os("ICEBREAKER_CAMPAIGN_DIR").map(std::path::PathBuf::from);
+        // Icebreaker: the cart and the common registry (jalon R).
+        state
+            .ecs_mut()
+            .insert(icebreaker_registre::IcebreakerRegistre::new(campaign_dir.clone()));
         state
             .ecs_mut()
             .insert(icebreaker_warehouse::IcebreakerWarehouse::new(
@@ -1274,6 +1283,38 @@ impl Server {
                             ),
                         },
                         CharacterScreenResponseKind::CharacterCreation(result) => match result {
+                            // Icebreaker: a recruit of the cart saved (jalon R): it joins
+                            // the registry and its player plays it.
+                            Ok((character_id, _))
+                                if self
+                                    .state
+                                    .ecs()
+                                    .write_resource::<icebreaker_registre::IcebreakerRegistre>()
+                                    .cree(response.target_entity, character_id)
+                                    .is_some() =>
+                            {
+                                self.notify_client(
+                                    response.target_entity,
+                                    ServerGeneral::IcebreakerJouer(Some(character_id)),
+                                );
+                            },
+                            Err(error)
+                                if self
+                                    .state
+                                    .ecs()
+                                    .write_resource::<icebreaker_registre::IcebreakerRegistre>()
+                                    .echec(response.target_entity) =>
+                            {
+                                self.notify_client(
+                                    response.target_entity,
+                                    ServerGeneral::server_msg(
+                                        comp::ChatType::CommandError,
+                                        Content::Plain(format!(
+                                            "La recrue n'a pas pu être engagée : {error}"
+                                        )),
+                                    ),
+                                );
+                            },
                             Ok((character_id, list)) => {
                                 self.notify_client(
                                     response.target_entity,

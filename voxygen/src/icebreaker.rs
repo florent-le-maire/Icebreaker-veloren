@@ -15,6 +15,17 @@ struct Travel {
 
 static TRAVEL: Mutex<Option<Travel>> = Mutex::new(None);
 
+/// Icebreaker: the character of the registry to play once on the character
+/// screen (jalon R); none to come back as a ghost.
+static JOUER: Mutex<Option<CharacterId>> = Mutex::new(None);
+
+/// Plays the character `id` of the registry (none: a ghost) once back on the
+/// character screen.
+pub fn jouer(id: Option<CharacterId>) { *JOUER.lock().unwrap_or_else(|e| e.into_inner()) = id; }
+
+/// The character of the registry to play, if any.
+pub fn take_jouer() -> Option<CharacterId> { JOUER.lock().unwrap_or_else(|e| e.into_inner()).take() }
+
 fn travel() -> std::sync::MutexGuard<'static, Option<Travel>> {
     TRAVEL.lock().unwrap_or_else(|e| e.into_inner())
 }
@@ -34,6 +45,10 @@ pub fn go(current_server: &str, port: u16, character: Option<CharacterId>) {
 
 /// Where to connect, if travelling.
 pub fn take_address() -> Option<String> { travel().as_mut()?.address.take() }
+
+/// Whether a character is to be played after a travel (the ghost of the
+/// registry waits for it).
+pub fn travelling() -> bool { travel().as_ref().is_some_and(|t| t.character.is_some()) }
 
 /// Who to play, if travelling.
 pub fn take_character() -> Option<CharacterId> { travel().take()?.character }

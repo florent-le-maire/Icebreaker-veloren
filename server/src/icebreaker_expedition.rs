@@ -335,6 +335,9 @@ pub(crate) fn handle_expedition(
     if ecs.read_resource::<IcebreakerExpedition>().leader_pos.is_none() {
         return Err(Content::Plain("Les expéditions partent du village.".to_string()));
     }
+    if crate::icebreaker_registre::is_ghost(ecs, client) {
+        return Err(Content::Plain(crate::icebreaker_registre::GHOST_REFUSAL.to_string()));
+    }
     let Some(id) = args.first().and_then(|word| answer_of_word(word)) else {
         return Err(Content::Plain(
             "/expedition <numéro de destination>, rejoindre, pret, attendre ou quitter".to_string(),

@@ -7,19 +7,22 @@
 use crate::{
     client::Client,
     events::ServerEvent,
+    icebreaker_registre::{self, IcebreakerRegistre},
     icebreaker_services::IcebreakerServices,
     icebreaker_treasury::IcebreakerTreasury,
     icebreaker_village::{self, Chantier, IcebreakerVillage, VillageConfig},
     icebreaker_warehouse::IcebreakerWarehouse,
 };
 use common::{
-    comp::{Content, LocalizationArg, item::ItemDesc, item::ItemI18n},
+    comp::{
+        Content, LocalizationArg, Player, Presence, PresenceKind, item::ItemDesc, item::ItemI18n,
+    },
     event::IcebreakerBuildingEvent,
     resources::TimeOfDay,
     uid::Uid,
 };
 use common_net::msg::ServerGeneral;
-use specs::{Read, ReadStorage};
+use specs::{Read, ReadStorage, Write};
 use tracing::info;
 use vek::*;
 
@@ -31,16 +34,19 @@ pub enum Building {
     Infirmary,
     /// Where the expeditions leave from (V.7).
     Departure,
+    /// Where the recruits wait, and the common registry (jalon R).
+    Charrette,
 }
 
 impl Building {
     /// In the order of the village's houses, nearest to the square first.
-    pub const ALL: [Building; 5] = [
+    pub const ALL: [Building; 6] = [
         Building::Warehouse,
         Building::Treasury,
         Building::Intendance,
         Building::Infirmary,
         Building::Departure,
+        Building::Charrette,
     ];
 
     fn name(self) -> &'static str {
@@ -50,6 +56,7 @@ impl Building {
             Building::Intendance => "Intendance",
             Building::Infirmary => "Infirmerie",
             Building::Departure => "Départ",
+            Building::Charrette => "Charrette",
         }
     }
 }
@@ -228,6 +235,10 @@ fn panel(
                 .collect();
             vec![plain(question)]
         },
+        // Built by the event handler, which knows the registry.
+        Building::Charrette => {
+            return (plain(building.name().to_string()), Vec::new(), Vec::new());
+        },
     };
     (plain(building.name().to_string()), lines, actions)
 }
@@ -242,11 +253,26 @@ impl ServerEvent for IcebreakerBuildingEvent {
         Read<'a, IcebreakerVillage>,
         Read<'a, TimeOfDay>,
         ReadStorage<'a, Uid>,
+        Write<'a, IcebreakerRegistre>,
+        ReadStorage<'a, Presence>,
+        ReadStorage<'a, Player>,
     );
 
     fn handle(
         events: impl ExactSizeIterator<Item = Self>,
-        (clients, buildings, warehouse, treasury, services, village, time_of_day, uids): Self::SystemData<'_>,
+        (
+            clients,
+            buildings,
+            warehouse,
+            treasury,
+            services,
+            village,
+            time_of_day,
+            uids,
+            mut registre,
+            presences,
+            players,
+        ): Self::SystemData<'_>,
     ) {
         let now = time_of_day.0;
         let places = buildings.places(village.open_plots());
@@ -256,7 +282,25 @@ impl ServerEvent for IcebreakerBuildingEvent {
             };
             match event.wpos {
                 Some(wpos) => {
-                    if let Some(place) = place_at(&places, wpos) {
+                    if let Some(Place::Building(Building::Charrette)) = place_at(&places, wpos) {
+                        let panel = charrette_panel(
+                            &mut registre,
+                            now,
+                            presences.get(event.entity),
+                            players.get(event.entity),
+                            &presences,
+                            &players,
+                        );
+                        client.send_fallible(ServerGeneral::IcebreakerPanel(
+                            Content::Plain(Building::Charrette.name().to_string()),
+                            panel.0.into_iter().map(Content::Plain).collect(),
+                            panel
+                                .1
+                                .into_iter()
+                                .map(|(label, command)| (Content::Plain(label), command))
+                                .collect(),
+                        ));
+                    } else if let Some(place) = place_at(&places, wpos) {
                         let (title, lines, action) =
                             panel(
                             place,
@@ -290,6 +334,37 @@ impl ServerEvent for IcebreakerBuildingEvent {
             }
         }
     }
+}
+
+/// The cart's panel for the player of `presence`: the cart is renewed on a new
+/// day of map time, and filled at once if a ghost has no one to take.
+fn charrette_panel(
+    registre: &mut IcebreakerRegistre,
+    now: f64,
+    presence: Option<&Presence>,
+    player: Option<&Player>,
+    presences: &ReadStorage<Presence>,
+    players: &ReadStorage<Player>,
+) -> (Vec<String>, Vec<(String, Vec<String>)>) {
+    if !icebreaker_registre::active() {
+        return (vec!["Pas de registre ici.".to_string()], Vec::new());
+    }
+    let Some(player) = player else {
+        return (Vec::new(), Vec::new());
+    };
+    let uuid = player.uuid().to_string();
+    let current = match presence.map(|p| p.kind) {
+        Some(PresenceKind::Character(id)) => Some(id.0),
+        _ => None,
+    };
+    let config = icebreaker_registre::config();
+    let mut rng = rand::rng();
+    registre.renouveler(icebreaker_registre::jour_de(now), &config, &mut rng);
+    let joueurs = icebreaker_registre::joueurs(presences, players);
+    if current.is_none() && !registre.de_quoi_jouer(&uuid, &joueurs) {
+        registre.completer(&config, &mut rng);
+    }
+    icebreaker_registre::panel_for(registre, &uuid, current, &joueurs)
 }
 
 /// `/echanger <entrepot|intendance>` (the panels of the top view, V.12):

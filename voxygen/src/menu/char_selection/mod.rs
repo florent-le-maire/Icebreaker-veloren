@@ -273,6 +273,8 @@ impl PlayState for CharSelectionState {
             match res {
                 Ok(events) => {
                     let mut join_metadata = None;
+                    // Icebreaker: the registry is open, enter as a ghost (jalon R).
+                    let mut fantome = false;
                     for event in events {
                         match event {
                             client::Event::SetViewDistance(_vd) => {},
@@ -303,6 +305,7 @@ impl PlayState for CharSelectionState {
                             client::Event::CharacterJoined(metadata) => {
                                 join_metadata = Some(metadata);
                             },
+                            client::Event::IcebreakerFantome => fantome = true,
                             #[cfg_attr(not(feature = "plugins"), expect(unused_variables))]
                             client::Event::PluginDataReceived(data) => {
                                 #[cfg(feature = "plugins")]
@@ -328,6 +331,25 @@ impl PlayState for CharSelectionState {
                             // TODO: See if we should handle StartSpectate here instead.
                             _ => {},
                         }
+                    }
+
+                    if fantome && let Some(id) = crate::icebreaker::take_jouer() {
+                        // A character of the registry: the server loads it.
+                        let graphics = &global_state.settings.graphics;
+                        self.client.borrow_mut().request_character(id, common::ViewDistances {
+                            terrain: graphics.terrain_view_distance,
+                            entity: graphics.entity_view_distance,
+                        });
+                    } else if fantome && !crate::icebreaker::travelling() {
+                        self.client
+                            .borrow_mut()
+                            .request_spectate(global_state.settings.graphics.view_distances());
+                        return PlayStateResult::Switch(Box::new(SessionState::new(
+                            global_state,
+                            UpdateCharacterMetadata::default(),
+                            Rc::clone(&self.client),
+                            Rc::clone(&self.persisted_state),
+                        )));
                     }
 
                     if let Some(metadata) = join_metadata {

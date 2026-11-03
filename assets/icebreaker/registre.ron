@@ -1,0 +1,21 @@
+// Icebreaker : la charrette et le registre commun (jalon R, décision 0017).
+// On arrive au village en fantôme ; la charrette propose des recrues (classe au hasard, `classes.ron`) ; une
+// recrue engagée entre au registre, que tout le monde peut jouer (un joueur à la fois). État dans
+// `campagne/registre.ron`.
+(
+    // Recrues proposées à chaque nouveau jour de carte (la charrette est alors renouvelée).
+    recrues_par_jour: 3,
+    // La charrette est complétée jusqu'à ce nombre à chaque retour de donjon, et tout de suite si un
+    // fantôme n'a ni recrue ni personnage libre à prendre.
+    minimum_charrette: 2,
+    // Personnages au registre, au plus.
+    places_registre: 10,
+    // Personnages qu'un compte peut réserver pour lui (seul lui peut alors les jouer).
+    reservations_par_compte: 5,
+    // Noms des recrues, tirés au hasard (un nom n'est pas pris deux fois).
+    noms: [
+        "Brunhild", "Aldric", "Maelis", "Torvald", "Isaure", "Gauvain", "Ysolde", "Bertrand",
+        "Solveig", "Enguerrand", "Ondine", "Thibaut", "Ragna", "Clovis", "Mahaut", "Leif",
+        "Aelis", "Bjorn", "Sigrid", "Amaury", "Guenièvre", "Hakon", "Perrine", "Ulric",
+    ],
+)

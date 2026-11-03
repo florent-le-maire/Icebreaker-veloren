@@ -92,8 +92,12 @@ impl Sys {
         match msg {
             // Request spectator state
             ClientGeneral::Spectate(requested_view_distances) => {
-                if let Some(admin) = data.admins.get(entity)
-                    && admin.0 >= AdminRole::Moderator
+                // Icebreaker: with the registry, everyone arrives as a ghost (jalon R).
+                if crate::icebreaker_registre::active()
+                    || data
+                        .admins
+                        .get(entity)
+                        .is_some_and(|admin| admin.0 >= AdminRole::Moderator)
                 {
                     send_join_messages()?;
 
@@ -104,6 +108,27 @@ impl Sys {
             },
             ClientGeneral::Character(character_id, requested_view_distances) => {
                 if let Some(player) = data.players.get(entity) {
+                    // Icebreaker: a character of the registry (jalon R) is saved under the
+                    // registry's account, and played by one player at a time.
+                    let registre = crate::icebreaker_registre::active()
+                        .then(|| data.icebreaker_registre.fiche(character_id))
+                        .flatten()
+                        .map(|_| {
+                            let joueurs = crate::icebreaker_registre::joueurs(
+                                &data.presences,
+                                &data.players,
+                            );
+                            data.icebreaker_registre.peut_jouer(
+                                character_id,
+                                player.uuid().to_string().as_str(),
+                                &joueurs,
+                            )
+                        });
+                    let account = if registre.is_some() {
+                        crate::icebreaker_registre::REGISTRE_UUID.to_string()
+                    } else {
+                        player.uuid().to_string()
+                    };
                     // NOTE: Because clients retain their Uid when exiting to the character
                     // selection screen, we rely on this check to prevent them from immediately
                     // re-entering in-game in the same tick so that we can synchronize their
@@ -112,6 +137,8 @@ impl Sys {
                     // this.
                     if data.presences.contains(entity) {
                         debug!("player already ingame, aborting");
+                    } else if let Some(Err(refusal)) = registre {
+                        client.send(ServerGeneral::CharacterDataLoadResult(Err(refusal)))?;
                     } else if character_updater.has_pending_database_action(character_id) {
                         debug!("player recently logged out pending persistence, aborting");
                         client.send(ServerGeneral::CharacterDataLoadResult(Err(
@@ -137,7 +164,7 @@ impl Sys {
                         // will be inserted for the entity
                         data.character_loader.load_character_data(
                             entity,
-                            player.uuid().to_string(),
+                            account,
                             character_id,
                         );
 
@@ -161,7 +188,10 @@ impl Sys {
             ClientGeneral::RequestCharacterList => {
                 if let Some(player) = data.players.get(entity) {
                     data.character_loader
-                        .load_character_list(entity, player.uuid().to_string())
+                        .load_character_list(entity, player.uuid().to_string());
+                    if crate::icebreaker_registre::active() {
+                        client.send(ServerGeneral::IcebreakerFantome)?;
+                    }
                 }
             },
             ClientGeneral::CreateCharacter {
@@ -330,6 +360,8 @@ pub struct ReadData<'a> {
     automod: ReadExpect<'a, AutoMod>,
     time: ReadExpect<'a, Time>,
     world: ReadExpect<'a, Arc<World>>,
+    /// Icebreaker: the common registry (jalon R).
+    icebreaker_registre: specs::Read<'a, crate::icebreaker_registre::IcebreakerRegistre>,
 
     #[cfg(feature = "worldgen")]
     index: ReadExpect<'a, IndexOwned>,

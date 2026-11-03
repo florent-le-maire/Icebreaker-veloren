@@ -260,17 +260,20 @@ que Veloren fait déjà (vue, ouïe, combat, fuite). G.11 à G.14 d'abord ; G.15
 On arrive au village en fantôme et on prend une recrue à la charrette ; les personnages sont au village (`0017`).
 Réglages : `assets/icebreaker/classes.ron`, `registre.ron` ; état : `campagne/registre.ron`.
 
-- [ ] **R.1 Classes en données** — guerrier, mage, archer = équipement de départ (`classes.ron`).
-  *Fin* : test — les 3 classes donnent la bonne arme et une armure. — *en cours : Veloren-registre, 2026-11-03*
-- [ ] **R.2 Arrivée en fantôme** — registre actif : on entre en spectateur au-dessus de la place, sans corps.
-  *Fin* : connexion → on survole le village, la vue U s'ouvre.
-- [ ] **R.3 La charrette** — bâtiment en vue U : recrues au hasard, « Engager » ; renouvelée chaque jour de carte,
-  complétée au minimum à chaque retour de donjon et si un fantôme n'a rien à prendre.
-  *Fin* : engager un archer → on le joue, arc en main.
-- [ ] **R.4 Registre commun** — « Jouer » un personnage libre, « Rendre au registre » ; un joueur par personnage.
-  *Fin* : B reprend le guerrier de A avec l'objet qu'il avait ramassé.
-- [ ] **R.5 Réserver** — un réservé n'est jouable que par son compte ; 5 par compte au plus.
-  *Fin* : B ne peut pas jouer le réservé de A ; la 6e réservation est refusée.
+- [x] **R.1 Classes en données** — guerrier (épée, cuir clouté), mage (bâton, lin), archer (arc, cuir) :
+  `classes.ron` et `classes/*.ron`. Testé (tests, et au client texte : arme et armure portées). — 8b1854d
+- [x] **R.2 Arrivée en fantôme** — registre actif (`ICEBREAKER_REGISTRE`, campagne et village) : le jeu passe
+  l'écran de personnages et entre en spectateur sur la place ; un fantôme ne part pas en expédition. Testé au
+  client texte ; vrai client compilé, pas lancé (vue U d'un fantôme, sortie de zone non bloquée). — HASH
+- [x] **R.3 La charrette** — 6e bâtiment de la vue U (village de départ à 8 maisons) : recrues au hasard, « Engager »
+  crée le personnage au registre et le fait jouer ; renouvelée chaque jour de carte, complétée au minimum au retour
+  d'un donjon (`/rentrer`) et si un fantôme n'a rien à prendre. Commande `/registre`. Testé au client texte ;
+  retour de donjon pas essayé. — HASH
+- [x] **R.4 Registre commun** — « Jouer » un libre (aussi d'un personnage à l'autre), « Rendre au registre » ; un
+  joueur par personnage (lu des joueurs en jeu). Testé à deux au client texte (refus, reprise avec le même
+  inventaire) ; pas encore avec un objet ramassé. — HASH
+- [x] **R.5 Réserver** — « Réserver » / « Libérer », 5 par compte (`registre.ron`). Testé (tests ; refus à un autre
+  joueur au client texte). — HASH
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 

@@ -106,6 +106,8 @@ $env:VELOREN_USERDATA = $ud
 $env:ICEBREAKER_CAMPAIGN_DIR = "$root\campagne"
 $env:ICEBREAKER_INSTANCE_SITE = $Site
 $env:ICEBREAKER_CAMPAGNE = if ($Lieu -eq "campagne") { "1" } else { $null }
+# Charrette et registre commun (jalon R) : on arrive en fantôme au village ; un donjon seul garde l'écran de Veloren.
+$env:ICEBREAKER_REGISTRE = if ($Lieu -in "campagne", "village") { "1" } else { $null }
 $env:ICEBREAKER_TOWN_SIZE = $TailleVille.ToString([Globalization.CultureInfo]::InvariantCulture)
 $env:ICEBREAKER_DONJON_SALLE = $Salle
 $env:ICEBREAKER_DONJON_TAILLE = $Taille

@@ -231,6 +231,8 @@ pub struct IcebreakerSettings {
     pub healer_offset: (f32, f32),
     /// Where the village expedition leader stands, likewise.
     pub departure_offset: (f32, f32),
+    /// Where the cart of the recruits is (jalon R), likewise.
+    pub charrette_offset: (f32, f32),
     /// What the healer asks (in coins) to heal fully.
     pub heal_price: u32,
 }
@@ -245,6 +247,7 @@ impl Default for IcebreakerSettings {
             intendant_offset: (0.0, 5.0),
             healer_offset: (0.0, -5.0),
             departure_offset: (0.0, 10.0),
+            charrette_offset: (0.0, -10.0),
             heal_price: 60,
         }
     }

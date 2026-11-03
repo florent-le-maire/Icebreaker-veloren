@@ -138,6 +138,10 @@ pub enum Event {
     IcebreakerPanel(comp::Content, Vec<comp::Content>, Vec<(comp::Content, Vec<String>)>),
     /// Icebreaker: go to the place of the campaign listening on this port.
     IcebreakerTravel(u16),
+    /// Icebreaker: the registry is open, enter as a ghost (jalon R).
+    IcebreakerFantome,
+    /// Icebreaker: play this character of the registry, or become a ghost again.
+    IcebreakerJouer(Option<CharacterId>),
     /// Icebreaker: the expedition being prepared at the village, or none.
     IcebreakerExpedition(Option<(comp::Content, Vec<(String, bool)>)>),
     /// Icebreaker: the village buildings and plots to build on (name, bounds in
@@ -3010,6 +3014,9 @@ impl Client {
             ServerGeneral::IcebreakerTravel(port) => {
                 frontend_events.push(Event::IcebreakerTravel(port));
             },
+            ServerGeneral::IcebreakerJouer(id) => {
+                frontend_events.push(Event::IcebreakerJouer(id));
+            },
             ServerGeneral::IcebreakerPanel(title, lines, actions) => {
                 frontend_events.push(Event::IcebreakerPanel(title, lines, actions));
             },
@@ -3099,6 +3106,7 @@ impl Client {
             ServerGeneral::CharacterCreated(character_id) => {
                 events.push(Event::CharacterCreated(character_id));
             },
+            ServerGeneral::IcebreakerFantome => events.push(Event::IcebreakerFantome),
             ServerGeneral::CharacterEdited(character_id) => {
                 events.push(Event::CharacterEdited(character_id));
             },

@@ -155,6 +155,9 @@ pub enum ServerGeneral {
     CharacterEdited(character::CharacterId),
     CharacterSuccess,
     SpectatorSuccess(Vec3<f32>),
+    /// Icebreaker: the registry of the campaign is open (jalon R): the client
+    /// enters as a ghost (spectator) instead of choosing a character.
+    IcebreakerFantome,
     //Ingame related
     GroupUpdate(comp::group::ChangeNotification<Uid>),
     /// Indicate to the client that they are invited to join a group
@@ -225,6 +228,9 @@ pub enum ServerGeneral {
     /// Icebreaker: go to the place of the campaign listening on this port, on the
     /// same host (the client leaves this server and connects there).
     IcebreakerTravel(u16),
+    /// Icebreaker: play this character of the registry, or none: become a ghost
+    /// again (jalon R); the client leaves the world to the character screen.
+    IcebreakerJouer(Option<character::CharacterId>),
     /// Icebreaker: the expedition being prepared at the village (title, members:
     /// alias and whether ready), or none; sent every second to the village.
     IcebreakerExpedition(Option<(Content, Vec<(String, bool)>)>),
@@ -364,7 +370,8 @@ impl ServerMsg {
                         | ServerGeneral::CharacterListUpdate(_)
                         | ServerGeneral::CharacterActionError(_)
                         | ServerGeneral::CharacterEdited(_)
-                        | ServerGeneral::CharacterCreated(_) => {
+                        | ServerGeneral::CharacterCreated(_)
+                        | ServerGeneral::IcebreakerFantome => {
                             c_type != ClientType::ChatOnly && presence.is_none()
                         },
                         ServerGeneral::CharacterSuccess | ServerGeneral::SpectatorSuccess(_) => {
@@ -389,6 +396,7 @@ impl ServerMsg {
                         | ServerGeneral::SiteEconomy(_)
                         | ServerGeneral::IcebreakerPanel(..)
                         | ServerGeneral::IcebreakerTravel(_)
+                        | ServerGeneral::IcebreakerJouer(_)
                         | ServerGeneral::IcebreakerExpedition(_)
                         | ServerGeneral::IcebreakerBuildings(_)
                         | ServerGeneral::MapMarker(_)

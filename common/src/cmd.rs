@@ -434,6 +434,8 @@ pub enum ServerChatCommand {
     Poise,
     Portal,
     Region,
+    /// Icebreaker: the cart and the common registry (jalon R).
+    Registre,
     ReloadChunks,
     RemoveLights,
     /// Icebreaker: leave an encounter instance for the village, with a summary.
@@ -922,6 +924,14 @@ impl ServerChatCommand {
             ServerChatCommand::Rentrer => {
                 cmd(vec![], Content::localized("command-rentrer-desc"), None)
             },
+            ServerChatCommand::Registre => cmd(
+                vec![
+                    Any("action", Required),
+                    Any("numero", Optional),
+                ],
+                Content::localized("command-registre-desc"),
+                None,
+            ),
             ServerChatCommand::RevokeBuild => cmd(
                 vec![Any("area_name", Required)],
                 Content::localized("command-revoke_build-desc"),
@@ -1271,6 +1281,7 @@ impl ServerChatCommand {
             ServerChatCommand::Portal => "portal",
             ServerChatCommand::ResetRecipes => "reset_recipes",
             ServerChatCommand::Region => "region",
+            ServerChatCommand::Registre => "registre",
             ServerChatCommand::ReloadChunks => "reload_chunks",
             ServerChatCommand::RemoveLights => "remove_lights",
             ServerChatCommand::Rentrer => "rentrer",

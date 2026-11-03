@@ -421,6 +421,14 @@ impl SessionState {
                     client.logout();
                     return Ok(TickAction::Disconnect);
                 },
+                // Icebreaker: another character of the registry, or a ghost again
+                // (jalon R): through the character screen, which plays it.
+                client::Event::IcebreakerJouer(id) => {
+                    crate::icebreaker::jouer(id);
+                    client.request_remove_character();
+                },
+                // Only on the character screen.
+                client::Event::IcebreakerFantome => {},
                 client::Event::Dialogue(sender_uid, dialogue) => {
                     if let Some(sender) = client.state().ecs().entity_from_uid(sender_uid) {
                         self.hud.dialogue(sender, pos, dialogue, global_state);
@@ -2495,10 +2503,18 @@ const ICEBREAKER_TOP_VIEW_PLANE: f32 = 5.0;
 impl SessionState {
     fn toggle_icebreaker_top_view(&mut self) {
         // Read apart: the client is borrowed again below to ask for the buildings.
-        let position = self.client.borrow().position();
+        // A ghost of the registry (spectator, jalon R) looks from its camera.
+        let spectator = self.client.borrow().presence() == Some(PresenceKind::Spectator);
+        let position = self.client.borrow().position().or_else(|| {
+            spectator.then(|| self.scene.camera().get_focus_pos() - Vec3::unit_z() * 20.0)
+        });
         let camera = self.scene.camera_mut();
         if let Some(view) = self.icebreaker_top_view.take() {
-            camera.set_mode(CameraMode::ThirdPerson);
+            camera.set_mode(if spectator {
+                CameraMode::Freefly
+            } else {
+                CameraMode::ThirdPerson
+            });
             camera.set_orientation_instant(view.ori);
             self.hud.icebreaker_top_view(false);
         } else if let Some(pos) = position {

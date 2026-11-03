@@ -108,7 +108,8 @@ impl Client {
                     | ServerGeneral::CharacterActionError(_)
                     | ServerGeneral::CharacterCreated(_)
                     | ServerGeneral::CharacterEdited(_)
-                    | ServerGeneral::CharacterSuccess => {
+                    | ServerGeneral::CharacterSuccess
+                    | ServerGeneral::IcebreakerFantome => {
                         self.character_screen_stream.lock().unwrap().send(g)
                     },
                     //In-game related
@@ -122,6 +123,7 @@ impl Client {
                     | ServerGeneral::SiteEconomy(_)
                     | ServerGeneral::IcebreakerPanel(..)
                     | ServerGeneral::IcebreakerTravel(_)
+                    | ServerGeneral::IcebreakerJouer(_)
                     | ServerGeneral::IcebreakerExpedition(_)
                     | ServerGeneral::IcebreakerBuildings(_)
                     | ServerGeneral::Outcomes(_)
@@ -184,7 +186,8 @@ impl Client {
                     | ServerGeneral::CharacterCreated(_)
                     | ServerGeneral::CharacterEdited(_)
                     | ServerGeneral::CharacterSuccess
-                    | ServerGeneral::SpectatorSuccess(_) => {
+                    | ServerGeneral::SpectatorSuccess(_)
+                    | ServerGeneral::IcebreakerFantome => {
                         PreparedMsg::new(1, &g, &self.character_screen_stream_params)
                     },
                     // In-game related
@@ -202,6 +205,7 @@ impl Client {
                     | ServerGeneral::SiteEconomy(_)
                     | ServerGeneral::IcebreakerPanel(..)
                     | ServerGeneral::IcebreakerTravel(_)
+                    | ServerGeneral::IcebreakerJouer(_)
                     | ServerGeneral::IcebreakerExpedition(_)
                     | ServerGeneral::IcebreakerBuildings(_)
                     | ServerGeneral::UpdatePendingTrade(_, _, _)

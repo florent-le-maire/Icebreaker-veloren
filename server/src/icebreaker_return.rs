@@ -127,6 +127,15 @@ pub(crate) fn handle_rentrer(
 
     // In the campaign: back on the village square, counting from there again.
     if campaign {
+        // Icebreaker: new recruits at the cart for whoever has no one (jalon R).
+        if crate::icebreaker_registre::active() {
+            let config = crate::icebreaker_registre::config();
+            server
+                .state
+                .ecs()
+                .write_resource::<crate::icebreaker_registre::IcebreakerRegistre>()
+                .completer(&config, &mut rand::rng());
+        }
         let square = server.state.ecs().read_resource::<SpawnPoint>().0;
         server
             .state

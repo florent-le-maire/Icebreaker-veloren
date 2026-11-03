@@ -56,6 +56,8 @@ export VELOREN_USERDATA="$ud"
 export ICEBREAKER_CAMPAIGN_DIR="$root/campagne"
 export ICEBREAKER_INSTANCE_SITE="${ICEBREAKER_SITE:-$site_lieu}"
 export ICEBREAKER_TOWN_SIZE="${ICEBREAKER_TOWN_SIZE:-1.0}"
+# Charrette et registre commun (jalon R) : on arrive en fantôme au village.
+if [ "$lieu" = village ]; then export ICEBREAKER_REGISTRE=1; else unset ICEBREAKER_REGISTRE; fi
 echo "Icebreaker : $lieu ($ICEBREAKER_INSTANCE_SITE), graine $seed, port $port"
 cd "$repo"
 # Sans terminal (service systemd), le serveur n'écoute pas l'entrée standard.
