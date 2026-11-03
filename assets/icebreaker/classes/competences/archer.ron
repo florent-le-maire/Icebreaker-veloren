@@ -1,0 +1,7 @@
+// Icebreaker : compétences de départ du archer (classes.ron), sur les touches 1 et 2.
+// Format des préréglages de compétences de Veloren (assets/common/skillset/preset/).
+[
+    Group(Weapon(Bow)),
+    Skill((Bow(Foothold), 1)),
+    Skill((Bow(HeavyNock), 1)),
+]

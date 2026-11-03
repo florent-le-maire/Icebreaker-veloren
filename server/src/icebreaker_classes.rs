@@ -1,10 +1,11 @@
 //! Icebreaker: the classes of the recruits of the cart (jalon R, decision
-//! 0017). For now a class is a starting equipment, read from
-//! `assets/icebreaker/classes.ron`.
+//! 0017). A class is a starting equipment and two skills of its weapon (R.6),
+//! read from `assets/icebreaker/classes.ron`.
 
 use common::{
     assets::{AssetExt, Ron},
-    comp::{Inventory, ItemKey, inventory::loadout_builder::LoadoutBuilder},
+    comp::{Inventory, ItemKey, SkillSet, inventory::loadout_builder::LoadoutBuilder},
+    skillset_builder::SkillSetBuilder,
 };
 use serde::Deserialize;
 
@@ -16,6 +17,8 @@ pub struct Class {
     pub nom: String,
     /// Loadout asset: armour and weapons in hand.
     pub equipement: String,
+    /// Skill set asset: the skills unlocked at the start (R.6).
+    pub competences: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -54,6 +57,12 @@ pub fn starting_inventory(class: &Class) -> Inventory {
         .with_asset_expect(&class.equipement, &mut rand::rng(), None)
         .build();
     Inventory::with_loadout_humanoid(loadout)
+}
+
+/// The skills a recruit of `class` starts with (R.6); they fill the first
+/// ability slots by themselves.
+pub fn starting_skill_set(class: &Class) -> SkillSet {
+    SkillSetBuilder::from_asset_expect(&class.competences).build()
 }
 
 #[cfg(test)]
@@ -95,5 +104,30 @@ mod tests {
             assert_eq!(icones[0], ItemKey::Simple(weapon.to_string()), "{id}");
         }
         assert_eq!(classes().len(), 3);
+    }
+
+    #[test]
+    fn icebreaker_classes_start_with_two_skills_on_slots_1_and_2() {
+        use common::comp::{ActiveAbilities, BASE_ABILITY_LIMIT, ability::AuxiliaryAbility};
+        for class in classes() {
+            let inventory = starting_inventory(&class);
+            // Panics in tests if a skill lacks its group or a prerequisite.
+            let skill_set = starting_skill_set(&class);
+            let slots = ActiveAbilities::default_limited(BASE_ABILITY_LIMIT)
+                .auxiliary_set(Some(&inventory), Some(&skill_set))
+                .into_owned();
+            let id = &class.id;
+            assert_eq!(slots.len(), BASE_ABILITY_LIMIT, "{id}");
+            assert!(
+                matches!(slots[0], AuxiliaryAbility::MainWeapon(_))
+                    && matches!(slots[1], AuxiliaryAbility::MainWeapon(_))
+                    && slots[0] != slots[1],
+                "{id}: {slots:?}"
+            );
+            assert!(
+                slots[2..].iter().all(|s| *s == AuxiliaryAbility::Empty),
+                "{id}: {slots:?}"
+            );
+        }
     }
 }

@@ -1,0 +1,7 @@
+// Icebreaker : compétences de départ du guerrier (classes.ron), sur les touches 1 et 2.
+// Format des préréglages de compétences de Veloren (assets/common/skillset/preset/).
+[
+    Group(Weapon(Sword)),
+    Skill((Sword(CrescentSlash), 1)),
+    Skill((Sword(FellStrike), 1)),
+]

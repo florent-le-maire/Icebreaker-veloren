@@ -66,6 +66,7 @@ pub fn create_character(
         player_uuid,
         character_alias,
         inventory,
+        SkillSet::default(),
         body,
         hardcore,
         character_updater,
@@ -75,7 +76,8 @@ pub fn create_character(
 }
 
 /// Icebreaker : une recrue de la charrette (jalon R) part avec l'équipement de
-/// sa classe (`assets/icebreaker/classes.ron`) au lieu de l'arme choisie.
+/// sa classe (`assets/icebreaker/classes.ron`) au lieu de l'arme choisie, et
+/// les 2 compétences de sa classe débloquées (R.6).
 pub fn create_recruit(
     entity: Entity,
     player_uuid: String,
@@ -97,6 +99,7 @@ pub fn create_recruit(
         player_uuid,
         character_alias,
         inventory,
+        crate::icebreaker_classes::starting_skill_set(class),
         body,
         false,
         character_updater,
@@ -111,13 +114,13 @@ fn persist_new_character(
     player_uuid: String,
     character_alias: String,
     mut inventory: Inventory,
+    skill_set: SkillSet,
     body: Body,
     hardcore: bool,
     character_updater: &mut WriteExpect<'_, CharacterUpdater>,
     waypoint: Option<Waypoint>,
 ) {
     let stats = Stats::new(Content::Plain(character_alias.to_string()), body);
-    let skill_set = SkillSet::default();
     // Default items for new characters
     inventory
         .push(Item::new_from_asset_expect(

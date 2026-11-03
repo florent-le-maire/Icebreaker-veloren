@@ -274,6 +274,9 @@ Réglages : `assets/icebreaker/classes.ron`, `registre.ron` ; état : `campagne/
   inventaire) ; pas encore avec un objet ramassé. — 9bd8d32d27
 - [x] **R.5 Réserver** — « Réserver » / « Libérer », 5 par compte (`registre.ron`). Testé (tests ; refus à un autre
   joueur au client texte). — 9bd8d32d27
+- [ ] **R.6 Deux compétences par classe** — en plus des attaques de base, sur les touches 1 et 2 : guerrier
+  (taillade en croissant, frappe cruelle), mage (onde de feu, ruée de feu), archer (appui, encoche lourde) ;
+  `classes/competences/*.ron`. — *en cours : Veloren-classes, 2026-11-03*
 
 ## Jalon X — Interface et ergonomie du village (Flo, 2026-11-03) — *en cours : Veloren-interface*
 
