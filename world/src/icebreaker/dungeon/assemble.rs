@@ -36,6 +36,9 @@ pub struct AssemblySettings {
     pub placement_tries: usize,
     /// Tries for a loop or a drop (given up otherwise).
     pub extra_passage_tries: usize,
+    /// Cells at most of the corridor of a loop or a drop (Icebreaker F.2: a loop
+    /// that would be a long detour is given up instead).
+    pub max_extra_length: usize,
     /// Cells between a door and the next room.
     pub spacing: super::settings::Range,
     /// Cells examined by a corridor search.
@@ -353,13 +356,18 @@ impl<'a> Attempt<'a> {
             }
             let (from_door, start, (dx, dy)) = self.pick(&from);
 
-            // Preferably a door facing the parent's: the room then lies beyond it.
+            // A door facing the parent's when there is one (Icebreaker F.2: the room
+            // then lies just beyond it, and turned rooms nearly always have one), and
+            // among those, one at the parent's level when there is one: a flat
+            // corridor, the stairs of the room do the descent.
             let template = self.pick(&templates);
             let doors: Vec<_> = template.doors().copied().collect();
             let facing: Vec<_> = doors.iter().copied().filter(|c| c.direction() == (-dx, -dy)).collect();
-            let use_facing = !facing.is_empty() && self.rng.random_range(0..4) > 0;
-            let to = self.pick(if use_facing { &facing } else { &doors });
-            let faces = facing.iter().any(|c| c.cell == to.cell);
+            let candidates = if facing.is_empty() { doors } else { facing };
+            let flat: Vec<_> =
+                candidates.iter().copied().filter(|c| level + c.outside.level == start.level).collect();
+            let to = self.pick(if flat.is_empty() { &candidates } else { &flat });
+            let faces = to.direction() == (-dx, -dy);
 
             // Where the front of the child's door should be: facing the parent's door.
             // A door that does not face: the room would stretch toward the parent, put it
@@ -368,7 +376,7 @@ impl<'a> Attempt<'a> {
             let ahead = self.settings.spacing.roll(self.rng)
                 + 2 * (start.level - (level + to.outside.level)).abs()
                 + if faces { 0 } else { width.max(depth) };
-            let side = self.rng.random_range(-3..=3);
+            let side = self.rng.random_range(-1..=1);
             let goal = Cell::new(
                 start.x + dx * ahead - dy * side,
                 start.y + dy * ahead + dx * side,
@@ -428,7 +436,9 @@ impl<'a> Attempt<'a> {
         for (_, _, (from_door, start, _), (to_door, goal, _)) in
             pairs.into_iter().take(self.settings.extra_passage_tries)
         {
-            if let Some(corridor) = self.route(start, goal, drop) {
+            if let Some(corridor) = self.route(start, goal, drop)
+                && corridor.len() <= self.settings.max_extra_length
+            {
                 self.carve(&corridor);
                 self.open_door(from_door);
                 self.open_door(to_door);
@@ -537,6 +547,12 @@ impl<'a> Attempt<'a> {
         };
         let estimate =
             |c: Cell| (c.x - goal.x).abs() + (c.y - goal.y).abs() + 3 * (c.level - goal.level).abs();
+        // Icebreaker F.2: behind the top of stairs, at their level, nothing one could
+        // walk on (the steps would end in the wall of that corridor): free, or a wall.
+        let blind = |c: Cell| {
+            let s = self.grid.get(c);
+            c != start && c != goal && !(plan::is_walkable(s) || s == '_' || plan::stairs_direction(s).is_some())
+        };
 
         type State = (Cell, bool);
         let origin: State = (start, false);
@@ -566,7 +582,11 @@ impl<'a> Attempt<'a> {
                 let mut corridor = vec![(start, '.')];
                 corridor.extend(steps.into_iter().flatten());
                 let distinct: BTreeSet<Cell> = corridor.iter().map(|(c, _)| *c).collect();
-                return (distinct.len() == corridor.len()).then_some(corridor);
+                // Icebreaker F.2: nor pass behind the top of its own stairs.
+                let blind_tops = corridor.iter().all(|(c, s)| {
+                    plan::stairs_direction(*s).is_none_or(|(dx, dy)| !distinct.contains(&c.offset(dx, dy, 0)))
+                });
+                return (distinct.len() == corridor.len() && blind_tops).then_some(corridor);
             }
             let mut visit = |target: State, step: i32, carved: Vec<(Cell, char)>| {
                 let new_cost = cost[&state] + step;
@@ -586,7 +606,7 @@ impl<'a> Attempt<'a> {
                 if !drop {
                     // Up: stairs here, a hole above them, a landing on the level above.
                     let up = next.offset(dx, dy, 1);
-                    if free(next) && free(next.offset(0, 0, 1)) && free(up) {
+                    if free(next) && free(next.offset(0, 0, 1)) && free(up) && blind(next.offset(dx, dy, 0)) {
                         visit((up, fallen), 5, vec![
                             (next, plan::stairs_symbol(dx, dy)),
                             (next.offset(0, 0, 1), '_'),
@@ -596,7 +616,7 @@ impl<'a> Attempt<'a> {
                     // Down: a hole ahead, stairs below (climbing toward us), a landing below.
                     let stairs = next.offset(0, 0, -1);
                     let down = stairs.offset(dx, dy, 0);
-                    if free(next) && free(stairs) && free(down) {
+                    if free(next) && free(stairs) && free(down) && blind(stairs.offset(-dx, -dy, 0)) {
                         visit((down, fallen), 5, vec![
                             (next, '_'),
                             (stairs, plan::stairs_symbol(-dx, -dy)),
@@ -658,7 +678,7 @@ mod tests {
     #[test]
     fn dungeons_assemble_and_are_finishable() {
         let settings = Settings::load().unwrap();
-        let catalog = RoomCatalog::load().unwrap();
+        let catalog = RoomCatalog::load().unwrap().with_orientations(settings.variety.orientations).unwrap();
         for size in settings.sizes.keys() {
             let resolved = settings
                 .resolve(&Mission {
@@ -682,5 +702,68 @@ mod tests {
             assert!(failures <= 2, "{size} : {failures} donjons sur 100 non assemblés");
         }
     }
-}
 
+
+    /// Cells dug outside the rooms (corridors, their stairs and holes) and,
+    /// among the corridor stairs, those whose top faces a walkable cell at the
+    /// lower level (Icebreaker F.2: steps that end in a wall of a corridor).
+    fn corridor_stats(dungeon: &Assembled) -> (usize, usize) {
+        let in_room: BTreeSet<Cell> = dungeon.rooms.iter().flat_map(|r| r.footprint()).collect();
+        let plan = &dungeon.plan;
+        let (mut cells, mut bad_stairs) = (0, 0);
+        for (cell, symbol) in &plan.cells {
+            if in_room.contains(cell) {
+                continue;
+            }
+            let stairs = plan::stairs_direction(*symbol);
+            if plan::is_walkable(*symbol) || stairs.is_some() || *symbol == '_' {
+                cells += 1;
+            }
+            if let Some((dx, dy)) = stairs {
+                let behind = plan.get(cell.offset(dx, dy, 0));
+                if plan::is_walkable(behind) || behind == '_' || plan::stairs_direction(behind).is_some() {
+                    bad_stairs += 1;
+                }
+            }
+        }
+        (cells, bad_stairs)
+    }
+
+    #[test]
+    fn corridors_are_short_and_stairs_lead_somewhere() {
+        let settings = Settings::load().unwrap();
+        let catalog = RoomCatalog::load().unwrap().with_orientations(settings.variety.orientations).unwrap();
+        for size in settings.sizes.keys() {
+            let resolved = settings
+                .resolve(&Mission {
+                    size: size.clone(),
+                    ..Mission::default()
+                })
+                .unwrap();
+            let (mut cells, mut rooms, mut bad_stairs, mut dungeons) = (0, 0, 0, 0);
+            let (mut extras, mut extras_dug) = (0, 0);
+            for seed in 0..100 {
+                let graph = graph::generate(&resolved, seed);
+                let assembled =
+                    assemble(&graph, &catalog, seed, &settings.assembly, settings.render.tunnel_cells, |_| {});
+                if let Some(dungeon) = assembled {
+                    let (c, b) = corridor_stats(&dungeon);
+                    cells += c;
+                    bad_stairs += b;
+                    rooms += dungeon.rooms.len();
+                    dungeons += 1;
+                    let tree = dungeon.rooms.len() - 1;
+                    extras += graph.passages.len() - tree;
+                    extras_dug += dungeon.passages.len() - tree;
+                }
+            }
+            let per_room = cells as f32 / rooms as f32;
+            println!("{size} : {dungeons} donjons, {per_room:.1} cases de couloir par salle, {bad_stairs} escalier(s) sur un couloir, {extras_dug} boucles et chutes creusées sur {extras}");
+            // Before Icebreaker F.2: 13.6 to 15.0 cells per room.
+            assert!(per_room <= 7.0, "{size} : {per_room:.1} cases de couloir par salle");
+            assert_eq!(bad_stairs, 0, "{size} : des escaliers de couloir débouchent sur un couloir");
+            // Loops join rooms placed far apart: most are longer than the cap and given up.
+            assert!(extras_dug * 10 >= extras, "{size} : {extras_dug} boucles et chutes creusées sur {extras}");
+        }
+    }
+}

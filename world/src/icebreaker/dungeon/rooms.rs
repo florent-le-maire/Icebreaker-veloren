@@ -146,6 +146,18 @@ impl RoomTemplate {
         }
 
         let plan = Plan::parse(text).map_err(|e| format!("salle « {id} » : {e}"))?;
+        Self::from_plan(id, roles, bosses, errors, plan)
+    }
+
+    /// Checks a plan and finds its connectors (`errors`: those of the header,
+    /// already found).
+    fn from_plan(
+        id: &str,
+        roles: Vec<RoomRole>,
+        bosses: Vec<String>,
+        mut errors: Vec<String>,
+        plan: Plan,
+    ) -> Result<Self, String> {
         let mut connectors = Vec::new();
         for (&cell, &symbol) in &plan.cells {
             let place = format!("connecteur ({})", describe(cell));
@@ -246,6 +258,51 @@ impl RoomTemplate {
     }
 
     pub fn door_count(&self) -> usize { self.doors().count() }
+
+    /// The room turned (Icebreaker F.2, `RoomOrientation.Transform` of the
+    /// project): 0 to 3 = quarter turns clockwise (seen from above, north up),
+    /// 4 to 7 = the same after a left-right mirror. Stairs turn with the room;
+    /// all the levels turn around the same frame. Its id becomes `id:n`.
+    pub fn oriented(&self, orientation: u8) -> Result<Self, String> {
+        if orientation == 0 {
+            return Ok(self.clone());
+        }
+        let (min_x, max_x, min_y, max_y) = self.plan.bounds().ok_or("salle vide")?;
+        let (mut width, mut depth) = (max_x - min_x + 1, max_y - min_y + 1);
+        let mut cells: Vec<(Cell, char)> = self
+            .plan
+            .cells
+            .iter()
+            .map(|(c, s)| (Cell::new(c.x - min_x, c.y - min_y, c.level), *s))
+            .collect();
+        if orientation >= 4 {
+            for (c, s) in &mut cells {
+                c.x = width - 1 - c.x;
+                *s = match *s {
+                    '<' => '>',
+                    '>' => '<',
+                    s => s,
+                };
+            }
+        }
+        for _ in 0..orientation % 4 {
+            for (c, s) in &mut cells {
+                *c = Cell::new(depth - 1 - c.y, c.x, c.level);
+                *s = match *s {
+                    '^' => '>',
+                    '>' => 'v',
+                    'v' => '<',
+                    '<' => '^',
+                    s => s,
+                };
+            }
+            std::mem::swap(&mut width, &mut depth);
+        }
+        let plan = Plan {
+            cells: cells.into_iter().collect(),
+        };
+        Self::from_plan(&format!("{}:{orientation}", self.id), self.roles.clone(), self.bosses.clone(), Vec::new(), plan)
+    }
 }
 
 /// The hand-written rooms, sorted by id (a seed gives the same dungeon
@@ -298,6 +355,28 @@ impl RoomCatalog {
 
     pub fn with_role(&self, role: RoomRole) -> Vec<&RoomTemplate> {
         self.rooms.iter().filter(|r| r.roles.contains(&role)).collect()
+    }
+
+    /// The rooms in every orientation asked (Icebreaker F.2, `orientations` of
+    /// the settings): 1 = as drawn, 2 = and mirrored, 4 = the quarter turns,
+    /// 8 = turns and mirrors. The drawn room keeps its id.
+    pub fn with_orientations(mut self, count: u8) -> Result<Self, String> {
+        let orientations: &[u8] = match count {
+            1 => &[0],
+            2 => &[0, 4],
+            4 => &[0, 1, 2, 3],
+            8 => &[0, 1, 2, 3, 4, 5, 6, 7],
+            _ => return Err(format!("variety.orientations : 1, 2, 4 ou 8, pas {count}")),
+        };
+        let mut rooms = Vec::new();
+        for room in &self.rooms {
+            for orientation in orientations {
+                rooms.push(room.oriented(*orientation)?);
+            }
+        }
+        rooms.sort_by(|a, b| a.id.cmp(&b.id));
+        self.rooms = rooms;
+        Ok(self)
     }
 
     pub fn get(&self, id: &str) -> Option<&RoomTemplate> { self.rooms.iter().find(|r| r.id == id) }

@@ -130,16 +130,24 @@ impl IcebreakerDungeon {
         }
     }
 
-    /// The direction a stair cell climbs; a ladder becomes steps toward the
-    /// floor around the hole above it.
-    fn stairs_dir(&self, cell: plan::Cell, symbol: char) -> (i32, i32) {
-        plan::stairs_direction(symbol).unwrap_or_else(|| {
-            let plan = &self.dungeon.plan;
-            plan::DIRECTIONS
-                .into_iter()
-                .find(|(dx, dy)| plan::is_walkable(plan.get(cell.offset(*dx, *dy, 1))))
-                .unwrap_or((1, 0))
-        })
+    /// The wall a ladder cell (`H`) leans on: its first wall neighbour.
+    fn ladder_wall(&self, cell: plan::Cell) -> Option<(i32, i32)> {
+        let plan = &self.dungeon.plan;
+        plan::DIRECTIONS.into_iter().find(|(dx, dy)| plan.get(cell.offset(*dx, *dy, 0)) == '#')
+    }
+
+    /// Icebreaker F.2: the ladder of a shaft, `Ladder` sprites against the wall
+    /// toward `wall`, from height `from` to `to` (excluded) of `cell`. Veloren
+    /// climbs any wall; the sprites show where.
+    fn ladder(&self, painter: &Painter, cell: plan::Cell, (dx, dy): (i32, i32), from: i32, to: i32) {
+        let c = self.render.cell_size;
+        let min = self.cell_min(cell);
+        let along = |w: i32| if w > 0 { c - 1 } else if w < 0 { 0 } else { c / 2 };
+        let xy = min.xy() + Vec2::new(dx, dy).map(along);
+        let facing = common::util::Dir2::from_vec2(Vec2::new(-dx, -dy)).sprite_ori();
+        for z in from..to {
+            painter.rotated_sprite(xy.with_z(min.z + z), SpriteKind::Ladder, facing);
+        }
     }
 
     /// The keyhole of a locked door, in the middle of its passage.
@@ -169,8 +177,8 @@ impl IcebreakerDungeon {
                 '~' | '_' => continue,
                 'D' => (min.xy() + c / 2, min.z),
                 // In the middle of the steps: the step under the centre block (Icebreaker F.1: even sizes too).
-                s if s == 'H' || plan::stairs_direction(s).is_some() => {
-                    let (dx, dy) = self.stairs_dir(cell, s);
+                s if plan::stairs_direction(s).is_some() => {
+                    let (dx, dy) = plan::stairs_direction(s).expect("stairs");
                     let u = if dx + dy > 0 { c / 2 } else { c - 1 - c / 2 };
                     (min.xy() + c / 2, min.z + 1 + u)
                 },
@@ -358,7 +366,16 @@ impl Structure for IcebreakerDungeon {
                 painter.aabb(self.cell_aabb(cell, h, h + 1, 0)).fill(rock.clone());
             }
             match *symbol {
-                '_' => painter.aabb(self.cell_aabb(cell, 0, h, 0)).clear(),
+                '_' => {
+                    painter.aabb(self.cell_aabb(cell, 0, h, 0)).clear();
+                    // The ladder of the shaft below goes on up to this floor.
+                    let below = cell.offset(0, 0, -1);
+                    if plan.get(below) == 'H'
+                        && let Some(wall) = self.ladder_wall(below).filter(|(dx, dy)| plan.get(cell.offset(*dx, *dy, 0)) == '#')
+                    {
+                        self.ladder(painter, cell, wall, 0, h);
+                    }
+                },
                 'D' => {
                     // A passage through the wall, along the floors on both sides.
                     let dir = self.door_dir(cell);
@@ -374,10 +391,18 @@ impl Structure for IcebreakerDungeon {
                             .clear();
                     }
                 },
-                symbol if symbol == 'H' || plan::stairs_direction(symbol).is_some() => {
+                'H' => {
+                    // Icebreaker F.2: a shaft with a ladder on its wall instead of steps.
                     painter.aabb(self.cell_aabb(cell, 1, h, 0)).clear();
                     painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(floor.clone());
-                    let dir = self.stairs_dir(cell, symbol);
+                    if let Some(wall) = self.ladder_wall(cell) {
+                        self.ladder(painter, cell, wall, 1, h);
+                    }
+                },
+                symbol if plan::stairs_direction(symbol).is_some() => {
+                    painter.aabb(self.cell_aabb(cell, 1, h, 0)).clear();
+                    painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(floor.clone());
+                    let dir = plan::stairs_direction(symbol).expect("stairs");
                     // One step per block: the last one is level with the floor above.
                     for u in 0..c {
                         let slice = self.slice(cell, dir, u, 0);

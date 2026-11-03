@@ -124,7 +124,7 @@ mod tests {
     #[test]
     fn people_follow_the_roles() {
         let settings = Settings::load().unwrap();
-        let catalog = RoomCatalog::load().unwrap();
+        let catalog = RoomCatalog::load().unwrap().with_orientations(settings.variety.orientations).unwrap();
         let resolved = settings.resolve(&Mission::default()).unwrap();
         for seed in 0..40 {
             let graph = graph::generate(&resolved, seed);

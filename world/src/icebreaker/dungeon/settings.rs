@@ -94,6 +94,15 @@ pub struct Settings {
     pub sleep: SleepSettings,
     /// How lit the rooms are, by their inhabitants.
     pub lighting: LightingSettings,
+    /// Variety of the rooms (Icebreaker F.2).
+    pub variety: VarietySettings,
+}
+
+/// Variety of the rooms (Icebreaker F.2): the orientations of each drawn room
+/// (1 = as drawn, 2 = and mirrored, 4 = quarter turns, 8 = both).
+#[derive(Clone, Debug, Deserialize)]
+pub struct VarietySettings {
+    pub orientations: u8,
 }
 
 /// Lights of the dungeon: the chance that a free floor cell holds one, by role
@@ -181,6 +190,9 @@ impl Settings {
         }
         if render.tunnel_cells < 1 {
             errors.push("render : tunnel_cells doit être au moins 1".into());
+        }
+        if ![1, 2, 4, 8].contains(&settings.variety.orientations) {
+            errors.push("variety : orientations vaut 1, 2, 4 ou 8".into());
         }
         for (name, shape) in &settings.sizes {
             let ranges = [

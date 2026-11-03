@@ -76,7 +76,12 @@ fn place_lights(
     }
     let mut lights = Vec::new();
     for (cell, symbol) in &plan.cells {
-        if *symbol != '.' || keys.iter().any(|(k, _)| k == cell) {
+        // Icebreaker F.2: nothing on a landing or at the foot of stairs.
+        let by_stairs = plan::DIRECTIONS.into_iter().any(|(dx, dy)| {
+            let s = plan.get(cell.offset(dx, dy, 0));
+            s == '_' || plan::stairs_direction(s).is_some()
+        });
+        if *symbol != '.' || by_stairs || keys.iter().any(|(k, _)| k == cell) {
             continue;
         }
         let chance = chances.get(cell).copied().unwrap_or_else(|| lighting.chance(None, false));
@@ -174,7 +179,7 @@ const SEED_TRIES: u64 = 10;
 /// Generates the dungeon of a mission: its graph, then the assembly of the
 /// rooms. A seed whose dungeon can't be assembled gives way to the next one.
 pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, String> {
-    let catalog = RoomCatalog::load()?;
+    let catalog = RoomCatalog::load()?.with_orientations(settings.variety.orientations)?;
     // A single room to look at (`ICEBREAKER_DONJON_SALLE`, `-Salle` of the launcher).
     if let Ok(id) = std::env::var("ICEBREAKER_DONJON_SALLE")
         && !id.is_empty()
@@ -392,7 +397,7 @@ mod tests {
     #[test]
     fn every_room_alone_reaches_its_tunnel() {
         let settings = Settings::load().unwrap();
-        let catalog = RoomCatalog::load().unwrap();
+        let catalog = RoomCatalog::load().unwrap().with_orientations(8).unwrap();
         for room in &catalog.rooms {
             let dungeon = single_room(&settings, room).unwrap();
             let top = *dungeon.tunnel.cells.last().unwrap();

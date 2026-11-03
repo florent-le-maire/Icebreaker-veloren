@@ -256,13 +256,13 @@ Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (j
   sort encore) ; portes et mur de porte à clé hauts de `h - 2` sous un linteau, torche à `h - 2`, serrure à mi-hauteur,
   colonne 3 × 3 ; `check_blocks` juste pour `c` pair. Testé : tests ciblés, exemple sur 5 graines (0 problème), lieu
   Genere démarré (graine 1234) ; caméra pas encore vue en jeu. — 13e4cc97ba
-- [ ] **F.2 Couloirs courts, escaliers propres** — rotations et miroirs des salles dessinées (`orientations: 8`,
-  de `RoomVariety.cs`) ; porte en face du parent quand il y en a une et distance = `spacing` (1 à 3) + étages, la
-  taille de la salle n'est ajoutée qu'aux salles sans porte en face ; décalage latéral −1 à 1 ; `route` exige libre
-  la case derrière le haut des marches et `carve` la mure ; pas de lumière sur un palier ; `H` = puits avec un
-  `Ladder` décoratif (escalade de Veloren), plus de fausses marches.
-  *Fin* : sur 100 graines par taille, longueur moyenne des couloirs divisée par deux (test) ; aucun couloir voisin du
-  haut d'un escalier (test) ; toujours finissable.
+- [x] **F.2 Couloirs courts, escaliers propres** — salles dessinées tournées et retournées (`variety.orientations: 8`,
+  136 salles) ; porte en face du parent et, parmi elles, au même étage (couloir plat, la salle fait la descente) ;
+  `spacing` (1, 3), décalage −1 à 1 ; boucles et chutes limitées à `max_extra_length` (24 cases, sinon abandonnées :
+  elles reliaient des salles éloignées, c'étaient les couloirs immenses ; ~15 % sont creusées) ; derrière le haut
+  d'un escalier de couloir, jamais de case praticable ; pas de lumière près d'un escalier ; `H` = puits dégagé avec
+  des sprites `Ladder` au mur. Mesuré (test, 100 graines par taille) : 14 → 6 cases de couloir par salle. Testé :
+  tests ciblés, exemple sur 5 graines, serveur Genere ; échelle et salles tournées pas encore vues en jeu.
 - [ ] **F.3 Donjon plus grand** — `sizes` : moyen chemin (7, 9), branches (3, 5), boucles (1, 2) ; grand chemin
   (9, 12), branches (5, 8), étages (3, 4) ; `search_limit` et `margin` ajustés.
   *Fin* : un donjon moyen fait 12 à 18 salles ; assemblage toujours vert sur 100 graines.
