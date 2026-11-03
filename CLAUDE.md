@@ -12,7 +12,8 @@ fichier de `docs/icebreaker/design/` utile.
 - Nos changements restent **regroupés et repérables** (commentaire « Icebreaker : … ») pour pouvoir suivre les
   mises à jour de Veloren.
 - Réglages (rayons, temps, prix) en configuration ou en fichiers de données (`assets/`), pas en dur.
-- Rien n'est poussé sur le dépôt de Veloren (`origin`) ; un dépôt à nous sera créé si l'équipe continue.
+- Notre dépôt est `origin` (GitHub, `git pull` / `git push` sur `master`) ; Veloren est le remote `veloren`, rien n'y est
+  poussé. L'ancien `master` (avec l'historique de Veloren) est gardé sous l'étiquette `ancien-master`.
 - Teste ce que tu écris : tests ciblés pour la logique, et lancer le lieu concerné pour vérifier qu'il démarre sans
   erreur ; dire dans la tâche cochée ce qui n'a pas été vérifié en jeu.
 - Reste simple : la solution la plus simple qui marche pour la tâche en cours.
@@ -22,7 +23,7 @@ fichier de `docs/icebreaker/design/` utile.
 ## Travailler à plusieurs agents (repris de `../Icebreaker/CLAUDE.md`, §5 bis)
 
 Plusieurs agents travaillent en même temps sur ce dépôt. La branche de référence est **`master`**,
-ouverte dans le dossier principal `Veloren-test` ; Veloren d'origine reste lisible dans `origin/master`.
+ouverte dans le dossier principal `Veloren-test` ; Veloren d'origine reste lisible dans `veloren/master`.
 
 - **Un agent = un worktree = une piste**, jamais à plusieurs dans le même dossier. Au démarrage, avant de toucher au
   code : `git worktree list` ; si le worktree de la piste existe, y travailler, sinon le créer :
