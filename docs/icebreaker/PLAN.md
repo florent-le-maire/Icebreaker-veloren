@@ -286,7 +286,7 @@ Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (j
   sacs, foin), nid (os, toiles, champignons), garde (table, outils, heaume), prison (barreaux, chaînes), trésor et
   chambre forte (bougies, orbe), antre (feu, trophées, os), sanctuaire (bougies, sceau, tombes), couloirs (os,
   pierres, toiles). Testé : test de placement, tests ciblés, exemple sur 5 graines, serveur Genere ; rendu et sens
-  des sprites pas encore vus en jeu.
+  des sprites pas encore vus en jeu. — bc767e06e3
 - [ ] **F.7 Caméra en donjon** (si F.1 ne suffit pas) — mode « loin » de `camera.rs` : refuser un point de caméra
   séparé du joueur par de la roche.
   *Fin* : en couloir, dos au mur, la caméra ne sort jamais du donjon.
