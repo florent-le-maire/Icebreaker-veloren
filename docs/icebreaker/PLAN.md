@@ -297,10 +297,10 @@ X.2, X.3, X.8, X.4, X.5, X.6. Réglages dans `assets/icebreaker/vue_village.ron`
   lignes avec icônes d'objets (`(Content, Vec<ItemKey>)`), boutons en colonne ; liste d'expédition du même style
   sous le panneau ; bandeau d'aide et « prêt » en `.ftl`. Testé (compilation, panneaux au client texte) ; rendu,
   icônes et Échap pas encore vus en jeu. — a2d4a8e6a6
-- [ ] **X.8 Charrette : voir les recrues** — chaque recrue et chaque fiche avec les icônes de son arme et de son
-  torse ; les recrues du jour debout devant la charrette, équipées et nommées (retirées quand engagées ou
-  renouvelées), E : « Engagez-moi à la charrette ».
-  *Fin* : on voit les recrues devant la charrette et leurs icônes dans le panneau.
+- [x] **X.8 Charrette : voir les recrues** — chaque recrue et chaque fiche avec les icônes de son arme et de son
+  torse ; les recrues du jour debout devant la charrette (`registre.ron` → `postes_recrues`), équipées et nommées,
+  retirées quand engagées ou renouvelées ; E : « Engagez-moi à la charrette ». Testé (tests, client texte : icônes,
+  recrues debout, PNJ parti à l'engagement) ; pas encore vu dans le vrai client. — db77c93340
 - [ ] **X.4 Identité visuelle des bâtiments** — en vue U, couleur de bord et icône du HUD par bâtiment
   (`village.ron` → `apparence`) ; dans le village, sprites de Veloren autour de la porte à la génération
   (caisses, tonneaux, coffre, lanterne, enseigne…), listés par bâtiment dans `village.ron`.
