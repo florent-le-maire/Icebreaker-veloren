@@ -1430,7 +1430,7 @@ impl PlayState for SessionState {
                     )
                         if self.icebreaker_top_view.is_some() =>
                     {
-                        self.click_icebreaker_top_view(global_state);
+                        self.click_icebreaker_top_view();
                     },
 
                     // Pass all other events to the scene
@@ -2492,12 +2492,11 @@ struct IcebreakerTopView {
     entree: Vec3<f32>,
     /// Whether the server's last answer had no building (not in the village).
     hors_village: bool,
-    /// The height at which the screen meets the village: a little above the
-    /// character's ground at the start, halfway up the houses.
-    plane_z: f32,
     /// The buildings and plots to build on (name, bounds in world coordinates,
-    /// whether a plot), once the server sent them.
-    buildings: Vec<(comp::Content, Aabr<i32>, bool)>,
+    /// ground altitude, whether a plot), once the server sent them.
+    buildings: Vec<(comp::Content, Aabr<i32>, i32, bool)>,
+    /// The centre of the building under the cursor this frame, if any (X.2).
+    survole: Option<Vec2<f32>>,
     /// Where the last click was, and when its panel and the buildings were last
     /// asked for: they are asked for again every second (chantiers, treasury,
     /// expedition change).
@@ -2530,8 +2529,8 @@ impl SessionState {
             ori,
             entree: pos,
             hors_village: false,
-            plane_z: pos.z + reglages.plan,
             buildings: Vec::new(),
+            survole: None,
             last_click: None,
             last_refresh: std::time::Instant::now(),
         });
@@ -2556,22 +2555,6 @@ impl SessionState {
         self.hud.icebreaker_top_view(false);
     }
 
-    /// The world position (x, y) under the screen point `ndc` (-1 to 1, y up):
-    /// looking straight down, screen right is +x and screen up is +y.
-    fn icebreaker_ndc_to_world(&self, view: &IcebreakerTopView, ndc: Vec2<f32>) -> Vec2<f32> {
-        let camera = self.scene.camera();
-        let cam = camera.get_focus_pos();
-        let half_height = (camera.get_effective_fov() / 2.0).tan() * (cam.z - view.plane_z);
-        cam.xy() + ndc * Vec2::new(half_height * camera.get_aspect_ratio(), half_height)
-    }
-
-    fn icebreaker_world_to_ndc(&self, view: &IcebreakerTopView, wpos: Vec2<f32>) -> Vec2<f32> {
-        let camera = self.scene.camera();
-        let cam = camera.get_focus_pos();
-        let half_height = (camera.get_effective_fov() / 2.0).tan() * (cam.z - view.plane_z);
-        (wpos - cam.xy()) / Vec2::new(half_height * camera.get_aspect_ratio(), half_height)
-    }
-
     /// The cursor, as a screen point (-1 to 1, y up).
     fn icebreaker_cursor_ndc(global_state: &GlobalState) -> Vec2<f32> {
         let size = global_state.window.window().inner_size();
@@ -2583,19 +2566,20 @@ impl SessionState {
         .as_::<f32>()
     }
 
-    /// Asks for the panel of the building under the cursor.
-    fn click_icebreaker_top_view(&mut self, global_state: &GlobalState) {
+    /// Asks for the panel of the building under the cursor (the one drawn
+    /// highlighted, X.2).
+    fn click_icebreaker_top_view(&mut self) {
         // Not through the HUD (the panel's buttons).
         if !self.hud.icebreaker_cursor_free() {
             return;
         }
-        let Some(view) = &self.icebreaker_top_view else {
+        let Some(view) = &mut self.icebreaker_top_view else {
             return;
         };
-        let wpos = self.icebreaker_ndc_to_world(view, Self::icebreaker_cursor_ndc(global_state));
-        if let Some(view) = &mut self.icebreaker_top_view {
-            view.last_click = Some(wpos);
-        }
+        let Some(wpos) = view.survole else {
+            return;
+        };
+        view.last_click = Some(wpos);
         self.client
             .borrow_mut()
             .request_icebreaker_building(Some(wpos));
@@ -2638,26 +2622,36 @@ impl SessionState {
                 client.request_icebreaker_building(Some(wpos));
             }
         }
-        let Some(view) = &self.icebreaker_top_view else {
+        let Some(view) = &mut self.icebreaker_top_view else {
             return;
         };
-        let cursor = self.icebreaker_ndc_to_world(view, Self::icebreaker_cursor_ndc(global_state));
+        // Each building projected with the camera's own matrix, at its own
+        // altitude (X.2): the rectangle drawn is the one clicked, in a slope too.
+        let camera = self.scene.camera();
+        let dependents = camera.dependents();
+        let vue_proj = dependents.proj_mat
+            * dependents.view_mat
+            * Mat4::translation_3d(-camera.get_focus_pos().map(f32::trunc));
+        let cursor = Self::icebreaker_cursor_ndc(global_state);
+        let plan = self.icebreaker_vue_settings.plan;
+        let mut survole = None;
         let on_screen = view
             .buildings
             .iter()
-            .map(|(name, bounds, plot)| {
+            .filter_map(|(name, bounds, alt, plot)| {
                 let bounds_f = Aabr {
                     min: bounds.min.as_::<f32>(),
                     max: bounds.max.as_::<f32>(),
                 };
-                let rect = Aabr {
-                    min: self.icebreaker_world_to_ndc(view, bounds_f.min),
-                    max: self.icebreaker_world_to_ndc(view, bounds_f.max),
-                };
-                let hovered = bounds_f.contains_point(cursor);
-                (name.clone(), rect, hovered, *plot)
+                let rect = icebreaker_vue::rect_ecran(&vue_proj, bounds_f, *alt as f32 + plan)?;
+                let hovered = rect.contains_point(cursor);
+                if hovered {
+                    survole = Some(bounds_f.center());
+                }
+                Some((name.clone(), rect, hovered, *plot))
             })
             .collect();
+        view.survole = survole;
         self.hud.icebreaker_buildings(on_screen);
     }
 }

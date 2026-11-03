@@ -77,22 +77,24 @@ pub enum Place {
 /// slot), the list sent is empty and the client leaves the view.
 #[derive(Default)]
 pub struct IcebreakerBuildings {
-    places: Vec<(Place, Aabr<i32>)>,
+    /// Each place, its bounds and its ground altitude (the client projects it
+    /// at that height, X.2).
+    places: Vec<(Place, Aabr<i32>, i32)>,
     zone: Option<Zone>,
 }
 
 impl IcebreakerBuildings {
-    /// The buildings of `Building::ALL` with their bounds, if any.
-    pub fn new(bounds: impl IntoIterator<Item = Option<Aabr<i32>>>) -> Self {
+    /// The buildings of `Building::ALL` with their bounds and altitude, if any.
+    pub fn new(bounds: impl IntoIterator<Item = Option<(Aabr<i32>, i32)>>) -> Self {
         Self {
             places: Building::ALL
                 .into_iter()
                 .zip(bounds)
                 .filter_map(|(building, bounds)| Some((building, bounds?)))
-                .inspect(|(building, bounds)| {
-                    info!(?building, ?bounds, "Icebreaker: village building")
+                .inspect(|(building, (bounds, alt))| {
+                    info!(?building, ?bounds, alt, "Icebreaker: village building")
                 })
-                .map(|(building, bounds)| (Place::Building(building), bounds))
+                .map(|(building, (bounds, alt))| (Place::Building(building), bounds, alt))
                 .collect(),
             zone: None,
         }
@@ -107,26 +109,30 @@ impl IcebreakerBuildings {
         self.zone.is_none_or(|zone| zone.push_back(pos).is_none())
     }
 
-    /// The buildings and the plots to build on (rank, bounds).
+    /// The buildings and the plots to build on (rank, bounds, altitude).
     pub fn places(
         &self,
-        plots: impl IntoIterator<Item = (usize, Aabr<i32>)>,
-    ) -> Vec<(Place, Aabr<i32>)> {
+        plots: impl IntoIterator<Item = (usize, Aabr<i32>, i32)>,
+    ) -> Vec<(Place, Aabr<i32>, i32)> {
         self.places
             .iter()
             .copied()
-            .chain(plots.into_iter().map(|(rank, bounds)| (Place::Plot(rank), bounds)))
+            .chain(
+                plots
+                    .into_iter()
+                    .map(|(rank, bounds, alt)| (Place::Plot(rank), bounds, alt)),
+            )
             .collect()
     }
 }
 
 /// The place at `wpos`, if any.
-fn place_at(places: &[(Place, Aabr<i32>)], wpos: Vec2<f32>) -> Option<Place> {
+fn place_at(places: &[(Place, Aabr<i32>, i32)], wpos: Vec2<f32>) -> Option<Place> {
     let wpos = wpos.map(|e| e.floor() as i32);
     places
         .iter()
-        .find(|(_, bounds)| bounds.contains_point(wpos))
-        .map(|(place, _)| *place)
+        .find(|(_, bounds, _)| bounds.contains_point(wpos))
+        .map(|(place, ..)| *place)
 }
 
 /// Hours of map time left until map time `fin`, at map time `now`.
@@ -347,13 +353,16 @@ impl ServerEvent for IcebreakerBuildingEvent {
                     client.send_fallible(ServerGeneral::IcebreakerBuildings(
                         places
                             .iter()
-                            .map(|(place, bounds)| match place {
-                                Place::Building(building) => {
-                                    (Content::Plain(building.name().to_string()), *bounds, false)
-                                },
+                            .map(|(place, bounds, alt)| match place {
+                                Place::Building(building) => (
+                                    Content::Plain(building.name().to_string()),
+                                    *bounds,
+                                    *alt,
+                                    false,
+                                ),
                                 Place::Plot(rank) => {
                                     let name = plot_name(&config, village.chantier(*rank), now);
-                                    (Content::Plain(name), *bounds, true)
+                                    (Content::Plain(name), *bounds, *alt, true)
                                 },
                             })
                             .collect(),
@@ -444,9 +453,13 @@ mod tests {
             min: Vec2::new(x, 0),
             max: Vec2::new(x + 10, 10),
         };
-        let buildings =
-            IcebreakerBuildings::new([Some(square(0)), None, Some(square(20)), Some(square(40))]);
-        let places = buildings.places([(7, square(60))]);
+        let buildings = IcebreakerBuildings::new([
+            Some((square(0), 0)),
+            None,
+            Some((square(20), 0)),
+            Some((square(40), 0)),
+        ]);
+        let places = buildings.places([(7, square(60), 0)]);
         let at = |x, y| place_at(&places, Vec2::new(x, y));
         assert_eq!(at(5.5, 5.0), Some(Place::Building(Building::Warehouse)));
         assert_eq!(at(25.0, 9.9), Some(Place::Building(Building::Intendance)));

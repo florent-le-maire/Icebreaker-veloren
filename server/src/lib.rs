@@ -585,16 +585,22 @@ impl Server {
                 .enumerate()
                 .map(|(i, offset)| {
                     let houses = houses.as_ref()?;
-                    let house = houses.get(i).map(|house| (house.front, house.bounds));
-                    let (door, bounds) = house.unwrap_or_else(|| {
+                    let house = houses
+                        .get(i)
+                        .map(|house| (house.front, house.bounds, house.alt));
+                    let (door, bounds, alt) = house.unwrap_or_else(|| {
                         let wpos = square + Vec2::<f32>::from(*offset).as_::<i32>();
-                        (wpos, Aabr {
-                            min: wpos - 6,
-                            max: wpos + 6,
-                        })
+                        (
+                            wpos,
+                            Aabr {
+                                min: wpos - 6,
+                                max: wpos + 6,
+                            },
+                            spawn_point.0.z as i32,
+                        )
                     });
                     let pos = world.find_accessible_pos(index.as_index_ref(), door, false);
-                    Some((pos, bounds))
+                    Some((pos, bounds, alt))
                 })
                 .collect::<Vec<_>>();
             (posts, village)
@@ -604,7 +610,7 @@ impl Server {
             vec![None; icebreaker_buildings::Building::ALL.len()],
             icebreaker_village::IcebreakerVillage::default(),
         );
-        let village_npc_pos = |i: usize| village_posts[i].map(|(pos, _)| pos);
+        let village_npc_pos = |i: usize| village_posts[i].map(|(pos, ..)| pos);
         // Icebreaker: the top view only works inside the village's zone (X.1).
         #[cfg(feature = "worldgen")]
         let village_zone = instance_site_area
@@ -617,7 +623,9 @@ impl Server {
         let village_zone = None;
         state.ecs_mut().insert(
             icebreaker_buildings::IcebreakerBuildings::new(
-                village_posts.iter().map(|post| post.map(|(_, bounds)| bounds)),
+                village_posts
+                    .iter()
+                    .map(|post| post.map(|(_, bounds, alt)| (bounds, alt))),
             )
             .with_zone(village_zone),
         );

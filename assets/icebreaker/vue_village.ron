@@ -3,7 +3,8 @@
 (
     // Hauteur de la caméra au-dessus du personnage à l'entrée dans la vue.
     hauteur: 90.0,
-    // Hauteur au-dessus du sol du plan visé (à mi-hauteur des maisons).
+    // Hauteur au-dessus du sol de chaque maison à laquelle on la vise (à mi-hauteur) :
+    // son rectangle à l'écran et le clic dessus en dépendent.
     plan: 5.0,
     // Distance de l'entrée au-delà de laquelle la vue se ferme d'elle-même
     // (téléportation, retour au village).

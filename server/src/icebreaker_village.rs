@@ -132,11 +132,11 @@ impl IcebreakerVillage {
         village
     }
 
-    /// The plots to build on now (chantiers included): (rank, bounds).
-    pub fn open_plots(&self) -> Vec<(usize, vek::Aabr<i32>)> {
+    /// The plots to build on now (chantiers included): (rank, bounds, altitude).
+    pub fn open_plots(&self) -> Vec<(usize, vek::Aabr<i32>, i32)> {
         open_plots(&self.houses, &self.standing, config().terrains_ouverts)
             .into_iter()
-            .map(|(rank, house)| (rank, house.bounds))
+            .map(|(rank, house)| (rank, house.bounds, house.alt))
             .collect()
     }
 
@@ -149,7 +149,7 @@ impl IcebreakerVillage {
     pub fn cannot_build(&self, rang: usize) -> Option<String> {
         if self.chantier(rang).is_some() {
             Some("Un chantier est déjà en cours sur ce terrain.".to_string())
-        } else if !self.open_plots().iter().any(|(rank, _)| *rank == rang) {
+        } else if !self.open_plots().iter().any(|(rank, ..)| *rank == rang) {
             Some("Ce terrain n'est pas à bâtir.".to_string())
         } else {
             None
@@ -266,6 +266,7 @@ mod tests {
         let house = |x| VillageHouse {
             plot: common::store::Id::new(x as u64),
             front: vek::Vec2::new(x, 0),
+            alt: 0,
             bounds: vek::Aabr {
                 min: vek::Vec2::new(x, 0),
                 max: vek::Vec2::new(x + 5, 5),
@@ -284,6 +285,7 @@ mod tests {
         let house = |x| VillageHouse {
             plot: common::store::Id::new(x as u64),
             front: vek::Vec2::new(x, 0),
+            alt: 0,
             bounds: vek::Aabr {
                 min: vek::Vec2::new(x, 0),
                 max: vek::Vec2::new(x + 5, 5),

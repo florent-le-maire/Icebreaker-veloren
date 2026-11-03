@@ -260,9 +260,9 @@ fn main() {
                     if buildings.is_empty() {
                         println!("Aucun bâtiment : pas de village ici");
                     }
-                    for (name, bounds, _) in buildings {
+                    for (name, bounds, alt, _) in buildings {
                         let center = bounds.center();
-                        println!("Bâtiment {name:?} : centre {} {}", center.x, center.y);
+                        println!("Bâtiment {name:?} : centre {} {}, altitude {alt}", center.x, center.y);
                     }
                 },
                 Event::IcebreakerJouer(next) => {

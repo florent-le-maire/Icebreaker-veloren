@@ -105,6 +105,9 @@ pub struct VillageHouse {
     pub front: vek::Vec2<i32>,
     /// World bounds.
     pub bounds: vek::Aabr<i32>,
+    /// Ground altitude at the door (the client projects the house at that
+    /// height in the top view, X.2).
+    pub alt: i32,
 }
 
 /// The houses of the village, nearest to `square` (world position) first: the
@@ -136,6 +139,7 @@ pub fn village_houses(site: &Site, square: vek::Vec2<i32>) -> Vec<VillageHouse> 
                         min: site.tile_wpos(tiles.min),
                         max: site.tile_wpos(tiles.max + 1),
                     },
+                    alt: house.alt,
                 })
             },
             _ => None,
