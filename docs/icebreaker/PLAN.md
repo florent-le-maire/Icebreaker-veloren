@@ -282,10 +282,10 @@ Reprendre ce que le vrai client a montré : robustesse et cohérence d'abord, le
 X.2, X.3, X.8, X.4, X.5, X.6. Réglages dans `assets/icebreaker/vue_village.ron`, `village.ron`, `registre.ron`,
 `verrouillage.ron`.
 
-- [ ] **X.1 Vue U : entrée et sortie propres** — la vue se ferme d'elle-même quand le joueur s'éloigne
+- [x] **X.1 Vue U : entrée et sortie propres** — la vue se ferme d'elle-même quand le joueur s'éloigne
   (téléportation, `/rentrer`), meurt, ou que le serveur ne renvoie plus de bâtiments (hors du village : liste
-  vide et message) ; hauteur, plan et rayon de sortie dans `vue_village.ron`.
-  *Fin* : partir en expédition depuis la vue U, ou `/rentrer`, rend une caméra et un personnage normaux.
+  vide et message) ; hauteur, plan et rayon de sortie dans `vue_village.ron`. Vérifié au client texte (liste sur la
+  place, vide au donjon après le départ, de retour après `/rentrer`) ; fermeture de la caméra pas encore vue en jeu. — eaa5413379
 - [ ] **X.7 « Campagne » amène sur la place, en fantôme** — plus d'attente sur l'écran de personnages (simple
   chargement quand le registre est actif), `TRAVEL` vidé hors voyage, message d'accueil du fantôme (U, la
   charrette) ; « Campagne » et « Icebreaker » en `.ftl`.
