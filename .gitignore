@@ -14,6 +14,8 @@ temp
 todo.md
 todo.txt
 userdata
+# Icebreaker : données des serveurs lancés par icebreaker.ps1 (campagne, monde)
+userdata-icebreaker
 Makefile
 
 ## Allow asset hud settings
