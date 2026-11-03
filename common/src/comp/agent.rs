@@ -166,6 +166,9 @@ pub enum TradingBehavior {
     /// Icebreaker: the village's expedition leader does not trade, but offers
     /// the destinations of expeditions by dialogue.
     Departure,
+    /// Icebreaker: a recruit standing at the village cart (X.8) does not trade;
+    /// it says to be hired at the cart.
+    Recrue,
 }
 
 impl TradingBehavior {
@@ -181,7 +184,8 @@ impl TradingBehavior {
             TradingBehavior::Storage | TradingBehavior::Treasury => true,
             TradingBehavior::None
             | TradingBehavior::Infirmary { .. }
-            | TradingBehavior::Departure => false,
+            | TradingBehavior::Departure
+            | TradingBehavior::Recrue => false,
         }
     }
 }

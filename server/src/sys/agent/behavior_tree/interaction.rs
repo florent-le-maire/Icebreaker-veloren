@@ -491,7 +491,8 @@ pub fn handle_inbox_update_pending_trade(bdata: &mut BehaviorData) -> bool {
                 },
                 TradingBehavior::None
                 | TradingBehavior::Infirmary { .. }
-                | TradingBehavior::Departure => {
+                | TradingBehavior::Departure
+                | TradingBehavior::Recrue => {
                     agent.behavior.unset(BehaviorState::TRADING);
                     agent.target = None;
                     emitters.emit(ProcessTradeActionEvent(

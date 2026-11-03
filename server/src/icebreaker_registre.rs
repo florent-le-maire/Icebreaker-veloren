@@ -13,7 +13,7 @@ use crate::{icebreaker_classes, icebreaker_warehouse::write_campaign_file};
 use common::{
     assets::{AssetExt, Ron},
     character::CharacterId,
-    comp::{Player, Presence, PresenceKind},
+    comp::{ItemKey, Player, Presence, PresenceKind},
 };
 use rand::prelude::IndexedRandom;
 use serde::{Deserialize, Serialize};
@@ -53,6 +53,10 @@ pub struct RegistreConfig {
     pub reservations_par_compte: usize,
     /// Names of the recruits.
     pub noms: Vec<String>,
+    /// Where the recruits of the day stand, in front of the cart (X.8): offsets
+    /// from the cart post, in blocks.
+    #[serde(default)]
+    pub postes_recrues: Vec<(f32, f32)>,
 }
 
 pub fn config() -> RegistreConfig {
@@ -365,19 +369,21 @@ pub fn panel_for(
     uuid: &str,
     current: Option<i64>,
     joueurs: &Joueurs,
-) -> (Vec<String>, Vec<(String, Vec<String>)>) {
+) -> (Vec<(String, Vec<ItemKey>)>, Vec<(String, Vec<String>)>) {
     let config = config();
     let command = |words: &[&str]| words.iter().map(|w| w.to_string()).collect::<Vec<_>>();
-    let mut lines = Vec::new();
+    // The icons of a class (X.8): its weapon and its chest armour.
+    let icones = |classe: &str| icebreaker_classes::class(classe).map(|c| icebreaker_classes::icones(&c)).unwrap_or_default();
+    let mut lines: Vec<(String, Vec<ItemKey>)> = Vec::new();
     let mut buttons = Vec::new();
     if registre.charrette().is_empty() {
-        lines.push("Personne à la charrette aujourd'hui.".to_string());
+        lines.push(("Personne à la charrette aujourd'hui.".to_string(), Vec::new()));
     } else {
-        lines.push("À la charrette :".to_string());
+        lines.push(("À la charrette :".to_string(), Vec::new()));
     }
     for (i, recrue) in registre.charrette().iter().enumerate() {
         let classe = nom_de_classe(&recrue.classe);
-        lines.push(format!("  {}, {classe}", recrue.nom));
+        lines.push((format!("  {}, {classe}", recrue.nom), icones(&recrue.classe)));
         if current.is_none() {
             buttons.push((
                 format!("Engager {} ({classe})", recrue.nom),
@@ -385,10 +391,13 @@ pub fn panel_for(
             ));
         }
     }
-    lines.push(format!(
-        "Registre ({}/{}) :",
-        registre.personnages().len(),
-        config.places_registre
+    lines.push((
+        format!(
+            "Registre ({}/{}) :",
+            registre.personnages().len(),
+            config.places_registre
+        ),
+        Vec::new(),
     ));
     // Those reserved by the player first.
     let mut fiches: Vec<&Fiche> = registre.personnages().iter().collect();
@@ -406,7 +415,10 @@ pub fn panel_for(
             (None, Some(_)) => "réservé".to_string(),
             (None, None) => "libre".to_string(),
         };
-        lines.push(format!("  {}, {} : {etat}", fiche.nom, nom_de_classe(&fiche.classe)));
+        lines.push((
+            format!("  {}, {} : {etat}", fiche.nom, nom_de_classe(&fiche.classe)),
+            icones(&fiche.classe),
+        ));
         let mien = fiche.reserve_par.as_deref() == Some(uuid);
         if current != Some(fiche.id) && registre.peut_jouer_fiche(fiche, uuid, joueurs).is_ok() {
             buttons.push((format!("Jouer {}", fiche.nom), command(&["registre", "jouer", &id])));
@@ -555,6 +567,7 @@ mod tests {
             places_registre: 4,
             reservations_par_compte: 2,
             noms: vec!["Anna".into(), "Bob".into(), "Cleo".into()],
+            postes_recrues: Vec::new(),
         }
     }
 
@@ -707,7 +720,10 @@ mod tests {
         registre.etat.personnages[1].reserve_par = Some("b".into());
         let (lines, buttons) = panel_for(&registre, "a", None, &Joueurs::new());
         let labels: Vec<&str> = buttons.iter().map(|(label, _)| label.as_str()).collect();
-        assert!(lines.iter().any(|l| l.contains("Anna, archer")), "{lines:?}");
+        assert!(
+            lines.iter().any(|(l, icones)| l.contains("Anna, archer") && icones.len() == 2),
+            "{lines:?}"
+        );
         assert!(labels.contains(&"Engager Anna (archer)"));
         assert!(labels.contains(&"Jouer P1"));
         assert!(!labels.contains(&"Jouer P2"), "reserved by b");

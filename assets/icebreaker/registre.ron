@@ -12,6 +12,9 @@
     places_registre: 10,
     // Personnages qu'un compte peut réserver pour lui (seul lui peut alors les jouer).
     reservations_par_compte: 5,
+    // Où les recrues du jour attendent, debout devant la charrette (X.8) : décalages en blocs par rapport
+    // au poste de la charrette (devant la porte de sa maison). Vide : pas de recrue visible.
+    postes_recrues: [(2.5, 2.0), (-2.5, 2.0), (0.0, 4.0), (2.5, 5.5), (-2.5, 5.5)],
     // Noms des recrues, tirés au hasard (un nom n'est pas pris deux fois).
     noms: [
         "Brunhild", "Aldric", "Maelis", "Torvald", "Isaure", "Gauvain", "Ysolde", "Bertrand",

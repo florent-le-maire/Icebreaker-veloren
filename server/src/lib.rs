@@ -18,6 +18,7 @@ mod data_dir;
 pub mod error;
 pub mod events;
 pub mod icebreaker_buildings;
+pub mod icebreaker_charrette;
 pub mod icebreaker_classes;
 pub mod icebreaker_expedition;
 pub mod icebreaker_mission;
@@ -479,6 +480,8 @@ impl Server {
         state.ecs_mut().register::<RegionSubscription>();
         state.ecs_mut().register::<Client>();
         state.ecs_mut().register::<comp::Presence>();
+        // Icebreaker: the recruits standing at the cart (X.8).
+        state.ecs_mut().register::<icebreaker_charrette::RecrueCharrette>();
         state.ecs_mut().register::<wiring::WiringElement>();
         state.ecs_mut().register::<wiring::Circuit>();
         state.ecs_mut().register::<Anchor>();
@@ -667,6 +670,26 @@ impl Server {
         state
             .ecs_mut()
             .insert(icebreaker_expedition::IcebreakerExpedition::new(village_npc_pos(4)));
+        // Icebreaker: the recruits of the day stand in front of the cart (X.8), at
+        // `registre.ron`'s offsets from the cart post.
+        #[cfg(feature = "worldgen")]
+        let recruit_posts = village_npc_pos(5)
+            .map(|cart| {
+                icebreaker_registre::config()
+                    .postes_recrues
+                    .iter()
+                    .map(|(x, y)| {
+                        let wpos = (cart.xy() + Vec2::new(*x, *y)).as_::<i32>();
+                        world.find_accessible_pos(index.as_index_ref(), wpos, false)
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        #[cfg(not(feature = "worldgen"))]
+        let recruit_posts = Vec::new();
+        state
+            .ecs_mut()
+            .insert(icebreaker_charrette::IcebreakerCharrette::new(recruit_posts));
 
         // Icebreaker: a generated dungeon's mission is won by killing its leader;
         // some of its creatures sleep.

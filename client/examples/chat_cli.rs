@@ -152,20 +152,24 @@ fn main() {
                     }
                 }
             } else if msg == "!voisins" {
-                // Icebreaker : les PNJ à moins de 40 blocs, leur position et leur haut
+                // Icebreaker : les PNJ à moins de 100 blocs, leur position et leur haut
                 // (couché : le haut n'est plus vertical).
                 use veloren_client::{Join, WorldExt};
                 let ecs = client.state().ecs();
                 let me = ecs.read_storage::<comp::Pos>().get(client.entity()).map(|p| p.0);
-                for (pos, ori, _) in (
+                let stats = ecs.read_storage::<comp::Stats>();
+                for (entity, pos, ori, _) in (
+                    &ecs.entities(),
                     &ecs.read_storage::<comp::Pos>(),
                     &ecs.read_storage::<comp::Ori>(),
                     &ecs.read_storage::<comp::Body>(),
                 )
                     .join()
-                    .filter(|(pos, _, _)| me.is_some_and(|me| me.distance(pos.0) < 40.0 && me != pos.0))
+                    .filter(|(_, pos, _, _)| me.is_some_and(|me| me.distance(pos.0) < 100.0 && me != pos.0))
                 {
-                    println!("Voisin en {:?} : haut {:?}", pos.0.map(|e| e.round()), ori.up().map(|e| (e * 10.0).round() / 10.0));
+                    // X.8 : le nom, pour voir les recrues de la charrette.
+                    let nom = stats.get(entity).map(|s| format!("{:?}", s.name)).unwrap_or_default();
+                    println!("Voisin {nom} en {:?} : haut {:?}", pos.0.map(|e| e.round()), ori.up().map(|e| (e * 10.0).round() / 10.0));
                 }
             } else if let Some((action, pos)) = msg.split_once(' ').and_then(|(action, rest)| {
                 let mut xyz = rest.split_whitespace().filter_map(|w| w.parse().ok());

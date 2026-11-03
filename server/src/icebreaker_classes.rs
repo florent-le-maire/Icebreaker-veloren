@@ -4,7 +4,7 @@
 
 use common::{
     assets::{AssetExt, Ron},
-    comp::{Inventory, inventory::loadout_builder::LoadoutBuilder},
+    comp::{Inventory, ItemKey, inventory::loadout_builder::LoadoutBuilder},
 };
 use serde::Deserialize;
 
@@ -34,6 +34,18 @@ pub fn classes() -> Vec<Class> {
 
 /// The class called `id`, if any.
 pub fn class(id: &str) -> Option<Class> { classes().into_iter().find(|class| class.id == id) }
+
+/// The items drawn as icons for a recruit of `class` (X.8): its weapon in
+/// hand and its chest armour.
+pub fn icones(class: &Class) -> Vec<ItemKey> {
+    use common::comp::inventory::slot::{ArmorSlot, EquipSlot};
+    let inventory = starting_inventory(class);
+    [EquipSlot::ActiveMainhand, EquipSlot::Armor(ArmorSlot::Chest)]
+        .into_iter()
+        .filter_map(|slot| inventory.equipped(slot))
+        .map(ItemKey::from)
+        .collect()
+}
 
 /// The inventory a recruit of `class` starts with: its equipment only (the
 /// items every character gets are added by the character creator).
@@ -77,6 +89,10 @@ mod tests {
             );
             assert!(equipped(&inventory, EquipSlot::Armor(ArmorSlot::Chest)).is_some(), "{id}");
             assert!(equipped(&inventory, EquipSlot::Glider).is_some(), "{id}");
+            // X.8 : deux icônes, l'arme d'abord.
+            let icones = icones(&class);
+            assert_eq!(icones.len(), 2, "{id}");
+            assert_eq!(icones[0], ItemKey::Simple(weapon.to_string()), "{id}");
         }
         assert_eq!(classes().len(), 3);
     }

@@ -336,7 +336,7 @@ impl ServerEvent for IcebreakerBuildingEvent {
                             panel
                                 .0
                                 .into_iter()
-                                .map(|line| (Content::Plain(line), Vec::new()))
+                                .map(|(line, icons)| (Content::Plain(line), icons))
                                 .collect(),
                             panel
                                 .1
@@ -392,9 +392,12 @@ fn charrette_panel(
     player: Option<&Player>,
     presences: &ReadStorage<Presence>,
     players: &ReadStorage<Player>,
-) -> (Vec<String>, Vec<(String, Vec<String>)>) {
+) -> (Vec<(String, Vec<ItemKey>)>, Vec<(String, Vec<String>)>) {
     if !icebreaker_registre::active() {
-        return (vec!["Pas de registre ici.".to_string()], Vec::new());
+        return (
+            vec![("Pas de registre ici.".to_string(), Vec::new())],
+            Vec::new(),
+        );
     }
     let Some(player) = player else {
         return (Vec::new(), Vec::new());

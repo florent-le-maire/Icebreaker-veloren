@@ -2,6 +2,7 @@ pub mod agent;
 pub mod chunk_send;
 pub mod chunk_serialize;
 pub mod entity_sync;
+pub mod icebreaker_charrette;
 pub mod icebreaker_clock;
 pub mod icebreaker_expedition;
 pub mod icebreaker_sleep;
@@ -43,6 +44,7 @@ pub fn add_server_systems(dispatch_builder: &mut DispatcherBuilder) {
     dispatch::<waypoint::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_zone::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_clock::Sys>(dispatch_builder, &[]);
+    dispatch::<icebreaker_charrette::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_expedition::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_slots::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_village::Sys>(dispatch_builder, &[]);
