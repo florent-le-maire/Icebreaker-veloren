@@ -293,10 +293,10 @@ X.2, X.3, X.8, X.4, X.5, X.6. Réglages dans `assets/icebreaker/vue_village.ron`
 - [x] **X.2 Clic juste en vue U** — le serveur envoie l'altitude de chaque bâtiment ; le client projette les
   coins avec la vraie matrice de la caméra, survol et clic sur le rectangle dessiné. Testé (projection, serveur,
   altitudes au client texte : de 201 à 257 sur un village) ; alignement pas encore vu en jeu. — 4e9faa3e09
-- [ ] **X.3 Un vrai panneau de bâtiment** — fenêtre à la Veloren (cadre, titre, croix, Échap), lignes avec
-  icônes d'objets (`(Content, Vec<String>)` : texte, ids d'objets), boutons en colonne ; liste d'expédition du
-  même style, sans chevauchement ; bandeau d'aide et « prêt » en `.ftl`.
-  *Fin* : cliquer sur l'entrepôt ouvre une fenêtre avec les icônes de son contenu.
+- [x] **X.3 Un vrai panneau de bâtiment** — fenêtre dans les cadres de dialogue de Veloren (titre, croix, Échap),
+  lignes avec icônes d'objets (`(Content, Vec<ItemKey>)`), boutons en colonne ; liste d'expédition du même style
+  sous le panneau ; bandeau d'aide et « prêt » en `.ftl`. Testé (compilation, panneaux au client texte) ; rendu,
+  icônes et Échap pas encore vus en jeu. — a2d4a8e6a6
 - [ ] **X.8 Charrette : voir les recrues** — chaque recrue et chaque fiche avec les icônes de son arme et de son
   torse ; les recrues du jour debout devant la charrette, équipées et nommées (retirées quand engagées ou
   renouvelées), E : « Engagez-moi à la charrette ».
