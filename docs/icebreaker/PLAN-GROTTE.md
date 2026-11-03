@@ -43,11 +43,12 @@ Pas de cases ni de salles : le tracé est en blocs, rendu avec le `Painter` de V
 Code dans `world/src/icebreaker/grotte/` (tracé, réglages) et `world/src/site/plot/icebreaker_grotte.rs` (rendu) ;
 réglages dans `assets/icebreaker/grottes/grotte.ron` ; exemple de contrôle `world/examples/icebreaker_grotte.rs`.
 
-- [ ] **K.1 Lieu « Grotte » minimal** — `SiteKind::IcebreakerGrotte`, plot, `site_kind("Grotte")`, `is_dungeon` et
-  liste rtsim, emplacement `("Grotte", 1)` dans `campagne.ron`, entrée dans `lieux.ron` (port 14140), en-tête
-  d'`icebreaker.ps1`. Rendu : une poche sous l'entrée et le tunnel en pente qui y descend. Couche grottes de Veloren
-  coupée dans toutes les instances (`world/src/lib.rs`, garde `is_instance()` : cohérent avec I.1).
-  *Fin* : `.\icebreaker.ps1 donjon -Site Grotte` ; on descend le tunnel, on arrive dans une poche vide.
+- [x] **K.1 Lieu « Grotte » minimal** — `SiteKind::IcebreakerGrotte`, plot `icebreaker_grotte.rs`, tracé dans
+  `world/src/icebreaker/grotte/` (`grotte.ron` : entrée, poche), `site_kind("Grotte")`, `is_dungeon` et liste rtsim,
+  emplacement `("Grotte", 1)` dans `campagne.ron`, « Grotte » dans `lieux.ron` (port 14140), en-tête du lanceur ;
+  couche grottes de Veloren coupée dans toutes les instances. Rendu : une poche (ellipsoïde) sous la bouche et le boyau
+  en pente qui y descend ; arrivée devant la bouche. Testé : tests, exemple `icebreaker_grotte` sur 3 graines (poche
+  et boyau creux), serveur lancé (apparition devant la bouche) ; pas encore descendu en jeu.
 - [ ] **K.2 Réseau de poches et de boyaux** — tracé déterministe par graine (`grotte.ron` : 6 à 10 poches, rayons
   8 à 16, 3 niveaux de profondeur, boyaux de rayon 3 à 5, 1 à 2 culs-de-sac par poche) : chaque poche reliée à une
   poche du niveau au-dessus, plus 1 ou 2 boucles ; poches en `superquadric`/`ellipsoid`, boyaux en `cubic_bezier`,

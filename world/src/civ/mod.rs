@@ -712,6 +712,11 @@ impl Civs {
                         &mut rng,
                         wpos,
                     ),
+                    SiteKind::IcebreakerGrotte => WorldSite::generate_icebreaker_grotte(
+                        &Land::from_sim(ctx.sim),
+                        &mut rng,
+                        wpos,
+                    ),
                     SiteKind::Cultist => {
                         WorldSite::generate_cultist(&Land::from_sim(ctx.sim), &mut rng, wpos)
                     },
@@ -1959,7 +1964,7 @@ impl SiteKind {
                         && (-0.3..0.4).contains(&chunk.temp)
                 },
                 // Icebreaker: underground, it only needs a place for its entrance.
-                SiteKind::IcebreakerDungeon => on_land() && on_flat_terrain(),
+                SiteKind::IcebreakerDungeon | SiteKind::IcebreakerGrotte => on_land() && on_flat_terrain(),
                 SiteKind::GiantTree => {
                     on_land()
                         && on_flat_terrain()
@@ -2076,6 +2081,7 @@ impl Site {
                 | SiteKind::Sahagin
                 | SiteKind::VampireCastle
                 | SiteKind::IcebreakerDungeon
+                | SiteKind::IcebreakerGrotte
         )
     }
 

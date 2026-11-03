@@ -47,8 +47,9 @@ impl Site {
                 | SiteKind::Adlet
                 | SiteKind::VampireCastle
                 | SiteKind::DwarvenMine
-                // Icebreaker: a dungeon of our generator.
-                | SiteKind::IcebreakerDungeon,
+                // Icebreaker: a dungeon of our generator, and a cave.
+                | SiteKind::IcebreakerDungeon
+                | SiteKind::IcebreakerGrotte,
             ) => Some(false),
             // Neutral
             Some(SiteKind::GiantTree | SiteKind::GliderCourse | SiteKind::Bridge(..)) | None => {

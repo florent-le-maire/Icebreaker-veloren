@@ -129,8 +129,9 @@ pub enum SiteKind {
     VampireCastle,
     GliderCourse,
     Myrmidon,
-    // Icebreaker: a dungeon of our generator.
+    // Icebreaker: a dungeon of our generator, and a cave.
     IcebreakerDungeon,
+    IcebreakerGrotte,
 }
 
 impl SiteKind {
@@ -157,6 +158,7 @@ impl SiteKind {
             SiteKind::VampireCastle => Some(SiteKindMeta::Dungeon(DungeonKindMeta::VampireCastle)),
             // Icebreaker: a dungeon of our generator, peopled with gnarlings by default.
             SiteKind::IcebreakerDungeon => Some(SiteKindMeta::Dungeon(DungeonKindMeta::Gnarling)),
+            SiteKind::IcebreakerGrotte => Some(SiteKindMeta::Dungeon(DungeonKindMeta::Gnarling)),
 
             _ => None,
         }
@@ -195,6 +197,7 @@ impl SiteKind {
             SiteKind::Haniwa => Some(MarkerKind::Haniwa),
             SiteKind::VampireCastle => Some(MarkerKind::VampireCastle),
             SiteKind::IcebreakerDungeon => Some(MarkerKind::Gnarling),
+            SiteKind::IcebreakerGrotte => Some(MarkerKind::Gnarling),
 
             SiteKind::PirateHideout
             | SiteKind::JungleRuin

@@ -5,5 +5,6 @@
     emplacements: [
         ("Gnarling", 2),
         ("Genere", 2),
+        ("Grotte", 1),
     ],
 )

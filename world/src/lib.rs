@@ -507,7 +507,9 @@ impl World {
         if index.features.caverns {
             layer::apply_caverns_to(&mut canvas, &mut dynamic_rng);
         }
-        if index.features.caves {
+        // Icebreaker: no wild caves in an instance (their creatures were not cut by I.1,
+        // and they would cut through the cave of our own).
+        if index.features.caves && !icebreaker::is_instance() {
             layer::apply_caves_to(&mut canvas, &mut dynamic_rng);
         }
         if index.features.rocks {

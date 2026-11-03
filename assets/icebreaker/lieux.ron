@@ -11,5 +11,6 @@
     (nom: "Campagne", arguments: ["campagne"], port: 14100, actif: true, au_menu: true),
     (nom: "Donjon", arguments: ["donjon", "-Site", "Gnarling"], port: 14110, actif: true),
     (nom: "Donjon généré", arguments: ["donjon", "-Site", "Genere"], port: 14130, actif: true),
+    (nom: "Grotte", arguments: ["donjon", "-Site", "Grotte"], port: 14140, actif: true),
     (nom: "Route", arguments: ["route"], port: 14120, actif: false),
 ]

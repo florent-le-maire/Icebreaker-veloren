@@ -11,7 +11,7 @@ pub mod settings;
 pub mod shapes;
 
 use plan::{Cell, Plan};
-use rooms::{RoomCatalog, RoomRole};
+use rooms::RoomRole;
 pub use settings::{Mission, RenderSettings, Settings};
 
 /// Where the dungeon data lives, under `assets/`.
@@ -357,6 +357,7 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::rooms::RoomCatalog;
     use std::collections::BTreeSet;
 
     #[test]

@@ -3,6 +3,7 @@
 //! site, without the wildlife and roaming monsters of a whole living world.
 
 pub mod dungeon;
+pub mod grotte;
 
 use crate::site::{
     Site, SiteKind,
@@ -87,6 +88,7 @@ pub fn site_kind(name: &str) -> Option<SiteKind> {
         "ChapelSite" => SiteKind::ChapelSite,
         "VampireCastle" => SiteKind::VampireCastle,
         "Genere" => SiteKind::IcebreakerDungeon,
+        "Grotte" => SiteKind::IcebreakerGrotte,
         _ => return None,
     };
     Some(kind)
@@ -97,6 +99,7 @@ pub fn site_kind(name: &str) -> Option<SiteKind> {
 pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
     site.plots().find_map(|plot| match plot.kind() {
         PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.entrance()),
+        PlotKind::IcebreakerGrotte(grotte) => Some(grotte.entrance()),
         _ => None,
     })
 }
@@ -341,6 +344,69 @@ pub fn check_generated_dungeon(
     Some((report, problems))
 }
 
+
+/// Generates the chunks of the cave in `world` and checks its blocks
+/// (`examples/icebreaker_grotte.rs`): the centre of each pocket and the blocks
+/// along each bore are hollow. `None` if the world has no cave; otherwise a
+/// summary and the problems found.
+pub fn check_generated_grotte(
+    world: &crate::World,
+    index: crate::IndexRef,
+) -> Option<(String, Vec<String>)> {
+    use common::terrain::TerrainChunkSize;
+    use common::vol::{ReadVol, RectVolSize};
+    use std::collections::HashMap;
+
+    let site = world
+        .civs()
+        .sites()
+        .filter_map(|site| site.site_tmp)
+        .map(|id| &index.sites[id])
+        .find(|site| site.kind == Some(SiteKind::IcebreakerGrotte))?;
+    let plot = site.plots().find_map(|plot| match plot.kind() {
+        PlotKind::IcebreakerGrotte(grotte) => Some(grotte),
+        _ => None,
+    })?;
+    let chunk_size = TerrainChunkSize::RECT_SIZE.map(|e| e as i32);
+    let bounds = plot.bounds();
+    let key_of = |wpos: vek::Vec2<i32>| wpos.map2(chunk_size, |e, s| e.div_euclid(s));
+    let (low, high) = (key_of(bounds.min), key_of(bounds.max));
+    let mut chunks = HashMap::new();
+    for x in low.x..=high.x {
+        for y in low.y..=high.y {
+            let key = vek::Vec2::new(x, y);
+            let chunk = world.generate_chunk(index, key, None, || false, None).ok().map(|(c, _)| c);
+            chunks.insert(key, chunk);
+        }
+    }
+    let hollow = |wpos: vek::Vec3<i32>| {
+        let key = key_of(wpos.xy());
+        let local = wpos - (key * chunk_size).with_z(0);
+        chunks
+            .get(&key)
+            .and_then(|c| c.as_ref())
+            .and_then(|c| c.get(local).ok())
+            .is_some_and(|b| !b.is_solid())
+    };
+    let grotte = plot.grotte();
+    let mut problems = Vec::new();
+    for pocket in &grotte.pockets {
+        if !hollow(pocket.center) {
+            problems.push(format!("poche pleine en {:?}", pocket.center));
+        }
+    }
+    for bore in &grotte.bores {
+        for k in 0..=8 {
+            let p = bore.a.as_::<f32>() + (bore.b - bore.a).as_::<f32>() * (k as f32 / 8.0);
+            let p = p.map(|e| e.round() as i32);
+            if !hollow(p) {
+                problems.push(format!("boyau bouché en {p:?}"));
+            }
+        }
+    }
+    let summary = format!("{}\nbouche en {:?}, arrivée en {:?}", grotte.summary, grotte.mouth, plot.entrance());
+    Some((summary, problems))
+}
 /// Whether the instance is the village (built around a town).
 pub fn is_village() -> bool { instance_site().is_some_and(is_town) }
 
