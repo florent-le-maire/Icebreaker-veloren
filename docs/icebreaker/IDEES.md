@@ -3,6 +3,11 @@
 Idées de fonctions, pas encore décidées ni découpées. Quand l'équipe en retient une, elle passe en tâche dans le
 plan concerné (`PLAN.md`, `PLAN-BOUCLES.md`) et sort d'ici. Effort sur Veloren : P petit, M moyen, G gros.
 
+## Âmes des monstres (Sayanel, 2026-11-03)
+
+Âme lâchée rarement par un monstre, inconnue (blanche) jusqu'à ce qu'on la lie à son personnage, puis reconnue
+(verte) ; Codex au village. Races, classes d'ennemis et stats de Veloren : `design/ames.md`.
+
 ## Boucles de jeu (lectures de game design, 2026-11-02)
 
 Ce que les lectures apprennent :
@@ -18,7 +23,8 @@ Ce que les lectures apprennent :
 ### Expédition
 
 1. **Relever un allié à terre** (M) — à 0 PV on tombe à terre, un allié a 30 s pour relever, ensuite seulement la
-   mort. Le moment de coop le plus fort ; déjà décidé dans `design/donjon.md`. *Deep Rock Galactic, Darkest Dungeon.*
+   mort. Le moment de coop le plus fort ; déjà décidé dans `design/donjon.md`. Veloren a déjà un état « à terre »
+   pour les humanoïdes (`has_death_protection`) : à régler plutôt qu'à faire. *Deep Rock Galactic, Darkest Dungeon.*
 2. **Le noir paie** (M) — salles sombres : coffres plus riches, surprises plus fréquentes ; une torche levée se voit
    de loin. S'appuie sur l'éclairage G.10. *Jauge de lumière de Darkest Dungeon.*
 3. **Curiosités** (P à M) — autel, fontaine, cadavre d'aventurier, caisse scellée : avec le bon objet apporté (eau
