@@ -280,7 +280,7 @@ Réglages : `assets/icebreaker/classes.ron`, `registre.ron` ; état : `campagne/
   mage en jeu et barre du vrai client pas vérifiés ; les recrues déjà créées n'en ont pas. — b75f07ff26
 - [x] **R.7 Guerrier plus spectaculaire** — cascade (prérequis, touche 1), tranche-tourbillon et fendeur de terre
   (touches 2 et 3, posture tranchante). Testé (tests ; mage et archer engagés au client texte, compétences en
-  base) ; pas de guerrier à la charrette ce jour-là, tourbillon et fendeur pas vus en jeu. — *hash*
+  base) ; pas de guerrier à la charrette ce jour-là, tourbillon et fendeur pas vus en jeu. — 1b7008aae2
 
 ## Jalon X — Interface et ergonomie du village (Flo, 2026-11-03)
 
