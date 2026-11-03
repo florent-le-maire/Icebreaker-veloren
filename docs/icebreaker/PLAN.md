@@ -281,6 +281,10 @@ Réglages : `assets/icebreaker/classes.ron`, `registre.ron` ; état : `campagne/
 - [x] **R.7 Guerrier plus spectaculaire** — cascade (prérequis, touche 1), tranche-tourbillon et fendeur de terre
   (touches 2 et 3, posture tranchante). Testé (tests ; mage et archer engagés au client texte, compétences en
   base) ; pas de guerrier à la charrette ce jour-là, tourbillon et fendeur pas vus en jeu. — 1b7008aae2
+- [x] **R.8 Trois postures pour le guerrier** — touche 1 riposte (défensive), 2 balayage lourd (lourde), 3
+  tranche-tourbillon (tranchante) ; prérequis sur 4 et 5. Ordre des touches en données (`touches` de `classes.ron`).
+  Testé (tests ; guerrier engagé au client texte, touches en base dans cet ordre) ; postures pas vues dans le vrai
+  client. — *hash*
 
 ## Jalon X — Interface et ergonomie du village (Flo, 2026-11-03)
 

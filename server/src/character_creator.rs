@@ -67,6 +67,7 @@ pub fn create_character(
         character_alias,
         inventory,
         SkillSet::default(),
+        common::comp::ActiveAbilities::default_limited(BASE_ABILITY_LIMIT),
         body,
         hardcore,
         character_updater,
@@ -77,7 +78,8 @@ pub fn create_character(
 
 /// Icebreaker : une recrue de la charrette (jalon R) part avec l'équipement de
 /// sa classe (`assets/icebreaker/classes.ron`) au lieu de l'arme choisie, et
-/// les compétences de sa classe débloquées (R.6).
+/// les compétences de sa classe débloquées (R.6), dans l'ordre de ses touches
+/// (R.8).
 pub fn create_recruit(
     entity: Entity,
     player_uuid: String,
@@ -94,12 +96,15 @@ pub fn create_recruit(
         return Err(CreationError::InvalidBody);
     }
     let inventory = crate::icebreaker_classes::starting_inventory(class);
+    let skill_set = crate::icebreaker_classes::starting_skill_set(class);
+    let abilities = crate::icebreaker_classes::starting_abilities(class, &inventory, &skill_set);
     persist_new_character(
         entity,
         player_uuid,
         character_alias,
         inventory,
-        crate::icebreaker_classes::starting_skill_set(class),
+        skill_set,
+        abilities,
         body,
         false,
         character_updater,
@@ -115,6 +120,7 @@ fn persist_new_character(
     character_alias: String,
     mut inventory: Inventory,
     skill_set: SkillSet,
+    active_abilities: common::comp::ActiveAbilities,
     body: Body,
     hardcore: bool,
     character_updater: &mut WriteExpect<'_, CharacterUpdater>,
@@ -144,7 +150,7 @@ fn persist_new_character(
         inventory,
         waypoint,
         pets: Vec::new(),
-        active_abilities: common::comp::ActiveAbilities::default_limited(BASE_ABILITY_LIMIT),
+        active_abilities,
         map_marker,
     });
 }

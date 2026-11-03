@@ -3,11 +3,14 @@
 // - `equipement` est un fichier d'équipement de Veloren (armure et armes en main), sous `assets/` ; s'y ajoutent une
 //   potion et du fromage, comme pour tout personnage ;
 // - `competences` est un fichier de compétences de Veloren (`classes/competences/*.ron`) : les compétences de
-//   l'arme débloquées au départ (2, ou 3 avec un prérequis), qui se placent seules sur les premières touches.
+//   l'arme débloquées au départ, qui se placent sur les premières touches
+//   dans l'ordre de Veloren ;
+// - `touches` (facultatif) : les compétences à mettre d'abord, dans cet ordre, sur les touches 1, 2, 3…
 (
     classes: [
         (id: "guerrier", nom: "guerrier", equipement: "icebreaker.classes.guerrier",
-            competences: "icebreaker.classes.competences.guerrier"),
+            competences: "icebreaker.classes.competences.guerrier",
+            touches: [Sword(DefensiveRiposte), Sword(HeavySweep), Sword(CleavingWhirlwindSlice)]),
         (id: "mage", nom: "mage", equipement: "icebreaker.classes.mage",
             competences: "icebreaker.classes.competences.mage"),
         (id: "archer", nom: "archer", equipement: "icebreaker.classes.archer",
