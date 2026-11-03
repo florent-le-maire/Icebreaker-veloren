@@ -281,6 +281,7 @@ Réglages : `assets/icebreaker/classes.ron`, `registre.ron` ; état : `campagne/
 
 ## Jalon X — Interface et ergonomie du village (Flo, 2026-11-03)
 
+Décision : `decisions/0018-refonte-interface-village.md`.
 Reprendre ce que le vrai client a montré : robustesse et cohérence d'abord, le visuel reste celui de Veloren
 (cadres, boutons, icônes et sprites existants ; pas de nouvelles textures ni de portrait 3D). Ordre : X.1, X.7,
 X.2, X.3, X.8, X.4, X.5, X.6. Réglages dans `assets/icebreaker/vue_village.ron`, `village.ron`, `registre.ron`,
