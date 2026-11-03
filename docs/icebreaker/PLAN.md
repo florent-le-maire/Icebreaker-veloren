@@ -284,7 +284,7 @@ Réglages : `assets/icebreaker/classes.ron`, `registre.ron` ; état : `campagne/
 - [x] **R.8 Trois postures pour le guerrier** — touche 1 riposte (défensive), 2 balayage lourd (lourde), 3
   tranche-tourbillon (tranchante) ; prérequis sur 4 et 5. Ordre des touches en données (`touches` de `classes.ron`).
   Testé (tests ; guerrier engagé au client texte, touches en base dans cet ordre) ; postures pas vues dans le vrai
-  client. — *hash*
+  client. — 88b52bb7ee
 
 ## Jalon X — Interface et ergonomie du village (Flo, 2026-11-03)
 
