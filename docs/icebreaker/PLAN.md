@@ -278,13 +278,15 @@ Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (j
   antres et sanctuaire restent dessinés ; 3 salles dessinées en plus (colonnade, galerie sur deux étages, caserne
   double). Mesuré (test, 40 graines) : 5,5 salles générées par donjon moyen ; validité des salles générées sur 20
   graines ; exemple sur 5 graines ; serveur Genere lancé. Pas encore vu en jeu (formes, galerie, échelles). — aaa6d77b89
-- [ ] **F.6 Décor par rôle** — section `decor` de `generation.ron` : par rôle, sprites et emplacement (`wall`,
-  `center`, `scatter`), meubles à plusieurs blocs via `PainterSpriteExt` ; jamais sur un escalier, une porte, une
-  créature, un coffre, une clé, une lumière. Cuisine (marmite, chaudron, tonneaux, table), caserne (couchages,
-  caisses), réserve (tonneaux, étagères, sacs), nid (os, toiles, moisissure), garde (table, outils au mur), prison
-  (barreaux, chaînes), trésor (bougies, orbe), antre (feu, os, trophées), sanctuaire (bougies, sceau, tombe),
-  couloirs (os, pierres, toiles clairsemés).
-  *Fin* : en jeu, cuisine, caserne, nid et prison se reconnaissent ; aucun sprite ne bouche un passage (contrôle).
+- [x] **F.6 Décor par rôle** — section `decor` de `generation.ron` : par rôle (et couloirs), sprites de Veloren par leur
+  nom, posés contre un mur (`wall`, tournés vers la salle), au milieu d'une case (`center`, `around` pour des chaises
+  autour d'une table) ou semés sur les blocs de sol (`scatter`, chance par bloc) ; jamais sur une case prise
+  (créature, coffre, clé, lumière) ni à côté d'une porte, d'un escalier ou d'un trou ; noms vérifiés au chargement.
+  Cuisine (marmite, chaudron, tonneaux, table et chaises), caserne (couchages, caisses), réserve (tonneaux, étagères,
+  sacs, foin), nid (os, toiles, champignons), garde (table, outils, heaume), prison (barreaux, chaînes), trésor et
+  chambre forte (bougies, orbe), antre (feu, trophées, os), sanctuaire (bougies, sceau, tombes), couloirs (os,
+  pierres, toiles). Testé : test de placement, tests ciblés, exemple sur 5 graines, serveur Genere ; rendu et sens
+  des sprites pas encore vus en jeu.
 - [ ] **F.7 Caméra en donjon** (si F.1 ne suffit pas) — mode « loin » de `camera.rs` : refuser un point de caméra
   séparé du joueur par de la roche.
   *Fin* : en couloir, dos au mur, la caméra ne sort jamais du donjon.

@@ -433,6 +433,43 @@ impl Structure for IcebreakerDungeon {
             painter.rotated_sprite(pos, sprite, ori);
         }
 
+        // The decor by the role of the rooms (Icebreaker F.6).
+        for decor in &self.dungeon.decor {
+            let Some(kind) = dungeon::settings::sprite_kind(&decor.sprite) else {
+                continue;
+            };
+            let min = self.cell_min(decor.cell);
+            let along = |w: i32| if w > 0 { c - 1 } else if w < 0 { 0 } else { c / 2 };
+            match &decor.place {
+                dungeon::DecorPlacement::Wall((dx, dy)) => {
+                    let wall = Vec2::new(*dx, *dy);
+                    let pos = (min.xy() + wall.map(along)).with_z(min.z + 1);
+                    painter.rotated_sprite(pos, kind, common::util::Dir2::from_vec2(-wall).sprite_ori());
+                },
+                dungeon::DecorPlacement::Center { around } => {
+                    let spot = self.spot(decor.cell);
+                    painter.sprite(spot, kind);
+                    if let Some(chair) = around.as_deref().and_then(dungeon::settings::sprite_kind) {
+                        for (dx, dy) in plan::DIRECTIONS {
+                            let facing = common::util::Dir2::from_vec2(Vec2::new(-dx, -dy)).sprite_ori();
+                            painter.rotated_sprite(spot + Vec3::new(dx, dy, 0), chair, facing);
+                        }
+                    }
+                },
+                dungeon::DecorPlacement::Scatter { chance } => {
+                    let noise = RandomField::new(13);
+                    for x in 1..c - 1 {
+                        for y in 1..c - 1 {
+                            let pos = (min.xy() + Vec2::new(x, y)).with_z(min.z + 1);
+                            if (x != c / 2 || y != c / 2) && noise.chance(pos, *chance) {
+                                painter.sprite(pos, kind);
+                            }
+                        }
+                    }
+                },
+            }
+        }
+
         // The people and the chests of the plan.
         let faction = &self.dungeon.faction;
         let chest = chest_sprite(&faction.chest);

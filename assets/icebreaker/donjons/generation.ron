@@ -234,6 +234,95 @@
         alert_radius: 12.0,
         zzz_interval: 5.0,
     ),
+    // Décor par rôle de salle (F.6) : des sprites de Veloren (leur nom) ; at : wall (contre un mur, tourné vers la
+    // salle), center (au milieu d'une case, around : un sprite sur les quatre blocs autour, des chaises) ou scatter
+    // (semé sur les blocs de sol, chance par bloc) ; count : nombre par salle (wall, center). Jamais sur une case
+    // occupée (créature, coffre, clé, lumière), ni à côté d'une porte, d'un escalier ou d'un trou.
+    decor: (
+        roles: {
+            "entrance": [(sprite: "Crate", at: wall, count: (1, 2)), (sprite: "Barrel", at: wall, count: (0, 1))],
+            "hall": [
+                (sprite: "Barrel", at: wall, count: (0, 2)),
+                (sprite: "Stones", at: scatter, chance: 0.01),
+                (sprite: "Bones", at: scatter, chance: 0.005),
+            ],
+            "guardRoom": [
+                (sprite: "DiningtableWoodWoodlandRound", at: center, count: (1, 1), around: Some("ChairWoodWoodland")),
+                (sprite: "CarpenterToolsWall", at: wall, count: (1, 2)),
+                (sprite: "Helm", at: wall, count: (0, 1)),
+                (sprite: "Barrel", at: wall, count: (0, 2)),
+            ],
+            "barracks": [
+                (sprite: "Bedroll", at: wall, count: (4, 8)),
+                (sprite: "CrateBlock", at: wall, count: (1, 2)),
+                (sprite: "Helm", at: wall, count: (0, 2)),
+            ],
+            "storage": [
+                (sprite: "Barrel", at: wall, count: (3, 6)),
+                (sprite: "CrateBlock", at: wall, count: (2, 4)),
+                (sprite: "Shelf", at: wall, count: (1, 3)),
+                (sprite: "SackLeatherM", at: wall, count: (1, 3)),
+                (sprite: "BasketWovenL", at: wall, count: (0, 2)),
+                (sprite: "Hay", at: scatter, chance: 0.02),
+            ],
+            "kitchen": [
+                (sprite: "CookingPot", at: center, count: (1, 1)),
+                (sprite: "Cauldron", at: wall, count: (1, 1)),
+                (sprite: "Barrel", at: wall, count: (2, 4)),
+                (sprite: "BarrelWoodWater", at: wall, count: (0, 1)),
+                (sprite: "JugClayM", at: wall, count: (0, 2)),
+                (sprite: "DiningtableWoodWoodlandRound", at: center, count: (1, 2), around: Some("ChairWoodWoodland")),
+            ],
+            "nest": [
+                (sprite: "Bones", at: scatter, chance: 0.06),
+                (sprite: "EnsnaringWeb", at: scatter, chance: 0.03),
+                (sprite: "CaveMushroom", at: scatter, chance: 0.03),
+                (sprite: "Mushroom", at: scatter, chance: 0.02),
+            ],
+            "treasure": [
+                (sprite: "Candle", at: wall, count: (2, 4)),
+                (sprite: "Crate", at: wall, count: (1, 2)),
+                (sprite: "DungeonWallDecor", at: wall, count: (1, 2)),
+                (sprite: "Orb", at: center, count: (0, 1)),
+            ],
+            "chiefLair": [
+                (sprite: "BonfireMLit", at: center, count: (1, 1)),
+                (sprite: "TrophyframeWoodDeer", at: wall, count: (1, 2)),
+                (sprite: "Helm", at: wall, count: (1, 2)),
+                (sprite: "Barrel", at: wall, count: (1, 2)),
+                (sprite: "Bones", at: scatter, chance: 0.03),
+            ],
+            "prison": [
+                (sprite: "DoorBars", at: wall, count: (2, 4)),
+                (sprite: "MetalChain", at: wall, count: (2, 4)),
+                (sprite: "Bones", at: scatter, chance: 0.02),
+                (sprite: "Hay", at: scatter, chance: 0.02),
+            ],
+            "vault": [
+                (sprite: "Candle", at: wall, count: (2, 3)),
+                (sprite: "Crate", at: wall, count: (2, 4)),
+                (sprite: "Barrel", at: wall, count: (1, 2)),
+                (sprite: "Orb", at: center, count: (0, 1)),
+            ],
+            "sanctum": [
+                (sprite: "Candle", at: wall, count: (3, 6)),
+                (sprite: "MagicalSeal", at: center, count: (1, 1)),
+                (sprite: "Gravestone", at: wall, count: (1, 3)),
+                (sprite: "Bones", at: scatter, chance: 0.01),
+            ],
+            "bossLair": [
+                (sprite: "BonfireMLit", at: center, count: (0, 1)),
+                (sprite: "IronSpike", at: wall, count: (0, 3)),
+                (sprite: "Bones", at: scatter, chance: 0.04),
+            ],
+        },
+        corridors: [
+            (sprite: "Barrel", at: wall, count: (0, 2)),
+            (sprite: "Bones", at: scatter, chance: 0.004),
+            (sprite: "Stones", at: scatter, chance: 0.006),
+            (sprite: "EnsnaringWeb", at: scatter, chance: 0.004),
+        ],
+    ),
     // Éclairage selon les habitants (tâche G.10) : chance qu'une case de sol libre porte une lumière, selon le rôle de
     // la salle (default pour les autres rôles) ; corridors : hors des salles ; empty_factor : facteur pour une salle
     // sans créature ; wall_torches : part des lumières en torches au mur (case contre un mur), le reste en braseros.

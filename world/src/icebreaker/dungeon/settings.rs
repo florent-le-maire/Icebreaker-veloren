@@ -98,6 +98,8 @@ pub struct Settings {
     pub lighting: LightingSettings,
     /// Variety of the rooms (Icebreaker F.2).
     pub variety: VarietySettings,
+    /// Decor by role of room (Icebreaker F.6).
+    pub decor: DecorSettings,
 }
 
 /// Variety of the rooms (Icebreaker F.2 and F.5): the orientations of each drawn
@@ -207,6 +209,7 @@ impl Settings {
             errors.push("variety : orientations vaut 1, 2, 4 ou 8".into());
         }
         errors.extend(settings.variety.shapes.errors().into_iter().map(|e| format!("variety.shapes : {e}")));
+        errors.extend(settings.decor.errors().into_iter().map(|e| format!("decor : {e}")));
         for (name, shape) in &settings.sizes {
             let ranges = [
                 ("main_path", shape.main_path, 2),
@@ -598,3 +601,73 @@ pub struct Resolved {
     /// Names of the parameters applied, for the summary.
     pub modifiers: Vec<String>,
 }
+
+/// Decor by role of room (Icebreaker F.6): sprites of Veloren placed in the
+/// rooms and the corridors.
+#[derive(Clone, Debug, Deserialize)]
+pub struct DecorSettings {
+    pub roles: BTreeMap<String, Vec<DecorItem>>,
+    pub corridors: Vec<DecorItem>,
+}
+
+/// Where a piece of decor goes: against a wall (facing the room), in the
+/// middle of a cell, or scattered over the floor blocks (`chance` per block).
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum DecorPlace {
+    Wall,
+    Center,
+    Scatter,
+}
+
+/// A piece of decor: a sprite of Veloren (its name), where it goes, how many
+/// per room (`count`, for `wall` and `center`) or how often per floor block
+/// (`chance`, for `scatter`); `around`: a sprite on the four blocks around
+/// (chairs around a table).
+#[derive(Clone, Debug, Deserialize)]
+#[serde(default)]
+pub struct DecorItem {
+    pub sprite: String,
+    pub at: DecorPlace,
+    pub count: Range,
+    pub chance: f32,
+    pub around: Option<String>,
+}
+
+impl Default for DecorItem {
+    fn default() -> Self {
+        Self {
+            sprite: String::new(),
+            at: DecorPlace::Center,
+            count: Range(1, 1),
+            chance: 0.0,
+            around: None,
+        }
+    }
+}
+
+impl DecorSettings {
+    pub fn errors(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+        let items = self.roles.iter().flat_map(|(role, items)| items.iter().map(move |i| (role.as_str(), i)));
+        for (role, item) in items.chain(self.corridors.iter().map(|i| ("corridors", i))) {
+            for name in std::iter::once(&item.sprite).chain(&item.around) {
+                if sprite_kind(name).is_none() {
+                    errors.push(format!("{role} : sprite inconnu « {name} »"));
+                }
+            }
+            if item.at == DecorPlace::Scatter && !(0.0..=1.0).contains(&item.chance) {
+                errors.push(format!("{role} : chance de « {} » entre 0 et 1", item.sprite));
+            }
+        }
+        for role in self.roles.keys() {
+            if super::rooms::RoomRole::parse(role).is_none() {
+                errors.push(format!("rôle inconnu : {role}"));
+            }
+        }
+        errors
+    }
+}
+
+/// The sprite of Veloren named in the data.
+pub fn sprite_kind(name: &str) -> Option<common::terrain::SpriteKind> { ron::from_str(name).ok() }

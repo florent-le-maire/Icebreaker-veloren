@@ -54,6 +54,8 @@ pub struct Dungeon {
     /// Lights on free floor cells: a torch on the wall toward (dx, dy), or a
     /// brazier (`None`).
     pub lights: Vec<(Cell, Option<(i32, i32)>)>,
+    /// The decor of the rooms (Icebreaker F.6).
+    pub decor: Vec<Decor>,
 }
 
 /// The lights of a dungeon by its inhabitants (Icebreaker G.10): on the free
@@ -97,6 +99,93 @@ fn place_lights(
         lights.push((*cell, torch.then(|| walls[rng.random_range(0..walls.len())])));
     }
     lights
+}
+
+/// A piece of decor of the dungeon (Icebreaker F.6): a sprite (by name) in a
+/// cell, against the wall toward (dx, dy), in the middle (with a sprite on
+/// the four blocks around, or not), or scattered over the floor blocks.
+#[derive(Clone, Debug)]
+pub struct Decor {
+    pub cell: Cell,
+    pub sprite: String,
+    pub place: DecorPlacement,
+}
+
+#[derive(Clone, Debug)]
+pub enum DecorPlacement {
+    Wall((i32, i32)),
+    Center { around: Option<String> },
+    Scatter { chance: f32 },
+}
+
+/// The decor of a dungeon by the role of its rooms (Icebreaker F.6), on the
+/// free floor cells (`.`, not `taken`: keys, lights) that are not next to a
+/// door, stairs or a hole; the corridors as one more room.
+fn place_decor(
+    plan: &Plan,
+    rooms: &[(&str, Vec<Cell>)],
+    taken: &std::collections::BTreeSet<Cell>,
+    decor: &settings::DecorSettings,
+    seed: u64,
+) -> Vec<Decor> {
+    use rand::SeedableRng;
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(seed ^ 0xDEC0_12);
+    let in_room: std::collections::BTreeSet<Cell> = rooms.iter().flat_map(|(_, c)| c.iter().copied()).collect();
+    let usable = |cell: &Cell| {
+        plan.get(*cell) == '.'
+            && !taken.contains(cell)
+            && plan::DIRECTIONS.into_iter().all(|(dx, dy)| {
+                let s = plan.get(cell.offset(dx, dy, 0));
+                s != 'D' && s != '_' && plan::stairs_direction(s).is_none()
+            })
+    };
+    let corridors: Vec<Cell> = plan.cells.keys().filter(|c| !in_room.contains(c)).copied().collect();
+    let mut placed = Vec::new();
+    let empty = Vec::new();
+    let sets = rooms
+        .iter()
+        .map(|(role, cells)| (decor.roles.get(*role).unwrap_or(&empty), cells))
+        .chain(std::iter::once((&decor.corridors, &corridors)));
+    for (items, cells) in sets {
+        let mut free: Vec<Cell> = cells.iter().filter(|c| usable(c)).copied().collect();
+        graph::shuffle(&mut free, &mut rng);
+        let wall_of = |cell: &Cell| {
+            plan::DIRECTIONS.into_iter().find(|(dx, dy)| plan.get(cell.offset(*dx, *dy, 0)) == '#')
+        };
+        for item in items {
+            match item.at {
+                settings::DecorPlace::Scatter => {
+                    placed.extend(free.iter().map(|cell| Decor {
+                        cell: *cell,
+                        sprite: item.sprite.clone(),
+                        place: DecorPlacement::Scatter { chance: item.chance },
+                    }));
+                },
+                at => {
+                    for _ in 0..item.count.roll(&mut rng).max(0) {
+                        // A wall item wants a wall; a centre item prefers open floor.
+                        let wanted = |c: &Cell| (at == settings::DecorPlace::Wall) == wall_of(c).is_some();
+                        let Some(index) = free.iter().position(wanted).or_else(|| {
+                            (at == settings::DecorPlace::Center && !free.is_empty()).then_some(0)
+                        }) else {
+                            break;
+                        };
+                        let cell = free.swap_remove(index);
+                        let place = match wall_of(&cell) {
+                            Some(wall) if at == settings::DecorPlace::Wall => DecorPlacement::Wall(wall),
+                            _ => DecorPlacement::Center { around: item.around.clone() },
+                        };
+                        placed.push(Decor {
+                            cell,
+                            sprite: item.sprite.clone(),
+                            place,
+                        });
+                    }
+                },
+            }
+        }
+    }
+    placed
 }
 
 /// Marks the tunnel in front of `door` (a wall cell of a room, opening toward
@@ -157,7 +246,10 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
     close_connectors(&mut plan);
     let role = room.roles.first().map_or("hall", |r| r.name());
     let cells: Vec<Cell> = room.plan.cells.keys().copied().collect();
-    let lights = place_lights(&plan, &[(role, cells)], &[], &settings.lighting, 0);
+    let rooms = [(role, cells)];
+    let lights = place_lights(&plan, &rooms, &[], &settings.lighting, 0);
+    let taken = lights.iter().map(|(c, _)| *c).collect();
+    let decor = place_decor(&plan, &rooms, &taken, &settings.decor, 0);
     Ok(Dungeon {
         plan,
         tunnel,
@@ -171,6 +263,7 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
         keys: Vec::new(),
         sleep: settings.sleep.clone(),
         lights,
+        decor,
     })
 }
 
@@ -234,6 +327,8 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 .map(|r| (graph.rooms[r.graph_room].role.name(), r.footprint().collect()))
                 .collect();
             let lights = place_lights(&assembled.plan, &room_cells, &keys, &settings.lighting, seed);
+            let taken = keys.iter().map(|(c, _)| *c).chain(lights.iter().map(|(c, _)| *c)).collect();
+            let decor = place_decor(&assembled.plan, &room_cells, &taken, &settings.decor, seed);
             return Ok(Dungeon {
                 plan: assembled.plan,
                 tunnel: assembled.tunnel,
@@ -252,6 +347,7 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 keys,
                 sleep: settings.sleep.clone(),
                 lights,
+                decor,
             });
         }
     }
@@ -409,5 +505,56 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// Icebreaker F.6: the decor follows the role of the room and stays out
+    /// of the way.
+    #[test]
+    fn decor_follows_the_roles() {
+        let settings = Settings::load().unwrap();
+        // Three rooms of 12 × 12 floor cells side by side, walls around, a door
+        // in the south wall of each: a kitchen, a nest, a storage.
+        let mut plan = Plan::default();
+        let mut rooms = Vec::new();
+        for (r, role) in ["kitchen", "nest", "storage"].into_iter().enumerate() {
+            let x0 = r as i32 * 14;
+            let mut cells = Vec::new();
+            for y in -1..=12 {
+                for x in x0 - 1..=x0 + 12 {
+                    let inside = (0..12).contains(&y) && (x0..x0 + 12).contains(&x);
+                    let cell = Cell::new(x, y, 0);
+                    plan.cells.insert(cell, if inside { '.' } else { '#' });
+                    cells.push(cell);
+                }
+            }
+            plan.cells.insert(Cell::new(x0 + 6, 12, 0), 'D');
+            plan.cells.insert(Cell::new(x0 + 2, 2, 0), 'b');
+            rooms.push((role, cells));
+        }
+        let taken = std::collections::BTreeSet::from([Cell::new(5, 5, 0)]);
+        let decor = place_decor(&plan, &rooms, &taken, &settings.decor, 7);
+        let of = |r: i32| decor.iter().filter(move |d| d.cell.x / 14 == r);
+        assert!(of(0).any(|d| d.sprite == "CookingPot" && matches!(d.place, DecorPlacement::Center { .. })));
+        assert!(of(0).any(|d| matches!(&d.place, DecorPlacement::Center { around: Some(c) } if c == "ChairWoodWoodland")));
+        assert!(of(1).any(|d| d.sprite == "Bones" && matches!(d.place, DecorPlacement::Scatter { .. })));
+        assert!(of(2).filter(|d| d.sprite == "Barrel").count() >= 3, "réserve sans tonneaux");
+        for d in &decor {
+            assert_eq!(plan.get(d.cell), '.', "{d:?} hors du sol");
+            assert!(!taken.contains(&d.cell), "{d:?} sur une case prise");
+            for (dx, dy) in plan::DIRECTIONS {
+                assert_ne!(plan.get(d.cell.offset(dx, dy, 0)), 'D', "{d:?} devant une porte");
+            }
+            if let DecorPlacement::Wall((dx, dy)) = d.place {
+                assert_eq!(plan.get(d.cell.offset(dx, dy, 0)), '#', "{d:?} loin du mur");
+            }
+        }
+        // Never two pieces of furniture in one cell.
+        let furniture: Vec<Cell> = decor
+            .iter()
+            .filter(|d| !matches!(d.place, DecorPlacement::Scatter { .. }))
+            .map(|d| d.cell)
+            .collect();
+        let distinct: std::collections::BTreeSet<Cell> = furniture.iter().copied().collect();
+        assert_eq!(furniture.len(), distinct.len());
     }
 }
