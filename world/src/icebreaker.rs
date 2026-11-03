@@ -8,8 +8,12 @@ use crate::site::{
     Site, SiteKind,
     plot::{Plot, PlotKind},
 };
-use common::{assets::AssetExt, store::Id};
-use std::{collections::HashSet, sync::RwLock};
+use common::{assets::AssetExt, store::Id, terrain::SpriteKind};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::RwLock,
+};
+use strum::IntoEnumIterator;
 use tracing::{info, warn};
 
 const INSTANCE_SITE_VAR: &str = "ICEBREAKER_INSTANCE_SITE";
@@ -155,13 +159,40 @@ pub fn village_houses(site: &Site, square: vek::Vec2<i32>) -> Vec<VillageHouse> 
 struct Village {
     hidden: HashSet<Id<Plot>>,
     inhabitants: u32,
+    /// The signs of each building, by the door tile of its house (X.4).
+    enseignes: HashMap<vek::Vec2<i32>, Vec<SpriteKind>>,
 }
 
 static VILLAGE: RwLock<Option<Village>> = RwLock::new(None);
 
 /// Sets what of the village's town stands: the `built` houses, its square and
-/// roads, its fields; and how many people live there.
-pub fn set_village(site: &Site, built: &HashSet<Id<Plot>>, inhabitants: u32) {
+/// roads, its fields; how many people live there; and the signs (names of
+/// `SpriteKind`) around the door of each building's house (X.4).
+pub fn set_village(
+    site: &Site,
+    built: &HashSet<Id<Plot>>,
+    inhabitants: u32,
+    signs: &[(Id<Plot>, Vec<String>)],
+) {
+    let enseignes = signs
+        .iter()
+        .filter_map(|(id, names)| {
+            let PlotKind::House(house) = site.plot(*id).kind() else {
+                return None;
+            };
+            let sprites = names
+                .iter()
+                .filter_map(|name| {
+                    let sprite = SpriteKind::iter().find(|kind| format!("{kind:?}") == *name);
+                    if sprite.is_none() {
+                        warn!(name, "Icebreaker: unknown sign sprite");
+                    }
+                    sprite
+                })
+                .collect();
+            Some((house.door_tile, sprites))
+        })
+        .collect();
     let hidden = site
         .plots
         .iter()
@@ -186,6 +217,7 @@ pub fn set_village(site: &Site, built: &HashSet<Id<Plot>>, inhabitants: u32) {
     *VILLAGE.write().unwrap_or_else(|e| e.into_inner()) = Some(Village {
         hidden,
         inhabitants,
+        enseignes,
     });
 }
 
@@ -196,6 +228,17 @@ pub(crate) fn is_hidden(plot: Id<Plot>) -> bool {
         .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .is_some_and(|village| village.hidden.contains(&plot))
+}
+
+/// The signs around the door of the house whose door tile is `door_tile`, if
+/// it is a building of the village (X.4).
+pub(crate) fn enseignes(door_tile: vek::Vec2<i32>) -> Vec<SpriteKind> {
+    VILLAGE
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .and_then(|village| village.enseignes.get(&door_tile).cloned())
+        .unwrap_or_default()
 }
 
 /// How many people live in the village, once set.

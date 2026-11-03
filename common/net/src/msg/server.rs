@@ -240,7 +240,7 @@ pub enum ServerGeneral {
     IcebreakerExpedition(Option<(Content, Vec<(String, bool)>)>),
     /// Icebreaker: the village buildings and plots to build on (name, bounds in
     /// world coordinates, whether a plot).
-    IcebreakerBuildings(Vec<(Content, Aabr<i32>, i32, bool)>),
+    IcebreakerBuildings(Vec<(Content, Aabr<i32>, i32, String)>),
     MapMarker(comp::MapMarkerUpdate),
     WeatherUpdate(SharedWeatherGrid),
     LocalWindUpdate(Vec2<f32>),

@@ -1,5 +1,5 @@
 mod icebreaker_lock;
-mod icebreaker_vue;
+pub mod icebreaker_vue;
 pub mod interactable;
 pub mod settings_change;
 mod target;
@@ -2493,8 +2493,9 @@ struct IcebreakerTopView {
     /// Whether the server's last answer had no building (not in the village).
     hors_village: bool,
     /// The buildings and plots to build on (name, bounds in world coordinates,
-    /// ground altitude, whether a plot), once the server sent them.
-    buildings: Vec<(comp::Content, Aabr<i32>, i32, bool)>,
+    /// ground altitude, kind: `Building::id`, « terrain » or « chantier »), once
+    /// the server sent them.
+    buildings: Vec<(comp::Content, Aabr<i32>, i32, String)>,
     /// The centre of the building under the cursor this frame, if any (X.2).
     survole: Option<Vec2<f32>>,
     /// Where the last click was, and when its panel and the buildings were last
@@ -2633,22 +2634,23 @@ impl SessionState {
             * dependents.view_mat
             * Mat4::translation_3d(-camera.get_focus_pos().map(f32::trunc));
         let cursor = Self::icebreaker_cursor_ndc(global_state);
-        let plan = self.icebreaker_vue_settings.plan;
+        let reglages = &self.icebreaker_vue_settings;
         let mut survole = None;
         let on_screen = view
             .buildings
             .iter()
-            .filter_map(|(name, bounds, alt, plot)| {
+            .filter_map(|(name, bounds, alt, kind)| {
                 let bounds_f = Aabr {
                     min: bounds.min.as_::<f32>(),
                     max: bounds.max.as_::<f32>(),
                 };
-                let rect = icebreaker_vue::rect_ecran(&vue_proj, bounds_f, *alt as f32 + plan)?;
+                let rect =
+                    icebreaker_vue::rect_ecran(&vue_proj, bounds_f, *alt as f32 + reglages.plan)?;
                 let hovered = rect.contains_point(cursor);
                 if hovered {
                     survole = Some(bounds_f.center());
                 }
-                Some((name.clone(), rect, hovered, *plot))
+                Some((name.clone(), rect, hovered, reglages.apparence(kind)))
             })
             .collect();
         view.survole = survole;

@@ -51,6 +51,19 @@ impl Building {
         Building::Charrette,
     ];
 
+    /// Its id in the data files (`village.ron`, `vue_village.ron`) and the
+    /// messages to the client (X.4).
+    pub fn id(self) -> &'static str {
+        match self {
+            Building::Warehouse => "entrepot",
+            Building::Treasury => "caisse",
+            Building::Intendance => "intendance",
+            Building::Infirmary => "infirmerie",
+            Building::Departure => "depart",
+            Building::Charrette => "charrette",
+        }
+    }
+
     fn name(self) -> &'static str {
         match self {
             Building::Warehouse => "Entrepôt",
@@ -368,11 +381,15 @@ impl ServerEvent for IcebreakerBuildingEvent {
                                     Content::Plain(building.name().to_string()),
                                     *bounds,
                                     *alt,
-                                    false,
+                                    building.id().to_string(),
                                 ),
+                                // A plot's kind tells its look (X.4): "terrain", or
+                                // "chantier" while a house is being built.
                                 Place::Plot(rank) => {
-                                    let name = plot_name(&config, village.chantier(*rank), now);
-                                    (Content::Plain(name), *bounds, *alt, true)
+                                    let chantier = village.chantier(*rank);
+                                    let name = plot_name(&config, chantier, now);
+                                    let kind = if chantier.is_some() { "chantier" } else { "terrain" };
+                                    (Content::Plain(name), *bounds, *alt, kind.to_string())
                                 },
                             })
                             .collect(),

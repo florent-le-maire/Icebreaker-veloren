@@ -185,6 +185,28 @@ fn main() {
                     let block = client.state().terrain().get(pos).ok().copied();
                     println!("Bloc {pos:?} : {:?}", block.map(|b| (b.kind(), b.get_sprite())));
                 }
+            } else if let Some(rest) = msg.strip_prefix("!sprites ") {
+                // Icebreaker : `!sprites x y r` liste les sprites à moins de r blocs (et ±25 en
+                // hauteur), pour voir les enseignes des bâtiments (X.4).
+                use common::vol::ReadVol;
+                let mut xyr = rest.split_whitespace().filter_map(|w| w.parse::<i32>().ok());
+                if let (Some(x), Some(y), Some(r)) = (xyr.next(), xyr.next(), xyr.next()) {
+                    let terrain = client.state().terrain();
+                    let z0 = client.position().map_or(0, |p| p.z as i32);
+                    for dx in -r..=r {
+                        for dy in -r..=r {
+                            for dz in -25..=25 {
+                                let pos = vek::Vec3::new(x + dx, y + dy, z0 + dz);
+                                if let Some(sprite) = terrain.get(pos).ok().and_then(|b| b.get_sprite())
+                                    && sprite != common::terrain::SpriteKind::Empty
+                                {
+                                    let dessous = terrain.get(pos - vek::Vec3::unit_z()).ok().map(|b| b.kind());
+                                    println!("Sprite {sprite:?} en {pos:?}, dessous {dessous:?}");
+                                }
+                            }
+                        }
+                    }
+                }
             } else if let Some(command) = msg.strip_prefix('/') {
                 let mut words = command.split_whitespace().map(str::to_string);
                 if let Some(name) = words.next() {
@@ -264,9 +286,9 @@ fn main() {
                     if buildings.is_empty() {
                         println!("Aucun bâtiment : pas de village ici");
                     }
-                    for (name, bounds, alt, _) in buildings {
+                    for (name, bounds, alt, kind) in buildings {
                         let center = bounds.center();
-                        println!("Bâtiment {name:?} : centre {} {}, altitude {alt}", center.x, center.y);
+                        println!("Bâtiment {name:?} ({kind}) : centre {} {}, altitude {alt}", center.x, center.y);
                     }
                 },
                 Event::IcebreakerJouer(next) => {

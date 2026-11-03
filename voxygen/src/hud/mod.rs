@@ -353,6 +353,8 @@ widget_ids! {
         icebreaker_expedition_bot,
         icebreaker_expedition_txt,
         icebreaker_building_rects[],
+        icebreaker_building_fills[],
+        icebreaker_building_icons[],
         icebreaker_building_names[],
         // Icebreaker: ring on the locked enemy
         icebreaker_lock_ring,
@@ -692,6 +694,23 @@ pub struct HudInfo<'a> {
     pub icebreaker_lock_target: Option<specs::Entity>,
     pub persistence_load_error: Option<SkillsPersistenceError>,
     pub key_state: &'a KeyState,
+}
+
+/// Icebreaker: the HUD icon called `name` in `vue_village.ron` (X.4), if any.
+fn icebreaker_icone(imgs: &Imgs, name: &str) -> Option<conrod_core::image::Id> {
+    Some(match name {
+        "utilitaire" => imgs.icon_utility,
+        "potion" => imgs.icon_potion,
+        "vivres" => imgs.icon_food,
+        "globe" => imgs.icon_globe,
+        "outils" => imgs.icon_tools,
+        "armes" => imgs.icon_weapon,
+        "armure" => imgs.icon_armor,
+        "buche" => imgs.icon_log,
+        "lingot" => imgs.icon_ingot,
+        "planeur" => imgs.icon_glider,
+        _ => return None,
+    })
 }
 
 /// Icebreaker: the panel of a village building in the top view: title, lines
@@ -1390,7 +1409,7 @@ pub struct Hud {
     /// Icebreaker: the buildings and plots on screen in the top view (name,
     /// rectangle from -1 to 1 with y up, whether under the cursor, whether a
     /// plot to build on).
-    icebreaker_buildings: Vec<(comp::Content, Aabr<f32>, bool, bool)>,
+    icebreaker_buildings: Vec<(comp::Content, Aabr<f32>, bool, crate::session::icebreaker_vue::Apparence)>,
     force_chat_input: Option<String>,
     force_chat_cursor: Option<Index>,
     tab_complete: Option<String>,
@@ -4245,25 +4264,47 @@ impl Hud {
                 self.ids.icebreaker_building_rects.resize(count, ids);
                 self.ids.icebreaker_building_names.resize(count, ids);
             }
+            if self.ids.icebreaker_building_fills.len() < count {
+                let ids = &mut ui_widgets.widget_id_generator();
+                self.ids.icebreaker_building_fills.resize(count, ids);
+                self.ids.icebreaker_building_icons.resize(count, ids);
+            }
             let half_win = Vec2::new(ui_widgets.win_w, ui_widgets.win_h) / 2.0;
-            for (i, (name, rect, hovered, plot)) in self.icebreaker_buildings.iter().enumerate() {
+            for (i, (name, rect, hovered, look)) in self.icebreaker_buildings.iter().enumerate() {
                 let min = rect.min.as_::<f64>() * half_win;
                 let max = rect.max.as_::<f64>() * half_win;
                 let center = (min + max) / 2.0;
-                // Buildings in white, plots to build on in green; yellow under
-                // the cursor.
-                let (fill, font_size) = match (*hovered, *plot) {
-                    (true, _) => ((1.0, 0.85, 0.3, 0.45), 26),
-                    (false, false) => ((1.0, 1.0, 1.0, 0.15), 18),
-                    (false, true) => ((0.3, 0.9, 0.3, 0.2), 16),
+                let size = [(max.x - min.x).abs(), (max.y - min.y).abs()];
+                // Each kind of building has its colour and its icon (X.4,
+                // `vue_village.ron`); brighter and bigger under the cursor.
+                let (r, g, b) = look.couleur;
+                let (alpha, fill_alpha, font_size, icon_size) = if *hovered {
+                    (1.0, 0.3, 22, 36.0)
+                } else {
+                    (0.75, 0.1, 16, 28.0)
                 };
-                Rectangle::fill([(max.x - min.x).abs(), (max.y - min.y).abs()])
-                    .rgba(fill.0, fill.1, fill.2, fill.3)
+                Rectangle::fill(size)
+                    .rgba(r, g, b, fill_alpha)
                     .x_y(center.x, center.y)
-                    .set(self.ids.icebreaker_building_rects[i], ui_widgets);
+                    .set(self.ids.icebreaker_building_fills[i], ui_widgets);
+                Rectangle::outline_styled(
+                    size,
+                    widget::line::Style::solid().thickness(if *hovered { 3.0 } else { 1.5 }),
+                )
+                .rgba(r, g, b, alpha)
+                .x_y(center.x, center.y)
+                .set(self.ids.icebreaker_building_rects[i], ui_widgets);
+                let icon = icebreaker_icone(&self.imgs, &look.icone);
+                if let Some(icon) = icon {
+                    Image::new(icon)
+                        .w_h(icon_size, icon_size)
+                        .x_y(center.x, center.y + 10.0)
+                        .color(Some(Color::Rgba(1.0, 1.0, 1.0, alpha)))
+                        .set(self.ids.icebreaker_building_icons[i], ui_widgets);
+                }
                 Text::new(&i18n.get_content(name))
-                    .color(if *hovered { TEXT_COLOR } else { TEXT_COLOR.alpha(0.85) })
-                    .x_y(center.x, center.y)
+                    .color(Color::Rgba(r, g, b, alpha))
+                    .x_y(center.x, center.y - if icon.is_some() { 16.0 } else { 0.0 })
                     .font_id(self.fonts.cyri.conrod_id)
                     .font_size(self.fonts.cyri.scale(font_size))
                     .set(self.ids.icebreaker_building_names[i], ui_widgets);
@@ -5696,7 +5737,10 @@ impl Hud {
         self.icebreaker_panel = panel;
     }
 
-    pub fn icebreaker_buildings(&mut self, buildings: Vec<(comp::Content, Aabr<f32>, bool, bool)>) {
+    pub fn icebreaker_buildings(
+        &mut self,
+        buildings: Vec<(comp::Content, Aabr<f32>, bool, crate::session::icebreaker_vue::Apparence)>,
+    ) {
         self.icebreaker_buildings = buildings;
     }
 

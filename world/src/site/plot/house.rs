@@ -2420,5 +2420,35 @@ impl Structure for House {
                 ),
             );
         }
+
+        // Icebreaker: the signs of a village building (X.4): crates, barrels, a
+        // lantern… chosen in `village.ron`. They stand on the foundations' ledge,
+        // just out of the front wall, either side of the door (the first one to
+        // the right, the next to the left, then further).
+        let enseignes = crate::icebreaker::enseignes(self.door_tile);
+        if !enseignes.is_empty() {
+            let (ledge, along): (Vec2<i32>, Vec2<i32>) = match self.front {
+                Dir2::NegY => (
+                    Vec2::new(door_tile_wpos.x, self.bounds.min.y - 1),
+                    Vec2::unit_x(),
+                ),
+                Dir2::Y => (
+                    Vec2::new(door_tile_wpos.x, self.bounds.max.y + 1),
+                    Vec2::unit_x(),
+                ),
+                Dir2::NegX => (
+                    Vec2::new(self.bounds.min.x - 1, door_tile_wpos.y),
+                    Vec2::unit_y(),
+                ),
+                Dir2::X => (
+                    Vec2::new(self.bounds.max.x + 1, door_tile_wpos.y),
+                    Vec2::unit_y(),
+                ),
+            };
+            for (i, sprite) in enseignes.into_iter().enumerate() {
+                let k = (i as i32 / 2 + 3) * if i % 2 == 0 { 1 } else { -1 };
+                painter.sprite((ledge + along * k).with_z(alt), sprite);
+            }
+        }
     }
 }

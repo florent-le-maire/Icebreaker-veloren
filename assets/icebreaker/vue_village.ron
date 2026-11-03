@@ -9,4 +9,18 @@
     // Distance de l'entrée au-delà de laquelle la vue se ferme d'elle-même
     // (téléportation, retour au village).
     rayon_sortie: 120.0,
+    // Apparence de chaque sorte de bâtiment en vue de dessus (X.4) : couleur (rouge, vert, bleu de 0 à 1) du
+    // cadre et du nom, et icône du HUD parmi : utilitaire, potion, vivres, globe, outils, armes, armure, buche,
+    // lingot, planeur (ou rien). Les sortes : entrepot, caisse, intendance, infirmerie, depart, charrette,
+    // terrain (à bâtir), chantier.
+    apparences: {
+        "entrepot": (couleur: (0.95, 0.75, 0.3), icone: "utilitaire"),
+        "caisse": (couleur: (1.0, 0.9, 0.2), icone: "lingot"),
+        "intendance": (couleur: (0.4, 0.8, 1.0), icone: "vivres"),
+        "infirmerie": (couleur: (1.0, 0.45, 0.45), icone: "potion"),
+        "depart": (couleur: (0.8, 0.55, 1.0), icone: "globe"),
+        "charrette": (couleur: (0.6, 1.0, 0.6), icone: "armure"),
+        "terrain": (couleur: (0.3, 0.9, 0.3), icone: "buche"),
+        "chantier": (couleur: (1.0, 0.6, 0.2), icone: "outils"),
+    },
 )

@@ -16,4 +16,14 @@
     prix_maison: 300,
     // Durée d'un chantier de maison, en heures de carte (1 min réelle = 30 min de carte).
     heures_chantier: 6.0,
+    // Enseignes de chaque bâtiment (X.4) : sprites de Veloren (noms de `SpriteKind`) posés sur la route de
+    // part et d'autre de la porte, le premier à droite, le deuxième à gauche, puis plus loin.
+    enseignes: {
+        "entrepot": ["Crate", "Barrel", "Crate", "Barrel"],
+        "caisse": ["Chest", "Lantern", "Chest", "Lantern"],
+        "intendance": ["Crate", "Lantern", "Barrel", "Crate"],
+        "infirmerie": ["Cauldron", "Bedroll", "Lantern", "Bedroll"],
+        "depart": ["Sign", "Tent", "Lantern", "Sign"],
+        "charrette": ["Crate", "Barrel", "Sign", "Crate"],
+    },
 )

@@ -150,7 +150,7 @@ pub enum Event {
     IcebreakerExpedition(Option<(comp::Content, Vec<(String, bool)>)>),
     /// Icebreaker: the village buildings and plots to build on (name, bounds in
     /// world coordinates, whether a plot).
-    IcebreakerBuildings(Vec<(comp::Content, Aabr<i32>, i32, bool)>),
+    IcebreakerBuildings(Vec<(comp::Content, Aabr<i32>, i32, String)>),
     Gizmos(Vec<Gizmos>),
 }
 

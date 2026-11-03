@@ -5,6 +5,7 @@
 
 use common::assets::{AssetExt, Ron};
 use serde::Deserialize;
+use std::collections::HashMap;
 use vek::*;
 
 #[derive(Clone, Debug, Deserialize)]
@@ -15,6 +16,28 @@ pub struct Reglages {
     pub plan: f32,
     /// Distance de l'entrée au-delà de laquelle la vue se ferme d'elle-même.
     pub rayon_sortie: f32,
+    /// L'apparence de chaque sorte de bâtiment (X.4), par id (`Building::id`,
+    /// « terrain », « chantier »).
+    #[serde(default)]
+    pub apparences: HashMap<String, Apparence>,
+}
+
+/// Comment un bâtiment se dessine en vue de dessus : couleur du cadre et du
+/// nom, icône du HUD (nom connu de `hud::icebreaker_icone`, ou rien).
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+pub struct Apparence {
+    pub couleur: (f32, f32, f32),
+    #[serde(default)]
+    pub icone: String,
+}
+
+impl Default for Apparence {
+    fn default() -> Self {
+        Self {
+            couleur: (1.0, 1.0, 1.0),
+            icone: String::new(),
+        }
+    }
 }
 
 impl Reglages {
@@ -23,6 +46,12 @@ impl Reglages {
             .read()
             .0
             .clone()
+    }
+
+    /// L'apparence d'un bâtiment de sorte `kind` (blanche, sans icône, si
+    /// elle n'est pas réglée).
+    pub fn apparence(&self, kind: &str) -> Apparence {
+        self.apparences.get(kind).cloned().unwrap_or_default()
     }
 }
 

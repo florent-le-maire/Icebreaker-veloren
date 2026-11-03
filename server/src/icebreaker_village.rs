@@ -27,6 +27,10 @@ pub struct VillageConfig {
     pub prix_maison: u32,
     /// How long a house takes to build, in hours of map time.
     pub heures_chantier: f64,
+    /// The signs around the door of each building (by `Building::id`): names of
+    /// `SpriteKind`, either side of the door (X.4).
+    #[serde(default)]
+    pub enseignes: std::collections::HashMap<String, Vec<String>>,
 }
 
 pub fn config() -> VillageConfig {
@@ -121,7 +125,15 @@ impl IcebreakerVillage {
             .map(|house| house.plot)
             .collect::<HashSet<_>>();
         let inhabitants = built.len() as u32 * config.habitants_par_maison;
-        world::icebreaker::set_village(site, &built, inhabitants);
+        let signs = Building::ALL
+            .iter()
+            .enumerate()
+            .filter_map(|(i, building)| {
+                let sprites = config.enseignes.get(building.id())?.clone();
+                Some((houses.get(i)?.plot, sprites))
+            })
+            .collect::<Vec<_>>();
+        world::icebreaker::set_village(site, &built, inhabitants, &signs);
         let village = Self {
             houses: houses.to_vec(),
             standing,
