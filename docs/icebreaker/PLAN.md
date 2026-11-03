@@ -365,7 +365,8 @@ garde et parade, monstres à coop) : tâches E.1 à E.16 dans `PLAN-DONJON.md`.
    profonde ou une suite de descentes qu'on reprend où on s'était arrêté ?
 3. **Charrette** (jalon R) : engager est-il gratuit (un fantôme n'a pas d'or ; proposé pour la démo) ou payé par la
    caisse ? Combien de places au registre (proposé : 10), et peut-on renvoyer un personnage ? Que devient un
-. **Enseignes** (X.4) : le sprite `Sign` de Veloren n'a pas de texte ; une vraie enseigne nommée demanderait un
+   personnage du registre qui meurt (attendre B.3, ou il quitte le registre) ?
+4. **Enseignes** (X.4) : le sprite `Sign` de Veloren n'a pas de texte ; une vraie enseigne nommée demanderait un
    asset à nous. On s'en tient aux caisses, tonneaux et lanternes, ou on dessine un panneau par bâtiment ?
 5. **Recrues devant la charrette** (X.8) : leurs postes sont trouvés depuis le poste de la charrette, et sur le village
    d'essai ils tombaient 8 blocs au-dessus de l'altitude de la maison (pente, ou toit voisin ?). Si elles sont mal
