@@ -119,7 +119,10 @@ impl IcebreakerDungeon {
             Some((dx, dy)) => {
                 let wall = Vec2::new(dx, dy);
                 let c = self.render.cell_size;
-                let pos = (self.spot(cell).xy() + wall * (c / 2)).with_z(self.cell_min(cell).z + 3);
+                let min = self.cell_min(cell);
+                // The last block before the wall, two below the ceiling (Icebreaker F.1: any cell size).
+                let along = |w: i32| if w > 0 { c - 1 } else if w < 0 { 0 } else { c / 2 };
+                let pos = (min.xy() + wall.map(along)).with_z(min.z + self.render.level_height - 2);
                 let facing = common::util::Dir2::from_vec2(-wall).sprite_ori_legacy();
                 (pos, SpriteKind::WallSconce, facing)
             },
@@ -127,8 +130,22 @@ impl IcebreakerDungeon {
         }
     }
 
+    /// The direction a stair cell climbs; a ladder becomes steps toward the
+    /// floor around the hole above it.
+    fn stairs_dir(&self, cell: plan::Cell, symbol: char) -> (i32, i32) {
+        plan::stairs_direction(symbol).unwrap_or_else(|| {
+            let plan = &self.dungeon.plan;
+            plan::DIRECTIONS
+                .into_iter()
+                .find(|(dx, dy)| plan::is_walkable(plan.get(cell.offset(*dx, *dy, 1))))
+                .unwrap_or((1, 0))
+        })
+    }
+
     /// The keyhole of a locked door, in the middle of its passage.
-    fn keyhole_pos(&self, cell: plan::Cell) -> Vec3<i32> { self.spot(cell) + Vec3::unit_z() }
+    fn keyhole_pos(&self, cell: plan::Cell) -> Vec3<i32> {
+        self.spot(cell) + Vec3::unit_z() * ((self.render.level_height - 2) / 2)
+    }
 
     /// Where the creature of a marker cell appears.
     pub fn spawn_pos(&self, cell: plan::Cell) -> Vec3<f32> {
@@ -151,9 +168,11 @@ impl IcebreakerDungeon {
             let (spot, ground) = match symbol {
                 '~' | '_' => continue,
                 'D' => (min.xy() + c / 2, min.z),
-                // In the middle of the steps: step c / 2 is c / 2 + 1 above the floor.
+                // In the middle of the steps: the step under the centre block (Icebreaker F.1: even sizes too).
                 s if s == 'H' || plan::stairs_direction(s).is_some() => {
-                    (min.xy() + c / 2, min.z + 1 + c / 2)
+                    let (dx, dy) = self.stairs_dir(cell, s);
+                    let u = if dx + dy > 0 { c / 2 } else { c - 1 - c / 2 };
+                    (min.xy() + c / 2, min.z + 1 + u)
                 },
                 _ => (min.xy(), min.z),
             };
@@ -350,7 +369,7 @@ impl Structure for IcebreakerDungeon {
                         painter
                             .aabb(Aabb {
                                 min: slice.min.with_z(z + 1),
-                                max: slice.max.with_z(z + h.min(4)),
+                                max: slice.max.with_z(z + h - 1),
                             })
                             .clear();
                     }
@@ -358,13 +377,7 @@ impl Structure for IcebreakerDungeon {
                 symbol if symbol == 'H' || plan::stairs_direction(symbol).is_some() => {
                     painter.aabb(self.cell_aabb(cell, 1, h, 0)).clear();
                     painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(floor.clone());
-                    let dir = plan::stairs_direction(symbol).unwrap_or_else(|| {
-                        // A ladder becomes steps toward the floor around the hole above.
-                        plan::DIRECTIONS
-                            .into_iter()
-                            .find(|(dx, dy)| plan::is_walkable(plan.get(cell.offset(*dx, *dy, 1))))
-                            .unwrap_or((1, 0))
-                    });
+                    let dir = self.stairs_dir(cell, symbol);
                     // One step per block: the last one is level with the floor above.
                     for u in 0..c {
                         let slice = self.slice(cell, dir, u, 0);
@@ -381,7 +394,8 @@ impl Structure for IcebreakerDungeon {
                     painter.aabb(self.cell_aabb(cell, 1, h, 0)).clear();
                     painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(floor.clone());
                     if symbol == 'O' {
-                        painter.aabb(self.cell_aabb(cell, 1, h, 1)).fill(rock.clone());
+                        // A 3 × 3 column whatever the cell size (Icebreaker F.1).
+                        painter.aabb(self.cell_aabb(cell, 1, h, (c / 2 - 1).max(1))).fill(rock.clone());
                     }
                 },
             }
@@ -431,7 +445,7 @@ impl Structure for IcebreakerDungeon {
             painter
                 .aabb(Aabb {
                     min: slice.min.with_z(z + 1),
-                    max: slice.max.with_z(z + h.min(4)),
+                    max: slice.max.with_z(z + h - 1),
                 })
                 .fill(Fill::Block(Block::air(SpriteKind::KeyDoor)));
             let unlock = UnlockKind::Consumes(ItemDefinitionIdOwned::Simple(key.item.clone()));

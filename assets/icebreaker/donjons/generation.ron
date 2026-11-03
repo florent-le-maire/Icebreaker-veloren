@@ -5,8 +5,8 @@
 (
     // Passage du plan aux blocs.
     render: (
-        cell_size: 5,      // blocs par case (horizontalement)
-        level_height: 5,   // blocs par étage, sol compris ; au plus cell_size (escalier : une marche par bloc)
+        cell_size: 7,      // blocs par case (horizontalement) ; F.1 : 7 pour que la caméra reste dans le donjon
+        level_height: 7,   // blocs par étage, sol compris ; au plus cell_size (escalier : une marche par bloc)
         tunnel_cells: 4,   // cases du tunnel qui descend de la surface à la salle d'entrée
         wall_color: (92, 86, 80),
         floor_color: (70, 62, 55),

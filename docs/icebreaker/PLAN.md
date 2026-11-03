@@ -252,10 +252,10 @@ soit l'échelle ; `place_child` ajoute la taille de la salle à la distance dès
 "low"` ; aucun décor. Réglages dans `generation.ron` ; worktree `Veloren-donjon`. Ordre : F.1 à F.6, F.7 si besoin.
 Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (jalon K), après F.
 
-- [ ] **F.1 Échelle** — `cell_size: 7`, `level_height: 7` (à passer à 8/8 si la caméra sort encore) ; portes et mur
-  de porte à clé hauts de `h - 1`, torche à `h - 2`, serrure à mi-hauteur ; `check_blocks` juste pour `c` pair ;
-  tunnel d'entrée praticable.
-  *Fin* : exemple `icebreaker_dungeon` sur 5 graines ; en jeu, la caméra reste dans une salle de garde.
+- [x] **F.1 Échelle** — `cell_size: 7`, `level_height: 7` (6 blocs libres, couloirs de 7 ; passer à 8/8 si la caméra
+  sort encore) ; portes et mur de porte à clé hauts de `h - 2` sous un linteau, torche à `h - 2`, serrure à mi-hauteur,
+  colonne 3 × 3 ; `check_blocks` juste pour `c` pair. Testé : tests ciblés, exemple sur 5 graines (0 problème), lieu
+  Genere démarré (graine 1234) ; caméra pas encore vue en jeu.
 - [ ] **F.2 Couloirs courts, escaliers propres** — rotations et miroirs des salles dessinées (`orientations: 8`,
   de `RoomVariety.cs`) ; porte en face du parent quand il y en a une et distance = `spacing` (1 à 3) + étages, la
   taille de la salle n'est ajoutée qu'aux salles sans porte en face ; décalage latéral −1 à 1 ; `route` exige libre
