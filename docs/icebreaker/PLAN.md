@@ -271,7 +271,7 @@ Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (j
   peuplés (`corridors` : un guetteur par tranche de 10 cases, jamais sur un escalier, un palier ni devant une porte),
   entrée 0–1 guetteur, sorte `beast` pour les nids (mandragora, hound, frostfang). Mesuré (test, 40 graines) : 42,5
   créatures par donjon moyen, ~4 en couloir ; exemple sur 5 graines (40 à 55 apparues) ; serveur Genere lancé
-  (graine 99). Pas encore vu en jeu (dont les bêtes endormies des nids).
+  (graine 99). Pas encore vu en jeu (dont les bêtes endormies des nids). — 7e0f652d71
 - [ ] **F.5 Salles de formes variées** — `RoomShapes.cs` traduit (`shapes.rs`) : coins coupés, L, T, croix,
   octogone, ellipse, grotte ; 2 à 4 portes sur les pans droits, garniture par rôle, part `share` 0,5 ; même gabarit
   que les dessinées (8–12 × 6–10 cases, `min_bar` 2) ; réglages `variety` ; entrée, antres et sanctuaire restent
