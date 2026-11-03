@@ -1,7 +1,9 @@
-// Icebreaker : compétences de départ du guerrier (classes.ron), sur les touches 1 et 2.
+// Icebreaker : compétences de départ du guerrier (classes.ron), sur les touches 1 à 3.
 // Format des préréglages de compétences de Veloren (assets/common/skillset/preset/).
+// Cascade (touche 1) est le prérequis du tourbillon et du fendeur de terre, qui mettent en posture tranchante.
 [
     Group(Weapon(Sword)),
-    Skill((Sword(CrescentSlash), 1)),
-    Skill((Sword(FellStrike), 1)),
+    Skill((Sword(Cascade), 1)),
+    Skill((Sword(CleavingWhirlwindSlice), 1)),
+    Skill((Sword(CleavingEarthSplitter), 1)),
 ]

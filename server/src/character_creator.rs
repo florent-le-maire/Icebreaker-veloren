@@ -77,7 +77,7 @@ pub fn create_character(
 
 /// Icebreaker : une recrue de la charrette (jalon R) part avec l'équipement de
 /// sa classe (`assets/icebreaker/classes.ron`) au lieu de l'arme choisie, et
-/// les 2 compétences de sa classe débloquées (R.6).
+/// les compétences de sa classe débloquées (R.6).
 pub fn create_recruit(
     entity: Entity,
     player_uuid: String,

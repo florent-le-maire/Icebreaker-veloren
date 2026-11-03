@@ -107,25 +107,31 @@ mod tests {
     }
 
     #[test]
-    fn icebreaker_classes_start_with_two_skills_on_slots_1_and_2() {
+    fn icebreaker_classes_start_with_their_skills_on_the_first_slots() {
         use common::comp::{ActiveAbilities, BASE_ABILITY_LIMIT, ability::AuxiliaryAbility};
-        for class in classes() {
+        // R.7 : le guerrier a cascade en plus, prérequis du tourbillon et du fendeur.
+        for (id, count) in [("guerrier", 3), ("mage", 2), ("archer", 2)] {
+            let class = class(id).unwrap_or_else(|| panic!("class {id} missing"));
             let inventory = starting_inventory(&class);
             // Panics in tests if a skill lacks its group or a prerequisite.
             let skill_set = starting_skill_set(&class);
             let slots = ActiveAbilities::default_limited(BASE_ABILITY_LIMIT)
                 .auxiliary_set(Some(&inventory), Some(&skill_set))
                 .into_owned();
-            let id = &class.id;
             assert_eq!(slots.len(), BASE_ABILITY_LIMIT, "{id}");
+            let skills = &slots[..count];
             assert!(
-                matches!(slots[0], AuxiliaryAbility::MainWeapon(_))
-                    && matches!(slots[1], AuxiliaryAbility::MainWeapon(_))
-                    && slots[0] != slots[1],
+                skills
+                    .iter()
+                    .all(|s| matches!(s, AuxiliaryAbility::MainWeapon(_)))
+                    && skills
+                        .iter()
+                        .enumerate()
+                        .all(|(i, s)| !skills[..i].contains(s)),
                 "{id}: {slots:?}"
             );
             assert!(
-                slots[2..].iter().all(|s| *s == AuxiliaryAbility::Empty),
+                slots[count..].iter().all(|s| *s == AuxiliaryAbility::Empty),
                 "{id}: {slots:?}"
             );
         }

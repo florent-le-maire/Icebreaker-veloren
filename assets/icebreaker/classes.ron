@@ -1,9 +1,9 @@
 // Icebreaker : les classes des recrues de la charrette (jalon R, décision 0017).
-// Une classe = un équipement de départ et deux compétences :
+// Une classe = un équipement de départ et ses compétences :
 // - `equipement` est un fichier d'équipement de Veloren (armure et armes en main), sous `assets/` ; s'y ajoutent une
 //   potion et du fromage, comme pour tout personnage ;
-// - `competences` est un fichier de compétences de Veloren (`classes/competences/*.ron`) : les 2 compétences de
-//   l'arme débloquées au départ, qui se placent seules sur les touches 1 et 2.
+// - `competences` est un fichier de compétences de Veloren (`classes/competences/*.ron`) : les compétences de
+//   l'arme débloquées au départ (2, ou 3 avec un prérequis), qui se placent seules sur les premières touches.
 (
     classes: [
         (id: "guerrier", nom: "guerrier", equipement: "icebreaker.classes.guerrier",
