@@ -18,6 +18,7 @@ mod data_dir;
 pub mod error;
 pub mod events;
 pub mod icebreaker_buildings;
+pub mod icebreaker_classes;
 pub mod icebreaker_expedition;
 pub mod icebreaker_mission;
 pub mod icebreaker_return;

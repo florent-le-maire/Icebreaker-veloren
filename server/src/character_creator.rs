@@ -60,8 +60,62 @@ pub fn create_character(
         .active_mainhand(character_mainhand.map(|x| Item::new_from_asset_expect(&x)))
         .active_offhand(character_offhand.map(|x| Item::new_from_asset_expect(&x)))
         .build();
-    let mut inventory = Inventory::with_loadout_humanoid(loadout);
+    let inventory = Inventory::with_loadout_humanoid(loadout);
+    persist_new_character(
+        entity,
+        player_uuid,
+        character_alias,
+        inventory,
+        body,
+        hardcore,
+        character_updater,
+        waypoint,
+    );
+    Ok(())
+}
 
+/// Icebreaker : une recrue de la charrette (jalon R) part avec l'équipement de
+/// sa classe (`assets/icebreaker/classes.ron`) au lieu de l'arme choisie.
+pub fn create_recruit(
+    entity: Entity,
+    player_uuid: String,
+    character_alias: String,
+    class: &crate::icebreaker_classes::Class,
+    body: Body,
+    character_updater: &mut WriteExpect<'_, CharacterUpdater>,
+    waypoint: Option<Waypoint>,
+) -> Result<(), CreationError> {
+    if !common::character::verify_character_name(&character_alias) {
+        return Err(CreationError::InvalidAlias);
+    }
+    if !matches!(body, Body::Humanoid(_)) {
+        return Err(CreationError::InvalidBody);
+    }
+    let inventory = crate::icebreaker_classes::starting_inventory(class);
+    persist_new_character(
+        entity,
+        player_uuid,
+        character_alias,
+        inventory,
+        body,
+        false,
+        character_updater,
+        waypoint,
+    );
+    Ok(())
+}
+
+/// The items every new character gets, then the character saved.
+fn persist_new_character(
+    entity: Entity,
+    player_uuid: String,
+    character_alias: String,
+    mut inventory: Inventory,
+    body: Body,
+    hardcore: bool,
+    character_updater: &mut WriteExpect<'_, CharacterUpdater>,
+    waypoint: Option<Waypoint>,
+) {
     let stats = Stats::new(Content::Plain(character_alias.to_string()), body);
     let skill_set = SkillSet::default();
     // Default items for new characters
@@ -90,7 +144,6 @@ pub fn create_character(
         active_abilities: common::comp::ActiveAbilities::default_limited(BASE_ABILITY_LIMIT),
         map_marker,
     });
-    Ok(())
 }
 
 pub fn edit_character(

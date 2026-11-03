@@ -1,0 +1,13 @@
+// Icebreaker : équipement de départ du mage (classes.ron).
+#![enable(implicit_some)]
+(
+    inherit: Asset("common.loadout.default"),
+    shoulders: Item("common.items.armor.cloth.linen.shoulder"),
+    chest: Item("common.items.armor.cloth.linen.chest"),
+    gloves: Item("common.items.armor.cloth.linen.hand"),
+    back: Item("common.items.armor.cloth.linen.back"),
+    belt: Item("common.items.armor.cloth.linen.belt"),
+    legs: Item("common.items.armor.cloth.linen.pants"),
+    feet: Item("common.items.armor.cloth.linen.foot"),
+    active_hands: InHands((Item("common.items.weapons.staff.starter_staff"), None)),
+)

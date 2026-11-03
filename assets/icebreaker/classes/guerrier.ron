@@ -1,0 +1,13 @@
+// Icebreaker : équipement de départ du guerrier (classes.ron).
+#![enable(implicit_some)]
+(
+    inherit: Asset("common.loadout.default"),
+    head: Item("common.items.armor.misc.head.helmet"),
+    shoulders: Item("common.items.armor.leather_plate.shoulder"),
+    chest: Item("common.items.armor.leather_plate.chest"),
+    gloves: Item("common.items.armor.leather_plate.hand"),
+    belt: Item("common.items.armor.leather_plate.belt"),
+    legs: Item("common.items.armor.leather_plate.pants"),
+    feet: Item("common.items.armor.leather_plate.foot"),
+    active_hands: InHands((Item("common.items.weapons.sword.starter"), None)),
+)

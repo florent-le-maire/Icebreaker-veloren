@@ -1,0 +1,10 @@
+// Icebreaker : les classes des recrues de la charrette (jalon R, décision 0017).
+// Pour commencer, une classe = un équipement de départ : `equipement` est un fichier d'équipement de Veloren
+// (armure et armes en main), sous `assets/` ; s'y ajoutent une potion et du fromage, comme pour tout personnage.
+(
+    classes: [
+        (id: "guerrier", nom: "guerrier", equipement: "icebreaker.classes.guerrier"),
+        (id: "mage", nom: "mage", equipement: "icebreaker.classes.mage"),
+        (id: "archer", nom: "archer", equipement: "icebreaker.classes.archer"),
+    ],
+)

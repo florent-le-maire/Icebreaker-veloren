@@ -1,0 +1,13 @@
+// Icebreaker : équipement de départ de l'archer (classes.ron).
+#![enable(implicit_some)]
+(
+    inherit: Asset("common.loadout.default"),
+    head: Item("common.items.armor.misc.head.hood"),
+    shoulders: Item("common.items.armor.hide.leather.shoulder"),
+    chest: Item("common.items.armor.hide.leather.chest"),
+    gloves: Item("common.items.armor.hide.leather.hand"),
+    belt: Item("common.items.armor.hide.leather.belt"),
+    legs: Item("common.items.armor.hide.leather.pants"),
+    feet: Item("common.items.armor.hide.leather.foot"),
+    active_hands: InHands((Item("common.items.weapons.bow.starter"), None)),
+)

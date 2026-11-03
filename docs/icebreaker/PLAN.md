@@ -255,6 +255,23 @@ que Veloren fait déjà (vue, ouïe, combat, fuite). G.11 à G.14 d'abord ; G.15
 - [x] **L.4 Cercle sur la cible** — anneau doré qui respire, halo, point et quatre traits, par-dessus tout, au milieu
   du corps de la cible verrouillée. Testé : le client compile ; rendu pas vérifié en jeu. — 9c2b1d8a77
 
+## Jalon R — La charrette et le registre commun (Flo, 2026-11-03)
+
+On arrive au village en fantôme et on prend une recrue à la charrette ; les personnages sont au village (`0017`).
+Réglages : `assets/icebreaker/classes.ron`, `registre.ron` ; état : `campagne/registre.ron`.
+
+- [ ] **R.1 Classes en données** — guerrier, mage, archer = équipement de départ (`classes.ron`).
+  *Fin* : test — les 3 classes donnent la bonne arme et une armure. — *en cours : Veloren-registre, 2026-11-03*
+- [ ] **R.2 Arrivée en fantôme** — registre actif : on entre en spectateur au-dessus de la place, sans corps.
+  *Fin* : connexion → on survole le village, la vue U s'ouvre.
+- [ ] **R.3 La charrette** — bâtiment en vue U : recrues au hasard, « Engager » ; renouvelée chaque jour de carte,
+  complétée au minimum à chaque retour de donjon et si un fantôme n'a rien à prendre.
+  *Fin* : engager un archer → on le joue, arc en main.
+- [ ] **R.4 Registre commun** — « Jouer » un personnage libre, « Rendre au registre » ; un joueur par personnage.
+  *Fin* : B reprend le guerrier de A avec l'objet qu'il avait ramassé.
+- [ ] **R.5 Réserver** — un réservé n'est jouable que par son compte ; 5 par compte au plus.
+  *Fin* : B ne peut pas jouer le réservé de A ; la 6e réservation est refusée.
+
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
 Ce qui rend l'enchaînement village → donjon → village intéressant (risque, butin, besoins du village) : règles et
@@ -287,7 +304,7 @@ garde et parade, monstres à coop) : tâches E.1 à E.16 dans `PLAN-DONJON.md`.
 ## Décisions (Flo, 2026-10-28)
 
 1. **Personnages** : pour le prototype, chaque compte garde ses propres personnages (modèle de Veloren) ; le
-   registre commun viendra plus tard.
+   registre commun viendra plus tard. *Remplacée le 2026-11-03 par `0017` (charrette et registre commun, jalon R).*
 2. **Village** : une vraie ville Veloren où l'on marche, **plus une vue de dessus façon 2D** où l'on clique sur les
    bâtiments pour voir les stocks et agir (V.6).
 3. **Butin du convoi** : chacun garde ce qu'il ramène (règle de butin habituelle).
@@ -301,3 +318,6 @@ garde et parade, monstres à coop) : tâches E.1 à E.16 dans `PLAN-DONJON.md`.
    les blessures (`design/village.md`) ?
 2. **Gouffre** (donjons avancés, jalon G) : que coûte la remontée, et le gouffre est-il une seule mission très
    profonde ou une suite de descentes qu'on reprend où on s'était arrêté ?
+3. **Charrette** (jalon R) : engager est-il gratuit (un fantôme n'a pas d'or ; proposé pour la démo) ou payé par la
+   caisse ? Combien de places au registre (proposé : 10), et peut-on renvoyer un personnage ? Que devient un
+   personnage du registre qui meurt (attendre B.3, ou il quitte le registre) ?
