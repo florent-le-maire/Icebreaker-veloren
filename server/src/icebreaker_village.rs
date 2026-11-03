@@ -278,6 +278,7 @@ mod tests {
         let house = |x| VillageHouse {
             plot: common::store::Id::new(x as u64),
             front: vek::Vec2::new(x, 0),
+            inside: vek::Vec2::new(x, 1),
             alt: 0,
             bounds: vek::Aabr {
                 min: vek::Vec2::new(x, 0),
@@ -297,6 +298,7 @@ mod tests {
         let house = |x| VillageHouse {
             plot: common::store::Id::new(x as u64),
             front: vek::Vec2::new(x, 0),
+            inside: vek::Vec2::new(x, 1),
             alt: 0,
             bounds: vek::Aabr {
                 min: vek::Vec2::new(x, 0),

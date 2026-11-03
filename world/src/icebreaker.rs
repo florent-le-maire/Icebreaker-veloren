@@ -107,6 +107,9 @@ pub struct VillageHouse {
     pub plot: Id<Plot>,
     /// In front of the door, on the road (world position).
     pub front: vek::Vec2<i32>,
+    /// Just inside the door (the door tile's centre, world position), where the
+    /// building's NPC stands (X.5).
+    pub inside: vek::Vec2<i32>,
     /// World bounds.
     pub bounds: vek::Aabr<i32>,
     /// Ground altitude at the door (the client projects the house at that
@@ -139,6 +142,7 @@ pub fn village_houses(site: &Site, square: vek::Vec2<i32>) -> Vec<VillageHouse> 
                 Some(VillageHouse {
                     plot: id,
                     front: site.tile_center_wpos(front),
+                    inside: site.tile_center_wpos(house.door_tile),
                     bounds: vek::Aabr {
                         min: site.tile_wpos(tiles.min),
                         max: site.tile_wpos(tiles.max + 1),

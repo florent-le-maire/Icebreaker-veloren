@@ -336,6 +336,30 @@ impl World {
         tc.find_accessible_pos(spawn_wpos, ascending)
     }
 
+    /// Icebreaker: the first spot at `wpos`, from `z_from` up, where one can
+    /// stand (a filled block below, three free above): the floor of a house
+    /// from its ground altitude (X.5), rather than the roof or a cave.
+    pub fn find_accessible_pos_above(
+        &self,
+        index: IndexRef,
+        wpos: Vec2<i32>,
+        z_from: i32,
+    ) -> Vec3<f32> {
+        let chunk_pos = TerrainGrid::chunk_key(wpos);
+        let (tc, _cs) = self
+            .generate_chunk(index, chunk_pos, None, || false, None)
+            .unwrap();
+        let rel = wpos.map2(TerrainChunkSize::RECT_SIZE, |e, sz| e.rem_euclid(sz as i32));
+        let block = |z: i32| tc.get(Vec3::new(rel.x, rel.y, z)).ok();
+        let z = (z_from..tc.get_max_z())
+            .find(|z| {
+                block(z - 1).is_some_and(|b| b.is_filled())
+                    && (0..3).all(|dz| block(z + dz).is_none_or(|b| !b.is_solid()))
+            })
+            .unwrap_or(z_from);
+        wpos.with_z(z).map(|e| e as f32) + 0.5
+    }
+
     #[expect(clippy::result_unit_err)]
     pub fn generate_chunk(
         &self,

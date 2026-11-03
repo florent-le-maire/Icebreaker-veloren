@@ -560,8 +560,9 @@ impl Server {
 
         // Icebreaker: the village buildings (warehouse, treasury, intendance,
         // infirmary, departure, cart, in `Building::ALL` order) are the houses nearest
-        // to the square, their NPC standing at the door; on the square, at the setting's
-        // offset from the spawn point, if the town lacks houses.
+        // to the square, their NPC standing inside, just past the door (X.5; the
+        // cart's stays out, at the door); on the square, at the setting's offset
+        // from the spawn point, if the town lacks houses.
         #[cfg(feature = "worldgen")]
         let (village_posts, village) = {
             let offsets = [
@@ -588,22 +589,23 @@ impl Server {
                 .enumerate()
                 .map(|(i, offset)| {
                     let houses = houses.as_ref()?;
-                    let house = houses
-                        .get(i)
-                        .map(|house| (house.front, house.bounds, house.alt));
-                    let (door, bounds, alt) = house.unwrap_or_else(|| {
+                    let inside = i != icebreaker_buildings::Building::ALL.len() - 1;
+                    let Some(house) = houses.get(i) else {
                         let wpos = square + Vec2::<f32>::from(*offset).as_::<i32>();
-                        (
-                            wpos,
-                            Aabr {
-                                min: wpos - 6,
-                                max: wpos + 6,
-                            },
-                            spawn_point.0.z as i32,
-                        )
-                    });
-                    let pos = world.find_accessible_pos(index.as_index_ref(), door, false);
-                    Some((pos, bounds, alt))
+                        let pos = world.find_accessible_pos(index.as_index_ref(), wpos, false);
+                        let bounds = Aabr {
+                            min: wpos - 6,
+                            max: wpos + 6,
+                        };
+                        return Some((pos, bounds, spawn_point.0.z as i32));
+                    };
+                    let pos = if inside {
+                        // On the house's floor, from its ground altitude up.
+                        world.find_accessible_pos_above(index.as_index_ref(), house.inside, house.alt)
+                    } else {
+                        world.find_accessible_pos(index.as_index_ref(), house.front, false)
+                    };
+                    Some((pos, house.bounds, house.alt))
                 })
                 .collect::<Vec<_>>();
             (posts, village)
