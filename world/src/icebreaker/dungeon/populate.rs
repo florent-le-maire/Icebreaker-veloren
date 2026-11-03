@@ -18,12 +18,14 @@ use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use std::collections::{BTreeMap, BTreeSet};
 
-/// The kinds of creatures of the plans, by marker (lowercase: awake).
-pub const KINDS: [(&str, char); 5] = [
+/// The kinds of creatures of the plans, by marker (lowercase: awake), the most
+/// important first. `beast` (Icebreaker F.4) is what lives in the nests.
+pub const KINDS: [(&str, char); 6] = [
     ("boss", 'x'),
     ("chief", 'c'),
     ("archer", 'a'),
     ("brute", 'b'),
+    ("beast", 'w'),
     ("lookout", 'g'),
 ];
 
@@ -111,6 +113,40 @@ pub fn populate(dungeon: &mut Assembled, graph: &MissionGraph, settings: &Resolv
             chests += 1;
         }
     }
+
+    // Icebreaker F.4: the corridors too. Their free floor cells (out of the rooms,
+    // not next to a door, stairs or a hole), by slices of `per_cells`.
+    let in_room: BTreeSet<Cell> = dungeon.rooms.iter().flat_map(|r| r.footprint()).collect();
+    let plan = &mut dungeon.plan;
+    let mut cells: Vec<Cell> = plan
+        .cells
+        .iter()
+        .filter(|(cell, symbol)| {
+            **symbol == '.'
+                && !in_room.contains(cell)
+                && DIRECTIONS.iter().all(|(dx, dy)| {
+                    let s = plan.get(cell.offset(*dx, *dy, 0));
+                    s != 'D' && s != '_' && plan::stairs_direction(s).is_none()
+                })
+        })
+        .map(|(cell, _)| *cell)
+        .collect();
+    shuffle(&mut cells, &mut rng);
+    let corridors = &settings.corridors;
+    for _ in 0..cells.len() / corridors.per_cells.max(1) {
+        for (kind, marker) in KINDS {
+            let Some(range) = corridors.creatures.get(kind) else {
+                continue;
+            };
+            for _ in 0..range.roll(&mut rng).max(0) {
+                let Some(cell) = cells.pop() else {
+                    break;
+                };
+                plan.cells.insert(cell, marker);
+                creatures += 1;
+            }
+        }
+    }
     (creatures, chests)
 }
 
@@ -152,5 +188,41 @@ mod tests {
             // Still finishable.
             assert!(dungeon.check().is_empty());
         }
+    }
+
+    /// Icebreaker F.4: a medium dungeon by default holds 30 to 50 creatures,
+    /// some of them in the corridors.
+    #[test]
+    fn dungeons_are_lively() {
+        let settings = Settings::load().unwrap();
+        let catalog = RoomCatalog::load().unwrap().with_orientations(settings.variety.orientations).unwrap();
+        let resolved = settings.resolve(&Mission::default()).unwrap();
+        let (mut total, mut in_corridors, mut dungeons) = (0, 0, 0);
+        for seed in 0..40 {
+            let graph = graph::generate(&resolved, seed);
+            let Some(mut dungeon) = assemble::assemble(&graph, &catalog, seed, &settings.assembly, 4, |_| {})
+            else {
+                continue;
+            };
+            let (creatures, _) = populate(&mut dungeon, &graph, &resolved, seed);
+            let in_room: BTreeSet<Cell> = dungeon.rooms.iter().flat_map(|r| r.footprint()).collect();
+            for (cell, symbol) in &dungeon.plan.cells {
+                if kind_of(*symbol).is_some() && !in_room.contains(cell) {
+                    in_corridors += 1;
+                    // Not on stairs, nor next to a door, stairs or a hole.
+                    for (dx, dy) in DIRECTIONS {
+                        let s = dungeon.plan.get(cell.offset(dx, dy, 0));
+                        assert!(s != 'D' && s != '_' && plan::stairs_direction(s).is_none(), "graine {seed} : {cell:?}");
+                    }
+                }
+            }
+            total += creatures;
+            dungeons += 1;
+            assert!(dungeon.check().is_empty());
+        }
+        let mean = total as f32 / dungeons as f32;
+        println!("medium : {mean:.1} créatures en moyenne, dont {in_corridors} en couloir sur {dungeons} donjons");
+        assert!((30.0..=50.0).contains(&mean), "medium : {mean:.1} créatures en moyenne");
+        assert!(in_corridors >= dungeons, "{in_corridors} créatures de couloir sur {dungeons} donjons");
     }
 }

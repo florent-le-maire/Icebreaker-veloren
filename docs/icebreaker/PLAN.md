@@ -267,10 +267,11 @@ Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (j
   branches (5, 8), étages (3, 4) ; `search_limit` et `margin` inchangés (ça suffit). Mesuré : 13,7 salles en moyenne en
   moyen (test, 40 graines, au moins 10 chacun) ; assemblage vert sur 100 graines ; exemple sur 5 graines ; serveur
   Genere lancé (graine 7). Pas encore vu en jeu. — 198820aeea
-- [ ] **F.4 Plus d'ennemis** — `population` relevée, couloirs peuplés (`corridors`, un guetteur toutes les N cases,
-  jamais sur un escalier ni devant une porte), entrée 0–1, sorte `beast` pour les nids (mandragora, hound,
-  frostfang) ; `default_density: "medium"` ou base ×2, pas les deux.
-  *Fin* : donjon moyen par défaut ≈ 30 à 40 créatures (test sur 40 graines), guetteurs dans les couloirs.
+- [x] **F.4 Plus d'ennemis** — `population` relevée (base ×2 environ, `default_density` reste « peu »), couloirs
+  peuplés (`corridors` : un guetteur par tranche de 10 cases, jamais sur un escalier, un palier ni devant une porte),
+  entrée 0–1 guetteur, sorte `beast` pour les nids (mandragora, hound, frostfang). Mesuré (test, 40 graines) : 42,5
+  créatures par donjon moyen, ~4 en couloir ; exemple sur 5 graines (40 à 55 apparues) ; serveur Genere lancé
+  (graine 99). Pas encore vu en jeu (dont les bêtes endormies des nids).
 - [ ] **F.5 Salles de formes variées** — `RoomShapes.cs` traduit (`shapes.rs`) : coins coupés, L, T, croix,
   octogone, ellipse, grotte ; 2 à 4 portes sur les pans droits, garniture par rôle, part `share` 0,5 ; même gabarit
   que les dessinées (8–12 × 6–10 cases, `min_bar` 2) ; réglages `variety` ; entrée, antres et sanctuaire restent

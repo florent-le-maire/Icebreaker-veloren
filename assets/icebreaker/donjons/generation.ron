@@ -86,22 +86,27 @@
         margin: 6,              // marge autour du donjon où un couloir peut passer
     ),
     // Habitants et butin selon le rôle de la salle (tâche G.5). creatures : nombre par sorte (brute, archer, lookout,
-    // chief, boss) ; chests : coffres ; awake : éveillées (false : endormies, voir `sleep`).
+    // chief, boss, beast) ; chests : coffres ; awake : éveillées (false : endormies, voir `sleep`).
     // Rôle absent : salle vide. Le chef garde toujours la salle de l'objectif.
+    // F.4 : valeurs relevées (le donjon était vide) ; sorte `beast` (bêtes des nids).
     population: {
-        "hall": (creatures: {"lookout": (0, 1)}),
-        "guardRoom": (creatures: {"brute": (1, 2), "archer": (0, 1)}),
-        "barracks": (creatures: {"brute": (2, 3)}, awake: false),
-        "storage": (creatures: {"lookout": (0, 1)}, chests: (1, 2)),
-        "kitchen": (creatures: {"brute": (0, 1), "lookout": (0, 1)}),
-        "nest": (creatures: {"brute": (2, 3)}, awake: false),
-        "treasure": (creatures: {"brute": (1, 1), "archer": (0, 1)}, chests: (2, 3)),
-        "chiefLair": (creatures: {"chief": (1, 1), "archer": (1, 2)}),
-        "prison": (creatures: {"brute": (1, 2)}),
-        "vault": (creatures: {"brute": (1, 2), "archer": (0, 1)}, chests: (3, 4)),
-        "sanctum": (creatures: {"archer": (1, 2)}, chests: (1, 1)),
-        "bossLair": (creatures: {"boss": (1, 1)}, chests: (1, 2)),
+        "entrance": (creatures: {"lookout": (0, 1)}),
+        "hall": (creatures: {"lookout": (1, 2)}),
+        "guardRoom": (creatures: {"brute": (2, 3), "archer": (1, 2)}),
+        "barracks": (creatures: {"brute": (3, 5)}, awake: false),
+        "storage": (creatures: {"lookout": (1, 2)}, chests: (1, 2)),
+        "kitchen": (creatures: {"brute": (1, 2), "lookout": (1, 2)}),
+        "nest": (creatures: {"beast": (3, 5)}, awake: false),
+        "treasure": (creatures: {"brute": (1, 2), "archer": (1, 1)}, chests: (2, 3)),
+        "chiefLair": (creatures: {"chief": (1, 1), "archer": (2, 3), "brute": (1, 2)}),
+        "prison": (creatures: {"brute": (2, 3)}),
+        "vault": (creatures: {"brute": (2, 3), "archer": (1, 1)}, chests: (3, 4)),
+        "sanctum": (creatures: {"archer": (2, 3)}, chests: (1, 1)),
+        "bossLair": (creatures: {"boss": (1, 1), "brute": (0, 2)}, chests: (1, 2)),
     },
+    // Les couloirs aussi (F.4) : pour chaque tranche de per_cells cases de couloir, ces créatures (jamais sur un
+    // escalier, un palier ni devant une porte) ; mêmes facteurs de menace et de nombre d'ennemis que les salles.
+    corridors: (creatures: {"lookout": (1, 1)}, per_cells: 10),
     // Qui habite le donjon : pour chaque sorte des plans, des créatures de Veloren (tirées au hasard dans la liste) ;
     // chest : le coffre (son butin vient de Veloren, DungeonChest0 = gnarlings, 1 = adlets, 5 = cultistes).
     default_faction: "gnarling",
@@ -109,6 +114,7 @@
         "gnarling": (
             creatures: {
                 "brute": ["common.entity.dungeon.gnarling.logger"],
+                "beast": ["common.entity.dungeon.gnarling.mandragora"],
                 "archer": ["common.entity.dungeon.gnarling.stalker"],
                 "lookout": ["common.entity.dungeon.gnarling.mugger"],
                 "chief": ["common.entity.dungeon.gnarling.chieftain"],
@@ -119,6 +125,7 @@
         "adlet": (
             creatures: {
                 "brute": ["common.entity.dungeon.adlet.icepicker"],
+                "beast": ["common.entity.wild.aggressive.frostfang"],
                 "archer": ["common.entity.dungeon.adlet.hunter"],
                 "lookout": ["common.entity.dungeon.adlet.tracker"],
                 "chief": ["common.entity.dungeon.adlet.elder"],
@@ -129,6 +136,7 @@
         "cultist": (
             creatures: {
                 "brute": ["common.entity.dungeon.cultist.husk_brute"],
+                "beast": ["common.entity.dungeon.cultist.hound"],
                 "archer": ["common.entity.dungeon.cultist.warlock"],
                 "lookout": ["common.entity.dungeon.cultist.cultist", "common.entity.dungeon.cultist.husk"],
                 "chief": ["common.entity.dungeon.cultist.warlord"],

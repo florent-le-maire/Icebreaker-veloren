@@ -82,6 +82,8 @@ pub struct Settings {
     pub assembly: super::assemble::AssemblySettings,
     /// People and loot by role of room (absent: an empty room).
     pub population: BTreeMap<String, RoomPopulation>,
+    /// People of the corridors.
+    pub corridors: CorridorPopulation,
     /// Who lives in the dungeon: Veloren creatures for each kind of the plans.
     pub factions: BTreeMap<String, Faction>,
     pub default_faction: String,
@@ -164,6 +166,14 @@ impl Default for RoomPopulation {
     }
 }
 
+/// People of the corridors (Icebreaker F.4): for each `per_cells` cells of
+/// corridor, these creatures (by kind).
+#[derive(Clone, Debug, Deserialize)]
+pub struct CorridorPopulation {
+    pub creatures: BTreeMap<String, Range>,
+    pub per_cells: usize,
+}
+
 /// The Veloren creatures (entity configs) of each kind, and the chest sprite.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Faction {
@@ -243,6 +253,9 @@ impl Settings {
                     errors.push(format!("population.{name}.{kind} : il faut 0 ≤ min ≤ max"));
                 }
             }
+        }
+        if settings.corridors.per_cells == 0 {
+            errors.push("corridors : per_cells doit être au moins 1".into());
         }
         for (name, faction) in &settings.factions {
             for (kind, _) in super::populate::KINDS {
@@ -403,6 +416,13 @@ impl Settings {
                 (role(name, &mut errors), population)
             })
             .collect();
+        let mut corridors = self.corridors.clone();
+        for (kind, range) in corridors.creatures.iter_mut() {
+            let factor = modifiers
+                .iter()
+                .fold(creature_factor, |f, (_, m)| f * m.creatures.get(kind).copied().unwrap_or(1.0));
+            *range = scale(*range, factor);
+        }
         let names: Vec<String> = modifiers
             .iter()
             .map(|(key, m)| if m.name.is_empty() { key.clone() } else { m.name.clone() })
@@ -426,6 +446,7 @@ impl Settings {
             guard_before_locks: self.rules.guard_before_locks,
             fallback,
             population,
+            corridors,
             faction,
             modifiers: names,
         })
@@ -561,6 +582,7 @@ pub struct Resolved {
     pub guard_before_locks: bool,
     pub fallback: RoomRole,
     pub population: BTreeMap<RoomRole, RoomPopulation>,
+    pub corridors: CorridorPopulation,
     pub faction: Faction,
     /// Names of the parameters applied, for the summary.
     pub modifiers: Vec<String>,
