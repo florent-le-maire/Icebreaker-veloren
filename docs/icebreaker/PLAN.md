@@ -301,10 +301,10 @@ X.2, X.3, X.8, X.4, X.5, X.6. Réglages dans `assets/icebreaker/vue_village.ron`
   torse ; les recrues du jour debout devant la charrette (`registre.ron` → `postes_recrues`), équipées et nommées,
   retirées quand engagées ou renouvelées ; E : « Engagez-moi à la charrette ». Testé (tests, client texte : icônes,
   recrues debout, PNJ parti à l'engagement) ; pas encore vu dans le vrai client. — db77c93340
-- [ ] **X.4 Identité visuelle des bâtiments** — en vue U, couleur de bord et icône du HUD par bâtiment
-  (`village.ron` → `apparence`) ; dans le village, sprites de Veloren autour de la porte à la génération
-  (caisses, tonneaux, coffre, lanterne, enseigne…), listés par bâtiment dans `village.ron`.
-  *Fin* : on reconnaît l'entrepôt et la charrette avant de lire le nom.
+- [x] **X.4 Identité visuelle des bâtiments** — en vue U, couleur et icône du HUD par sorte de bâtiment
+  (`vue_village.ron` → `apparences`) ; dans le village, enseignes (sprites de Veloren) sur le rebord des fondations
+  de part et d'autre de la porte (`village.ron` → `enseignes`). Testé (tests, enseignes vues au client texte) ;
+  couleurs et icônes pas encore vues en jeu. — fe3400d39e
 - [ ] **X.5 Les PNJ dans leur maison** — magasinier, trésorier, intendant, infirmier et chef à l'intérieur
   (case de la porte ou sa voisine, au plancher) ; la charrette et ses recrues restent dehors.
   *Fin* : E et T marchent dans la maison ; échanges à distance et départ inchangés.
