@@ -272,11 +272,12 @@ Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (j
   entrée 0–1 guetteur, sorte `beast` pour les nids (mandragora, hound, frostfang). Mesuré (test, 40 graines) : 42,5
   créatures par donjon moyen, ~4 en couloir ; exemple sur 5 graines (40 à 55 apparues) ; serveur Genere lancé
   (graine 99). Pas encore vu en jeu (dont les bêtes endormies des nids). — 7e0f652d71
-- [ ] **F.5 Salles de formes variées** — `RoomShapes.cs` traduit (`shapes.rs`) : coins coupés, L, T, croix,
-  octogone, ellipse, grotte ; 2 à 4 portes sur les pans droits, garniture par rôle, part `share` 0,5 ; même gabarit
-  que les dessinées (8–12 × 6–10 cases, `min_bar` 2) ; réglages `variety` ; entrée, antres et sanctuaire restent
-  dessinés ; 3 ou 4 salles dessinées en plus (salle sur deux étages avec galerie, colonnade).
-  *Fin* : au moins 3 salles non rectangulaires par donjon moyen ; validité et contrôle des blocs sur 5 graines.
+- [x] **F.5 Salles de formes variées** — `RoomShapes.cs` traduit (`shapes.rs`) : coins coupés, L, T, croix, octogone,
+  ellipse, grotte (regénérée si elle sort rectangulaire) ; 2 à 4 portes sur les pans droits, piliers et coffres par
+  rôle, part `share` 0,5, 8–12 × 6–10 cases, `min_bar` 2, tirées par graine de donjon (`variety.shapes`) ; entrée,
+  antres et sanctuaire restent dessinés ; 3 salles dessinées en plus (colonnade, galerie sur deux étages, caserne
+  double). Mesuré (test, 40 graines) : 5,5 salles générées par donjon moyen ; validité des salles générées sur 20
+  graines ; exemple sur 5 graines ; serveur Genere lancé. Pas encore vu en jeu (formes, galerie, échelles).
 - [ ] **F.6 Décor par rôle** — section `decor` de `generation.ron` : par rôle, sprites et emplacement (`wall`,
   `center`, `scatter`), meubles à plusieurs blocs via `PainterSpriteExt` ; jamais sur un escalier, une porte, une
   créature, un coffre, une clé, une lumière. Cuisine (marmite, chaudron, tonneaux, table), caserne (couchages,

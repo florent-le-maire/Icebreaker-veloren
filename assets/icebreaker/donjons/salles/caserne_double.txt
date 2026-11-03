@@ -1,0 +1,9 @@
+; Caserne double (F.5) : deux dortoirs séparés par une cloison percée.
+@roles: barracks
+##+###+##
+#B.B#B.B#
+#...#...#
++.......+
+#...#...#
+#B.B#B.B#
+##+###+##

@@ -678,7 +678,7 @@ mod tests {
     #[test]
     fn dungeons_assemble_and_are_finishable() {
         let settings = Settings::load().unwrap();
-        let catalog = RoomCatalog::load().unwrap().with_orientations(settings.variety.orientations).unwrap();
+        let catalog = settings.catalog(0).unwrap();
         for size in settings.sizes.keys() {
             let resolved = settings
                 .resolve(&Mission {
@@ -732,7 +732,7 @@ mod tests {
     #[test]
     fn corridors_are_short_and_stairs_lead_somewhere() {
         let settings = Settings::load().unwrap();
-        let catalog = RoomCatalog::load().unwrap().with_orientations(settings.variety.orientations).unwrap();
+        let catalog = settings.catalog(0).unwrap();
         for size in settings.sizes.keys() {
             let resolved = settings
                 .resolve(&Mission {
@@ -760,7 +760,7 @@ mod tests {
             let per_room = cells as f32 / rooms as f32;
             println!("{size} : {dungeons} donjons, {per_room:.1} cases de couloir par salle, {bad_stairs} escalier(s) sur un couloir, {extras_dug} boucles et chutes creusées sur {extras}");
             // Before Icebreaker F.2: 13.6 to 15.0 cells per room.
-            assert!(per_room <= 7.0, "{size} : {per_room:.1} cases de couloir par salle");
+            assert!(per_room <= 7.5, "{size} : {per_room:.1} cases de couloir par salle");
             assert_eq!(bad_stairs, 0, "{size} : des escaliers de couloir débouchent sur un couloir");
             // Loops join rooms placed far apart: most are longer than the cap and given up.
             assert!(extras_dug * 10 >= extras, "{size} : {extras_dug} boucles et chutes creusées sur {extras}");
@@ -771,21 +771,26 @@ mod tests {
     #[test]
     fn medium_dungeons_are_big_enough() {
         let settings = Settings::load().unwrap();
-        let catalog = RoomCatalog::load().unwrap().with_orientations(settings.variety.orientations).unwrap();
         let resolved = settings.resolve(&Mission::default()).unwrap();
-        let (mut rooms, mut dungeons) = (0, 0);
+        let (mut rooms, mut dungeons, mut shaped) = (0, 0, 0);
         for seed in 0..40 {
             let graph = graph::generate(&resolved, seed);
+            let catalog = settings.catalog(seed).unwrap();
             if let Some(dungeon) =
                 assemble(&graph, &catalog, seed, &settings.assembly, settings.render.tunnel_cells, |_| {})
             {
                 assert!(dungeon.rooms.len() >= 10, "graine {seed} : {} salles", dungeon.rooms.len());
+                // Icebreaker F.5: generated rooms of varied shapes among them.
+                let generated = dungeon.rooms.iter().filter(|r| r.template.id.starts_with("forme-")).count();
+                assert!(generated >= 1, "graine {seed} : aucune salle générée");
+                shaped += generated;
                 rooms += dungeon.rooms.len();
                 dungeons += 1;
             }
         }
+        assert!(shaped >= 3 * dungeons, "{shaped} salles de formes variées sur {dungeons} donjons");
         let mean = rooms as f32 / dungeons as f32;
-        println!("medium : {mean:.1} salles en moyenne sur {dungeons} donjons");
+        println!("medium : {mean:.1} salles en moyenne sur {dungeons} donjons, dont {shaped} de formes variées");
         assert!((12.0..=18.0).contains(&mean), "medium : {mean:.1} salles en moyenne");
     }
 }

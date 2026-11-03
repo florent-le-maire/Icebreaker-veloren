@@ -100,11 +100,13 @@ pub struct Settings {
     pub variety: VarietySettings,
 }
 
-/// Variety of the rooms (Icebreaker F.2): the orientations of each drawn room
-/// (1 = as drawn, 2 = and mirrored, 4 = quarter turns, 8 = both).
+/// Variety of the rooms (Icebreaker F.2 and F.5): the orientations of each drawn
+/// room (1 = as drawn, 2 = and mirrored, 4 = quarter turns, 8 = both), and the
+/// generated rooms of varied shapes.
 #[derive(Clone, Debug, Deserialize)]
 pub struct VarietySettings {
     pub orientations: u8,
+    pub shapes: super::shapes::ShapeSettings,
 }
 
 /// Lights of the dungeon: the chance that a free floor cell holds one, by role
@@ -204,6 +206,7 @@ impl Settings {
         if ![1, 2, 4, 8].contains(&settings.variety.orientations) {
             errors.push("variety : orientations vaut 1, 2, 4 ou 8".into());
         }
+        errors.extend(settings.variety.shapes.errors().into_iter().map(|e| format!("variety.shapes : {e}")));
         for (name, shape) in &settings.sizes {
             let ranges = [
                 ("main_path", shape.main_path, 2),
@@ -304,6 +307,14 @@ impl Settings {
     }
 
     pub fn load() -> Result<Self, String> { Self::parse(&super::read_data("generation.ron")?) }
+
+    /// The rooms a dungeon of `seed` is built from: the drawn ones in every
+    /// orientation, and the generated ones of this seed (Icebreaker F.2, F.5).
+    pub fn catalog(&self, seed: u64) -> Result<super::rooms::RoomCatalog, String> {
+        super::rooms::RoomCatalog::load()?
+            .with_orientations(self.variety.orientations)?
+            .with_shapes(&self.variety.shapes, seed)
+    }
 
     /// The modifiers of a mission: its region, season, threat, number of
     /// enemies and objective. Unknown names are errors.

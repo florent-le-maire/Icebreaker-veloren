@@ -151,7 +151,7 @@ impl RoomTemplate {
 
     /// Checks a plan and finds its connectors (`errors`: those of the header,
     /// already found).
-    fn from_plan(
+    pub(super) fn from_plan(
         id: &str,
         roles: Vec<RoomRole>,
         bosses: Vec<String>,
@@ -389,7 +389,7 @@ mod tests {
     #[test]
     fn all_rooms_are_valid() {
         let catalog = RoomCatalog::load().unwrap_or_else(|e| panic!("{e}"));
-        assert_eq!(catalog.rooms.len(), 17);
+        assert_eq!(catalog.rooms.len(), 20);
         // Every role of a branch or of the main path has a room.
         for role in RoomRole::ALL {
             assert!(!catalog.with_role(role).is_empty(), "aucune salle pour {}", role.name());

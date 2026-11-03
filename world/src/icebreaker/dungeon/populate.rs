@@ -153,14 +153,14 @@ pub fn populate(dungeon: &mut Assembled, graph: &MissionGraph, settings: &Resolv
 #[cfg(test)]
 mod tests {
     use super::{
-        super::{assemble, graph, rooms::RoomCatalog, settings::*},
+        super::{assemble, graph, settings::*},
         *,
     };
 
     #[test]
     fn people_follow_the_roles() {
         let settings = Settings::load().unwrap();
-        let catalog = RoomCatalog::load().unwrap().with_orientations(settings.variety.orientations).unwrap();
+        let catalog = settings.catalog(0).unwrap();
         let resolved = settings.resolve(&Mission::default()).unwrap();
         for seed in 0..40 {
             let graph = graph::generate(&resolved, seed);
@@ -195,7 +195,7 @@ mod tests {
     #[test]
     fn dungeons_are_lively() {
         let settings = Settings::load().unwrap();
-        let catalog = RoomCatalog::load().unwrap().with_orientations(settings.variety.orientations).unwrap();
+        let catalog = settings.catalog(0).unwrap();
         let resolved = settings.resolve(&Mission::default()).unwrap();
         let (mut total, mut in_corridors, mut dungeons) = (0, 0, 0);
         for seed in 0..40 {

@@ -1,0 +1,24 @@
+; Galerie (F.5) : une grande salle sur deux étages, une galerie fait le tour en haut ;
+; on y monte par l'escalier du coin, on en redescend en sautant.
+@roles: hall, guardRoom
+[étage 1]
+###########
+#.........+
+#._______.#
+#._______.#
++._______.#
+#._______.#
+#._______.#
+#._______.#
+###########
+
+[étage 0]
+#####+#####
+#.........#
+#.........#
+#.........#
++.........+
+#.........#
+#.........#
+#.......>.#
+#####+#####

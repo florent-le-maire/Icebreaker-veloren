@@ -74,7 +74,34 @@
     // Variété des salles (F.2) : orientations de chaque salle dessinée, 1 (telle quelle), 2 (et son miroir), 4 (les
     // quarts de tour) ou 8 (les deux) ; les escaliers tournent avec la salle. Avec 8, presque toute salle a une porte
     // en face de la précédente : les couloirs sont courts.
-    variety: (orientations: 8),
+    variety: (
+        orientations: 8,
+        // Salles générées (F.5, RoomShapes.cs du projet) mêlées aux salles dessinées des rôles de `roles` : share = part
+        // visée (0,5 : autant que de dessinées) ; width, depth en cases, murs compris ; doors : portes possibles, dans
+        // les pans droits ; min_bar : largeur minimale d'une branche (L, T, croix) ou d'un passage de grotte ; shapes :
+        // poids de chaque forme (chamfer = coins coupés, l, t, cross, octagon, ellipse, cave). Par rôle : pillars et
+        // chests en plus, shapes = formes permises (toutes sinon). Tirées pour chaque donjon (même graine, mêmes salles).
+        // Entrée, antres et sanctuaire restent dessinés.
+        shapes: (
+            share: 0.5,
+            width: (8, 12),
+            depth: (6, 10),
+            doors: (2, 4),
+            min_bar: 2,
+            shapes: {"chamfer": 2, "l": 2, "t": 2, "cross": 2, "octagon": 2, "ellipse": 2, "cave": 1},
+            roles: {
+                "hall": (pillars: (0, 2)),
+                "guardRoom": (pillars: (0, 1)),
+                "barracks": (pillars: (0, 2)),
+                "kitchen": (pillars: (1, 3)),
+                "storage": (chests: (0, 1)),
+                "prison": (pillars: (0, 1)),
+                "nest": (shapes: Some([cave, ellipse])),
+                "treasure": (chests: (2, 4), shapes: Some([ellipse, octagon, chamfer, cross])),
+                "vault": (chests: (2, 3), pillars: (0, 2), shapes: Some([octagon, ellipse, cross])),
+            },
+        ),
+    ),
     // Assemblage (tâche G.4) : placement des salles et creusement des couloirs.
     assembly: (
         attempts: 20,           // tentatives complètes avant d'abandonner

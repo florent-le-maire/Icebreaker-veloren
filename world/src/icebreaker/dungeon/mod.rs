@@ -8,6 +8,7 @@ pub mod plan;
 pub mod populate;
 pub mod rooms;
 pub mod settings;
+pub mod shapes;
 
 use plan::{Cell, Plan};
 use rooms::{RoomCatalog, RoomRole};
@@ -179,7 +180,7 @@ const SEED_TRIES: u64 = 10;
 /// Generates the dungeon of a mission: its graph, then the assembly of the
 /// rooms. A seed whose dungeon can't be assembled gives way to the next one.
 pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, String> {
-    let catalog = RoomCatalog::load()?.with_orientations(settings.variety.orientations)?;
+    let catalog = settings.catalog(mission.seed)?;
     // A single room to look at (`ICEBREAKER_DONJON_SALLE`, `-Salle` of the launcher).
     if let Ok(id) = std::env::var("ICEBREAKER_DONJON_SALLE")
         && !id.is_empty()
