@@ -2,13 +2,14 @@
 
 Copie modifiée de Veloren (Rust, GPL v3) qui sert de prototype au jeu **Icebreaker** (équipe : Flo, Sayanel).
 Le projet principal, sa vision et sa méthode sont dans le dépôt `../Icebreaker` ; ce qu'il faut ici est copié dans
-`docs/icebreaker/` : lire `docs/icebreaker/PLAN.md` (tâches, questions ouvertes) avant de coder, puis la vision ou le
-fichier de `docs/icebreaker/design/` utile.
+`docs/icebreaker/` : lire `docs/icebreaker/README.md` (fichiers, jalons, conventions), puis `PLAN.md` (état, tâches,
+à vérifier en jeu) et `QUESTIONS.md` avant de coder, puis le fichier de `docs/icebreaker/design/` utile.
 
 ## Règles
 
 - Avancer tâche par tâche selon `PLAN.md` ; présenter un nouveau découpage et attendre l'accord avant de coder.
-- Un commit par tâche, message en français, détail dans le corps ; cocher la tâche avec le hash.
+- Un commit par tâche, message en français, détail dans le corps ; cocher la tâche avec le hash. Ce qui n'est pas
+  vérifié en jeu s'ajoute aussi à « À vérifier en jeu » de `PLAN.md` ; un jalon fini part dans `HISTORIQUE.md`.
 - Nos changements restent **regroupés et repérables** (commentaire « Icebreaker : … ») pour pouvoir suivre les
   mises à jour de Veloren.
 - Réglages (rayons, temps, prix) en configuration ou en fichiers de données (`assets/`), pas en dur.
@@ -17,8 +18,9 @@ fichier de `docs/icebreaker/design/` utile.
 - Teste ce que tu écris : tests ciblés pour la logique, et lancer le lieu concerné pour vérifier qu'il démarre sans
   erreur ; dire dans la tâche cochée ce qui n'a pas été vérifié en jeu.
 - Reste simple : la solution la plus simple qui marche pour la tâche en cours.
-- Fin de session : résumer ce qui a été fait, ce qui reste, et ajouter les questions pour l'équipe dans la section
-  « Questions ouvertes » du plan concerné.
+- Fin de session : résumer ce qui a été fait, ce qui reste ; mettre à jour « État » de `PLAN.md` si le tableau a
+  changé ; les questions pour l'équipe vont dans `QUESTIONS.md` (numéro Qn suivant), jamais dans un plan ; une
+  question tranchée passe dans son « Tranché » avec la date. Une idée non décidée va dans `IDEES.md`.
 
 ## Travailler à plusieurs agents (repris de `../Icebreaker/CLAUDE.md`, §5 bis)
 
@@ -38,7 +40,8 @@ ouverte dans le dossier principal `Veloren-test` ; Veloren d'origine reste lisib
 - Pour prendre une tâche, l'annoncer dans le plan : `— *en cours : <worktree>, <date>*`.
 - Tâche cochée = court : 1 à 3 lignes de résultat (dont ce qui reste ou n'est pas vérifié) et le hash ; le détail va
   dans le corps du message de commit.
-- Fichiers partagés (`PLAN.md`, `CLAUDE.md`, `icebreaker.ps1`, `server/src/lib.rs`, `server/src/settings/mod.rs`) :
+- Fichiers partagés (`PLAN.md`, `QUESTIONS.md`, `HISTORIQUE.md`, `CLAUDE.md`, `icebreaker.ps1`, `server/src/lib.rs`,
+  `server/src/settings/mod.rs`) :
   modifications courtes et localisées, pour que les fusions restent simples.
 - Lire juste ce qu'il faut : dans `docs/icebreaker/design/`, seulement le domaine utile ; l'historique se cherche
   dans `git log`.
