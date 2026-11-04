@@ -64,7 +64,7 @@ réglages dans `assets/icebreaker/grottes/grotte.ron` ; exemple de contrôle `wo
   pas de boyau qui en traverse un autre, sol des boyaux posé explicitement. Contrôle à pied de l'exemple remis en
   service (diagnostics `ICEBREAKER_GROTTE_COLONNE=x,y`, `ICEBREAKER_GROTTE_ATTEINT=x,y`). Testé : 4 tests, exemple
   sur 20 graines (0 problème), serveur lancé (graine 7, cristaux). Pas encore vu en jeu : lisibilité des ambiances
-  et lumière sans lanterne. — (hash)
+  et lumière sans lanterne. — e0fc89ce37
 - [ ] **K.4 Filons** — minerais en sprites minables contre les parois (bloc d'air voisin d'une roche), paliers par
   profondeur (`Copper`, `Tin`, `Iron` en haut ; `Coal`, `Cobalt`, `Silver` au milieu ; `Gold`, gemmes au fond),
   densités dans `grotte.ron`. Une pioche de Veloren dans le kit de chaque classe (`assets/icebreaker/classes/`,
