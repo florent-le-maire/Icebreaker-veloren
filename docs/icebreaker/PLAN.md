@@ -133,7 +133,7 @@ garde et parade, monstres à coop) : tâches E.1 à E.16 dans `PLAN-DONJON.md`.
 
 Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1` ; pas encore lancé sur un vrai Linux).
 
-- [ ] **S.2 Serveur sur le VPS** — binaire Linux release, assets, un service systemd par lieu (village et donjon
+- [ ] **S.2 Serveur sur le VPS** — *en cours : Veloren-serveur, 2026-11-04* — binaire Linux release, assets, un service systemd par lieu (village et donjon
   en même temps), pare-feu ouvert sur les ports de jeu ; `--no-auth` (on fait confiance aux potes au début).
   *Fin* : un pote se connecte à `<vps>:14100` depuis chez lui.
 - [ ] **S.3 Client pour les potes** — adresse du serveur dans `lieux.ron` (pas de serveur local lancé si l'adresse
@@ -184,7 +184,8 @@ tâche pour ce qui casse.
   trop bas.
 
 **Divers**
-- M.1 : téléchargement du plugin par le vrai client ; S.1 : `icebreaker.sh` sur un vrai Linux.
+- M.1 : téléchargement du plugin par le vrai client.
+- S.2 : vrai client sur le VPS (`116.202.107.125:14100`), depuis chez un pote ; un départ en expédition là-bas.
 
 ## Plus tard (à découper le moment venu)
 

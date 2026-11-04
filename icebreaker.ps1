@@ -111,6 +111,11 @@ if ($Lieu -in "village", "campagne" -and -not $PSBoundParameters.ContainsKey("Se
     else { Set-Content -Path $graineVillage -Value $Seed -Encoding ascii }
 }
 
+# Icebreaker : le terrain du village (graine gardée par la partie) est enregistré dans maps\ au premier
+# lancement, puis relu : le serveur démarre bien plus vite.
+$carte = if ($Lieu -eq "donjon") { "Generate((x_lg: $Lg, y_lg: $Lg))" }
+else { "LoadOrGenerate(name: `"$Lieu-$Seed-lg$Lg`", opts: (x_lg: $Lg, y_lg: $Lg))" }
+
 [IO.File]::WriteAllText("$ud\server\server_config\settings.ron", @"
 (
     gameserver_protocols: [Tcp(address: "0.0.0.0:$port")],
@@ -119,7 +124,7 @@ if ($Lieu -in "village", "campagne" -and -not $PSBoundParameters.ContainsKey("Se
     world_seed: $Seed,
     server_name: "Icebreaker - $Lieu",
     day_length: $DayLength,
-    map_file: Some(Generate((x_lg: $Lg, y_lg: $Lg))),
+    map_file: Some($carte),
 )
 "@, $utf8)
 [IO.File]::WriteAllText("$ud\server-cli\settings.ron", @"

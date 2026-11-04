@@ -326,6 +326,6 @@ puis vu en jeu par Flo le soir même : « c'est cool ».
 S.2, S.3 et D.1 restent dans `PLAN.md`.
 
 - [x] **S.1 Script de lancement Linux** — `icebreaker.sh`, même rôle que `icebreaker.ps1` (village, donjon), pour le
-  serveur de test (VPS Hetzner CX22, x86, 2 vCPU, 4 Go).
+  serveur de test (VPS Hetzner CAX11, ARM64, 2 vCPU, 4 Go).
   *Fin* : `./icebreaker.sh village` démarre un serveur qui écoute sur 14100.
   Village et donjon démarrent (Git Bash + serveur Windows) ; pas encore lancé sur un vrai Linux. — df6e34479d

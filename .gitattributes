@@ -17,3 +17,4 @@ assets/world/map/*.bin filter=lfs diff=lfs merge=lfs -text
 /CHANGELOG.md merge=union
 # Icebreaker : les scripts shell gardent leurs fins de ligne Unix, même extraits sous Windows.
 *.sh text eol=lf
+icebreaker-serveur/* text eol=lf

@@ -1,0 +1,20 @@
+# Icebreaker : un lieu de la campagne sur le serveur de test (PLAN.md S.2).
+# Posé par deployer.sh ; un service par lieu : icebreaker-veloren@campagne (village et donjons, décision 0016).
+[Unit]
+Description=Icebreaker sur Veloren : %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=veloren
+WorkingDirectory=/opt/icebreaker-veloren
+Environment=ICEBREAKER_SERVER=/opt/icebreaker-veloren/veloren-server-cli
+ExecStart=/opt/icebreaker-veloren/icebreaker.sh %i
+# SIGUSR1 : arrêt propre du serveur (sauvegarde des personnages).
+KillSignal=SIGUSR1
+TimeoutStopSec=60
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
