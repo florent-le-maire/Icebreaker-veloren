@@ -373,6 +373,8 @@ puis vu en jeu par Flo le soir même : « c'est cool ».
 - [x] **X.6 Anneau de verrouillage centré** — cause trouvée : les cercles sans position explicite étaient placés
   par conrod par rapport au widget dessiné avant ; posés en (0, 0) puis projetés ; `ancrage` et `rayon_anneau` dans
   `verrouillage.ron`. Testé (tests, compilation) ; centrage pas encore vu en jeu (sinon : régler `ancrage`). — 30ed3cd7b3
+- [x] **X.9 Panneau fermé pour de bon** (Flo, 2026-11-04) — fermé (croix ou Échap), le panneau n'est plus redemandé
+  chaque seconde ni rouvert par une réponse en route. Testé (compilation) ; pas encore vu en jeu.
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 

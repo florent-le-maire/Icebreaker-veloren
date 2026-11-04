@@ -728,6 +728,9 @@ pub type IcebreakerPanel = (
 pub enum Event {
     SendMessage(String),
     SendCommand(String, Vec<String>),
+    /// Icebreaker: the building's panel was closed (cross or Escape): stop
+    /// asking the server for it again.
+    IcebreakerPanelClosed,
 
     CharacterSelection,
     UseSlot {
@@ -4456,6 +4459,7 @@ impl Hud {
         }
         if icebreaker_close {
             self.icebreaker_panel = None;
+            self.events.push(Event::IcebreakerPanelClosed);
         }
         self.events.extend(icebreaker_command);
 
@@ -5375,6 +5379,7 @@ impl Hud {
                 } else if self.icebreaker_panel.is_some() {
                     // Icebreaker: Escape closes the building's panel first (X.3).
                     self.icebreaker_panel = None;
+                    self.events.push(Event::IcebreakerPanelClosed);
                 } else if self.show.trade {
                     self.events.push(Event::TradeAction(TradeAction::Decline));
                 } else {

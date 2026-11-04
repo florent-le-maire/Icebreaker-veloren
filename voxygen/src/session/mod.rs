@@ -408,8 +408,16 @@ impl SessionState {
                 client::Event::IcebreakerExpedition(expedition) => {
                     self.hud.icebreaker_expedition(expedition);
                 },
+                // Icebreaker: a panel asked for before it was closed (answer still
+                // on its way) does not open it again.
                 client::Event::IcebreakerPanel(title, lines, actions) => {
-                    self.hud.icebreaker_panel(Some((title, lines, actions)));
+                    if self
+                        .icebreaker_top_view
+                        .as_ref()
+                        .is_some_and(|view| view.last_click.is_some())
+                    {
+                        self.hud.icebreaker_panel(Some((title, lines, actions)));
+                    }
                 },
                 // Icebreaker: off to another place of the campaign, through the main
                 // menu, with the same character.
@@ -1856,6 +1864,13 @@ impl PlayState for SessionState {
                     HudEvent::SendMessage(msg) => {
                         // TODO: Handle result
                         self.client.borrow_mut().send_chat(msg);
+                    },
+                    // Icebreaker: the panel closed, it is not asked for every second
+                    // any more (else it opened again a second later).
+                    HudEvent::IcebreakerPanelClosed => {
+                        if let Some(view) = &mut self.icebreaker_top_view {
+                            view.last_click = None;
+                        }
                     },
                     HudEvent::SendCommand(name, args) => {
                         match run_command(self, global_state, &name, args) {
