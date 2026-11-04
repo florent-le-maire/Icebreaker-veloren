@@ -72,12 +72,17 @@ réglages dans `assets/icebreaker/grottes/grotte.ron` ; exemple de contrôle `wo
   niveau (sprites minables sur lesquels on marche). Testé : test de paliers (haut et fond disjoints, or au fond), test
   des classes (pioche), exemple sur 20 graines (0 problème, 2 à 23 filons par niveau), serveur lancé (graine 3,
   ossuaire). Pas vérifié en jeu : miner un filon à la pioche, changement d'arme. — 2a1589751b
-- [ ] **K.5 Habitants et victoire** — créatures par ambiance (gobelins, truffler, fungome / dodarock, cave_spider,
-  cave_troll / basilisk, blue_oni…) dans les poches et au bout des culs-de-sac, plus nombreuses en profondeur ;
-  un chef par ambiance (cave_troll, basilisk, ogre…) dans la poche la plus profonde ; `dungeon_mission` étendu au
-  plot pour que G.7 annonce « Mission accomplie » ; traces (tués, coffres) ; quelques coffres dans les culs-de-sac.
-  *Fin* : au client texte, `/goto` chez le chef puis `/explosion` → victoire ; 25 à 40 créatures par grotte (test
-  sur 20 graines).
+- [x] **K.5 Habitants et victoire** — créatures de Veloren par ambiance (`grotte.ron` → `population` et `creatures`,
+  `chef` de chaque ambiance : gobelins, truffler, fungome et troll des cavernes ; dodarock, araignée, salamandre et
+  basilic ; araignée, onis, chauve-souris et ogre) : 2 à 3 par poche plus 1 par niveau de profondeur, une au bout
+  d'un cul-de-sac sur deux, le chef au milieu de la poche la plus profonde ; coffres (`DungeonChest2`) au bout de
+  certains culs-de-sac ; `dungeon_mission` étendu au plot (chef, créatures, coffres, personne ne dort). L'exemple
+  vérifie que chaque habitant apparaît une fois, debout à un bloc près, et que les coffres sont posés. Testé : test
+  (20 graines : un chef au fond, 25 à 40 habitants en moyenne, entités connues), exemple sur 20 graines (0 problème,
+  25 à 45 habitants), serveur graine 7 (42 créatures, 2 coffres), client texte admin : `!jouer`, `/goto` chez le
+  chef, `/explosion 500` → « Mission accomplie : le chef du donjon est tombé ! Bilan : 16 créature(s) tuée(s) sur
+  42, 0 coffre(s) ouvert(s) sur 2. ». Pas encore joué à pied ; les culs-de-sac posent parfois la créature un bloc
+  trop haut ou trop bas (elle tombe ou ressort). — (hash)
 
 Plus tard : trous à sens unique et cordes (E.7), filons comme carburant de la foreuse (E.4, E.6), ressources à
 ramener (B.5, B.9), patrouilles (B.4), essaim qui sort des trous (E.15).
@@ -92,3 +97,20 @@ ramener (B.5, B.9), patrouilles (B.4), essaim qui sort des trous (E.15).
 1. **Ambiances** : trois dès K.3 (proposé, en données), ou une seule pour la démo ?
 2. **Lumière** : grotte sombre où la lanterne compte (`design/donjon.md`, torche), ou assez de roche luisante pour
   jouer sans ? Proposé : lisible sans lanterne pour la première version.
+3. **Message de victoire** : G.7 dit « le chef du donjon est tombé » aussi dans la grotte (texte commun de
+  `server/src/icebreaker_mission.rs`). Garder, ou un texte par lieu (« le chef de la grotte ») ?
+4. **Bêtes paisibles** : truffler, fungome et chauve-souris comptent dans le bilan des créatures tuées (elles font
+  partie des habitants). Les garder comme faune, ou ne compter que les agressives ?
+5. **Pioche** : en mains secondaires de chaque classe (on change d'arme pour miner). Préférable à une pioche dans le
+  sac ? La foreuse E.6 la remplacera-t-elle ?
+6. **Lumière et lisibilité** : K.3 à K.5 ne sont pas encore vus dans le vrai client ; le premier retour de jeu dira si
+  les ambiances se reconnaissent et si la roche luisante suffit (question 2).
+
+## Bilan de session (2026-11-04)
+
+Fait : K.3 (relief, décor, trois ambiances, tracé revu avec le contrôle à pied), K.4 (filons par profondeur, pioche
+des classes), K.5 (habitants, chef, coffres, victoire G.7 vérifiée au client texte). Le jalon K est complet pour la
+première version : on lance « Grotte », on descend, on tue des ennemis et le chef au fond.
+
+Reste : parcourir une grotte dans le vrai client (ambiances, lumière, caméra, filons à la pioche, changement d'arme),
+puis le contenu prévu plus tard (E.4 à E.8, B.4, B.5, B.9) selon les retours.

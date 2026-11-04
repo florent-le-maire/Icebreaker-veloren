@@ -5,13 +5,17 @@ use super::*;
 use crate::{
     Land,
     icebreaker::{
-        dungeon::settings::sprite_kind,
+        dungeon::settings::{SleepSettings, sprite_kind},
         grotte::{self, Grotte, SpeleothemKind, bump},
     },
     site::namegen::NameGen,
     util::{FastNoise, RandomField, Sampler},
 };
-use common::terrain::{Block, BlockKind};
+use common::{
+    generation::EntityInfo,
+    terrain::{Block, BlockKind},
+};
+use rand_chacha::ChaCha8Rng;
 use rand::prelude::*;
 use std::sync::Arc;
 use tracing::{error, info};
@@ -39,6 +43,24 @@ impl IcebreakerGrotte {
         Aabr {
             min: bounds.min.xy() - 4,
             max: bounds.max.xy() + 4,
+        }
+    }
+
+    /// What the mission counts (Icebreaker K.5): every inhabitant, the chief
+    /// as leader, the chests. No one sleeps in the cave.
+    pub fn mission_targets(&self) -> MissionTargets {
+        let grotte = &self.grotte;
+        MissionTargets {
+            leader: grotte.inhabitants.iter().find(|i| i.chief).map(|i| (i.pos, "chief".to_string())),
+            creatures: grotte.inhabitants.iter().map(|i| i.pos).collect(),
+            chests: grotte.chests.clone(),
+            sleepers: Vec::new(),
+            sleep: SleepSettings {
+                wake_radius: 0.0,
+                wake_radius_sneaking: 0.0,
+                alert_radius: 0.0,
+                zzz_interval: 1.0e9,
+            },
         }
     }
 }
@@ -175,6 +197,25 @@ impl Structure for IcebreakerGrotte {
                     pos.z <= axis_z(pos).round() as i32 - r as i32 && !pockets.iter().any(|p| p.contains_point(pos))
                 })
                 .fill(Fill::Block(rock));
+        }
+        // The inhabitants and the chests (Icebreaker K.5). The painter's area
+        // includes its far edge, shared with the next chunk: spawn there only
+        // once.
+        let area = painter.render_aabr();
+        for (i, inhabitant) in grotte.inhabitants.iter().enumerate() {
+            let pos = inhabitant.pos;
+            if pos.x == area.max.x || pos.y == area.max.y {
+                continue;
+            }
+            let mut rng = ChaCha8Rng::seed_from_u64(i as u64);
+            painter.spawn(
+                EntityInfo::at(pos.as_::<f32>() + Vec3::new(0.5, 0.5, 0.0)).with_asset_expect(&inhabitant.asset, &mut rng, None),
+            );
+        }
+        if let Some(chest) = sprite_kind(&grotte.chest) {
+            for (i, pos) in grotte.chests.iter().enumerate() {
+                painter.rotated_sprite(*pos, chest, (i % 4) as u8 * 2);
+            }
         }
     }
 }

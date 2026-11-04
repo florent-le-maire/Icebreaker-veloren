@@ -262,6 +262,7 @@ pub fn village_inhabitants() -> Option<u32> {
 pub fn dungeon_mission(site: &Site) -> Option<crate::site::plot::MissionTargets> {
     site.plots().find_map(|plot| match plot.kind() {
         PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.mission_targets()),
+        PlotKind::IcebreakerGrotte(grotte) => Some(grotte.mission_targets()),
         _ => None,
     })
 }
@@ -372,11 +373,18 @@ pub fn check_generated_grotte(
     let key_of = |wpos: vek::Vec2<i32>| wpos.map2(chunk_size, |e, s| e.div_euclid(s));
     let (low, high) = (key_of(bounds.min), key_of(bounds.max));
     let mut chunks = HashMap::new();
+    let mut spawned: Vec<vek::Vec3<f32>> = Vec::new();
     for x in low.x..=high.x {
         for y in low.y..=high.y {
             let key = vek::Vec2::new(x, y);
-            let chunk = world.generate_chunk(index, key, None, || false, None).ok().map(|(c, _)| c);
-            chunks.insert(key, chunk);
+            let generated = world.generate_chunk(index, key, None, || false, None).ok();
+            if let Some((_, supplement)) = &generated {
+                spawned.extend(supplement.entity_spawns.iter().flat_map(|spawn| match spawn {
+                    common::generation::EntitySpawn::Entity(e) => vec![e.pos],
+                    common::generation::EntitySpawn::Group(g) => g.iter().map(|e| e.pos).collect(),
+                }));
+            }
+            chunks.insert(key, generated.map(|(chunk, _)| chunk));
         }
     }
     let hollow = |wpos: vek::Vec3<i32>| {
@@ -505,6 +513,27 @@ pub fn check_generated_grotte(
             format!("{:?} → {:?} (r {}, pente {:.2})", b.a, b.b, b.radius, (b.a.z - b.b.z).abs() as f32 / along)
         })
         .collect();
+    // The inhabitants (K.5): each one stands on the floor and appears once;
+    // each chest is drawn.
+    let mut appeared = 0;
+    for inhabitant in &grotte.inhabitants {
+        let n = spawned.iter().filter(|p| p.map(|e| e.floor() as i32) == inhabitant.pos).count();
+        appeared += n;
+        if n != 1 {
+            problems.push(format!("habitant {} apparu {n} fois en {:?}", inhabitant.asset, inhabitant.pos));
+        }
+        // The bores round their floor as they are drawn: a block off is fine,
+        // the creature falls or is pushed out (the mission knows the position).
+        if ![0, 1, -1].iter().any(|dz| standing(inhabitant.pos + vek::Vec3::unit_z() * *dz)) {
+            problems.push(format!("habitant {} dans la roche ou en l'air en {:?}", inhabitant.asset, inhabitant.pos));
+        }
+    }
+    let chest = crate::icebreaker::dungeon::settings::sprite_kind(&grotte.chest);
+    for pos in &grotte.chests {
+        if block_at(*pos).and_then(|b| b.get_sprite()) != chest {
+            problems.push(format!("coffre absent en {pos:?}"));
+        }
+    }
     // The ores (K.4): one stands on them (a mineable sprite is solid); counted
     // by the level of the pocket they lie in.
     let mut ores = vec![0usize; grotte.pockets.iter().map(|p| p.level + 1).max().unwrap_or(1) as usize];
@@ -520,12 +549,15 @@ pub fn check_generated_grotte(
         problems.push("aucun filon sur lequel marcher".into());
     }
     let summary = format!(
-        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, filons par niveau {:?}\nboyaux :\n  {}",
+        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, filons par niveau {:?}, {} habitant(s) ({appeared} \
+         apparus), {} coffre(s)\nboyaux :\n  {}",
         grotte.summary,
         grotte.mouth,
         plot.entrance(),
         seen.len(),
         ores,
+        grotte.inhabitants.len(),
+        grotte.chests.len(),
         bores.join("\n  ")
     );
     Some((summary, problems))

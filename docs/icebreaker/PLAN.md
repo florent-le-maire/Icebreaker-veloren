@@ -250,7 +250,7 @@ sans décor, escaliers qui débouchent sur un mur. Causes trouvées dans le code
 soit l'échelle ; `place_child` ajoute la taille de la salle à la distance dès que la porte ne fait pas face ;
 `route` ne vérifie pas la case derrière le haut d'un escalier ; peuplement des salles seulement, `default_density:
 "low"` ; aucun décor. Réglages dans `generation.ron` ; worktree `Veloren-donjon`. Ordre : F.1 à F.6, F.7 si besoin.
-Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (jalon K), après F.
+Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (jalon K, après F ; K.1 à K.5 faits le 2026-11-04, reste à voir dans le vrai client).
 
 - [x] **F.1 Échelle** — `cell_size: 7`, `level_height: 7` (6 blocs libres, couloirs de 7 ; passer à 8/8 si la caméra
   sort encore) ; portes et mur de porte à clé hauts de `h - 2` sous un linteau, torche à `h - 2`, serrure à mi-hauteur,

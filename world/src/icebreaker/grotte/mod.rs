@@ -22,6 +22,8 @@ pub struct Settings {
     pub relief: ReliefSettings,
     /// The ores (Icebreaker K.4).
     pub filons: VeinSettings,
+    /// The inhabitants (Icebreaker K.5).
+    pub population: PopulationSettings,
     /// The moods of the cave (Icebreaker K.3), by name; one is drawn per cave.
     pub ambiances: BTreeMap<String, Ambiance>,
 }
@@ -119,6 +121,20 @@ impl VeinSettings {
     }
 }
 
+/// The inhabitants (Icebreaker K.5): how many, and where the chests lie.
+#[derive(Clone, Debug, Deserialize)]
+pub struct PopulationSettings {
+    /// Creatures per pocket (min, max), at the entrance level...
+    pub par_poche: (i32, i32),
+    /// ...plus this many per level of depth.
+    pub par_niveau: i32,
+    /// Chance of a creature at the end of a dead end, and of a chest there.
+    pub trous: f32,
+    pub coffres: f32,
+    /// The chest sprite.
+    pub coffre: String,
+}
+
 /// A mood of the cave (Icebreaker K.3): what its floors, walls, concretions
 /// and sprites are made of.
 #[derive(Clone, Debug, Deserialize)]
@@ -136,6 +152,9 @@ pub struct Ambiance {
     pub stalagmites: (i32, i32),
     pub stalactites: (i32, i32),
     pub cristaux: (i32, i32),
+    /// The creatures living here (entities of Veloren), and their chief (K.5).
+    pub creatures: Vec<String>,
+    pub chef: String,
 }
 
 impl Settings {
@@ -203,6 +222,23 @@ impl Settings {
             }
             if !(0.0..=1.0).contains(&ambiance.lueur_chance) {
                 errors.push(format!("ambiances.{name} : lueur_chance entre 0 et 1"));
+            }
+        }
+        let pop = &settings.population;
+        if pop.par_poche.0 < 0
+            || pop.par_poche.1 < pop.par_poche.0
+            || pop.par_niveau < 0
+            || !(0.0..=1.0).contains(&pop.trous)
+            || !(0.0..=1.0).contains(&pop.coffres)
+        {
+            errors.push("population : par_poche (min, max) avec 0 ≤ min ≤ max, par_niveau ≥ 0, trous et coffres entre 0 et 1".into());
+        }
+        if sprite_kind(&pop.coffre).is_none() {
+            errors.push(format!("population : coffre inconnu « {} »", pop.coffre));
+        }
+        for (name, ambiance) in &settings.ambiances {
+            if ambiance.creatures.is_empty() || ambiance.chef.is_empty() {
+                errors.push(format!("ambiances.{name} : creatures (au moins une) et chef"));
             }
         }
         if errors.is_empty() { Ok(settings) } else { Err(errors.join(" ; ")) }
@@ -282,6 +318,16 @@ pub enum SpeleothemKind {
     Crystal,
 }
 
+/// An inhabitant of the cave (Icebreaker K.5): where it appears (the block
+/// its feet are in) and which entity of Veloren it is.
+#[derive(Clone, Debug)]
+pub struct Inhabitant {
+    pub pos: Vec3<i32>,
+    pub asset: String,
+    /// The leader: killing it wins the mission (G.7).
+    pub chief: bool,
+}
+
 /// A generated cave, ready to be drawn.
 #[derive(Clone, Debug)]
 pub struct Grotte {
@@ -301,6 +347,11 @@ pub struct Grotte {
     pub look: Ambiance,
     pub relief: ReliefSettings,
     pub filons: VeinSettings,
+    /// The inhabitants (Icebreaker K.5), the chief among them.
+    pub inhabitants: Vec<Inhabitant>,
+    /// Where the chests lie, and their sprite.
+    pub chests: Vec<Vec3<i32>>,
+    pub chest: String,
     pub summary: String,
 }
 
@@ -643,17 +694,79 @@ pub fn generate(
         }
     }
 
+    // Inhabitants (K.5): creatures of the mood in every pocket, more of them
+    // with depth, away from the concretions and from each other; one in some
+    // dead ends, with a chest; the chief in the middle of the deepest pocket.
+    let pop = &settings.population;
+    let mut inhabitants: Vec<Inhabitant> = Vec::new();
+    let mut chests = Vec::new();
+    let pick = |rng: &mut ChaCha8Rng| look.creatures[rng.random_range(0..look.creatures.len())].clone();
+    for pocket in &pockets {
+        let count = roll(&mut rng, pop.par_poche).max(0) + pocket.level * pop.par_niveau;
+        for _ in 0..count {
+            for _ in 0..10 {
+                let angle = rng.random_range(0.0..std::f32::consts::TAU);
+                let reach = rng.random_range(0.15..0.7);
+                let xy = pocket.center.xy()
+                    + Vec2::new(
+                        (angle.cos() * reach * pocket.radius.x as f32).round() as i32,
+                        (angle.sin() * reach * pocket.radius.y as f32).round() as i32,
+                    );
+                let clear = speleothems.iter().all(|s| {
+                    s.kind == SpeleothemKind::Stalactite || (s.base.xy() - xy).map(|e| e.abs()).reduce_max() > 2
+                }) && inhabitants.iter().all(|i| i.pos.xy() != xy);
+                if !clear {
+                    continue;
+                }
+                let asset = pick(&mut rng);
+                inhabitants.push(Inhabitant {
+                    pos: xy.with_z(pocket.floor_z(xy, relief.bosses) + 1),
+                    asset,
+                    chief: false,
+                });
+                break;
+            }
+        }
+    }
+    for bore in &dead_ends {
+        let along = (bore.b - bore.a).xy().as_::<f32>();
+        let dir = along.try_normalized().unwrap_or(Vec2::unit_x());
+        // Where one stands in the tube, `back` blocks before its end.
+        let stand = |back: f32| {
+            let xy = bore.b.xy().as_::<f32>() - dir * back;
+            let t = ((xy - bore.a.xy().as_::<f32>()).magnitude() / along.magnitude().max(1.0)).clamp(0.0, 1.0);
+            let axis = bore.a.z as f32 + t * (bore.b.z - bore.a.z) as f32;
+            xy.map(|e| e.round() as i32).with_z(axis.round() as i32 - (bore.radius as i32 - 1))
+        };
+        if rng.random_bool(pop.trous as f64) {
+            let asset = pick(&mut rng);
+            inhabitants.push(Inhabitant { pos: stand(3.0), asset, chief: false });
+        }
+        if rng.random_bool(pop.coffres as f64) {
+            chests.push(stand(1.0));
+        }
+    }
+    if let Some(deep) = pockets.iter().min_by_key(|p| p.center.z) {
+        inhabitants.push(Inhabitant {
+            pos: deep.center.xy().with_z(deep.floor_z(deep.center.xy(), relief.bosses) + 1),
+            asset: look.chef.clone(),
+            chief: true,
+        });
+    }
+
     let levels = pockets.iter().map(|p| p.level).max().unwrap_or(0) + 1;
     Grotte {
         mouth,
         dir,
         summary: format!(
             "grotte {ambiance}, graine {seed} : {} poche(s) sur {levels} niveau(x), {} boyau(x) dont {loops} boucle(s), {} \
-             cul(s)-de-sac, {} concrétion(s), fond en {:?}",
+             cul(s)-de-sac, {} concrétion(s), {} habitant(s), {} coffre(s), fond en {:?}",
             pockets.len(),
             bores.len(),
             dead_ends.len(),
             speleothems.len(),
+            inhabitants.len(),
+            chests.len(),
             pockets.iter().min_by_key(|p| p.center.z).map(|p| p.center)
         ),
         pockets,
@@ -664,6 +777,9 @@ pub fn generate(
         look,
         relief: relief.clone(),
         filons: settings.filons.clone(),
+        inhabitants,
+        chests,
+        chest: settings.population.coffre.clone(),
     }
 }
 
@@ -766,5 +882,33 @@ mod tests {
         assert!(!top.is_empty() && !bottom.is_empty(), "pas de filon");
         assert!(top.is_disjoint(&bottom), "les mêmes minerais en haut et au fond : {top:?} / {bottom:?}");
         assert!(bottom.contains(&SpriteKind::Gold) && !top.contains(&SpriteKind::Gold), "l'or n'est pas au fond");
+    }
+
+    #[test]
+    fn the_cave_is_inhabited() {
+        use common::assets::AssetExt;
+        let settings = Settings::load().unwrap();
+        let mouth = Vec3::new(1000, 1000, 200);
+        let mut total = 0;
+        for seed in 1..=20 {
+            let grotte = generate(&settings, seed, mouth, None, &|_| mouth.z);
+            let chiefs: Vec<&Inhabitant> = grotte.inhabitants.iter().filter(|i| i.chief).collect();
+            assert_eq!(chiefs.len(), 1, "graine {seed} : un seul chef");
+            assert!(grotte.deepest().aabb().contains_point(chiefs[0].pos), "graine {seed} : le chef n'est pas au fond");
+            let bounds = grotte.bounds();
+            for i in &grotte.inhabitants {
+                assert!(bounds.contains_point(i.pos), "graine {seed} : habitant hors de la grotte en {:?}", i.pos);
+            }
+            assert!(grotte.inhabitants.len() >= 15, "graine {seed} : {} habitant(s) seulement", grotte.inhabitants.len());
+            total += grotte.inhabitants.len();
+        }
+        let mean = total as f32 / 20.0;
+        assert!((25.0..=40.0).contains(&mean), "{mean} habitants par grotte en moyenne");
+        // Every creature named in the data is an entity of Veloren.
+        for ambiance in settings.ambiances.values() {
+            for asset in ambiance.creatures.iter().chain(std::iter::once(&ambiance.chef)) {
+                common::assets::Ron::<common::generation::EntityConfig>::load(asset).unwrap_or_else(|e| panic!("{asset} : {e}"));
+            }
+        }
     }
 }

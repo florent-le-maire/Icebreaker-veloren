@@ -25,6 +25,10 @@
     // Filons (K.4) : minerais en sprites minables (à la pioche) au pied des parois des poches : chance par bloc du
     // bord du sol (bord : à partir de quelle part du rayon, au carré, le sol compte comme le bord) ; minerais par
     // niveau de profondeur (nom de sprite, poids), le dernier palier servant aux niveaux plus profonds.
+    // Habitants (K.5) : dans chaque poche, par_poche créatures (min, max) plus par_niveau par niveau de profondeur ;
+    // au bout de chaque cul-de-sac, une créature avec la chance trous et un coffre (sprite coffre) avec la chance
+    // coffres ; le chef de l'ambiance dans la poche la plus profonde. Les créatures sont celles de l'ambiance.
+    population: (par_poche: (2, 3), par_niveau: 1, trous: 0.5, coffres: 0.3, coffre: "DungeonChest2"),
     filons: (
         chance: 0.06,
         bord: 0.55,
@@ -36,24 +40,31 @@
     ),
     // Ambiances (K.3) : une par grotte, tirée par la graine ou demandée (-Ambiance du lanceur, variable
     // ICEBREAKER_GROTTE_AMBIANCE). roche : couleur du sol ; lueur : couleur de la roche luisante et sa part dans le
-    // sol ; sol et plafond : sprites de Veloren (nom, chance par bloc) ; stalagmites, stalactites, cristaux par poche.
+    // sol ; sol et plafond : sprites de Veloren (nom, chance par bloc) ; stalagmites, stalactites, cristaux par poche ;
+    // creatures et chef (K.5) : entités de Veloren.
     ambiances: {
         "champignons": (
             roche: (70, 80, 60), lueur: (40, 110, 180), lueur_chance: 0.04,
             sol: [("GlowMushroom", 0.04), ("CaveMushroom", 0.03), ("Mushroom", 0.02), ("GrassBlueMedium", 0.03), ("SporeReed", 0.02)],
             plafond: [("MycelBlue", 0.05), ("CeilingMushroom", 0.03)],
+            creatures: ["common.entity.wild.aggressive.goblin_thug", "common.entity.wild.aggressive.goblin_ruffian", "common.entity.wild.aggressive.goblin_chucker", "common.entity.wild.peaceful.truffler", "common.entity.wild.peaceful.fungome"],
+            chef: "common.entity.wild.aggressive.cave_troll",
             stalagmites: (2, 5), stalactites: (3, 8), cristaux: (0, 1),
         ),
         "cristaux": (
             roche: (80, 80, 95), lueur: (150, 120, 230), lueur_chance: 0.06,
             sol: [("CrystalLow", 0.03), ("CrystalHigh", 0.015), ("Amethyst", 0.005), ("Stones", 0.01)],
             plafond: [("CrystalHigh", 0.03)],
+            creatures: ["common.entity.wild.aggressive.dodarock", "common.entity.wild.aggressive.cave_spider", "common.entity.wild.aggressive.cave_salamander"],
+            chef: "common.entity.wild.aggressive.basilisk",
             stalagmites: (1, 3), stalactites: (2, 5), cristaux: (3, 7),
         ),
         "ossuaire": (
             roche: (75, 70, 60), lueur: (200, 150, 60), lueur_chance: 0.02,
             sol: [("Bones", 0.05), ("EnsnaringWeb", 0.03), ("Stones", 0.02), ("Mud", 0.01), ("DeadBush", 0.01)],
             plafond: [("EnsnaringWeb", 0.03)],
+            creatures: ["common.entity.wild.aggressive.cave_spider", "common.entity.wild.aggressive.blue_oni", "common.entity.wild.aggressive.red_oni", "common.entity.wild.peaceful.bat"],
+            chef: "common.entity.wild.aggressive.ogre",
             stalagmites: (3, 7), stalactites: (4, 9), cristaux: (0, 0),
         ),
     },
