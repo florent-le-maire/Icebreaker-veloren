@@ -71,7 +71,7 @@ réglages dans `assets/icebreaker/grottes/grotte.ron` ; exemple de contrôle `wo
   de chaque classe (`classes/*.ron`, `inactive_hands` : on change d'arme pour miner). L'exemple compte les filons par
   niveau (sprites minables sur lesquels on marche). Testé : test de paliers (haut et fond disjoints, or au fond), test
   des classes (pioche), exemple sur 20 graines (0 problème, 2 à 23 filons par niveau), serveur lancé (graine 3,
-  ossuaire). Pas vérifié en jeu : miner un filon à la pioche, changement d'arme. — (hash)
+  ossuaire). Pas vérifié en jeu : miner un filon à la pioche, changement d'arme. — 2a1589751b
 - [ ] **K.5 Habitants et victoire** — créatures par ambiance (gobelins, truffler, fungome / dodarock, cave_spider,
   cave_troll / basilisk, blue_oni…) dans les poches et au bout des culs-de-sac, plus nombreuses en profondeur ;
   un chef par ambiance (cave_troll, basilisk, ogre…) dans la poche la plus profonde ; `dungeon_mission` étendu au
