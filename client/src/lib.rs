@@ -1450,6 +1450,20 @@ impl Client {
                 return;
             }
 
+            // Icebreaker : le sac d'un mort se fouille (interaction de quelques secondes, T.3).
+            if self
+                .state
+                .read_storage::<comp::PickupItem>()
+                .get(entity)
+                .is_some_and(|item| common::icebreaker_mort::est_sac(item.item()))
+            {
+                self.send_msg(ClientGeneral::ControlEvent(ControlEvent::InteractWith {
+                    target: uid,
+                    kind: common::interaction::InteractionKind::IcebreakerFouillerSac,
+                }));
+                return;
+            }
+
             self.send_msg(ClientGeneral::ControlEvent(ControlEvent::InventoryEvent(
                 InventoryEvent::Pickup(uid),
             )));

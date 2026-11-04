@@ -22,3 +22,6 @@ icebreaker-fantome-accueil = You arrive as a ghost on the village square: the "V
 icebreaker-vue-aide = Village view: click a building ({ $key } to go back)
 icebreaker-expedition-pret = ready
 icebreaker-a-terre-reste = Death in { $secondes } s
+icebreaker-sac_du_mort = Bag of the dead
+    .desc = What a fallen companion was carrying.
+icebreaker-fouiller-sac = Search the bag

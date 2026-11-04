@@ -3739,6 +3739,11 @@
         "voxel.armor.misc.bag.reliable_backpack",
         (0.0, 0.0, 0.0), (-75.0, 20.0, 5.0), 0.9,
     ),
+    // Icebreaker : sac du mort (T.3)
+    Simple("common.items.icebreaker.sac_du_mort"): VoxTrans(
+        "voxel.armor.misc.bag.reliable_backpack",
+        (0.0, 0.0, 0.0), (-75.0, 20.0, 5.0), 0.9,
+    ),
     Simple("common.items.armor.misc.bag.reliable_leather_pack"): VoxTrans(
         "voxel.armor.misc.bag.reliable_leather_pack",
         (0.0, 0.0, 0.0), (-75.0, 20.0, 5.0), 0.9,

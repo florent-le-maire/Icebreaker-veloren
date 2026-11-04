@@ -68,6 +68,9 @@ pub enum InventoryManip {
     },
     SwapEquippedWeapons,
     Delete(InvSlotId, NonZeroU32),
+    /// Icebreaker : prendre le contenu du sac d'un mort, au bout de la fouille (T.3) ; ne
+    /// vient que de l'état `Interact`, jamais directement du client.
+    IcebreakerFouillerSac(Uid),
 }
 
 impl From<InventoryEvent> for InventoryManip {

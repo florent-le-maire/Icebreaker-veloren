@@ -1,0 +1,14 @@
+// Icebreaker : le sac laissé par un joueur mort en expédition (jalon T, T.3). Ses places gardent
+// l'inventaire du mort (hors équipement porté) ; un allié le fouille (E, `mort.ron` → `duree_fouille`)
+// pour en prendre le contenu. On ne le ramasse pas.
+ItemDef(
+    legacy_name: "Bag of the dead",
+    legacy_description: "What a fallen companion was carrying.",
+    kind: Armor((
+        kind: Bag,
+        stats: Direct(()),
+    )),
+    quality: Common,
+    tags: [],
+    slots: 250,
+)

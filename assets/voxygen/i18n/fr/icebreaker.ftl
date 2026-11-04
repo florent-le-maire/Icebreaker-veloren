@@ -22,3 +22,6 @@ icebreaker-fantome-accueil = Vous arrivez en fantôme sur la place du village : 
 icebreaker-vue-aide = Vue du village : cliquer sur un bâtiment ({ $key } pour revenir)
 icebreaker-expedition-pret = prêt
 icebreaker-a-terre-reste = Mort dans { $secondes } s
+icebreaker-sac_du_mort = Sac du mort
+    .desc = Ce que portait un compagnon tombé.
+icebreaker-fouiller-sac = Fouiller le sac

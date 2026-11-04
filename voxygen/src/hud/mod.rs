@@ -2237,7 +2237,12 @@ impl Hud {
                     &self.fonts,
                     vec![(
                         Some(GameInput::Interact),
-                        i18n.get_msg("hud-pick_up").to_string(),
+                        // Icebreaker : le sac d'un mort se fouille (T.3).
+                        if common::icebreaker_mort::est_sac(item.item()) {
+                            i18n.get_msg("icebreaker-fouiller-sac").to_string()
+                        } else {
+                            i18n.get_msg("hud-pick_up").to_string()
+                        },
                         overitem::TEXT_COLOR,
                     )],
                 )

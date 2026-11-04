@@ -1,13 +1,14 @@
 #[cfg(feature = "worldgen")] use crate::rtsim;
 use crate::icebreaker_slots::IcebreakerSlots;
 use common::{
-    comp::{Player, Pos},
+    comp::{PickupItem, Player, Pos},
+    event::{DeleteEvent, EventBus},
     terrain::{TerrainChunkSize, TerrainGrid},
     vol::RectVolSize,
 };
 use common_ecs::{Job, Origin, Phase, System};
 use common_state::TerrainChanges;
-use specs::{Join, ReadStorage, Write, WriteExpect};
+use specs::{Entities, Join, Read, ReadStorage, Write, WriteExpect};
 use tracing::info;
 use vek::*;
 
@@ -30,6 +31,8 @@ impl<'a> System<'a> for Sys {
         WriteExpect<'a, TerrainGrid>,
         Write<'a, TerrainChanges>,
         RtSimData<'a>,
+        // Icebreaker : les sacs des morts disparaissent à la remise à neuf (T.3).
+        (Entities<'a>, ReadStorage<'a, PickupItem>, Read<'a, EventBus<DeleteEvent>>),
     );
 
     const NAME: &'static str = "icebreaker_slots";
@@ -39,7 +42,15 @@ impl<'a> System<'a> for Sys {
     #[cfg_attr(not(feature = "worldgen"), expect(unused_variables, unused_mut))]
     fn run(
         _job: &mut Job<Self>,
-        (mut slots, players, positions, mut terrain, mut terrain_changes, mut rtsim): Self::SystemData,
+        (
+            mut slots,
+            players,
+            positions,
+            mut terrain,
+            mut terrain_changes,
+            mut rtsim,
+            (entities, pickup_items, delete_bus),
+        ): Self::SystemData,
     ) {
         if slots.0.is_empty() {
             return;
@@ -55,6 +66,15 @@ impl<'a> System<'a> for Sys {
                 let forgotten = rtsim.forget_dungeon_traces(|wpos| slot.holds(wpos.xy().as_()));
                 #[cfg(not(feature = "worldgen"))]
                 let forgotten = (0, 0);
+                let mut delete = delete_bus.emitter();
+                for (sac, _, _) in (&entities, &pickup_items, &positions)
+                    .join()
+                    .filter(|(_, item, pos)| {
+                        common::icebreaker_mort::est_sac(item.item()) && slot.holds(pos.0.xy())
+                    })
+                {
+                    delete.emit(DeleteEvent(sac));
+                }
                 let chunk = |wpos: Vec2<f32>| {
                     wpos.as_::<i32>()
                         .map2(TerrainChunkSize::RECT_SIZE, |e, sz| e.div_euclid(sz as i32))

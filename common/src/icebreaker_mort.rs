@@ -25,6 +25,17 @@ impl Default for IcebreakerMort {
     }
 }
 
+/// L'objet « sac du mort » posé au sol à la mort d'un joueur en expédition (T.3).
+pub const SAC_DU_MORT: &str = "common.items.icebreaker.sac_du_mort";
+
+/// `item` est un sac de mort : il se fouille, il ne se ramasse pas.
+pub fn est_sac(item: &crate::comp::Item) -> bool {
+    matches!(
+        item.item_definition_id(),
+        crate::comp::item::ItemDefinitionId::Simple(id) if id == SAC_DU_MORT
+    )
+}
+
 impl IcebreakerMort {
     /// Réglages lus dans `assets/icebreaker/mort.ron` (valeurs par défaut si le fichier manque).
     pub fn actuel() -> Self {

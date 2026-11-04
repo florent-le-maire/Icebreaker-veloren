@@ -159,6 +159,13 @@ impl CharacterBehavior for Data {
                                         });
                                     },
                                     crate::interaction::InteractionKind::Pet => {},
+                                    // Icebreaker : le contenu du sac passe au fouilleur (T.3).
+                                    crate::interaction::InteractionKind::IcebreakerFouillerSac => {
+                                        output_events.emit_server(InventoryManipEvent(
+                                            data.entity,
+                                            InventoryManip::IcebreakerFouillerSac(target),
+                                        ));
+                                    },
                                 },
                                 InteractKind::Sprite { pos, kind } => {
                                     let inv_manip = InventoryManip::Collect {
@@ -241,6 +248,7 @@ impl crate::interaction::InteractionKind {
         match self {
             Self::HelpDowned => Some(0.1),
             Self::Pet => Some(0.7),
+            Self::IcebreakerFouillerSac => Some(0.1),
         }
     }
 
@@ -254,6 +262,14 @@ impl crate::interaction::InteractionKind {
             Self::Pet => (
                 Duration::from_secs_f32(0.0),
                 None,
+                Duration::from_secs_f32(0.0),
+            ),
+            // Icebreaker : durée de la fouille dans `mort.ron` (T.3).
+            Self::IcebreakerFouillerSac => (
+                Duration::from_secs_f32(0.0),
+                Some(Duration::from_secs_f32(
+                    crate::icebreaker_mort::IcebreakerMort::actuel().duree_fouille,
+                )),
                 Duration::from_secs_f32(0.0),
             ),
         }

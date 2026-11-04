@@ -8,8 +8,8 @@ use specs::{
 };
 
 use crate::{
-    comp::{Alignment, CharacterState, Health, Pos},
-    consts::{MAX_INTERACT_RANGE, MAX_MOUNT_RANGE},
+    comp::{Alignment, CharacterState, Health, PickupItem, Pos},
+    consts::{MAX_INTERACT_RANGE, MAX_MOUNT_RANGE, MAX_PICKUP_RANGE},
     link::{Is, Link, LinkHandle, Role},
     uid::{IdMaps, Uid},
 };
@@ -46,6 +46,8 @@ impl Component for Interactors {
 pub enum InteractionKind {
     HelpDowned,
     Pet,
+    /// Icebreaker : fouiller le sac d'un mort (T.3).
+    IcebreakerFouillerSac,
 }
 
 // TODO: Do we want to use this for sprite interactions too?
@@ -81,6 +83,12 @@ pub fn can_pet(pos: Pos, target_pos: Pos, target_alignment: Option<&Alignment>) 
     within_distance && valid_alignment
 }
 
+/// Icebreaker : à portée d'un sac de mort (T.3).
+pub fn can_fouiller_sac(pos: Pos, target_pos: Pos, item: Option<&PickupItem>) -> bool {
+    pos.0.distance_squared(target_pos.0) <= MAX_PICKUP_RANGE.powi(2)
+        && item.is_some_and(|item| crate::icebreaker_mort::est_sac(item.item()))
+}
+
 impl Link for Interaction {
     type CreateData<'a> = (
         Read<'a, IdMaps>,
@@ -90,6 +98,7 @@ impl Link for Interaction {
         ReadStorage<'a, Health>,
         ReadStorage<'a, Pos>,
         ReadStorage<'a, Alignment>,
+        ReadStorage<'a, PickupItem>,
     );
     type DeleteData<'a> = (
         Read<'a, IdMaps>,
@@ -107,13 +116,21 @@ impl Link for Interaction {
         ReadStorage<'a, CharacterState>,
         ReadStorage<'a, Pos>,
         ReadStorage<'a, Alignment>,
+        ReadStorage<'a, PickupItem>,
     );
 
     fn create(
         this: &crate::link::LinkHandle<Self>,
-        (id_maps, is_interactors, interactors, character_states, healths, positions, alignments): &mut Self::CreateData<
-            '_,
-        >,
+        (
+            id_maps,
+            is_interactors,
+            interactors,
+            character_states,
+            healths,
+            positions,
+            alignments,
+            pickup_items,
+        ): &mut Self::CreateData<'_>,
     ) -> Result<(), Self::Error> {
         let entity = |uid: Uid| id_maps.uid_entity(uid);
 
@@ -135,6 +152,9 @@ impl Link for Interaction {
                         can_help_downed(*pos, *target_pos, healths.get(target))
                     },
                     InteractionKind::Pet => can_pet(*pos, *target_pos, alignments.get(target)),
+                    InteractionKind::IcebreakerFouillerSac => {
+                        can_fouiller_sac(*pos, *target_pos, pickup_items.get(target))
+                    },
                 }
             {
                 if let Some(mut character_state) = character_states.get_mut(interactor) {
@@ -188,6 +208,7 @@ impl Link for Interaction {
             character_states,
             positions,
             alignments,
+            pickup_items,
         ): &mut Self::PersistData<'_>,
     ) -> bool {
         let entity = |uid: Uid| id_maps.uid_entity(uid);
@@ -208,6 +229,9 @@ impl Link for Interaction {
                     can_help_downed(*pos, *target_pos, healths.get(target))
                 },
                 InteractionKind::Pet => can_pet(*pos, *target_pos, alignments.get(target)),
+                InteractionKind::IcebreakerFouillerSac => {
+                    can_fouiller_sac(*pos, *target_pos, pickup_items.get(target))
+                },
             }
             && let Some(CharacterState::Interact(crate::states::interact::Data {
                 static_data:

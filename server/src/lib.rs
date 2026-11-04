@@ -22,6 +22,7 @@ pub mod icebreaker_charrette;
 pub mod icebreaker_classes;
 pub mod icebreaker_expedition;
 pub mod icebreaker_mission;
+pub mod icebreaker_mort;
 pub mod icebreaker_registre;
 pub mod icebreaker_return;
 pub mod icebreaker_services;

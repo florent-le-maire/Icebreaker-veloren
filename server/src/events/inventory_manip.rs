@@ -181,6 +181,14 @@ impl ServerEvent for InventoryManipEvent {
                         debug!("Failed to get entity for item Uid: {}", pickup_uid);
                         continue;
                     };
+                    // Icebreaker : le sac d'un mort se fouille, il ne se ramasse pas (T.3).
+                    if data
+                        .items
+                        .get(item_entity)
+                        .is_some_and(|item| common::icebreaker_mort::est_sac(item.item()))
+                    {
+                        continue;
+                    }
                     let entity_cylinder = get_cylinder(entity);
 
                     // FIXME: Raycast so we can't pick up items through walls.
@@ -1158,6 +1166,20 @@ impl ServerEvent for InventoryManipEvent {
                 },
                 comp::InventoryManip::Delete(slot, amount) => {
                     let _ = inventory.take_amount(slot, amount, &data.ability_map, &data.msm);
+                },
+                // Icebreaker : fin de la fouille du sac d'un mort (T.3).
+                comp::InventoryManip::IcebreakerFouillerSac(sac_uid) => {
+                    if let Some(sac) = data.id_maps.uid_entity(sac_uid)
+                        && within_pickup_range(get_cylinder(entity), || get_cylinder(sac))
+                        && let Some(mut pickup) = data.items.get_mut(sac)
+                        && common::icebreaker_mort::est_sac(pickup.item())
+                        && crate::icebreaker_mort::fouiller(
+                            pickup.icebreaker_item_mut(),
+                            &mut inventory,
+                        )
+                    {
+                        emitters.emit(DeleteEvent(sac));
+                    }
                 },
             }
             if data.trades.in_mutable_trade(uid) {

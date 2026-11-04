@@ -1515,6 +1515,10 @@
         Simple(
             "common.items.armor.misc.bag.reliable_backpack",
         ): "armor-misc-bag-reliable_backpack",
+        // Icebreaker : sac du mort (T.3)
+        Simple(
+            "common.items.icebreaker.sac_du_mort",
+        ): "icebreaker-sac_du_mort",
         Simple(
             "common.items.armor.misc.bag.reliable_leather_pack",
         ): "armor-misc-bag-reliable_leather_pack",

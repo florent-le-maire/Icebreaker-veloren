@@ -1664,6 +1664,13 @@ impl PickupItem {
             .expect("PickupItem without at least one item is an invariant")
     }
 
+    /// Icebreaker : le dernier objet de la pile, modifiable (places du sac d'un mort, T.3).
+    pub fn icebreaker_item_mut(&mut self) -> &mut Item {
+        self.items
+            .last_mut()
+            .expect("PickupItem without at least one item is an invariant")
+    }
+
     pub fn created(&self) -> ProgramTime { self.created_at }
 
     pub fn next_merge_check(&self) -> ProgramTime { self.next_merge_check }

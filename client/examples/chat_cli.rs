@@ -139,6 +139,54 @@ fn main() {
             } else if msg == "!echange" {
                 // Icebreaker : l'échange en cours, s'il y en a un.
                 println!("Échange en cours : {}", client.pending_trade().is_some());
+            } else if msg == "!etat" {
+                // Icebreaker : PV, à terre ou mort (jalon T).
+                use veloren_client::WorldExt;
+                let ecs = client.state().ecs();
+                let healths = ecs.read_storage::<comp::Health>();
+                let states = ecs.read_storage::<comp::CharacterState>();
+                let health = healths.get(client.entity());
+                println!(
+                    "État : PV {:?}/{:?}, à terre {}, mort {}, position {:?}",
+                    health.map(|h| h.current()),
+                    health.map(|h| h.maximum()),
+                    comp::is_downed(health, states.get(client.entity())),
+                    health.is_some_and(|h| h.is_dead),
+                    client.position().map(|p| p.map(|e| e.round())),
+                );
+            } else if msg == "!relever" || msg == "!fouiller" {
+                // Icebreaker : relever le joueur à terre ou fouiller le sac le plus proche
+                // (jalon T).
+                use veloren_client::{Join, WorldExt};
+                let cible = {
+                    let ecs = client.state().ecs();
+                    let me = client.position().unwrap_or_default();
+                    let healths = ecs.read_storage::<comp::Health>();
+                    let states = ecs.read_storage::<comp::CharacterState>();
+                    let items = ecs.read_storage::<comp::PickupItem>();
+                    (&ecs.entities(), &ecs.read_storage::<comp::Pos>())
+                        .join()
+                        .filter(|(e, _)| *e != client.entity())
+                        .filter(|(e, _)| {
+                            if msg == "!relever" {
+                                comp::is_downed(healths.get(*e), states.get(*e))
+                            } else {
+                                items.get(*e).is_some_and(|i| common::icebreaker_mort::est_sac(i.item()))
+                            }
+                        })
+                        .min_by_key(|(_, p)| (p.0.distance(me) * 100.0) as i64)
+                        .map(|(e, p)| (e, p.0.distance(me)))
+                };
+                match cible {
+                    Some((e, d)) => {
+                        println!("Cible à {d:.1} blocs");
+                        if msg == "!relever" { client.help_downed(e) } else { client.pick_up(e) }
+                    },
+                    None => println!("Aucune cible"),
+                }
+            } else if msg == "!revivre" {
+                // Icebreaker : la touche de réapparition après la mort (jalon T).
+                client.respawn();
             } else if msg == "!sac" {
                 // Icebreaker : ce que porte le personnage.
                 use veloren_client::WorldExt;

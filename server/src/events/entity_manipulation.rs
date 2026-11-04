@@ -570,6 +570,8 @@ pub struct DestroyEventData<'a> {
     dungeon_slots: ReadStorage<'a, rtsim::DungeonSlot>,
     #[cfg(feature = "worldgen")]
     icebreaker_mission: Read<'a, crate::icebreaker_mission::IcebreakerMission>,
+    // Icebreaker : le sac du mort se pose dans un emplacement d'expédition (T.3).
+    icebreaker_slots: Read<'a, crate::icebreaker_slots::IcebreakerSlots>,
     event_buses: DestroyEvents<'a>,
     buffs: ReadStorage<'a, comp::Buffs>,
     orientations: ReadStorage<'a, comp::Ori>,
@@ -1243,6 +1245,21 @@ impl ServerEvent for DestroyEvent {
                 }
                 if let Some(mut character_state) = data.character_states.get_mut(ev.entity) {
                     *character_state = CharacterState::default();
+                }
+                // Icebreaker : mort dans un emplacement d'expédition, le joueur laisse un sac
+                // avec son inventaire hors équipement porté (T.3).
+                if let Some(pos) = data.positions.get(ev.entity).copied()
+                    && data.icebreaker_slots.at(pos.0.xy()).is_some()
+                    && let Some(mut inventory) = data.inventories.get_mut(ev.entity)
+                    && let Some(sac) = crate::icebreaker_mort::remplir_sac(&mut inventory)
+                {
+                    emitters.emit(CreateItemDropEvent {
+                        pos,
+                        vel: comp::Vel::default(),
+                        ori: data.orientations.get(ev.entity).copied().unwrap_or_default(),
+                        item: comp::PickupItem::new(sac, *data.program_time, false),
+                        loot_owner: None,
+                    });
                 }
 
                 false
