@@ -21,3 +21,4 @@ icebreaker-partie-nom-existe = Une partie porte déjà ce nom : la choisir dans 
 icebreaker-fantome-accueil = Vous arrivez en fantôme sur la place du village : la touche « Vue du village de dessus » montre les bâtiments ; à la charrette, engagez une recrue ou jouez un personnage du registre.
 icebreaker-vue-aide = Vue du village : cliquer sur un bâtiment ({ $key } pour revenir)
 icebreaker-expedition-pret = prêt
+icebreaker-a-terre-reste = Mort dans { $secondes } s

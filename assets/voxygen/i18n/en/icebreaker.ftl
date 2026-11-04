@@ -21,3 +21,4 @@ icebreaker-partie-nom-existe = A game already has this name: pick it in the list
 icebreaker-fantome-accueil = You arrive as a ghost on the village square: the "Village top view" key shows the buildings; at the cart, hire a recruit or play a character of the registry.
 icebreaker-vue-aide = Village view: click a building ({ $key } to go back)
 icebreaker-expedition-pret = ready
+icebreaker-a-terre-reste = Death in { $secondes } s

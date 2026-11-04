@@ -1624,6 +1624,8 @@ impl Hud {
             let is_riders = ecs.read_storage::<Is<Rider>>();
             let stances = ecs.read_storage::<comp::Stance>();
             let char_activities = ecs.read_storage::<comp::CharacterActivity>();
+            // Icebreaker : pour le temps qui reste à terre (T.2).
+            let icebreaker_etats = ecs.read_storage::<comp::CharacterState>();
             let time = ecs.read_resource::<Time>();
             let id_maps = ecs.read_resource::<common::uid::IdMaps>();
             let terrain = ecs.read_resource::<common::terrain::TerrainGrid>();
@@ -2626,6 +2628,12 @@ impl Hud {
                             hardcore: hardcore.contains(entity),
                             stance,
                             marked: is_marked,
+                            // Icebreaker : temps qui reste à terre (T.2).
+                            icebreaker_a_terre: crate::icebreaker_mort::reste(
+                                *uid,
+                                comp::is_downed(health, icebreaker_etats.get(entity)),
+                                time.0,
+                            ),
                         });
                         // Only render bubble if nearby or if its me and setting is on
                         let bubble = if (dist_sqr < SPEECH_BUBBLE_RANGE.powi(2) && !is_me)

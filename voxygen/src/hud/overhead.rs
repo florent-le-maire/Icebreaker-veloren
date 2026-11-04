@@ -76,6 +76,8 @@ pub struct Info<'a> {
     pub hardcore: bool,
     pub stance: Option<&'a Stance>,
     pub marked: bool,
+    /// Icebreaker : à terre, secondes et part du délai qui restent avant la mort (T.2).
+    pub icebreaker_a_terre: Option<(f64, f32)>,
 }
 
 /// Determines whether to show the healthbar
@@ -167,12 +169,16 @@ impl Widget for Overhead<'_> {
             hardcore,
             stance,
             marked,
+            icebreaker_a_terre,
         }) = self.info
         {
             // Used to set healthbar colours based on hp_percentage
             let hp_percentage = health.map_or(100.0, |h| {
                 f64::from(h.current() / h.base_max().max(h.maximum()) * 100.0)
             });
+            // Icebreaker : à terre, la barre montre le temps qui reste avant la mort (T.2).
+            let hp_percentage =
+                icebreaker_a_terre.map_or(hp_percentage, |(_, part)| f64::from(part) * 100.0);
             // Compare levels to decide if a skull is shown
             let health_current = health.map_or(1.0, |h| f64::from(h.current()));
             let health_max = health.map_or(1.0, |h| f64::from(h.maximum()));
@@ -371,6 +377,15 @@ impl Widget for Overhead<'_> {
                     if health.is_dead {
                         txt = self.i18n.get_msg("hud-group-dead").to_string()
                     };
+                    // Icebreaker : temps qui reste à terre (T.2).
+                    if let Some((reste, _)) = icebreaker_a_terre {
+                        txt = self
+                            .i18n
+                            .get_msg_ctx("icebreaker-a-terre-reste", &i18n::fluent_args! {
+                                "secondes" => reste.ceil() as u32
+                            })
+                            .to_string();
+                    }
                     Text::new(&txt)
                         .mid_top_with_margin_on(state.ids.health_bar_bg, 2.0)
                         .font_size(10)
