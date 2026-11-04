@@ -13,7 +13,8 @@
 #                                             doit être compilé avec --features plugins)
 #
 # Chaque lieu génère son propre petit monde à chaque lancement (graine au hasard, ou -Seed).
-# Les personnages sont communs à tous les lieux : ils vivent dans userdata-icebreaker\campagne.
+# Les personnages sont communs à tous les lieux : ils vivent dans la partie, userdata-icebreaker\parties\<nom>
+# (-Partie <nom>, la dernière jouée par défaut).
 # Dans le jeu : Multijoueur, serveur « localhost:<port> », n'importe quel pseudo.
 param(
     [Parameter(Mandatory = $true, Position = 0)]
@@ -41,7 +42,10 @@ param(
     [ValidateSet("", "low", "medium", "high")] [string]$Ennemis = "",
     [ValidateSet("", "gnarling", "adlet", "cultist")] [string]$Faction = "",
     # Ambiance de la grotte (K.3) : champignons, cristaux ou ossuaire ; au hasard sinon.
-    [string]$Ambiance = ""
+    [string]$Ambiance = "",
+    # Icebreaker X.10 : la partie (dossier userdata-icebreaker\parties\<nom>) ; par défaut ICEBREAKER_PARTIE
+    # (hérité d'un serveur qui en lance un autre), sinon la dernière jouée, sinon « Partie 1 ».
+    [string]$Partie = ""
 )
 
 $repo = $PSScriptRoot
@@ -70,24 +74,43 @@ if (-not $Site) { $Site = @{ campagne = "Town"; village = "Town"; donjon = "Gnar
 if (-not $Lg) { $Lg = if ($Lieu -eq "campagne") { 7 } else { 6 } }
 
 $root = "$repo\userdata-icebreaker"
-# Le monde de la campagne a son dossier à lui, à côté de « campagne » (personnages, caisse, entrepôt…).
+# Le monde de la campagne a son dossier à lui, à côté des parties (personnages, caisse, entrepôt…).
 $ud = if ($Lieu -eq "campagne") { "$root\monde" } else { "$root\$Lieu" }
 $port = if ($Port) { $Port } else { $ports[$Lieu] }
 
-# Monde neuf à chaque lancement ; les personnages restent dans la campagne.
-Remove-Item -Recurse -Force "$ud\server\rtsim" -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force "$ud\server\server_config", "$ud\server-cli", "$root\campagne" | Out-Null
+# Icebreaker X.10 : une partie = un dossier de userdata-icebreaker\parties. L'ancienne campagne unique
+# (userdata-icebreaker\campagne) devient « Partie 1 », une seule fois.
+$parties = "$root\parties"
+if (-not (Test-Path $parties) -and (Test-Path "$root\campagne")) {
+    New-Item -ItemType Directory -Force $parties | Out-Null
+    Move-Item "$root\campagne" "$parties\Partie 1"
+    Write-Host "Icebreaker : l'ancienne campagne devient la partie « Partie 1 »"
+}
+if (-not $Partie) { $Partie = $env:ICEBREAKER_PARTIE }
+if (-not $Partie -and (Test-Path "$parties\derniere.txt")) {
+    $Partie = (Get-Content "$parties\derniere.txt" -TotalCount 1 -Encoding utf8).Trim()
+}
+if (-not $Partie) { $Partie = "Partie 1" }
+$campagne = "$parties\$Partie"
 
-# Le village (seul ou dans la campagne) garde sa graine pour toute la campagne : ses maisons (bâties ou à bâtir)
+# Monde neuf à chaque lancement ; les personnages restent dans la partie.
+Remove-Item -Recurse -Force "$ud\server\rtsim" -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force "$ud\server\server_config", "$ud\server-cli", $campagne | Out-Null
+
+# Les lecteurs RON refusent le BOM : UTF-8 sans BOM. Les champs absents prennent leur valeur par défaut.
+$utf8 = New-Object Text.UTF8Encoding($false)
+# La dernière partie jouée, et celle de ce serveur (le menu refuse d'y envoyer pour une autre partie).
+[IO.File]::WriteAllText("$parties\derniere.txt", $Partie, $utf8)
+[IO.File]::WriteAllText("$ud\partie.txt", $Partie, $utf8)
+
+# Le village (seul ou dans la campagne) garde sa graine pour toute la partie : ses maisons (bâties ou à bâtir)
 # restent à leur place.
-$graineVillage = "$root\campagne\$Lieu-graine.txt"
+$graineVillage = "$campagne\$Lieu-graine.txt"
 if ($Lieu -in "village", "campagne" -and -not $PSBoundParameters.ContainsKey("Seed")) {
     if (Test-Path $graineVillage) { $Seed = [int](Get-Content $graineVillage -TotalCount 1) }
     else { Set-Content -Path $graineVillage -Value $Seed -Encoding ascii }
 }
 
-# Les lecteurs RON refusent le BOM : UTF-8 sans BOM. Les champs absents prennent leur valeur par défaut.
-$utf8 = New-Object Text.UTF8Encoding($false)
 [IO.File]::WriteAllText("$ud\server\server_config\settings.ron", @"
 (
     gameserver_protocols: [Tcp(address: "0.0.0.0:$port")],
@@ -106,7 +129,8 @@ $utf8 = New-Object Text.UTF8Encoding($false)
 "@, $utf8)
 
 $env:VELOREN_USERDATA = $ud
-$env:ICEBREAKER_CAMPAIGN_DIR = "$root\campagne"
+$env:ICEBREAKER_CAMPAIGN_DIR = $campagne
+$env:ICEBREAKER_PARTIE = $Partie
 $env:ICEBREAKER_INSTANCE_SITE = $Site
 $env:ICEBREAKER_CAMPAGNE = if ($Lieu -eq "campagne") { "1" } else { $null }
 # Charrette et registre commun (jalon R) : on arrive en fantôme au village ; un donjon seul garde l'écran de Veloren.
@@ -121,6 +145,6 @@ $env:ICEBREAKER_DONJON_MENACE = $Menace
 $env:ICEBREAKER_DONJON_ENNEMIS = $Ennemis
 $env:ICEBREAKER_DONJON_FACTION = $Faction
 $env:ICEBREAKER_GROTTE_AMBIANCE = $Ambiance
-Write-Host "Icebreaker : $Lieu ($Site), graine $Seed, port $port"
+Write-Host "Icebreaker : $Lieu ($Site), partie « $Partie », graine $Seed, port $port"
 Set-Location $repo
 & ".\target\debug\veloren-server-cli.exe" --no-auth

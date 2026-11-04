@@ -11,7 +11,7 @@
 # ICEBREAKER_SERVER (binaire, par défaut target/release/veloren-server-cli).
 #
 # Chaque lieu génère son propre petit monde à chaque lancement ; les personnages sont communs à tous les
-# lieux et vivent dans userdata-icebreaker/campagne.
+# lieux et vivent dans la partie, userdata-icebreaker/parties/<nom>.
 set -e
 
 lieu="$1"
@@ -30,9 +30,22 @@ server=${ICEBREAKER_SERVER:-$repo/target/release/veloren-server-cli}
 root="$repo/userdata-icebreaker"
 ud="$root/$lieu"
 
-# Monde neuf à chaque lancement ; les personnages restent dans la campagne.
+# Icebreaker X.10 : une partie = un dossier de userdata-icebreaker/parties (ICEBREAKER_PARTIE, sinon la
+# dernière jouée, sinon « Partie 1 ») ; l'ancienne campagne unique devient « Partie 1 », une seule fois.
+parties="$root/parties"
+if [ ! -d "$parties" ] && [ -d "$root/campagne" ]; then
+    mkdir -p "$parties" && mv "$root/campagne" "$parties/Partie 1"
+fi
+partie=${ICEBREAKER_PARTIE:-}
+if [ -z "$partie" ] && [ -f "$parties/derniere.txt" ]; then partie=$(head -n 1 "$parties/derniere.txt"); fi
+partie=${partie:-Partie 1}
+campagne="$parties/$partie"
+
+# Monde neuf à chaque lancement ; les personnages restent dans la partie.
 rm -rf "$ud/server/rtsim"
-mkdir -p "$ud/server/server_config" "$ud/server-cli" "$root/campagne"
+mkdir -p "$ud/server/server_config" "$ud/server-cli" "$campagne"
+printf '%s' "$partie" > "$parties/derniere.txt"
+printf '%s' "$partie" > "$ud/partie.txt"
 
 # Les champs absents prennent leur valeur par défaut.
 cat > "$ud/server/server_config/settings.ron" <<EOF
@@ -53,7 +66,8 @@ cat > "$ud/server-cli/settings.ron" <<EOF
 EOF
 
 export VELOREN_USERDATA="$ud"
-export ICEBREAKER_CAMPAIGN_DIR="$root/campagne"
+export ICEBREAKER_CAMPAIGN_DIR="$campagne"
+export ICEBREAKER_PARTIE="$partie"
 export ICEBREAKER_INSTANCE_SITE="${ICEBREAKER_SITE:-$site_lieu}"
 export ICEBREAKER_TOWN_SIZE="${ICEBREAKER_TOWN_SIZE:-1.0}"
 # Charrette et registre commun (jalon R) : on arrive en fantôme au village.

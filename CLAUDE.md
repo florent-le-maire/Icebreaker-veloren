@@ -61,7 +61,8 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
 - Campagne (décision 0016) : `powershell -ExecutionPolicy Bypass -File .\icebreaker.ps1 campagne` (port 14100 : le
   village et les emplacements de donjon dans un seul serveur), ou le bouton « Campagne » du menu principal. Un lieu
   seul, pour tester : `village`, `donjon -Site Gnarling` (port 14110), `donjon -Site Genere` ; client en multijoueur
-  sur `localhost:<port>`. Personnages communs dans `userdata-icebreaker\campagne`.
+  sur `localhost:<port>`. Une partie (personnages, caisse, village…) = `userdata-icebreaker\parties\<nom>`, choisie
+  par `-Partie <nom>` (défaut : la dernière jouée) ; au menu, `ICEBREAKER_AUTO_PARTIE=<nom>` avec l'auto-clic.
 - Client texte pour tester sans affichage : `cargo build -p veloren-client --example chat_cli --features
   "plugins bin_bot"`, puis sur l'entrée : pseudo, `localhost:<port>`, un mot de passe quelconque, et des lignes de
   chat (`/commande args` part en commande). Laisser ~40 s entre deux connexions coupées net : le serveur n'accepte

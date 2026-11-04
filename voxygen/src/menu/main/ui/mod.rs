@@ -267,6 +267,8 @@ pub struct Controls {
     /// without a prompt (X.7), and the event it makes waits for `maintain`.
     icebreaker_auto_credentials: bool,
     icebreaker_pending: Vec<Event>,
+    /// Icebreaker X.10: the open campaign panel (choice of the game), if any.
+    icebreaker_parties: Option<icebreaker::MenuParties>,
 }
 
 #[derive(Clone)]
@@ -288,6 +290,11 @@ enum Message {
     Multiplayer,
     // Icebreaker : lieu de la campagne (index dans `assets/icebreaker/lieux.ron`).
     Campagne(usize),
+    // Icebreaker X.10 : choix de la partie (continuer, nom tapé, nouvelle, retour).
+    CampagnePartie(String),
+    CampagneNom(String),
+    CampagneNouvelle,
+    CampagneRetour,
     UnlockServerField,
     LanguageChanged(usize),
     OpenLanguageMenu,
@@ -371,6 +378,7 @@ impl Controls {
             screen,
             icebreaker_auto_credentials: false,
             icebreaker_pending: Vec::new(),
+            icebreaker_parties: None,
         }
     }
 
@@ -429,6 +437,7 @@ impl Controls {
                 self.selected_language_index,
                 &language_metadatas,
                 button_style,
+                self.icebreaker_parties.as_ref(),
             ),
             Screen::Servers { screen } => screen.view(
                 &self.fonts,
@@ -486,6 +495,24 @@ impl Controls {
         self.icebreaker_auto_credentials = true;
         crate::icebreaker::campagne_attendue();
         Event::LoginAttempt { server_address }
+    }
+
+    /// Icebreaker X.10: launches the place of the open campaign panel for the
+    /// game `partie` if needed, then connects to it.
+    fn icebreaker_lancer(&mut self, ui: &mut Ui, partie: &str, events: &mut Vec<Event>) {
+        let Some(menu) = self.icebreaker_parties.take() else {
+            return;
+        };
+        let lieu = icebreaker::lieux().read().0.get(menu.lieu).cloned();
+        match lieu.map(|lieu| icebreaker::lancer(&lieu, partie)) {
+            Some(Ok(server_address)) => events.push(self.icebreaker_connect(ui, server_address)),
+            Some(Err(error)) => {
+                // The panel stays open, to choose another game.
+                self.icebreaker_parties = Some(menu);
+                self.connection_error(error);
+            },
+            None => {},
+        }
     }
 
     fn update(
@@ -580,15 +607,31 @@ impl Controls {
                     server_address: self.login_info.server.trim().to_string(),
                 });
             },
-            // Icebreaker : lance le serveur du lieu si besoin, puis s'y connecte.
-            Message::Campagne(index) => {
-                let lieu = icebreaker::lieux().read().0.get(index).cloned();
-                match lieu.map(|lieu| icebreaker::lancer(&lieu)) {
-                    Some(Ok(server_address)) => {
-                        events.push(self.icebreaker_connect(ui, server_address));
+            // Icebreaker X.10 : « Campagne » ouvre le choix de la partie.
+            Message::Campagne(lieu) => {
+                self.icebreaker_parties = Some(icebreaker::MenuParties {
+                    lieu,
+                    parties: icebreaker::parties(),
+                    nom: String::new(),
+                });
+            },
+            Message::CampagneRetour => self.icebreaker_parties = None,
+            Message::CampagneNom(nom) => {
+                if let Some(menu) = &mut self.icebreaker_parties {
+                    menu.nom = nom;
+                }
+            },
+            Message::CampagnePartie(partie) => self.icebreaker_lancer(ui, &partie, events),
+            Message::CampagneNouvelle => {
+                let Some(menu) = &self.icebreaker_parties else {
+                    return;
+                };
+                match icebreaker::nom_partie(&menu.nom, &menu.parties) {
+                    Ok(partie) => self.icebreaker_lancer(ui, &partie, events),
+                    Err(refus) => {
+                        let message = self.i18n.read().get_msg(refus.cle()).into_owned();
+                        self.connection_error(message);
                     },
-                    Some(Err(error)) => self.connection_error(error),
-                    None => {},
                 }
             },
             Message::UnlockServerField => self.server_field_locked = false,
@@ -879,7 +922,9 @@ impl MainMenuUi {
     }
 
     /// Icebreaker: as a click on the first « Campagne » button (X.7, for the
-    /// tests): launches the place if needed and connects to it.
+    /// tests): launches the place if needed and connects to it, for the game
+    /// `ICEBREAKER_AUTO_PARTIE`, else the most recent one, else « Partie 1 »
+    /// (X.10).
     pub fn icebreaker_campagne_auto(&mut self) -> Option<Event> {
         let lieu = icebreaker::lieux()
             .read()
@@ -887,7 +932,12 @@ impl MainMenuUi {
             .iter()
             .find(|lieu| lieu.au_menu && lieu.actif)
             .cloned()?;
-        match icebreaker::lancer(&lieu) {
+        let partie = std::env::var("ICEBREAKER_AUTO_PARTIE")
+            .ok()
+            .filter(|partie| !partie.trim().is_empty())
+            .or_else(|| icebreaker::parties().into_iter().next().map(|p| p.nom))
+            .unwrap_or_else(|| "Partie 1".to_string());
+        match icebreaker::lancer(&lieu, &partie) {
             Ok(server_address) => Some(self.controls.icebreaker_connect(&mut self.ui, server_address)),
             Err(error) => {
                 self.controls.connection_error(error);
