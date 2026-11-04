@@ -82,7 +82,7 @@ réglages dans `assets/icebreaker/grottes/grotte.ron` ; exemple de contrôle `wo
   25 à 45 habitants), serveur graine 7 (42 créatures, 2 coffres), client texte admin : `!jouer`, `/goto` chez le
   chef, `/explosion 500` → « Mission accomplie : le chef du donjon est tombé ! Bilan : 16 créature(s) tuée(s) sur
   42, 0 coffre(s) ouvert(s) sur 2. ». Pas encore joué à pied ; les culs-de-sac posent parfois la créature un bloc
-  trop haut ou trop bas (elle tombe ou ressort). — (hash)
+  trop haut ou trop bas (elle tombe ou ressort). — 4d75e94a76
 
 Plus tard : trous à sens unique et cordes (E.7), filons comme carburant de la foreuse (E.4, E.6), ressources à
 ramener (B.5, B.9), patrouilles (B.4), essaim qui sort des trous (E.15).
