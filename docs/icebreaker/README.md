@@ -38,9 +38,9 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | P | Pillage sur la route | `PLAN.md` | pas commencé | à créer |
 | G | Donjon généré | `PLAN.md` | G.1 à G.10 faits ; IA G.11 à G.16 restent | `Veloren-donjon` |
 | F | Forme et vie du donjon généré | `PLAN.md` | F.1 à F.6 faits ; F.7 si besoin | `Veloren-donjon` |
-| L | Combat létal | `HISTORIQUE.md` | fait | `Veloren-combat` |
-| R | Charrette et registre commun | `HISTORIQUE.md` | fait | `Veloren-classes` |
-| X | Interface du village | `HISTORIQUE.md` | fait, vu en jeu | `Veloren-interface` |
+| L | Combat létal | `HISTORIQUE.md` | fait | — (supprimé) |
+| R | Charrette et registre commun | `HISTORIQUE.md` | fait | — (supprimé) |
+| X | Interface du village | `HISTORIQUE.md` | fait, vu en jeu | — (supprimé) |
 | S, D | Démo à l'équipe (serveur, soirée) | `PLAN.md` | S.1 fait ; S.2, S.3, D.1 restent | `Veloren-serveur` |
 | B | Boucles de jeu | `PLAN-BOUCLES.md` | proposition à valider | `Veloren-boucles` (à créer) |
 | E | Le donjon à jouer | `PLAN-DONJON.md` | proposition à valider | `Veloren-donjon` |
