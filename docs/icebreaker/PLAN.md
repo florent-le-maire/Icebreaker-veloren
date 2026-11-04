@@ -121,7 +121,7 @@ client. Réglages dans `generation.ron` ; worktree `Veloren-donjon`. La grotte f
   *Fin* : en couloir, dos au mur, la caméra ne sort jamais du donjon.
 - [x] **F.8 Donjon jamais au bord du monde** — entrée à 16 tronçons au moins du bord, donjon refait (autre graine)
   s'il passe à moins d'un tronçon du bord ; réglages `placement` de `generation.ron`. Campagne lancée : donjons
-  placés sans dépassement ; descente jusqu'au bout pas faite en jeu. *(hash à venir)*
+  placés sans dépassement ; descente jusqu'au bout pas faite en jeu. de7388d606
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
