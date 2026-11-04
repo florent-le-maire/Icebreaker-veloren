@@ -22,9 +22,7 @@ Ce que les lectures apprennent :
 
 ### Expédition
 
-1. **Relever un allié à terre** (M) — à 0 PV on tombe à terre, un allié a 30 s pour relever, ensuite seulement la
-   mort. Le moment de coop le plus fort ; déjà décidé dans `design/donjon.md`. Veloren a déjà un état « à terre »
-   pour les humanoïdes (`has_death_protection`) : à régler plutôt qu'à faire. *Deep Rock Galactic, Darkest Dungeon.*
+1. *(Relever un allié à terre : retenue, devenue le jalon T de `PLAN.md`, 2026-11-04.)*
 2. **Le noir paie** (M) — salles sombres : coffres plus riches, surprises plus fréquentes ; une torche levée se voit
    de loin. S'appuie sur l'éclairage G.10. *Jauge de lumière de Darkest Dungeon.*
 3. **Curiosités** (P à M) — autel, fontaine, cadavre d'aventurier, caisse scellée : avec le bon objet apporté (eau

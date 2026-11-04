@@ -19,7 +19,7 @@ Le jeu doit rester lançable après chaque tâche.
   caisse, intendance, infirmerie, chantiers payés par la caisse, charrette et registre commun de personnages, départ
   groupé), deux emplacements de donjon Gnarling, deux de notre générateur (salles de formes variées, verrous et clés,
   dormeurs, décor), une grotte façon Deep Rock Galactic (poches, filons, chef au fond), combat létal et verrouillage
-  de cible. Détail et hashes : `HISTORIQUE.md`, `PLAN-GROTTE.md`.
+  de cible, à terre et relève, sac du mort (jalon T). Détail et hashes : `HISTORIQUE.md`, `PLAN-GROTTE.md`.
 - **Presque rien n'a été vu dans le vrai client** : la plupart des tâches ont été vérifiées par des tests et le client
   texte ; seul le jalon X (interface du village) a été joué par Flo. Liste : « À vérifier en jeu » plus bas.
 - **Ce qui manque à la démo D.1** : le pillage sur la route (P.1 à P.4, pas commencé) et le client pour les potes
@@ -131,11 +131,16 @@ rentre au village en fantôme (puis joue un perso de sa réserve) ou regarde un 
 tombe, tous rentrent. Réglages : `assets/icebreaker/mort.ron` ; worktree `Veloren-mort`. Le personnage mort revient
 au registre (`QUESTIONS.md`, Q28).
 
-- [ ] **T.1 Relever à 25 % et mort après 30 s à terre** — *en cours : Veloren-mort, 2026-11-04*
-- [ ] **T.2 Visuel du temps qui reste à terre** — barre et compte à rebours (soi, au-dessus des autres).
-- [ ] **T.3 Le sac du mort** — sac au sol, fouillé en 3 s par un allié, contenu dans son inventaire.
-- [ ] **T.4 Après la mort : village ou regarder un allié** — R : fantôme au village ; clic : allié suivant.
-- [ ] **T.5 Le dernier tombe : retour au village** — tous les joueurs de l'emplacement morts, tous rentrent.
+- [x] **T.1 Relever à 25 % et mort après 30 s à terre** — client texte à deux : relevé à 25/100 PV, mort ~30 s
+  après une seconde chute. 63f57ce830
+- [x] **T.2 Visuel du temps qui reste à terre** — barre et « Mort dans N s » (soi, au-dessus des autres). Client
+  compilé, pas vu à l'écran. bab7a8345d
+- [x] **T.3 Le sac du mort** — sac au sol, fouillé en 3 s par un allié, contenu dans son inventaire. Client texte : B
+  récupère l'or de A ; modèle du sac au sol pas vu. 634f96f275
+- [x] **T.4 Après la mort : village ou regarder un allié** — R : fantôme au village (vu au client texte) ; clic :
+  allié suivant, pas vu dans le vrai client. 61b3637e5c
+- [x] **T.5 Le dernier tombe : retour au village** — client texte : B meurt seul en bas, message et retour en
+  fantôme. 3e9abc6ef2
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
@@ -196,6 +201,11 @@ tâche pour ce qui casse.
   caméra dans les boyaux.
 - K.4 : miner un filon à la pioche, changement d'arme ; K.5 : créatures des culs-de-sac posées un bloc trop haut ou
   trop bas.
+
+**Mort (jalon T)**
+- T.2 : barre « Mort dans N s » du joueur à terre et au-dessus du corps (position, lisibilité).
+- T.3 : modèle du sac au sol, libellé « Fouiller le sac », fouille interrompue si on bouge.
+- T.4 : texte de mort, clic pour regarder un allié (vue à la première personne), R pour rentrer en fantôme.
 
 **Divers**
 - M.1 : téléchargement du plugin par le vrai client.

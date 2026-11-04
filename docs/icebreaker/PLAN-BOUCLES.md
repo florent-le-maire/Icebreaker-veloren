@@ -177,9 +177,8 @@ Chaque tâche = quelques heures, un critère de fin, le jeu reste lançable. Les
   *Fin* : on revient au village avec les PV qu'on avait en bas.
 - [ ] **B.2 Sortie par l'entrée** — `/rentrer` et le bouton refusés loin de l'entrée de l'emplacement.
   *Fin* : refus au fond du donjon, retour à l'entrée.
-- [ ] **B.3 Le sac du mort** — mort en expédition : sac au sol (inventaire hors équipement, or compris), retour au
-  village à 1 PV ; un allié qui ramasse le sac le rend à son propriétaire au retour.
-  *Fin* : un joueur meurt, l'autre rapporte son or.
+- [x] **B.3 Le sac du mort** — fait autrement par le jalon T de `PLAN.md` (Flo, 2026-11-04) : l'allié qui fouille
+  le sac en garde le contenu, il ne revient pas au propriétaire.
 - [ ] **B.4 Patrouilles** — toutes les `minutes_renfort`, une patrouille entre par l'entrée et cherche les joueurs ;
   annonce avant ; le bruit l'avance.
   *Fin* : rester 12 min fait arriver une patrouille annoncée.
