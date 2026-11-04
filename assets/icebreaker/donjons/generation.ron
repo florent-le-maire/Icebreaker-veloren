@@ -347,4 +347,13 @@
         empty_factor: 0.3,
         wall_torches: 0.5,
     ),
+    // Place dans le monde (F.8) : un donjon qui dépasse le bord du monde ne se finit pas (les tronçons au-delà ne
+    // sont jamais générés). entrance_margin : tronçons (32 blocs) au moins entre l'entrée et le bord ; un donjon moyen
+    // s'étend jusqu'à ~23 tronçons de son entrée (90 % sous 17), un grand jusqu'à ~27. edge_margin : tronçons gardés
+    // entre le donjon et le bord ; un donjon trop près est refait avec une autre graine, fit_tries fois au plus.
+    placement: (
+        entrance_margin: 16,
+        edge_margin: 1,
+        fit_tries: 20,
+    ),
 )

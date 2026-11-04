@@ -94,6 +94,33 @@ pub fn site_kind(name: &str) -> Option<SiteKind> {
     Some(kind)
 }
 
+/// Icebreaker F.8: where a site of `kind` may be placed in `world_dims` (in
+/// chunks). A dungeon of our generator spreads far around its entrance: the
+/// entrance keeps `entrance_margin` chunks from the edges of the world, past
+/// which the dungeon could not be finished.
+pub fn site_area(kind: SiteKind, world_dims: vek::Aabr<i32>) -> vek::Aabr<i32> {
+    if !matches!(kind, SiteKind::IcebreakerDungeon) {
+        return world_dims;
+    }
+    let margin = match dungeon::Settings::load() {
+        Ok(settings) => settings.placement.entrance_margin,
+        Err(e) => {
+            warn!(?e, "Icebreaker: dungeon settings unreadable, no margin from the edges");
+            0
+        },
+    };
+    let area = vek::Aabr {
+        min: world_dims.min + margin,
+        max: world_dims.max - margin,
+    };
+    if area.min.x < area.max.x && area.min.y < area.max.y {
+        area
+    } else {
+        warn!(margin, ?world_dims, "Icebreaker: world too small for the dungeon's margin");
+        world_dims
+    }
+}
+
 /// Where players arrive at a dungeon of our generator: out of its entrance
 /// tunnel.
 pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {

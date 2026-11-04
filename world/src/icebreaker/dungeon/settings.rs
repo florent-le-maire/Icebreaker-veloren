@@ -100,6 +100,20 @@ pub struct Settings {
     pub variety: VarietySettings,
     /// Decor by role of room (Icebreaker F.6).
     pub decor: DecorSettings,
+    /// Where the dungeon may lie in the world (Icebreaker F.8).
+    pub placement: PlacementSettings,
+}
+
+/// Icebreaker F.8: a dungeon that goes past the edge of the world cannot be
+/// finished (the chunks there are never generated). Its entrance is placed
+/// `entrance_margin` chunks at least from the edges, and a dungeon that comes
+/// closer than `edge_margin` chunks to an edge is generated again with another
+/// seed, `fit_tries` times at most.
+#[derive(Clone, Debug, Deserialize)]
+pub struct PlacementSettings {
+    pub entrance_margin: i32,
+    pub edge_margin: i32,
+    pub fit_tries: u64,
 }
 
 /// Variety of the rooms (Icebreaker F.2 and F.5): the orientations of each drawn
@@ -201,6 +215,10 @@ impl Settings {
         if render.cell_size < 3 || render.level_height < 3 || render.level_height > render.cell_size
         {
             errors.push("render : il faut 3 ≤ level_height ≤ cell_size".to_string());
+        }
+        let placement = &settings.placement;
+        if placement.entrance_margin < 0 || placement.edge_margin < 0 || placement.fit_tries < 1 {
+            errors.push("placement : marges positives, fit_tries au moins 1".into());
         }
         if render.tunnel_cells < 1 {
             errors.push("render : tunnel_cells doit être au moins 1".into());

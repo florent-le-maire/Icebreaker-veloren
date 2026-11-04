@@ -282,10 +282,12 @@ impl Civs {
         // randomly placed sites.
         if let Some(kind) = instance_site {
             let center = world_dims.center();
+            // Icebreaker F.8: our dungeon keeps away from the edges of the world.
+            let area = crate::icebreaker::site_area(kind, world_dims);
             let near_center = ProximityRequirementsBuilder::new()
                 .close_to_one_of(std::iter::once(center), 8)
-                .finalize(&world_dims);
-            let anywhere = ProximityRequirementsBuilder::new().finalize(&world_dims);
+                .finalize(&area);
+            let anywhere = ProximityRequirementsBuilder::new().finalize(&area);
             // A town may find no room to build around its square: try a few
             // places and keep the one where the town grows the most.
             let mut town_loc: Option<(Vec2<i32>, usize)> = None;
@@ -339,7 +341,7 @@ impl Civs {
                 };
                 let far = ProximityRequirementsBuilder::new()
                     .avoid_all_of(this.sites().map(|s| s.center), crate::icebreaker::SLOT_DISTANCE)
-                    .finalize(&world_dims);
+                    .finalize(&crate::icebreaker::site_area(kind, world_dims));
                 match find_site_loc(&mut ctx, &far, &kind) {
                     Some(loc) => {
                         info!(?kind, ?loc, "Icebreaker dungeon slot placed");

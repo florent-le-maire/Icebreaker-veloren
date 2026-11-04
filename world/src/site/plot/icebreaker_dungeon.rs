@@ -12,11 +12,11 @@ use crate::{
 use common::{
     comp::item::ItemDefinitionIdOwned,
     generation::EntityInfo,
-    terrain::{Block, BlockKind, SpriteCfg, SpriteKind, UnlockKind},
+    terrain::{Block, BlockKind, SpriteCfg, SpriteKind, TerrainChunkSize, UnlockKind},
 };
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 use vek::*;
 
 /// See [`IcebreakerDungeon::mission_targets`].
@@ -61,6 +61,54 @@ impl IcebreakerDungeon {
             floor0,
             entrance: origin + Vec2::new(dx, dy) * 3,
         }
+    }
+
+    /// Icebreaker F.8: the dungeon of the mission, its tunnel coming out at
+    /// `origin`, drawn again with other seeds (`placement` of the settings)
+    /// while it comes too close to an edge of the world: the chunks past the
+    /// edge are never generated, and such a dungeon could not be finished.
+    /// `world`: the size of the world, in chunks; `mission`: the mission of a
+    /// seed. Also gives whether the dungeon fits.
+    fn generate_inside(
+        land: &Land,
+        world: Vec2<i32>,
+        rng: &mut impl Rng,
+        origin: Vec2<i32>,
+        mission: impl Fn(u64) -> Result<dungeon::Mission, String>,
+    ) -> Result<(Self, bool), String> {
+        let settings = dungeon::Settings::load()?;
+        let placement = &settings.placement;
+        let chunk = TerrainChunkSize::RECT_SIZE.map(|e| e as i32);
+        let inside = Aabr {
+            min: chunk * placement.edge_margin,
+            max: (world - placement.edge_margin) * chunk,
+        };
+        let fits = |b: Aabr<i32>| {
+            b.min.x >= inside.min.x
+                && b.min.y >= inside.min.y
+                && b.max.x <= inside.max.x
+                && b.max.y <= inside.max.y
+        };
+        let mut plot = None;
+        for attempt in 1..=placement.fit_tries {
+            let dungeon = dungeon::generate(&settings, &mission(rng.random())?)?;
+            let tried = Self::new(dungeon, settings.render.clone(), land, origin);
+            let bounds = tried.bounds();
+            if fits(bounds) {
+                if attempt > 1 {
+                    info!(attempt, "Icebreaker dungeon redrawn to fit inside the world");
+                }
+                return Ok((tried, true));
+            }
+            debug!(attempt, ?bounds, ?inside, "Icebreaker dungeon past the edge of the world");
+            plot = Some(tried);
+        }
+        error!(
+            ?origin,
+            tries = placement.fit_tries,
+            "Icebreaker dungeon goes past the edge of the world: it cannot be finished"
+        );
+        Ok((plot.expect("fit_tries is at least 1"), false))
     }
 
     /// Where players arrive, on the surface just outside the tunnel.
@@ -553,20 +601,15 @@ impl Site {
             kind: Some(SiteKind::IcebreakerDungeon),
             ..Site::default()
         };
-        let generated = dungeon::Settings::load().and_then(|settings| {
-            let mission = dungeon::Mission::from_env(rng.random())?;
-            let dungeon = dungeon::generate(&settings, &mission)?;
-            Ok((dungeon, settings))
-        });
-        let (dungeon, settings) = match generated {
-            Ok(generated) => generated,
+        let world = land.size().map(|e| e as i32);
+        let plot = match IcebreakerDungeon::generate_inside(land, world, &mut rng, origin, dungeon::Mission::from_env) {
+            Ok((plot, _)) => plot,
             Err(e) => {
                 error!(?e, "Icebreaker dungeon not generated");
                 return site;
             },
         };
-        info!("Icebreaker dungeon: {}\n{}", dungeon.summary, dungeon.plan.to_text());
-        let plot = IcebreakerDungeon::new(dungeon, settings.render, land, origin);
+        info!("Icebreaker dungeon: {}\n{}", plot.dungeon.summary, plot.dungeon.plan.to_text());
         for (cell, key) in &plot.dungeon.locks {
             let (keyhole, dir) = (plot.keyhole_pos(*cell), plot.door_dir(*cell));
             info!(?keyhole, ?dir, key = key.item, "Icebreaker dungeon locked door");
@@ -594,5 +637,62 @@ impl Site {
             hard_alt: None,
         });
         site
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::icebreaker::site_area;
+
+    /// Icebreaker F.8: an entrance placed in a corner of the area that
+    /// `site_area` allows still gets a dungeon that stays inside the world, for
+    /// every size, in the world of the campaign (2^7 chunks).
+    #[test]
+    fn dungeon_in_a_corner_stays_inside_the_world() {
+        let world = Vec2::broadcast(128);
+        let area = site_area(SiteKind::IcebreakerDungeon, Aabr { min: Vec2::zero(), max: world });
+        let chunk = TerrainChunkSize::RECT_SIZE.map(|e| e as i32);
+        for corner in [area.min, area.max, Vec2::new(area.min.x, area.max.y)] {
+            let origin = corner * chunk + chunk / 2;
+            for size in ["small", "medium", "large"] {
+                for seed in 0..10 {
+                    let mut rng = ChaCha8Rng::seed_from_u64(seed);
+                    let mission = |seed| {
+                        Ok(dungeon::Mission {
+                            seed,
+                            size: size.into(),
+                            ..dungeon::Mission::default()
+                        })
+                    };
+                    let (plot, fits) =
+                        IcebreakerDungeon::generate_inside(&Land::empty(), world, &mut rng, origin, mission)
+                            .unwrap();
+                    assert!(fits, "{size} {seed} {origin} : donjon hors du monde {:?}", plot.bounds());
+                }
+            }
+        }
+    }
+
+    /// Too close to the edge, no dungeon fits: it is said.
+    #[test]
+    fn dungeon_at_the_edge_does_not_fit() {
+        let mut rng = ChaCha8Rng::seed_from_u64(0);
+        let mission = |seed| Ok(dungeon::Mission { seed, size: "large".into(), ..dungeon::Mission::default() });
+        let (_, fits) =
+            IcebreakerDungeon::generate_inside(&Land::empty(), Vec2::broadcast(8), &mut rng, Vec2::new(40, 40), mission)
+                .unwrap();
+        assert!(!fits);
+    }
+
+    #[test]
+    fn only_our_dungeon_keeps_away_from_the_edges() {
+        let world = Aabr { min: Vec2::zero(), max: Vec2::broadcast(128) };
+        let area = site_area(SiteKind::IcebreakerDungeon, world);
+        assert!(area.min.x > 0 && area.max.y < 128);
+        assert_eq!(site_area(SiteKind::Gnarling, world), world);
+        // A world too small for the margin is kept whole.
+        let tiny = Aabr { min: Vec2::zero(), max: Vec2::broadcast(4) };
+        assert_eq!(site_area(SiteKind::IcebreakerDungeon, tiny), tiny);
     }
 }

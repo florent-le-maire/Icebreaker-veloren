@@ -119,6 +119,9 @@ client. Réglages dans `generation.ron` ; worktree `Veloren-donjon`. La grotte f
 - [ ] **F.7 Caméra en donjon** (si F.1 ne suffit pas) — mode « loin » de `camera.rs` : refuser un point de caméra
   séparé du joueur par de la roche.
   *Fin* : en couloir, dos au mur, la caméra ne sort jamais du donjon.
+- [x] **F.8 Donjon jamais au bord du monde** — entrée à 16 tronçons au moins du bord, donjon refait (autre graine)
+  s'il passe à moins d'un tronçon du bord ; réglages `placement` de `generation.ron`. Campagne lancée : donjons
+  placés sans dépassement ; descente jusqu'au bout pas faite en jeu. *(hash à venir)*
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
@@ -170,6 +173,7 @@ tâche pour ce qui casse.
 - F.1 : la caméra reste-t-elle dans le donjon à l'échelle 7 ? Sinon 8/8, puis F.7.
 - F.2 salles tournées, puits à échelles `H` ; F.3 taille ; F.4 bêtes endormies des nids ; F.5 formes, galerie sur
   deux étages ; F.6 rendu et orientation des sprites de décor ; G.10 sens des torches.
+- F.8 : un donjon généré de la campagne se finit en entier (aucune salle coupée par le bord du monde).
 - G.7 : descendre à pied jusqu'au chef et le tuer ; G.8 ouvrir une porte à clé à la main ; G.9 pose des dormeurs
   (à moitié dans le sol ?), approche accroupie.
 
