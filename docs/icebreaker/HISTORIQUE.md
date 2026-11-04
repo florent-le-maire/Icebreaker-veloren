@@ -317,6 +317,9 @@ puis vu en jeu par Flo le soir même : « c'est cool ».
   `verrouillage.ron`. Testé (tests, compilation) ; centrage pas encore vu en jeu (sinon : régler `ancrage`). — 30ed3cd7b3
 - [x] **X.9 Panneau fermé pour de bon** (Flo, 2026-11-04) — fermé (croix ou Échap), le panneau n'est plus redemandé
   chaque seconde ni rouvert par une réponse en route. Testé (compilation) ; pas encore vu en jeu. — 4cdf36023a
+- [x] **X.10 Parties de campagne** (Flo, 2026-11-04) — « Campagne » propose de continuer une partie ou d'en créer une
+  (nom tapé) ; une partie = `userdata-icebreaker/parties/<nom>` (`-Partie`), l'ancienne campagne devient « Partie 1 ».
+  Testé (tests, compilation, script sur une copie) ; panneau et lancement depuis le menu pas encore vus en jeu. — c861af7b08
 
 ## Jalon 4 — Démo à l'équipe — S.1
 

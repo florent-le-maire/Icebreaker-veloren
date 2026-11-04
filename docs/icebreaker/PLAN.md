@@ -158,6 +158,7 @@ tâche pour ce qui casse.
 - X.1 fermeture de la vue U au départ et à la mort ; X.2 alignement des clics sur les maisons en pente ; X.3 et X.9
   panneau, icônes, Échap, fermeture pour de bon ; X.4 couleurs et icônes des bâtiments ; X.5 E et T sur les PNJ dans
   leur maison ; X.8 recrues devant la charrette (posées 8 blocs trop haut sur le village d'essai ? `QUESTIONS.md`, Q30).
+- X.10 : panneau « Campagne » (continuer, nouvelle partie), passage de l'ancienne campagne en « Partie 1 ».
 - R.6 à R.8 : barre de compétences du vrai client ; mage en jeu ; tourbillon, fendeur et les trois postures du
   guerrier ; les recrues créées avant R.6 n'ont pas de compétences.
 
