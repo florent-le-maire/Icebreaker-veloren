@@ -131,7 +131,7 @@ garde et parade, monstres à coop) : tâches E.1 à E.16 dans `PLAN-DONJON.md`.
 
 ## Jalon 4 — Démo à l'équipe
 
-Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1` ; pas encore lancé sur un vrai Linux).
+Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
 
 - [ ] **S.2 Serveur sur le VPS** — *en cours : Veloren-serveur, 2026-11-04* — binaire Linux release, assets, un service systemd par lieu (village et donjon
   en même temps), pare-feu ouvert sur les ports de jeu ; `--no-auth` (on fait confiance aux potes au début).
