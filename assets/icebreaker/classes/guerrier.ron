@@ -10,4 +10,5 @@
     legs: Item("common.items.armor.leather_plate.pants"),
     feet: Item("common.items.armor.leather_plate.foot"),
     active_hands: InHands((Item("common.items.weapons.sword.starter"), None)),
+    inactive_hands: InHands((Item("common.items.tool.pickaxe_stone"), None)),
 )

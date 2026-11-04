@@ -153,6 +153,12 @@ mod tests {
             );
             assert!(equipped(&inventory, EquipSlot::Armor(ArmorSlot::Chest)).is_some(), "{id}");
             assert!(equipped(&inventory, EquipSlot::Glider).is_some(), "{id}");
+            // K.4 : une pioche en mains secondaires, pour les filons de la grotte.
+            assert_eq!(
+                equipped(&inventory, EquipSlot::InactiveMainhand).as_deref(),
+                Some("common.items.tool.pickaxe_stone"),
+                "{id}"
+            );
             // X.8 : deux icônes, l'arme d'abord.
             let icones = icones(&class);
             assert_eq!(icones.len(), 2, "{id}");

@@ -123,6 +123,12 @@ impl Structure for IcebreakerGrotte {
             cavity
                 .sample(move |pos| pos.z == floor_z(pos.xy()) + 1)
                 .fill(scatter(&look.sol, 920));
+            // The ores (Icebreaker K.4): at the foot of the walls, by depth.
+            let (veins, level, bord) = (grotte.filons.clone(), pocket.level, grotte.filons.bord);
+            let rim = move |xy: Vec2<i32>| ((xy - center.xy()).as_::<f32>() / radius.xy().as_::<f32>()).magnitude_squared();
+            cavity
+                .sample(move |pos| pos.z == floor_z(pos.xy()) + 1 && rim(pos.xy()) >= bord)
+                .fill(Fill::Sampling(Arc::new(move |pos| veins.ore(level, pos).map(Block::air))));
             cavity
                 .sample(move |pos| pos.z > center.z && !inside(pos + Vec3::unit_z()))
                 .fill(scatter(&look.plafond, 940));

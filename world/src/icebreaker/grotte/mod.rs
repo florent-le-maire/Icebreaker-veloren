@@ -3,6 +3,9 @@
 //! the `IcebreakerGrotte` plot (`site/plot/icebreaker_grotte.rs`). No cells
 //! nor rooms here: the layout is in blocks.
 
+use super::dungeon::settings::sprite_kind;
+use crate::util::RandomField;
+use common::{comp::item::tool::ToolKind, terrain::SpriteKind};
 use crate::util::{FastNoise, Sampler};
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -17,6 +20,8 @@ pub struct Settings {
     pub poche: PocketSettings,
     pub reseau: NetworkSettings,
     pub relief: ReliefSettings,
+    /// The ores (Icebreaker K.4).
+    pub filons: VeinSettings,
     /// The moods of the cave (Icebreaker K.3), by name; one is drawn per cave.
     pub ambiances: BTreeMap<String, Ambiance>,
 }
@@ -74,6 +79,46 @@ pub struct ReliefSettings {
     pub hauteur_concretions: (i32, i32),
 }
 
+/// The ores (Icebreaker K.4): mineable sprites at the foot of the pocket
+/// walls, richer with depth.
+#[derive(Clone, Debug, Deserialize)]
+pub struct VeinSettings {
+    /// Chance of an ore on each floor block of the rim.
+    pub chance: f32,
+    /// From where the floor counts as the rim: squared normalised distance
+    /// from the centre (1 at the wall).
+    pub bord: f32,
+    /// The ores of each depth level (sprite name, weight); the last tier
+    /// serves the deeper levels too.
+    pub paliers: Vec<Vec<(String, f32)>>,
+}
+
+impl VeinSettings {
+    /// The ores of a pocket at `level`.
+    pub fn tier(&self, level: i32) -> &[(String, f32)] {
+        let i = (level.max(0) as usize).min(self.paliers.len().saturating_sub(1));
+        self.paliers.get(i).map(|t| t.as_slice()).unwrap_or(&[])
+    }
+
+    /// The ore at `pos`, a floor block on the rim of a pocket at `level`, if
+    /// the draw (by position: the same every time) puts one there.
+    pub fn ore(&self, level: i32, pos: Vec3<i32>) -> Option<SpriteKind> {
+        if !RandomField::new(950).chance(pos, self.chance) {
+            return None;
+        }
+        let tier = self.tier(level);
+        let total: f32 = tier.iter().map(|(_, w)| w).sum();
+        let mut draw = RandomField::new(951).get_f32(pos) * total;
+        for (name, weight) in tier {
+            if draw < *weight {
+                return sprite_kind(name);
+            }
+            draw -= weight;
+        }
+        None
+    }
+}
+
 /// A mood of the cave (Icebreaker K.3): what its floors, walls, concretions
 /// and sprites are made of.
 #[derive(Clone, Debug, Deserialize)]
@@ -127,6 +172,22 @@ impl Settings {
         }
         if settings.relief.bosses < 0.0 || !(0.0..=0.5).contains(&settings.relief.rugosite) {
             errors.push("relief : bosses ≥ 0, rugosite entre 0 et 0,5".into());
+        }
+        let veins = &settings.filons;
+        if !(0.0..=1.0).contains(&veins.chance) || !(0.0..1.0).contains(&veins.bord) || veins.paliers.is_empty() {
+            errors.push("filons : chance entre 0 et 1, bord entre 0 et 1, au moins un palier".into());
+        }
+        for (sprite, weight) in veins.paliers.iter().flatten() {
+            match sprite_kind(sprite) {
+                None => errors.push(format!("filons : sprite inconnu « {sprite} »")),
+                Some(kind) if kind.mine_tool() != Some(ToolKind::Pick) => {
+                    errors.push(format!("filons : « {sprite} » ne se mine pas à la pioche"))
+                },
+                _ => {},
+            }
+            if *weight <= 0.0 {
+                errors.push(format!("filons : poids de « {sprite} » > 0"));
+            }
         }
         if settings.ambiances.is_empty() {
             errors.push("ambiances : au moins une".into());
@@ -239,6 +300,7 @@ pub struct Grotte {
     pub ambiance: String,
     pub look: Ambiance,
     pub relief: ReliefSettings,
+    pub filons: VeinSettings,
     pub summary: String,
 }
 
@@ -601,6 +663,7 @@ pub fn generate(
         ambiance,
         look,
         relief: relief.clone(),
+        filons: settings.filons.clone(),
     }
 }
 
@@ -687,5 +750,21 @@ mod tests {
             }
         }
         assert!(settings.ambiances.contains_key(&generate(&settings, 11, mouth, Some("lune"), &|_| mouth.z).ambiance));
+    }
+
+    #[test]
+    fn ores_get_richer_with_depth() {
+        let settings = Settings::load().unwrap();
+        let veins = &settings.filons;
+        let found = |level: i32| -> std::collections::HashSet<SpriteKind> {
+            (0..60)
+                .flat_map(|x| (0..60).map(move |y| Vec3::new(x, y, 0)))
+                .filter_map(|pos| veins.ore(level, pos))
+                .collect()
+        };
+        let (top, bottom) = (found(0), found(settings.reseau.niveaux - 1));
+        assert!(!top.is_empty() && !bottom.is_empty(), "pas de filon");
+        assert!(top.is_disjoint(&bottom), "les mêmes minerais en haut et au fond : {top:?} / {bottom:?}");
+        assert!(bottom.contains(&SpriteKind::Gold) && !top.contains(&SpriteKind::Gold), "l'or n'est pas au fond");
     }
 }

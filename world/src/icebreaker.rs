@@ -388,6 +388,15 @@ pub fn check_generated_grotte(
             .and_then(|c| c.get(local).ok())
             .is_some_and(|b| !b.is_solid())
     };
+    let block_at = |wpos: vek::Vec3<i32>| {
+        let key = key_of(wpos.xy());
+        let local = wpos - (key * chunk_size).with_z(0);
+        chunks
+            .get(&key)
+            .and_then(|c| c.as_ref())
+            .and_then(|c| c.get(local).ok())
+            .copied()
+    };
     let grotte = plot.grotte();
     let volume = grotte.bounds();
     // Standing at p: solid under, two blocks of air.
@@ -496,12 +505,27 @@ pub fn check_generated_grotte(
             format!("{:?} → {:?} (r {}, pente {:.2})", b.a, b.b, b.radius, (b.a.z - b.b.z).abs() as f32 / along)
         })
         .collect();
+    // The ores (K.4): one stands on them (a mineable sprite is solid); counted
+    // by the level of the pocket they lie in.
+    let mut ores = vec![0usize; grotte.pockets.iter().map(|p| p.level + 1).max().unwrap_or(1) as usize];
+    for p in &seen {
+        let mined = block_at(*p - vek::Vec3::unit_z())
+            .and_then(|b| b.get_sprite())
+            .is_some_and(|s| s.mine_tool() == Some(common::comp::item::tool::ToolKind::Pick));
+        if mined && let Some(pocket) = grotte.pockets.iter().find(|pocket| pocket.aabb().contains_point(*p)) {
+            ores[pocket.level as usize] += 1;
+        }
+    }
+    if ores.iter().sum::<usize>() == 0 {
+        problems.push("aucun filon sur lequel marcher".into());
+    }
     let summary = format!(
-        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied\nboyaux :\n  {}",
+        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, filons par niveau {:?}\nboyaux :\n  {}",
         grotte.summary,
         grotte.mouth,
         plot.entrance(),
         seen.len(),
+        ores,
         bores.join("\n  ")
     );
     Some((summary, problems))

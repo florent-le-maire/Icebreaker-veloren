@@ -65,11 +65,13 @@ réglages dans `assets/icebreaker/grottes/grotte.ron` ; exemple de contrôle `wo
   service (diagnostics `ICEBREAKER_GROTTE_COLONNE=x,y`, `ICEBREAKER_GROTTE_ATTEINT=x,y`). Testé : 4 tests, exemple
   sur 20 graines (0 problème), serveur lancé (graine 7, cristaux). Pas encore vu en jeu : lisibilité des ambiances
   et lumière sans lanterne. — e0fc89ce37
-- [ ] **K.4 Filons** — minerais en sprites minables contre les parois (bloc d'air voisin d'une roche), paliers par
-  profondeur (`Copper`, `Tin`, `Iron` en haut ; `Coal`, `Cobalt`, `Silver` au milieu ; `Gold`, gemmes au fond),
-  densités dans `grotte.ron`. Une pioche de Veloren dans le kit de chaque classe (`assets/icebreaker/classes/`,
-  décision de Flo ; la foreuse E.6 viendra en plus).
-  *Fin* : à la pioche, un filon du fond donne du minerai plus rare qu'un filon du haut (test de densité par palier).
+- [x] **K.4 Filons** — minerais de Veloren en sprites minables au pied des parois des poches (`grotte.ron` → `filons` :
+  chance par bloc du bord, paliers par niveau : cuivre, étain, fer en haut ; charbon, cobalt, argent au milieu ; or et
+  gemmes au fond), tirés par la position (`VeinSettings::ore`). Une pioche de pierre de Veloren en mains secondaires
+  de chaque classe (`classes/*.ron`, `inactive_hands` : on change d'arme pour miner). L'exemple compte les filons par
+  niveau (sprites minables sur lesquels on marche). Testé : test de paliers (haut et fond disjoints, or au fond), test
+  des classes (pioche), exemple sur 20 graines (0 problème, 2 à 23 filons par niveau), serveur lancé (graine 3,
+  ossuaire). Pas vérifié en jeu : miner un filon à la pioche, changement d'arme. — (hash)
 - [ ] **K.5 Habitants et victoire** — créatures par ambiance (gobelins, truffler, fungome / dodarock, cave_spider,
   cave_troll / basilisk, blue_oni…) dans les poches et au bout des culs-de-sac, plus nombreuses en profondeur ;
   un chef par ambiance (cave_troll, basilisk, ogre…) dans la poche la plus profonde ; `dungeon_mission` étendu au

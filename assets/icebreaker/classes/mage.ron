@@ -10,4 +10,5 @@
     legs: Item("common.items.armor.cloth.linen.pants"),
     feet: Item("common.items.armor.cloth.linen.foot"),
     active_hands: InHands((Item("common.items.weapons.staff.starter_staff"), None)),
+    inactive_hands: InHands((Item("common.items.tool.pickaxe_stone"), None)),
 )
