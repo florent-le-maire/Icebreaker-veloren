@@ -28,7 +28,7 @@ ouverte dans le dossier principal `Veloren-test` ; Veloren d'origine reste lisib
 - **Un agent = un worktree = une piste**, jamais à plusieurs dans le même dossier. Au démarrage, avant de toucher au
   code : `git worktree list` ; si le worktree de la piste existe, y travailler, sinon le créer :
   `git worktree add ../Veloren-<piste> -b icebreaker-<piste> master`, puis travailler **uniquement**
-  dans ce dossier. Pistes actuelles : `Veloren-donjon`, `Veloren-mod` (plan `docs/icebreaker/PLAN-MOD.md`).
+  dans ce dossier. Pistes, plans et worktrees : tableau des jalons dans `docs/icebreaker/README.md`.
 - Le premier build d'un worktree refait toute la compilation dans son propre `target/` (long, c'est normal).
 - Une simple question, une relecture ou une modification de doc d'une ligne n'ont pas besoin de worktree.
 - Tâche finie et testée → commit sur la branche de la piste, `git rebase master`, puis fusion en avance

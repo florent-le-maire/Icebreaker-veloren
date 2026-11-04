@@ -186,8 +186,4 @@ et l'essaim attendent les trous (bloc 3).
 
 ## Questions pour l'équipe
 
-1. **Ressources du donjon à la sortie** : perdues (proposé : on les trouve sur place), ou gardées à l'entrepôt ?
-2. **Escalade de Veloren** : la couper en donjon (proposé, sinon les trous ne comptent pas) ? Et au village ?
-3. **Inventaire** : commencer par la capacité simple (E.3) et ne faire la grille (E.16) que si la contrainte plaît ?
-4. **Foreuse et classes** : outil pour tous, ou réservé à une classe (ingénieur, `decisions/0010`) ?
-5. **Monstres à coop** : lesquels pour la démo ? Proposé : porte-bouclier, ombre, chaman (les moins chers).
+Dans `QUESTIONS.md`, § 3 « Donjon généré et grotte » (Q16 à Q20).

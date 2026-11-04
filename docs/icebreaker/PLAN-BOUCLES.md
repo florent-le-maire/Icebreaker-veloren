@@ -222,10 +222,4 @@ IA fine (G.11 à G.16 restent dans `PLAN.md`).
 
 ## Questions pour l'équipe
 
-1. **Mort** : sac au sol + blessure (proposé), ou plus dur (le personnage reste mort jusqu'à ce qu'on rapporte son
-   corps, comme `design/village.md`) ? Le plus dur attend le registre commun.
-2. **Or des contrats** : à la caisse (proposé, pour pousser à bâtir ensemble) ou partagé entre les membres ?
-3. **Entretien** : le village coûte-t-il de l'or chaque jour de carte (pression permanente, façon Darkest Dungeon) ?
-   Proposé : non pour la démo, à essayer après.
-4. **Patrouilles** toutes les 12 min : trop punitif pour une première soirée ? On peut commencer à 20 min.
-5. **Salle d'armes** : bloquer l'arbre de compétences de Veloren hors village, ou le laisser libre pour la démo ?
+Dans `QUESTIONS.md`, § 2 « Boucle de jeu » (Q8 à Q13).

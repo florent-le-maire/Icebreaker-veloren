@@ -187,16 +187,8 @@ réglages de départ, à ajuster en jouant.
   relais agrandi attire des recrues déjà aguerries (rang 1, puis 2).
 - Un **mode essai** (sans village) reste disponible pour tester un donjon : chacun choisit sa classe, rien n'est gardé.
 
-## Décisions de l'équipe (Flo, 2026-10-22)
+## Décisions et questions
 
-1. **Un seul village, commun** à tout le serveur (or personnel + caisse commune).
-2. **Pas de stress** façon Darkest Dungeon : les blessures et les traits portent la tension.
-3. **Registre commun** : tout le monde peut jouer tous les personnages ; un système de partage viendra peut-être.
-4. **Une scène 2D avec des menus** pour commencer ; plus tard, on y verra les personnages bouger.
-
-## À décider avec l'équipe
-
-5. **Changer de classe** à la salle d'armes : possible (cher) ou jamais (la classe fait l'identité de la recrue) ?
-6. **Combien de places dans le paquetage**, et les potions se partagent-elles entre joueurs en donjon ?
-7. **Le village peut-il être attaqué** quand le monde vit (phase 5) ? Si oui, l'entrepôt et la palissade deviennent
-   importants.
+Les quatre décisions de Flo du 2026-10-22 (un seul village commun, pas de stress, registre commun, scène 2D à menus)
+sont dans `../QUESTIONS.md`, § Tranché ; les questions restantes (changer de classe, paquetage, village attaqué)
+sont Q31 à Q33 du même fichier.

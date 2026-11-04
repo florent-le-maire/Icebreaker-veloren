@@ -87,24 +87,10 @@ réglages dans `assets/icebreaker/grottes/grotte.ron` ; exemple de contrôle `wo
 Plus tard : trous à sens unique et cordes (E.7), filons comme carburant de la foreuse (E.4, E.6), ressources à
 ramener (B.5, B.9), patrouilles (B.4), essaim qui sort des trous (E.15).
 
-## Décisions (Flo, 2026-11-03)
+## Décisions et questions
 
-1. La grotte se gagne comme le donjon : tuer le chef au fond.
-2. Chaque classe part avec une pioche de Veloren (K.4).
-
-## Questions pour l'équipe
-
-1. **Ambiances** : trois dès K.3 (proposé, en données), ou une seule pour la démo ?
-2. **Lumière** : grotte sombre où la lanterne compte (`design/donjon.md`, torche), ou assez de roche luisante pour
-  jouer sans ? Proposé : lisible sans lanterne pour la première version.
-3. **Message de victoire** : G.7 dit « le chef du donjon est tombé » aussi dans la grotte (texte commun de
-  `server/src/icebreaker_mission.rs`). Garder, ou un texte par lieu (« le chef de la grotte ») ?
-4. **Bêtes paisibles** : truffler, fungome et chauve-souris comptent dans le bilan des créatures tuées (elles font
-  partie des habitants). Les garder comme faune, ou ne compter que les agressives ?
-5. **Pioche** : en mains secondaires de chaque classe (on change d'arme pour miner). Préférable à une pioche dans le
-  sac ? La foreuse E.6 la remplacera-t-elle ?
-6. **Lumière et lisibilité** : K.3 à K.5 ne sont pas encore vus dans le vrai client ; le premier retour de jeu dira si
-  les ambiances se reconnaissent et si la roche luisante suffit (question 2).
+Décisions de Flo du 2026-11-03 (victoire en tuant le chef, pioche des classes) : `QUESTIONS.md`, § Tranché.
+Questions ouvertes : `QUESTIONS.md`, § 3 « Donjon généré et grotte » (Q21 à Q25).
 
 ## Bilan de session (2026-11-04)
 

@@ -1,7 +1,8 @@
 # Vision du jeu et grandes phases
 
-Document de conception d'origine (sorti de `CLAUDE.md` le 2026-10-20). À lire pour une décision de design ou pour
-découper une nouvelle phase. Les règles fixées sont dans `docs/design/`, l'avancement dans `docs/ROADMAP.md`.
+Document de conception d'origine du projet Godot, copié de `../Icebreaker` le 2026-10-28. À lire pour une décision
+de design. Les « grandes phases » plus bas sont le plan du projet Godot (.NET, SQLite…) : la feuille de route du
+prototype Veloren est `PLAN.md` ; les règles par domaine sont dans `design/` (index : `GAME_DESIGN.md`).
 
 ## Vision du jeu
 

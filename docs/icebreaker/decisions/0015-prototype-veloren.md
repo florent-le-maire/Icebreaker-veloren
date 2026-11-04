@@ -39,7 +39,8 @@ Clone de Veloren dans `../Veloren-test`, branche locale `icebreaker-traces` :
 - **Licence GPL v3** : distribuer le jeu (même entre amis) oblige à fournir le code source modifié ; pas de jeu
   fermé ou vendu.
 - **Langage Rust** : `src/` (C# pur, dont `WorldSim`) n'est pas réutilisable tel quel ; les règles se réécrivent.
-- **Architecture** : un processus serveur par instance, comme prévu par `0005`.
+- **Architecture** : un processus serveur par instance, comme prévu par `0005`. *Remplacé le 2026-10-29 par `0016` :
+  un seul serveur, des emplacements de donjon dans le même monde.*
 - Suivre les mises à jour de Veloren demandera de résoudre des conflits : garder nos changements regroupés.
 
 ## Recommandation

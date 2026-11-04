@@ -147,9 +147,4 @@ plus que l'interface du plugin et les réglages génériques.
 
 ## Questions ouvertes
 
-1. **Quand ?** Proposition : après D.1, si Veloren est gardé. Sinon, au moins faire les nouvelles fonctionnalités
-   (V.2 et suivantes) directement dans le plugin dès M.1–M.5 pour ne pas grossir l'écart.
-2. **Proposer l'interface élargie à Veloren ?** Aujourd'hui rien ne part vers `veloren` ; une proposition passerait par
-   une demande de fusion sur leur GitLab, à décider en équipe.
-3. **Licence du plugin** : GPL comme le reste, ou autre si la double licence de `plugin/wit/` le permet ?
-4. **V.6 (vue de dessus)** : le garder malgré le code client qu'il impose, ou attendre ?
+Dans `QUESTIONS.md`, § 1 « Stratégie et démo » (Q3 à Q6).
