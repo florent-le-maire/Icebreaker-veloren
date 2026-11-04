@@ -22,12 +22,12 @@ Le jeu doit rester lançable après chaque tâche.
   de cible. Détail et hashes : `HISTORIQUE.md`, `PLAN-GROTTE.md`.
 - **Presque rien n'a été vu dans le vrai client** : la plupart des tâches ont été vérifiées par des tests et le client
   texte ; seul le jalon X (interface du village) a été joué par Flo. Liste : « À vérifier en jeu » plus bas.
-- **Ce qui manque à la démo D.1** : le pillage sur la route (P.1 à P.4, pas commencé) et le serveur pour les potes
-  (S.2, S.3). Le contenu de la démo est à confirmer ou à réduire : `QUESTIONS.md`, Q1.
+- **Ce qui manque à la démo D.1** : le pillage sur la route (P.1 à P.4, pas commencé) et le client pour les potes
+  (S.3 ; le serveur S.2 tourne sur le VPS). Le contenu de la démo est à confirmer ou à réduire : `QUESTIONS.md`, Q1.
 - **Propositions en attente de l'équipe** : boucles de jeu (`PLAN-BOUCLES.md`, B.1 à B.13), mécaniques du donjon
   (`PLAN-DONJON.md`, E.1 à E.16), mod (`PLAN-MOD.md`), piliers, menace et âmes (`design/`), idées (`IDEES.md`).
 - **Prochaine étape proposée** : une session de test dans le vrai client sur la liste « À vérifier en jeu », puis le
-  bloc 1 des boucles (B.1 à B.4), puis S.2 et S.3 pour jouer à plusieurs (`QUESTIONS.md`, Q7).
+  bloc 1 des boucles (B.1 à B.4), puis S.3 pour jouer à plusieurs (`QUESTIONS.md`, Q7).
 
 ## Architecture visée
 
@@ -133,9 +133,9 @@ garde et parade, monstres à coop) : tâches E.1 à E.16 dans `PLAN-DONJON.md`.
 
 Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
 
-- [ ] **S.2 Serveur sur le VPS** — *en cours : Veloren-serveur, 2026-11-04* — binaire Linux release, assets, un service systemd par lieu (village et donjon
-  en même temps), pare-feu ouvert sur les ports de jeu ; `--no-auth` (on fait confiance aux potes au début).
-  *Fin* : un pote se connecte à `<vps>:14100` depuis chez lui.
+- [x] **S.2 Serveur sur le VPS** — campagne sur `116.202.107.125:14100` (service `icebreaker-veloren@campagne`,
+  `icebreaker-serveur/deployer.sh`), terrain pré-généré relu au démarrage (~1 s). Vérifié au client texte depuis le
+  PC ; pas encore au vrai client ni depuis chez un pote. `66960fc9a4`
 - [ ] **S.3 Client pour les potes** — adresse du serveur dans `lieux.ron` (pas de serveur local lancé si l'adresse
   est distante), zip du client à envoyer.
   *Fin* : un pote lance le zip, clique « Village » et arrive sur le VPS.
