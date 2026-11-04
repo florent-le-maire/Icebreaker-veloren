@@ -849,9 +849,22 @@ impl PlayState for SessionState {
                             GameInput::Primary => {
                                 self.walking_speed = false;
                                 let mut client = self.client.borrow_mut();
+                                // Icebreaker : mort, le clic passe à l'allié suivant (T.4).
+                                if crate::icebreaker_mort::registre() && client.is_dead() {
+                                    if state
+                                        && let Some(allie) = crate::icebreaker_mort::allie_suivant(
+                                            &client,
+                                            self.viewpoint_entity,
+                                        )
+                                    {
+                                        client.start_spectate_entity(allie);
+                                        self.viewpoint_entity = Some(allie);
+                                        self.scene.camera_mut().set_mode(CameraMode::FirstPerson);
+                                    }
+                                }
                                 // Building inputs take precedence... but only if there's an active
                                 // building target.
-                                if let Some(build_target) = build_target.filter(|_| state) {
+                                else if let Some(build_target) = build_target.filter(|_| state) {
                                     client.remove_block(build_target.position_int());
                                 } else {
                                     client.handle_input(
@@ -927,6 +940,11 @@ impl PlayState for SessionState {
                             GameInput::Respawn => {
                                 self.walking_speed = false;
                                 self.stop_auto_walk();
+                                // Icebreaker : on cesse de regarder un allié (T.4).
+                                if state && self.viewpoint_entity.take().is_some() {
+                                    self.client.borrow_mut().stop_spectate_entity();
+                                    self.scene.camera_mut().set_mode(CameraMode::ThirdPerson);
+                                }
                                 if state && self.client.borrow_mut().respawn() {
                                     global_state.profile.tutorial.event_respawn();
                                     self.scene.screen_fade = -0.5;
@@ -1485,7 +1503,12 @@ impl PlayState for SessionState {
             {
                 self.client.borrow_mut().stop_spectate_entity();
                 self.viewpoint_entity = None;
-                self.scene.camera_mut().set_mode(CameraMode::Freefly);
+                // Icebreaker : un mort ne passe pas en caméra libre (T.4).
+                if crate::icebreaker_mort::registre() && self.client.borrow().is_dead() {
+                    self.scene.camera_mut().set_mode(CameraMode::ThirdPerson);
+                } else {
+                    self.scene.camera_mut().set_mode(CameraMode::Freefly);
+                }
             }
 
             let (viewpoint_entity, mutable_viewpoint) = self.viewpoint_entity();

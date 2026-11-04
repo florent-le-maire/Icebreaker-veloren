@@ -259,6 +259,12 @@ impl Sys {
                 {
                     *spectating_entity = Some(uid);
                 }
+                // Icebreaker : un mort de la campagne regarde un allié (T.4).
+                else if crate::icebreaker_registre::active()
+                    && healths.get(entity).is_some_and(|h| h.is_dead)
+                {
+                    *spectating_entity = Some(uid);
+                }
             },
             ClientGeneral::SetBattleMode(battle_mode) => {
                 emitters.emit(event::SetBattleModeEvent {

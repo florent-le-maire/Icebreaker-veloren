@@ -28,3 +28,37 @@ pub fn reste(uid: Uid, a_terre: bool, maintenant: f64) -> Option<(f64, f32)> {
     let reste = regles.reste_a_terre(*depuis, maintenant);
     Some((reste, (reste / regles.delai_a_terre.max(0.001)) as f32))
 }
+
+/// Icebreaker : le serveur a un registre (campagne, village) : un mort y choisit entre le retour
+/// au village et regarder un allié (T.4). Noté par l'écran de personnages.
+static REGISTRE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn set_registre(actif: bool) { REGISTRE.store(actif, std::sync::atomic::Ordering::Relaxed); }
+
+pub fn registre() -> bool { REGISTRE.load(std::sync::atomic::Ordering::Relaxed) }
+
+/// L'allié à regarder après `actuel` : les autres joueurs vivants que le client voit, dans
+/// l'ordre de leur `Uid`, en boucle.
+pub fn allie_suivant(client: &client::Client, actuel: Option<specs::Entity>) -> Option<specs::Entity> {
+    use specs::{Join, WorldExt};
+    let ecs = client.state().ecs();
+    let healths = ecs.read_storage::<common::comp::Health>();
+    let mut allies = (
+        &ecs.entities(),
+        &ecs.read_storage::<common::comp::Player>(),
+        &ecs.read_storage::<Uid>(),
+    )
+        .join()
+        .filter(|(e, _, _)| *e != client.entity())
+        // Les fantômes (spectateurs) n'ont pas de santé.
+        .filter(|(e, _, _)| healths.get(*e).is_some_and(|h| !h.is_dead))
+        .map(|(e, _, uid)| (*uid, e))
+        .collect::<Vec<_>>();
+    allies.sort_by_key(|(uid, _)| uid.0);
+    let actuel = actuel.and_then(|e| allies.iter().position(|(_, a)| *a == e));
+    let suivant = actuel.map_or(0, |i| i + 1);
+    allies.get(suivant % allies.len().max(1)).map(|(_, e)| *e)
+}
+
+/// Il y a un autre joueur vivant à regarder.
+pub fn un_allie_a_regarder(client: &client::Client) -> bool { allie_suivant(client, None).is_some() }

@@ -339,6 +339,10 @@ impl PlayState for CharSelectionState {
                     }
 
                     self.icebreaker_fantome = fantome;
+                    // Icebreaker : un serveur à registre, la mort y a ses choix (T.4).
+                    if fantome {
+                        crate::icebreaker_mort::set_registre(true);
+                    }
                     // The list is here and no ghost asked: a place without registry, the
                     // usual screen (X.7).
                     if !fantome && !self.client.borrow().character_list().loading {

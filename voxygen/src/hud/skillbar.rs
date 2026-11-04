@@ -519,6 +519,18 @@ impl<'a> Skillbar<'a> {
                         "key" => key.display_string()
                     },
                 )
+            } else if crate::icebreaker_mort::registre() {
+                // Icebreaker : retour au village, ou regarder un allié (T.4).
+                let mut msg = localized_strings
+                    .get_msg_ctx("icebreaker-mort-village", &i18n::fluent_args! {
+                        "key" => key.display_string()
+                    })
+                    .into_owned();
+                if crate::icebreaker_mort::un_allie_a_regarder(self.client) {
+                    msg.push_str(" — ");
+                    msg.push_str(&localized_strings.get_msg("icebreaker-mort-regarder"));
+                }
+                msg.into()
             } else {
                 localized_strings.get_msg_ctx("hud-press_key_to_respawn", &i18n::fluent_args! {
                     "key" => key.display_string()

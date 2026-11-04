@@ -1560,6 +1560,7 @@ impl ServerEvent for RespawnEvent {
         ReadStorage<'a, Client>,
         ReadStorage<'a, Hardcore>,
         ReadStorage<'a, comp::Waypoint>,
+        Read<'a, crate::icebreaker_slots::IcebreakerSlots>,
     );
 
     fn handle(
@@ -1575,9 +1576,21 @@ impl ServerEvent for RespawnEvent {
             clients,
             hardcore,
             waypoints,
+            icebreaker_slots,
         ): Self::SystemData<'_>,
     ) {
         for RespawnEvent(entity) in events {
+            // Icebreaker : mort en expédition (campagne à registre), on rentre au village en
+            // fantôme, comme « Rendre au registre » (T.4).
+            if crate::icebreaker_registre::active()
+                && let Some(client) = clients.get(entity)
+                && positions
+                    .get(entity)
+                    .is_some_and(|pos| icebreaker_slots.at(pos.0.xy()).is_some())
+            {
+                client.send_fallible(ServerGeneral::IcebreakerJouer(None));
+                continue;
+            }
             // Hardcore characters cannot respawn
             if !hardcore.contains(entity) && clients.contains(entity) {
                 let respawn_point = waypoints

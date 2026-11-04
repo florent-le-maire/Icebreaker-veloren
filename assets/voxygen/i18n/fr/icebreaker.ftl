@@ -25,3 +25,5 @@ icebreaker-a-terre-reste = Mort dans { $secondes } s
 icebreaker-sac_du_mort = Sac du mort
     .desc = Ce que portait un compagnon tombé.
 icebreaker-fouiller-sac = Fouiller le sac
+icebreaker-mort-village = { $key } : retour au village
+icebreaker-mort-regarder = clic gauche : regarder un allié

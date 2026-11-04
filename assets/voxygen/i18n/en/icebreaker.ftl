@@ -25,3 +25,5 @@ icebreaker-a-terre-reste = Death in { $secondes } s
 icebreaker-sac_du_mort = Bag of the dead
     .desc = What a fallen companion was carrying.
 icebreaker-fouiller-sac = Search the bag
+icebreaker-mort-village = { $key }: back to the village
+icebreaker-mort-regarder = left click: watch an ally
