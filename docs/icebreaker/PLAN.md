@@ -123,6 +123,20 @@ client. Réglages dans `generation.ron` ; worktree `Veloren-donjon`. La grotte f
   s'il passe à moins d'un tronçon du bord ; réglages `placement` de `generation.ron`. Campagne lancée : donjons
   placés sans dépassement ; descente jusqu'au bout pas faite en jeu. de7388d606
 
+## Jalon T — À terre, mort et sac du mort (Flo, 2026-11-04)
+
+À 0 PV on tombe à terre ; un allié relève (E) avec 25 % des PV ; passé 30 s à terre, on meurt. Mort en
+expédition : un sac au sol garde l'inventaire hors équipement porté, un allié le fouille 3 s pour le prendre. Le mort
+rentre au village en fantôme (puis joue un perso de sa réserve) ou regarde un allié sur place ; si le dernier vivant
+tombe, tous rentrent. Réglages : `assets/icebreaker/mort.ron` ; worktree `Veloren-mort`. Le personnage mort revient
+au registre (`QUESTIONS.md`, Q28).
+
+- [ ] **T.1 Relever à 25 % et mort après 30 s à terre** — *en cours : Veloren-mort, 2026-11-04*
+- [ ] **T.2 Visuel du temps qui reste à terre** — barre et compte à rebours (soi, au-dessus des autres).
+- [ ] **T.3 Le sac du mort** — sac au sol, fouillé en 3 s par un allié, contenu dans son inventaire.
+- [ ] **T.4 Après la mort : village ou regarder un allié** — R : fantôme au village ; clic : allié suivant.
+- [ ] **T.5 Le dernier tombe : retour au village** — tous les joueurs de l'emplacement morts, tous rentrent.
+
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
 Ce qui rend l'enchaînement village → donjon → village intéressant (risque, butin, besoins du village) : règles et

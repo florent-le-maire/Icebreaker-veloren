@@ -366,6 +366,8 @@ impl ServerEvent for HelpDownedEvent {
             if let Some(entity) = data.id_maps.uid_entity(ev.target) {
                 if let Some(mut health) = data.healths.get_mut(entity) {
                     health.refresh_death_protection();
+                    // Icebreaker : relevé avec une part de ses PV (jalon T, `mort.ron`).
+                    health.set_fraction(common::icebreaker_mort::IcebreakerMort::actuel().pv_releve);
                 }
                 if let Some(mut character_state) = data.character_states.get_mut(entity)
                     && matches!(*character_state, comp::CharacterState::Crawl)

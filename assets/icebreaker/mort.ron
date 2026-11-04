@@ -1,0 +1,9 @@
+// Icebreaker : à terre, relève et mort (jalon T, `common/src/icebreaker_mort.rs`).
+// À 0 PV on tombe à terre (on rampe) ; un allié qui interagit (E) relève avec `pv_releve` des PV maximum.
+// Passé `delai_a_terre` secondes à terre, on meurt. Mort en expédition, on laisse un sac (tout l'inventaire
+// hors équipement porté) qu'un allié fouille en `duree_fouille` secondes pour en prendre le contenu.
+(
+    delai_a_terre: 30.0,
+    pv_releve: 0.25,
+    duree_fouille: 3.0,
+)

@@ -717,6 +717,8 @@ impl Server {
         let (mission, sleep) = (None, None);
         state.ecs_mut().insert(mission.unwrap_or_default());
         state.ecs_mut().insert(sleep.unwrap_or_default());
+        // Icebreaker : à terre et mort (jalon T).
+        state.ecs_mut().insert(sys::icebreaker_mort::IcebreakerATerre::default());
 
         // Set the spawn point we calculated above
         state.ecs_mut().insert(spawn_point);
