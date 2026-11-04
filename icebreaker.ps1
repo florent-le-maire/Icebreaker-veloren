@@ -39,7 +39,9 @@ param(
     [ValidateSet("", "spring", "summer", "autumn", "winter")] [string]$Saison = "",
     [ValidateSet("", "1", "2", "3", "4", "5")] [string]$Menace = "",
     [ValidateSet("", "low", "medium", "high")] [string]$Ennemis = "",
-    [ValidateSet("", "gnarling", "adlet", "cultist")] [string]$Faction = ""
+    [ValidateSet("", "gnarling", "adlet", "cultist")] [string]$Faction = "",
+    # Ambiance de la grotte (K.3) : champignons, cristaux ou ossuaire ; au hasard sinon.
+    [string]$Ambiance = ""
 )
 
 $repo = $PSScriptRoot
@@ -118,6 +120,7 @@ $env:ICEBREAKER_DONJON_SAISON = $Saison
 $env:ICEBREAKER_DONJON_MENACE = $Menace
 $env:ICEBREAKER_DONJON_ENNEMIS = $Ennemis
 $env:ICEBREAKER_DONJON_FACTION = $Faction
+$env:ICEBREAKER_GROTTE_AMBIANCE = $Ambiance
 Write-Host "Icebreaker : $Lieu ($Site), graine $Seed, port $port"
 Set-Location $repo
 & ".\target\debug\veloren-server-cli.exe" --no-auth

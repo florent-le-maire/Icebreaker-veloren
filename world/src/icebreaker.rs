@@ -346,16 +346,16 @@ pub fn check_generated_dungeon(
 
 
 /// Generates the chunks of the cave in `world` and checks its blocks
-/// (`examples/icebreaker_grotte.rs`): the centre of each pocket and the blocks
-/// along each bore are hollow. `None` if the world has no cave; otherwise a
-/// summary and the problems found.
+/// (`examples/icebreaker_grotte.rs`): walking from the mouth (steps of one
+/// block up, any fall down), every pocket is reached (Icebreaker K.2). `None`
+/// if the world has no cave; otherwise a summary and the problems found.
 pub fn check_generated_grotte(
     world: &crate::World,
     index: crate::IndexRef,
 ) -> Option<(String, Vec<String>)> {
     use common::terrain::TerrainChunkSize;
     use common::vol::{ReadVol, RectVolSize};
-    use std::collections::HashMap;
+    use std::collections::{HashMap, HashSet, VecDeque};
 
     let site = world
         .civs()
@@ -389,24 +389,124 @@ pub fn check_generated_grotte(
             .is_some_and(|b| !b.is_solid())
     };
     let grotte = plot.grotte();
-    let mut problems = Vec::new();
-    for pocket in &grotte.pockets {
-        if !hollow(pocket.center) {
-            problems.push(format!("poche pleine en {:?}", pocket.center));
-        }
+    let volume = grotte.bounds();
+    // Standing at p: solid under, two blocks of air.
+    let standing = |p: vek::Vec3<i32>| !hollow(p - vek::Vec3::unit_z()) && hollow(p) && hollow(p + vek::Vec3::unit_z());
+    // From the mouth, down to the ground.
+    let mut start = grotte.mouth + vek::Vec3::unit_z() * 3;
+    while hollow(start - vek::Vec3::unit_z()) && start.z > volume.min.z {
+        start.z -= 1;
     }
-    for bore in &grotte.bores {
-        for k in 0..=8 {
-            let p = bore.a.as_::<f32>() + (bore.b - bore.a).as_::<f32>() * (k as f32 / 8.0);
-            let p = p.map(|e| e.round() as i32);
-            if !hollow(p) {
-                problems.push(format!("boyau bouché en {p:?}"));
+    let mut seen = HashSet::from([start]);
+    let mut queue = VecDeque::from([start]);
+    while let Some(p) = queue.pop_front() {
+        for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
+            let column = p.xy() + vek::Vec2::new(dx, dy);
+            if !volume.contains_point(column.with_z(p.z)) {
+                continue;
+            }
+            // One step up, or down as far as it falls, through air only.
+            let mut z = p.z + 1;
+            if !(hollow(column.with_z(z)) && hollow(column.with_z(z + 1))) {
+                continue;
+            }
+            while z > volume.min.z && hollow(column.with_z(z - 1)) {
+                z -= 1;
+            }
+            let next = column.with_z(z);
+            if standing(next) && seen.insert(next) {
+                queue.push_back(next);
             }
         }
     }
-    let summary = format!("{}\nbouche en {:?}, arrivée en {:?}", grotte.summary, grotte.mouth, plot.entrance());
+    let mut problems = Vec::new();
+    for (i, pocket) in grotte.pockets.iter().enumerate() {
+        let aabb = pocket.aabb();
+        if !seen.iter().any(|p| aabb.contains_point(*p)) {
+            problems.push(format!("poche {i} (niveau {}) inaccessible depuis la bouche : {:?}", pocket.level, pocket.center));
+        }
+    }
+    // Along each bore, the floor under its axis never steps more than one
+    // block (one walks it both ways).
+    for (i, bore) in grotte.bores.iter().enumerate() {
+        let n = ((bore.b - bore.a).as_::<f32>().magnitude().ceil() as i32).max(1);
+        let mut last: Option<(i32, vek::Vec3<i32>)> = None;
+        for k in 0..=n {
+            let p = (bore.a.as_::<f32>() + (bore.b - bore.a).as_::<f32>() * (k as f32 / n as f32))
+                .map(|e| e.round() as i32);
+            // The entrance bore may run in the open for a while: the terrain decides there.
+            if i == 0 && (p.z + 1..=p.z + 12).all(|z| hollow(p.xy().with_z(z))) {
+                last = None;
+                continue;
+            }
+            let mut z = p.z;
+            while z > volume.min.z && hollow(p.xy().with_z(z)) {
+                z -= 1;
+            }
+            if let Some((prev, at)) = last
+                && (z - prev).abs() > 1
+            {
+                problems.push(format!("boyau {i} : marche de {} blocs entre {at:?} et {:?}", (z - prev).abs(), p.xy().with_z(z)));
+            }
+            last = Some((z, p.xy().with_z(z)));
+        }
+    }
+    for (i, end) in grotte.dead_ends.iter().enumerate() {
+        if !hollow(end.b) {
+            problems.push(format!("cul-de-sac {i} bouché en {:?}", end.b));
+        }
+    }
+    // `ICEBREAKER_GROTTE_ATTEINT=x,y`: the heights reached on foot in that column.
+    if let Ok(column) = std::env::var("ICEBREAKER_GROTTE_ATTEINT")
+        && let Some((x, y)) = column.split_once(',')
+        && let (Ok(x), Ok(y)) = (x.trim().parse::<i32>(), y.trim().parse::<i32>())
+    {
+        let mut heights: Vec<i32> = seen.iter().filter(|p| p.x == x && p.y == y).map(|p| p.z).collect();
+        heights.sort();
+        problems.push(format!("atteint en ({x}, {y}) : {heights:?}"));
+    }
+    // `ICEBREAKER_GROTTE_COLONNE=x,y`: the blocks of that column, to look at a problem.
+    if let Ok(column) = std::env::var("ICEBREAKER_GROTTE_COLONNE")
+        && let Some((x, y)) = column.split_once(',')
+        && let (Ok(x), Ok(y)) = (x.trim().parse::<i32>(), y.trim().parse::<i32>())
+    {
+        let line: String = (volume.min.z..=volume.max.z)
+            .rev()
+            .map(|z| if hollow(vek::Vec3::new(x, y, z)) { '.' } else { '#' })
+            .collect();
+        problems.push(format!("colonne ({x}, {y}) de z = {} (gauche) à {} : {line}", volume.max.z, volume.min.z));
+    }
+    let pockets: Vec<String> = grotte
+        .pockets
+        .iter()
+        .map(|p| format!("{:?} r {:?} niveau {} sol {}", p.center, p.radius, p.level, p.floor().z))
+        .collect();
+    problems.extend(std::env::var("ICEBREAKER_GROTTE_COLONNE").ok().map(|_| format!("poches :\n  {}", pockets.join("\n  "))));
+    let concretions: Vec<String> = grotte
+        .speleothems
+        .iter()
+        .map(|s| format!("{:?} {:?} h {}", s.kind, s.base, s.height))
+        .collect();
+    problems.extend(std::env::var("ICEBREAKER_GROTTE_COLONNE").ok().map(|_| format!("concrétions :\n  {}", concretions.join("\n  "))));
+    let bores: Vec<String> = grotte
+        .bores
+        .iter()
+        .map(|b| {
+            let along = (b.a.xy() - b.b.xy()).as_::<f32>().magnitude().max(1.0);
+            format!("{:?} → {:?} (r {}, pente {:.2})", b.a, b.b, b.radius, (b.a.z - b.b.z).abs() as f32 / along)
+        })
+        .collect();
+    let summary = format!(
+        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied\nboyaux :\n  {}",
+        grotte.summary,
+        grotte.mouth,
+        plot.entrance(),
+        seen.len(),
+        bores.join("\n  ")
+    );
     Some((summary, problems))
 }
+
 /// Whether the instance is the village (built around a town).
 pub fn is_village() -> bool { instance_site().is_some_and(is_town) }
 

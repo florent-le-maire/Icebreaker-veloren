@@ -50,16 +50,21 @@ réglages dans `assets/icebreaker/grottes/grotte.ron` ; exemple de contrôle `wo
   en pente qui y descend ; arrivée devant la bouche. Testé : tests, exemple `icebreaker_grotte` sur 3 graines (poche
   et boyau creux), serveur lancé (apparition devant la bouche) ; pas encore descendu en jeu. — 619d257d25
 - [x] **K.2 Réseau de poches et de boyaux** — tracé déterministe par graine (`grotte.ron` → `reseau` : 6 à 10 poches,
-  3 niveaux à 22 blocs d'écart, boyaux de rayon 3 à 5, 1 à 2 boucles entre les poches les plus proches, 1 à 2
-  culs-de-sac par poche) : chaque poche accrochée à une poche du niveau au-dessus, jamais deux qui se chevauchent ;
-  poches en ellipsoïde, boyaux droits (`line`) ; le bruit des surfaces attend K.3. Contrôle dans l'exemple : marche
-  depuis la bouche (un bloc de montée, descentes libres), toutes les poches atteintes, culs-de-sac creux. Testé :
-  tests (20 graines : liées, sur plusieurs niveaux, sans chevauchement), exemple sur 25 graines (0 problème), serveur
-  lancé (graine 42 : 7 poches, 2 boucles). Pas encore parcouru en jeu. — bca9fee91b
-- [ ] **K.3 Relief et décor** — sol irrégulier, stalagmites et stalactites, `GlowingRock` dans les parois,
-  champignons, mycélium au plafond, cristaux, os et toiles par `Fill::Sampling` ; trois ambiances en données
-  (`-Ambiance`, variable `ICEBREAKER_GROTTE_AMBIANCE`, au hasard sinon).
-  *Fin* : en jeu, on reconnaît l'ambiance ; assez de lumière pour se repérer sans lanterne.
+  3 niveaux, boyaux de rayon 3 à 5, 1 à 2 boucles entre les poches les plus proches, 1 à 2 culs-de-sac par poche) :
+  chaque poche accrochée à une poche du niveau au-dessus, jamais deux qui se chevauchent ; poches en ellipsoïde,
+  boyaux droits (`line`). Testé : tests (20 graines : liées, sur plusieurs niveaux, sans chevauchement), serveur
+  lancé (graine 42 : 7 poches, 2 boucles). Le contrôle « marche depuis la bouche » de l'exemple était resté inactif
+  par erreur (l'ancien contrôle tournait encore) : il n'a pris effet qu'en K.3, qui a corrigé ce qu'il a trouvé.
+  Pas encore parcouru en jeu. — bca9fee91b
+- [x] **K.3 Relief et décor** — parois au bruit, sol en remblai bosselé avec roche luisante, sol plat sous chaque poche
+  pour que les boyaux y arrivent de plain-pied, stalagmites, stalactites et cristaux (cônes), sprites au sol et au
+  plafond ; trois ambiances en données (`grotte.ron` → `ambiances` : champignons, cristaux, ossuaire ; `-Ambiance`,
+  variable `ICEBREAKER_GROTTE_AMBIANCE`, au hasard sinon). Tracé revu pour que tout se marche : poches sous le terrain
+  (entrée vers le terrain le plus haut, allongée jusqu'à une pente douce), boyaux de bord à bord au niveau du sol,
+  pas de boyau qui en traverse un autre, sol des boyaux posé explicitement. Contrôle à pied de l'exemple remis en
+  service (diagnostics `ICEBREAKER_GROTTE_COLONNE=x,y`, `ICEBREAKER_GROTTE_ATTEINT=x,y`). Testé : 4 tests, exemple
+  sur 20 graines (0 problème), serveur lancé (graine 7, cristaux). Pas encore vu en jeu : lisibilité des ambiances
+  et lumière sans lanterne. — (hash)
 - [ ] **K.4 Filons** — minerais en sprites minables contre les parois (bloc d'air voisin d'une roche), paliers par
   profondeur (`Copper`, `Tin`, `Iron` en haut ; `Coal`, `Cobalt`, `Silver` au milieu ; `Gold`, gemmes au fond),
   densités dans `grotte.ron`. Une pioche de Veloren dans le kit de chaque classe (`assets/icebreaker/classes/`,
