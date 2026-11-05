@@ -128,8 +128,8 @@ client. Réglages dans `generation.ron` ; worktree `Veloren-donjon`. La grotte f
 À 0 PV on tombe à terre ; un allié relève (E) avec 25 % des PV ; passé 30 s à terre, on meurt. Mort en
 expédition : un sac au sol garde l'inventaire hors équipement porté, un allié le fouille 3 s pour le prendre. Le mort
 rentre au village en fantôme (puis joue un perso de sa réserve) ou regarde un allié sur place ; si le dernier vivant
-tombe, tous rentrent. Réglages : `assets/icebreaker/mort.ron` ; worktree `Veloren-mort`. Le personnage mort revient
-au registre (`QUESTIONS.md`, Q28).
+tombe, tous rentrent. Le personnage mort est perdu : il quitte le registre et il est supprimé. Réglages :
+`assets/icebreaker/mort.ron` ; worktree `Veloren-mort`.
 
 - [x] **T.1 Relever à 25 % et mort après 30 s à terre** — client texte à deux : relevé à 25/100 PV, mort ~30 s
   après une seconde chute. 63f57ce830
@@ -141,6 +141,8 @@ au registre (`QUESTIONS.md`, Q28).
   allié suivant, pas vu dans le vrai client. 61b3637e5c
 - [x] **T.5 Le dernier tombe : retour au village** — client texte : B meurt seul en bas, message et retour en
   fantôme. 3e9abc6ef2
+- [x] **T.6 Le mort est perdu pour de bon** — fiche retirée du registre, personnage supprimé de la base. Client
+  texte : registre à 0/10 après la mort, plus dans la base ; texte de mort du vrai client pas vu. 186c82f80d
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 

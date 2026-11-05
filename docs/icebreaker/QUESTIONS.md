@@ -31,9 +31,7 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 
 - **Q8 Valider le plan des boucles** (règles chiffrées, bâtiments à niveaux, contrats, 13 tâches). *Qui* : équipe.
   Il remplace les maisons de C.3 par des bâtiments nommés (B.8) : à trancher avant C.5 et C.6.
-- **Q9 La mort en expédition** : le sac au sol est fait (jalon T, voir « Tranché » 2026-11-04) ; reste à choisir
-  entre la blessure (proposé, B.10) et la version dure, le personnage reste mort jusqu'à ce qu'on rapporte son corps
-  (`design/village.md`). Lié à Q28.
+- **Q9** *(numéro réservé : « la mort en expédition » est tranchée, voir plus bas, 2026-11-04 et 2026-11-05).*
 - **Q10 L'or des contrats** : à la caisse (proposé, pour pousser à bâtir ensemble) ou partagé entre les membres.
 - **Q11 Entretien du village** : coûte-t-il de l'or chaque jour de carte (pression permanente, façon Darkest
   Dungeon) ? *Proposé* : non pour la démo, à essayer après. Variante « tribut du seigneur » : `IDEES.md`, idée 8.
@@ -69,8 +67,7 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q26 Engager à la charrette** : gratuit (un fantôme n'a pas d'or ; proposé pour la démo) ou payé par la caisse ?
   *Origine* : `PLAN.md`. *Qui* : Flo.
 - **Q27 Places au registre** (proposé : 10) et peut-on renvoyer un personnage ?
-- **Q28 Un personnage du registre qui meurt** : aujourd'hui (jalon T) il revient au registre, vivant, avec son
-  équipement mais sans son sac. Le garder ainsi (blessure plus tard, B.10), ou il quitte le registre ? Lié à Q9.
+- **Q28** *(numéro réservé : « un personnage du registre qui meurt » est tranchée, voir plus bas, 2026-11-05).*
 - **Q29 Enseignes** (X.4) : le sprite `Sign` de Veloren n'a pas de texte ; une enseigne nommée demanderait un asset à
   nous. On s'en tient aux caisses, tonneaux et lanternes, ou on dessine un panneau par bâtiment ?
 - **Q30 Recrues devant la charrette** (X.8) : sur le village d'essai, leurs postes tombaient 8 blocs au-dessus de la
@@ -128,4 +125,6 @@ Petites décisions, par date ; les règles qui en sortent sont dans le fichier i
 - **2026-11-04 (Flo, `PLAN.md`, jalon T)** : à terre 30 s au plus (compte à rebours visible), relève à 25 % des PV ;
   mort en expédition : sac au sol avec l'inventaire hors équipement porté, fouillé en 3 s par un allié qui en garde
   le contenu ; le mort rentre au village en fantôme ou regarde un allié sur place (pas de caméra libre) ; quand le
-  dernier vivant tombe, tous rentrent.
+  dernier vivant tombe, tous rentrent (ex-Q9, en partie).
+- **2026-11-05 (Flo, `PLAN.md`, T.6)** : un personnage mort en expédition est perdu pour de bon : il quitte le
+  registre et il est supprimé (ex-Q9 et Q28 ; pas de blessure ni de corps à rapporter pour l'instant).
