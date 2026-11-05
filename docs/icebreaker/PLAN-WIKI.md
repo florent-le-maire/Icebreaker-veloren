@@ -67,9 +67,10 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
   verrouillage, plan du village), déclarés par `schema = "…"` dans l'en-tête de la fiche ; vus en captures Edge. 3c4f1b7fcd
 - [x] **W.10 Captures d'écran** — `![légende](images/x.png)` dans une fiche (ou une page de doc) rendu en figure avec
   légende et zoom ; tant que le fichier manque, un encadré « capture à prendre » dit quoi photographier et où déposer
-  le fichier ; deux captures demandées par fiche, aucune prise encore ; zoom pas essayé dans un vrai navigateur. HASH_W10
-- [ ] **W.11 Icônes dans les tableaux** — icône de Veloren à côté des armes des classes, des états et des objets dans
-  les tableaux de réglages et de design, quand elle existe.
+  le fichier ; deux captures demandées par fiche, aucune prise encore ; zoom pas essayé dans un vrai navigateur. 9d93e2b3ff
+- [x] **W.11 Icônes dans les tableaux** — `icones.rs` : vingt-quatre règles (mots → icône de Veloren) appliquées à la
+  première cellule des tableaux Markdown et aux lignes des réglages (armes, classes, lieux, états, sac, potion) ;
+  vu en captures Edge sur combat, classes et lieux. HASH_W11
 
 Hors périmètre pour l'instant : accès public, édition dans le navigateur, mise à jour automatique à chaque push,
 historique des valeurs des réglages dans le temps (`IDEES.md`).

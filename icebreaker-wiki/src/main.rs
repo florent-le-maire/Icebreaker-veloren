@@ -7,6 +7,7 @@ mod avancement;
 mod commits;
 mod decisions;
 mod fiches;
+mod icones;
 mod markdown;
 mod reglages;
 mod schemas;
@@ -181,12 +182,15 @@ pub fn pages_markdown(fichiers: &[(String, String)], docs: &Path) -> Vec<Page> {
             .titre
             .unwrap_or_else(|| source.trim_end_matches(".md").to_string());
         let url = url_de_source(source);
+        let (html, icones) = icones::annoter_tableaux(&rendu.html, &site::prefixe_racine(&url));
+        let mut images = images_de_page(source, &url, &rendu.images);
+        images.extend(icones.into_iter().map(|i| (format!("assets/{i}"), format!("assets/{i}"))));
         pages.push(Page {
-            images: images_de_page(source, &url, &rendu.images),
+            images,
             url,
             rubrique: Rubrique::de_source(source),
             titre,
-            html: rendu.html,
+            html,
             source: source.clone(),
             gabarit: "page.html",
             extra: serde_json::Value::Null,

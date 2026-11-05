@@ -282,6 +282,8 @@ pub struct LigneVue {
     pub valeur: String,
     pub commentaire_html: String,
     pub groupe: bool,
+    /// Icône de Veloren (chemin sous `assets/`) quand la clé ou la valeur parle d'une chose connue.
+    pub icone: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -320,6 +322,7 @@ pub fn vue(f: &Fichier) -> FichierVue {
         lignes: aplatir(&f.entrees)
             .into_iter()
             .map(|l| LigneVue {
+                icone: crate::icones::pour_texte(&format!("{} {}", l.cle, l.valeur)).map(str::to_string),
                 profondeur: l.profondeur,
                 cle: l.cle,
                 valeur: l.valeur,
@@ -330,12 +333,25 @@ pub fn vue(f: &Fichier) -> FichierVue {
     }
 }
 
+/// Les icônes d'une vue, à copier dans le site.
+pub fn images(vue: &FichierVue) -> Vec<(String, String)> {
+    let mut images: Vec<(String, String)> = Vec::new();
+    for i in vue.lignes.iter().filter_map(|l| l.icone.as_ref()) {
+        let paire = (format!("assets/{i}"), format!("assets/{i}"));
+        if !images.contains(&paire) {
+            images.push(paire);
+        }
+    }
+    images
+}
+
 /// Une page par fichier de réglages, dans la rubrique « Réglages ».
 pub fn pages(fichiers: &[Fichier]) -> Vec<crate::Page> {
     fichiers
         .iter()
         .map(|f| {
             let vue = vue(f);
+            let images = images(&vue);
             crate::Page {
                 source: format!("assets/icebreaker/{}", f.chemin),
                 url: url(&f.chemin),
@@ -346,7 +362,7 @@ pub fn pages(fichiers: &[Fichier]) -> Vec<crate::Page> {
                 extra: serde_json::to_value(&vue).expect("sérialisation des réglages"),
                 ordre: 0,
                 icone: None,
-                images: Vec::new(),
+                images,
             }
         })
         .collect()

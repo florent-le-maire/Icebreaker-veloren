@@ -242,13 +242,16 @@ pub fn page(
 ) -> Result<Page> {
     let (entete, corps) = markdown::separer_entete(texte);
     let entete: Entete = toml::from_str(entete.unwrap_or_default()).with_context(|| format!("en-tête de {source}"))?;
-    let designs = entete
+    let mut images_icones: Vec<String> = Vec::new();
+    let designs: Vec<DesignVue> = entete
         .design
         .iter()
         .filter_map(|nom| {
             let chemin = format!("design/{nom}");
             let (_, texte) = fichiers_md.iter().find(|(f, _)| *f == chemin)?;
             let rendu = markdown::rendre(texte, &chemin);
+            let (html, icones) = crate::icones::annoter_tableaux(&rendu.html, "../");
+            images_icones.extend(icones);
             Some(DesignVue {
                 nom: nom.clone(),
                 titre: rendu
@@ -257,7 +260,7 @@ pub fn page(
                     .trim_start_matches("Game design — ")
                     .to_string(),
                 url: crate::url_de_source(&chemin),
-                html: rendu.html,
+                html,
             })
         })
         .collect();
@@ -293,7 +296,13 @@ pub fn page(
     let regle = markdown::rendre_images(corps, source, Some(&racine.join("docs").join("icebreaker").join("wiki")));
     let nom = source.trim_start_matches("wiki/").trim_end_matches(".md");
     let url = format!("fiches/{nom}.html");
+    let (regle_html, icones) = crate::icones::annoter_tableaux(&regle.html, "../");
+    images_icones.extend(icones);
     let mut images = crate::images_de_page(source, &url, &regle.images);
+    images.extend(images_icones.iter().map(|i| (format!("assets/{i}"), format!("assets/{i}"))));
+    for r in entete.reglages.iter().filter_map(|c| reglages.iter().find(|f| &f.chemin == c)) {
+        images.extend(reglages::images(&reglages::vue(r)));
+    }
     if let Some(s) = &schema {
         images.extend(s.images.iter().map(|i| (format!("assets/{i}"), format!("assets/{i}"))));
     }
@@ -303,7 +312,7 @@ pub fn page(
         resume: entete.resume.clone(),
         schema_svg: schema.as_ref().map(|s| s.svg.clone()),
         schema_legende: schema.as_ref().map(|s| s.legende.clone()),
-        regle_html: regle.html,
+        regle_html,
         chiffres: chiffres(&entete, reglages),
         designs,
         reglages: entete

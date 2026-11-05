@@ -17,7 +17,7 @@
 <tbody>
 {% for l in r.lignes %}
 <tr class="{{ 'groupe' if l.groupe else '' }} p{{ l.profondeur }}">
-  <td class="cle" style="padding-left: {{ 0.7 + l.profondeur * 1.2 }}rem">{% if l.cle %}<code>{{ l.cle }}</code>{% else %}<span class="puce"></span>{% endif %}</td>
+  <td class="cle" style="padding-left: {{ 0.7 + l.profondeur * 1.2 }}rem">{% if l.icone %}<img class="icone-table" src="{{ racine | safe }}assets/{{ l.icone | safe }}" alt="">{% endif %}{% if l.cle %}<code>{{ l.cle }}</code>{% else %}<span class="puce"></span>{% endif %}</td>
   <td class="valeur">{% if l.valeur %}<code>{{ l.valeur }}</code>{% endif %}</td>
   <td class="commentaire">{{ l.commentaire_html | safe }}</td>
 </tr>
