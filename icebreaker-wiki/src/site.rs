@@ -13,6 +13,7 @@ const GABARIT_PAGE: &str = include_str!("../gabarits/page.html");
 const GABARIT_ACCUEIL: &str = include_str!("../gabarits/accueil.html");
 const GABARIT_JALON: &str = include_str!("../gabarits/jalon.html");
 const GABARIT_REGLAGES: &str = include_str!("../gabarits/reglages.html");
+const GABARIT_FICHE: &str = include_str!("../gabarits/fiche.html");
 const STYLE: &str = include_str!("../static/style.css");
 
 #[derive(Serialize)]
@@ -40,6 +41,7 @@ fn environnement() -> Result<Environment<'static>> {
     env.add_template("accueil.html", GABARIT_ACCUEIL)?;
     env.add_template("jalon.html", GABARIT_JALON)?;
     env.add_template("reglages.html", GABARIT_REGLAGES)?;
+    env.add_template("fiche.html", GABARIT_FICHE)?;
     Ok(env)
 }
 
@@ -72,7 +74,7 @@ pub fn titre_court(page: &Page) -> String {
     }
     let titre = page.titre.trim_start_matches("Game design — ");
     let titre = match page.rubrique {
-        Rubrique::Decisions | Rubrique::Avancement | Rubrique::Reglages => titre,
+        Rubrique::Decisions | Rubrique::Avancement | Rubrique::Reglages | Rubrique::Mecaniques => titre,
         _ => titre.split(" — ").next().unwrap_or(titre),
     };
     let titre = match titre.find(" (") {

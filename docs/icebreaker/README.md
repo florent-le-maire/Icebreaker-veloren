@@ -26,6 +26,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | `VISION.md` | Vision du jeu (copie du dépôt Godot ; ses « grandes phases » sont celles du projet Godot) |
 | `GAME_DESIGN.md` | Index des règles de `design/`, avec ce qui vaut pour Veloren |
 | `design/` | Règles par domaine, copiées du dépôt Godot le 2026-10-28 ; `ames.md` et `village.md` sont les plus vivants |
+| `wiki/` | Fiches mécaniques du wiki (jalon W) : vulgarisation + en-tête qui relie design, réglages, tâches et code |
 | `decisions/` | Notes de décision (problème, options, recommandation) ; `0001` à `0014` restent dans `../Icebreaker` |
 
 ## Les jalons et leurs lettres

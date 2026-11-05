@@ -47,8 +47,9 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
   thème sombre ; 33 pages, vues avec Edge sans fenêtre. c3b7887098
 - [x] **W.2 Tâches et commits** — tâches de PLAN, HISTORIQUE et PLAN-* liées à `git log` (sujet, corps, « Testé »,
   lien GitHub) ; tableau de bord en accueil et une page par jalon. Un hash de X (af89bed30e) est introuvable. f8bd44c0d6
-- [ ] **W.3 Réglages** — *en cours : Veloren-wiki, 2026-11-05* — lecture des `.ron` de `assets/icebreaker/` (clé, valeur, commentaire) → tableau et encart.
-- [ ] **W.4 Fiches mécaniques** — gabarit à trois étages, en-tête de liaison, première fiche « À terre et mort »
+- [x] **W.3 Réglages** — chaque `.ron` de `assets/icebreaker/` lu avec ses commentaires (groupes, listes) ; une page par
+  fichier avec chiffres clés et tableau réglage / valeur / ce que ça fait. a82d2c3cc6
+- [ ] **W.4 Fiches mécaniques** — *en cours : Veloren-wiki, 2026-11-05* — gabarit à trois étages, en-tête de liaison, première fiche « À terre et mort »
   (jalon T), puis combat, village, classes, donjons, grotte (vulgarisation à relire par l'équipe).
 - [ ] **W.5 Décisions, questions, idées, vision** — rendu et badges d'état.
 - [ ] **W.6 Recherche et finitions** — index JSON, script de recherche, revue du CSS sur petit écran.

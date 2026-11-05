@@ -168,3 +168,35 @@ table.reglages tr.groupe td { background: var(--fond-3); }
 table.reglages tr.groupe td.cle code { color: var(--accent); font-weight: 600; background: none; }
 table.reglages td.commentaire { color: var(--texte-2); }
 .puce { color: var(--texte-2); }
+
+/* Fiches mécaniques : la règle + encart, le détail, sous le capot */
+.fiche h1 .icone { font-size: 1.6rem; margin-right: .25rem; }
+.resume { font-size: 1.1rem; color: var(--texte-2); margin: -.25rem 0 1rem; }
+.fiche-corps { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; gap: 2rem; align-items: start; }
+.regle { max-width: 78ch; }
+.regle h2 { margin-top: 1.25rem; }
+.encart { position: sticky; top: calc(var(--bandeau) + 1rem); background: var(--fond-2); border: 1px solid var(--bordure); border-radius: 10px; padding: .9rem 1rem; }
+.encart h3 { margin: 0 0 .6rem; font-size: .78rem; text-transform: uppercase; letter-spacing: .1em; color: var(--texte-2); }
+.encart dl { margin: 0; }
+.encart-ligne-chiffre { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; padding: .35rem 0; border-top: 1px solid var(--bordure); }
+.encart-ligne-chiffre:first-child { border-top: 0; }
+.encart dt { font-size: .85rem; color: var(--texte); }
+.encart dd { margin: 0; font-weight: 700; color: var(--accent-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.encart-source { margin: .6rem 0 0; font-size: .78rem; color: var(--texte-2); }
+.etage { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--bordure); }
+.etage-sous { color: var(--texte-2); margin-top: -.4rem; }
+.detail-design, .detail-reglages { margin: .6rem 0; border: 1px solid var(--bordure); border-radius: 8px; background: var(--fond-2); }
+.detail-design summary, .detail-reglages summary { cursor: pointer; padding: .6rem .9rem; }
+.detail-contenu { padding: 0 1.2rem 1rem; max-width: 90ch; }
+.detail-contenu h1 { font-size: 1.3rem; border: 0; margin-top: .5rem; }
+.detail-reglages table { margin: 0; }
+.systemes { list-style: none; padding: 0; }
+.systemes li { padding: .5rem .8rem; margin: .4rem 0; border-left: 3px solid var(--accent); background: var(--fond-2); border-radius: 0 8px 8px 0; }
+.systeme-doc { color: var(--texte-2); font-size: .92rem; }
+.systeme-doc p { margin: .3rem 0; }
+.jalons-lies { display: flex; flex-wrap: wrap; gap: .5rem; }
+.jalon-lie { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .7rem .3rem .4rem; border: 1px solid var(--bordure); border-radius: 999px; background: var(--fond-2); color: var(--texte); }
+.jalon-lie:hover { text-decoration: none; border-color: var(--accent); }
+.taches.compactes .tache { padding: .45rem .8rem; }
+.taches.compactes .hash { margin-left: .3rem; }
+@media (max-width: 1100px) { .fiche-corps { grid-template-columns: 1fr; } .encart { position: static; } }

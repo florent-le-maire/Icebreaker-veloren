@@ -276,27 +276,28 @@ pub fn chiffres_cles(fichier: &Fichier) -> Vec<&Entree> {
 }
 
 #[derive(Serialize)]
-struct LigneVue {
-    profondeur: usize,
-    cle: String,
-    valeur: String,
-    commentaire_html: String,
-    groupe: bool,
+pub struct LigneVue {
+    pub profondeur: usize,
+    pub cle: String,
+    pub valeur: String,
+    pub commentaire_html: String,
+    pub groupe: bool,
 }
 
 #[derive(Serialize)]
-struct ChiffreVue {
-    cle: String,
-    valeur: String,
-    commentaire: String,
+pub struct ChiffreVue {
+    pub cle: String,
+    pub valeur: String,
+    pub commentaire: String,
 }
 
+/// Un fichier de réglages prêt pour les gabarits (page de réglages, bloc d'une fiche).
 #[derive(Serialize)]
-struct FichierVue {
-    chemin: String,
-    entete_html: String,
-    chiffres: Vec<ChiffreVue>,
-    lignes: Vec<LigneVue>,
+pub struct FichierVue {
+    pub chemin: String,
+    pub entete_html: String,
+    pub chiffres: Vec<ChiffreVue>,
+    pub lignes: Vec<LigneVue>,
 }
 
 /// L'URL de la page d'un fichier de réglages (`mort.ron` → `reglages/mort.html`).
@@ -304,33 +305,37 @@ pub fn url(chemin: &str) -> String {
     format!("reglages/{}.html", chemin.trim_end_matches(".ron"))
 }
 
+pub fn vue(f: &Fichier) -> FichierVue {
+    FichierVue {
+        chemin: f.chemin.clone(),
+        entete_html: crate::markdown::rendre(&f.entete, "").html,
+        chiffres: chiffres_cles(f)
+            .into_iter()
+            .map(|e| ChiffreVue {
+                cle: e.cle.clone(),
+                valeur: e.valeur.clone(),
+                commentaire: e.commentaire.clone(),
+            })
+            .collect(),
+        lignes: aplatir(&f.entrees)
+            .into_iter()
+            .map(|l| LigneVue {
+                profondeur: l.profondeur,
+                cle: l.cle,
+                valeur: l.valeur,
+                commentaire_html: crate::markdown::rendre_inline(&l.commentaire),
+                groupe: l.groupe,
+            })
+            .collect(),
+    }
+}
+
 /// Une page par fichier de réglages, dans la rubrique « Réglages ».
 pub fn pages(fichiers: &[Fichier]) -> Vec<crate::Page> {
     fichiers
         .iter()
         .map(|f| {
-            let vue = FichierVue {
-                chemin: f.chemin.clone(),
-                entete_html: crate::markdown::rendre(&f.entete, "").html,
-                chiffres: chiffres_cles(f)
-                    .into_iter()
-                    .map(|e| ChiffreVue {
-                        cle: e.cle.clone(),
-                        valeur: e.valeur.clone(),
-                        commentaire: e.commentaire.clone(),
-                    })
-                    .collect(),
-                lignes: aplatir(&f.entrees)
-                    .into_iter()
-                    .map(|l| LigneVue {
-                        profondeur: l.profondeur,
-                        cle: l.cle,
-                        valeur: l.valeur,
-                        commentaire_html: crate::markdown::rendre_inline(&l.commentaire),
-                        groupe: l.groupe,
-                    })
-                    .collect(),
-            };
+            let vue = vue(f);
             crate::Page {
                 source: format!("assets/icebreaker/{}", f.chemin),
                 url: url(&f.chemin),

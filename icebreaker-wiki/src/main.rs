@@ -5,6 +5,7 @@
 
 mod avancement;
 mod commits;
+mod fiches;
 mod markdown;
 mod reglages;
 mod site;
@@ -39,6 +40,7 @@ pub struct Page {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rubrique {
     Reperes,
+    Mecaniques,
     Avancement,
     Plans,
     Regles,
@@ -50,6 +52,7 @@ impl Rubrique {
     pub fn nom(self) -> &'static str {
         match self {
             Rubrique::Reperes => "Repères",
+            Rubrique::Mecaniques => "Mécaniques",
             Rubrique::Avancement => "Avancement",
             Rubrique::Plans => "Plans",
             Rubrique::Regles => "Règles du jeu",
@@ -58,9 +61,10 @@ impl Rubrique {
         }
     }
 
-    pub fn toutes() -> [Rubrique; 6] {
+    pub fn toutes() -> [Rubrique; 7] {
         [
             Rubrique::Reperes,
+            Rubrique::Mecaniques,
             Rubrique::Avancement,
             Rubrique::Plans,
             Rubrique::Regles,
@@ -71,7 +75,9 @@ impl Rubrique {
 
     /// La rubrique d'un fichier d'après son chemin relatif à `docs/icebreaker/`.
     pub fn de_source(source: &str) -> Rubrique {
-        if source.starts_with("design/") {
+        if source.starts_with("wiki/") {
+            Rubrique::Mecaniques
+        } else if source.starts_with("design/") {
             Rubrique::Regles
         } else if source.starts_with("decisions/") {
             Rubrique::Decisions
@@ -143,6 +149,9 @@ pub fn lire_fichiers(docs: &Path) -> Result<Vec<(String, String)>> {
 pub fn pages_markdown(fichiers: &[(String, String)]) -> Vec<Page> {
     let mut pages = Vec::new();
     for (source, texte) in fichiers {
+        if source.starts_with("wiki/") {
+            continue; // les fiches mécaniques ont leur propre gabarit (`fiches.rs`)
+        }
         let (_entete, corps) = markdown::separer_entete(texte);
         let rendu = markdown::rendre(corps, source);
         let titre = rendu
@@ -187,6 +196,17 @@ pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
     pages.extend(avancement::pages(&sources, &jalons));
     let fichiers_ron = reglages::lire_dossier(&racine.join("assets").join("icebreaker"))?;
     pages.extend(reglages::pages(&fichiers_ron));
+    for (source, texte) in fichiers.iter().filter(|(f, _)| f.starts_with("wiki/")) {
+        pages.push(fiches::page(
+            racine,
+            source,
+            texte,
+            &fichiers,
+            &jalons,
+            &fichiers_ron,
+            sources.url_github.as_deref(),
+        )?);
+    }
     pages.sort_by_key(cle_de_tri);
     Ok(pages)
 }
@@ -232,7 +252,9 @@ mod tests {
             .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("md"))
             .count();
         let markdown: Vec<&Page> = pages.iter().filter(|p| p.gabarit == "page.html").collect();
-        assert_eq!(markdown.len(), nb_md);
+        let fiches = pages.iter().filter(|p| p.gabarit == "fiche.html").count();
+        assert_eq!(markdown.len() + fiches, nb_md);
+        assert!(pages.iter().any(|p| p.url == "fiches/mort.html" && p.rubrique == Rubrique::Mecaniques));
         assert!(pages.iter().any(|p| p.url == "readme.html" && p.source == "README.md"));
         assert_eq!(pages[0].url, "index.html");
         assert!(pages.iter().any(|p| p.url == "design/combat.html" && p.rubrique == Rubrique::Regles));

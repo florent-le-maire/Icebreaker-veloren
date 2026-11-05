@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block contenu %}
+{% set f = extra %}
+<article class="article article-large fiche">
+<p class="fil">Mécaniques › {{ f.titre }}</p>
+<h1>{% if f.icone %}<span class="icone">{{ f.icone }}</span> {% endif %}{{ f.titre }}</h1>
+{% if f.resume %}<p class="resume">{{ f.resume }}</p>{% endif %}
+
+<div class="fiche-corps">
+<section class="regle">
+{{ f.regle_html | safe }}
+</section>
+{% if f.chiffres %}
+<aside class="encart">
+  <h3>En chiffres</h3>
+  <dl>
+  {% for c in f.chiffres %}
+    <div class="encart-ligne-chiffre" title="{{ c.commentaire }}"><dt>{{ c.nom }}</dt><dd>{{ c.valeur }}</dd></div>
+  {% endfor %}
+  </dl>
+  <p class="encart-source">{% for r in f.reglages %}<a href="{{ racine | safe }}reglages/{{ r.chemin | replace(".ron", ".html") | safe }}"><code>{{ r.chemin }}</code></a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+</aside>
+{% endif %}
+</div>
+
+{% if f.designs %}
+<h2 class="etage">Le détail des règles</h2>
+<p class="etage-sous">Le document de conception, tel qu'il est écrit dans <code>docs/icebreaker/design/</code>.</p>
+{% for d in f.designs %}
+<details class="detail-design">
+  <summary><strong>{{ d.titre }}</strong> <span class="date">design/{{ d.nom }}</span> · <a href="{{ racine | safe }}{{ d.url | safe }}">page entière</a></summary>
+  <div class="detail-contenu">{{ d.html | safe }}</div>
+</details>
+{% endfor %}
+{% endif %}
+
+<h2 class="etage">Sous le capot</h2>
+<p class="etage-sous">Comment c'est fait dans le prototype, sans lire le code ligne à ligne.</p>
+
+{% if f.systemes %}
+<h3>Les morceaux de code</h3>
+<ul class="systemes">
+{% for s in f.systemes %}
+  <li><div class="systeme-chemin">{% if s.url %}<a href="{{ s.url | safe }}"><code>{{ s.chemin }}</code></a>{% else %}<code>{{ s.chemin }}</code>{% endif %}</div>
+    <div class="systeme-doc">{{ s.doc_html | safe }}</div></li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% if f.reglages %}
+<h3>Les réglages</h3>
+{% for r in f.reglages %}
+<details class="detail-reglages">
+  <summary><code>assets/icebreaker/{{ r.chemin }}</code> · <a href="{{ racine | safe }}reglages/{{ r.chemin | replace(".ron", ".html") | safe }}">page entière</a></summary>
+  <table class="reglages">
+  <thead><tr><th>Réglage</th><th>Valeur</th><th>Ce que ça fait</th></tr></thead>
+  <tbody>
+  {% for l in r.lignes %}
+  <tr class="{{ 'groupe' if l.groupe else '' }}">
+    <td class="cle" style="padding-left: {{ 0.7 + l.profondeur * 1.2 }}rem">{% if l.cle %}<code>{{ l.cle }}</code>{% else %}<span class="puce">•</span>{% endif %}</td>
+    <td class="valeur">{% if l.valeur %}<code>{{ l.valeur }}</code>{% endif %}</td>
+    <td class="commentaire">{{ l.commentaire_html | safe }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+  </table>
+</details>
+{% endfor %}
+{% endif %}
+
+{% if f.jalons or f.taches %}
+<h3>Ce qui a été fait</h3>
+{% if f.jalons %}
+<p class="jalons-lies">{% for j in f.jalons %}<a class="jalon-lie" href="{{ racine | safe }}{{ j.url | safe }}"><span class="lettre">{{ j.lettres }}</span> {{ j.titre }} <span class="chiffre">{{ j.nb_faites }}/{{ j.nb_total }}</span></a> {% endfor %}</p>
+{% endif %}
+<ol class="taches compactes">
+{% for t in f.taches %}
+  <li class="tache {{ 'faite' if t.fait else 'reste' }}">
+    <div class="tache-tete">
+      <span class="coche">{{ '✔' if t.fait else '○' }}</span>
+      {% if t.id %}<a class="id" href="{{ racine | safe }}avancement/{{ t.jalon }}.html#{{ t.id }}">{{ t.id }}</a>{% endif %}
+      <strong>{{ t.titre }}</strong>
+      {% if t.en_cours %}<span class="badge badge-en-cours">en cours : {{ t.en_cours }}</span>{% endif %}
+      {% if t.a_voir_en_jeu %}<span class="badge badge-a-voir">à voir en jeu</span>{% endif %}
+      {% for c in t.commits %}{% if c.url %}<a class="hash" href="{{ c.url | safe }}" title="{{ c.sujet }}">{{ c.court }}</a>{% else %}<span class="hash">{{ c.court }}</span>{% endif %}{% endfor %}
+    </div>
+    {% if t.detail_html %}<div class="tache-detail">{{ t.detail_html | safe }}</div>{% endif %}
+    {% for c in t.commits %}{% if c.teste_html %}<p class="commit-teste"><span class="etiquette">Testé</span> {{ c.teste_html | safe }}</p>{% endif %}{% endfor %}
+  </li>
+{% endfor %}
+</ol>
+{% endif %}
+<footer class="source">Source : <code>docs/icebreaker/{{ f.source }}</code> (la règle) ; design, réglages, plans et <code>git log</code> pour le reste</footer>
+</article>
+{% endblock %}
