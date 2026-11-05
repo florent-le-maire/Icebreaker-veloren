@@ -155,3 +155,16 @@ table.jalons td { vertical-align: middle; }
 .a-verifier-liste { font-size: .92rem; }
 .a-verifier-liste p { color: var(--texte-2); }
 @media (max-width: 900px) { .deux-colonnes { grid-template-columns: 1fr; } }
+
+/* Réglages : chiffres clés et tableau clé / valeur / commentaire */
+.chiffres-cles { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1rem 0; }
+.chiffre-cle { background: var(--fond-2); border: 1px solid var(--bordure); border-radius: 8px; padding: .5rem .9rem; min-width: 7rem; }
+.chiffre-cle-valeur { font-size: 1.4rem; font-weight: 700; color: var(--accent-2); font-variant-numeric: tabular-nums; }
+.chiffre-cle-nom { font-family: var(--mono); font-size: .75rem; color: var(--texte-2); }
+table.reglages { display: table; font-size: .9rem; }
+table.reglages td.cle { white-space: nowrap; }
+table.reglages td.valeur code { white-space: pre-wrap; word-break: break-word; }
+table.reglages tr.groupe td { background: var(--fond-3); }
+table.reglages tr.groupe td.cle code { color: var(--accent); font-weight: 600; background: none; }
+table.reglages td.commentaire { color: var(--texte-2); }
+.puce { color: var(--texte-2); }

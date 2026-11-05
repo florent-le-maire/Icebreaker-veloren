@@ -6,6 +6,7 @@
 mod avancement;
 mod commits;
 mod markdown;
+mod reglages;
 mod site;
 mod taches;
 
@@ -41,6 +42,7 @@ pub enum Rubrique {
     Avancement,
     Plans,
     Regles,
+    Reglages,
     Decisions,
 }
 
@@ -51,12 +53,20 @@ impl Rubrique {
             Rubrique::Avancement => "Avancement",
             Rubrique::Plans => "Plans",
             Rubrique::Regles => "Règles du jeu",
+            Rubrique::Reglages => "Réglages",
             Rubrique::Decisions => "Décisions",
         }
     }
 
-    pub fn toutes() -> [Rubrique; 5] {
-        [Rubrique::Reperes, Rubrique::Avancement, Rubrique::Plans, Rubrique::Regles, Rubrique::Decisions]
+    pub fn toutes() -> [Rubrique; 6] {
+        [
+            Rubrique::Reperes,
+            Rubrique::Avancement,
+            Rubrique::Plans,
+            Rubrique::Regles,
+            Rubrique::Reglages,
+            Rubrique::Decisions,
+        ]
     }
 
     /// La rubrique d'un fichier d'après son chemin relatif à `docs/icebreaker/`.
@@ -175,6 +185,8 @@ pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
         .collect();
     let jalons = avancement::jalons(&sources, &toutes);
     pages.extend(avancement::pages(&sources, &jalons));
+    let fichiers_ron = reglages::lire_dossier(&racine.join("assets").join("icebreaker"))?;
+    pages.extend(reglages::pages(&fichiers_ron));
     pages.sort_by_key(cle_de_tri);
     Ok(pages)
 }
@@ -225,6 +237,7 @@ mod tests {
         assert_eq!(pages[0].url, "index.html");
         assert!(pages.iter().any(|p| p.url == "design/combat.html" && p.rubrique == Rubrique::Regles));
         assert!(pages.iter().any(|p| p.url == "avancement/T.html" && p.rubrique == Rubrique::Avancement));
+        assert!(pages.iter().any(|p| p.url == "reglages/mort.html" && p.rubrique == Rubrique::Reglages));
         assert!(markdown.iter().all(|p| !p.titre.is_empty() && !p.html.is_empty()));
     }
 

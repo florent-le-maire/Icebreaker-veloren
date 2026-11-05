@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block contenu %}
+{% set r = extra %}
+<article class="article article-large">
+<p class="fil">Réglages › <code>assets/icebreaker/{{ r.chemin }}</code></p>
+<h1>{{ r.chemin }}</h1>
+{% if r.entete_html %}<div class="intention">{{ r.entete_html | safe }}</div>{% endif %}
+{% if r.chiffres %}
+<div class="chiffres-cles">
+  {% for c in r.chiffres %}
+  <div class="chiffre-cle" title="{{ c.commentaire }}"><div class="chiffre-cle-valeur">{{ c.valeur }}</div><div class="chiffre-cle-nom">{{ c.cle }}</div></div>
+  {% endfor %}
+</div>
+{% endif %}
+<table class="reglages">
+<thead><tr><th>Réglage</th><th>Valeur</th><th>Ce que ça fait</th></tr></thead>
+<tbody>
+{% for l in r.lignes %}
+<tr class="{{ 'groupe' if l.groupe else '' }} p{{ l.profondeur }}">
+  <td class="cle" style="padding-left: {{ 0.7 + l.profondeur * 1.2 }}rem">{% if l.cle %}<code>{{ l.cle }}</code>{% else %}<span class="puce">•</span>{% endif %}</td>
+  <td class="valeur">{% if l.valeur %}<code>{{ l.valeur }}</code>{% endif %}</td>
+  <td class="commentaire">{{ l.commentaire_html | safe }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<footer class="source">Source : <code>assets/icebreaker/{{ r.chemin }}</code></footer>
+</article>
+{% endblock %}
