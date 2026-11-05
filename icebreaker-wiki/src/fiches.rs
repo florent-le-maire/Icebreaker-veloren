@@ -14,6 +14,7 @@ use crate::{Page, Rubrique, markdown};
 #[derive(Debug, Deserialize)]
 pub struct Entete {
     pub titre: String,
+    /// Icône : chemin d'une image sous `assets/` (ex. `voxygen/element/ui/generic/icons/skull_2.png`).
     #[serde(default)]
     pub icone: String,
     #[serde(default)]
@@ -90,7 +91,8 @@ struct JalonLie {
 #[derive(Serialize)]
 struct FicheVue {
     titre: String,
-    icone: String,
+    /// URL de l'icône relative à la racine du site, si le fichier existe.
+    icone_url: Option<String>,
     resume: String,
     regle_html: String,
     chiffres: Vec<ChiffreVue>,
@@ -209,6 +211,20 @@ fn taches_liees(specs: &[String], jalons: &[JalonVue]) -> (Vec<JalonLie>, Vec<Ta
     (lies, taches)
 }
 
+/// L'URL d'une icône sous `assets/`, relative à la racine du site ; `None` (avec un avertissement) si le fichier
+/// manque.
+fn icone_url(racine: &Path, icone: &str, source: &str) -> Option<String> {
+    if icone.is_empty() {
+        return None;
+    }
+    if racine.join("assets").join(icone).is_file() {
+        Some(format!("assets/{icone}"))
+    } else {
+        eprintln!("{source} : icône introuvable, assets/{icone}");
+        None
+    }
+}
+
 /// Construit la page d'une fiche à partir de son texte.
 pub fn page(
     racine: &Path,
@@ -255,9 +271,10 @@ pub fn page(
         })
         .collect();
     let (jalons_lies, taches) = taches_liees(&entete.taches, jalons);
+    let icone_vue = icone_url(racine, &entete.icone, source);
     let vue = FicheVue {
         titre: entete.titre.clone(),
-        icone: entete.icone.clone(),
+        icone_url: icone_vue.clone(),
         resume: entete.resume.clone(),
         regle_html: markdown::rendre(corps, source).html,
         chiffres: chiffres(&entete, reglages),
@@ -278,15 +295,12 @@ pub fn page(
         source: source.to_string(),
         url: format!("fiches/{nom}.html"),
         rubrique: Rubrique::Mecaniques,
-        titre: if entete.icone.is_empty() {
-            entete.titre
-        } else {
-            format!("{} {}", entete.icone, entete.titre)
-        },
+        titre: entete.titre,
         html: String::new(),
         gabarit: "fiche.html",
         extra: serde_json::to_value(&vue).expect("sérialisation d'une fiche"),
         ordre: entete.ordre,
+        icone: icone_vue.clone().map(|_| entete.icone.clone()),
     })
 }
 
@@ -312,7 +326,7 @@ mod tests {
 
     #[test]
     fn en_tete_et_liaisons() {
-        let texte = "+++\ntitre = \"Mort\"\nicone = \"x\"\nreglages = [\"mort.ron\"]\ntaches = [\"T\", \"L.1\"]\n\
+        let texte = "+++\ntitre = \"Mort\"\nicone = \"voxygen/element/ui/generic/icons/skull_2.png\"\nreglages = [\"mort.ron\"]\ntaches = [\"T\", \"L.1\"]\n\
 systemes = [\"icebreaker-wiki/src/fiches.rs\"]\n[[chiffre]]\ncle = \"pv_releve\"\nnom = \"PV rendus\"\npourcent = true\n+++\n\n## La règle\n\nTexte.\n";
         let racine = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
         let mort = reglages::analyser("(\n pv_releve: 0.25, // part\n delai: 30.0,\n)\n", "mort.ron");
@@ -345,7 +359,9 @@ systemes = [\"icebreaker-wiki/src/fiches.rs\"]\n[[chiffre]]\ncle = \"pv_releve\"
         };
         let page = page(&racine, "wiki/mort.md", texte, &[], &[jalon], &[mort], Some("https://g/x")).unwrap();
         assert_eq!(page.url, "fiches/mort.html");
-        assert_eq!(page.titre, "x Mort");
+        assert_eq!(page.titre, "Mort");
+        assert_eq!(page.icone.as_deref(), Some("voxygen/element/ui/generic/icons/skull_2.png"));
+        assert_eq!(page.extra["icone_url"], "assets/voxygen/element/ui/generic/icons/skull_2.png");
         let extra = &page.extra;
         assert_eq!(extra["chiffres"][0]["valeur"], "25 %");
         assert_eq!(extra["chiffres"][0]["nom"], "PV rendus");

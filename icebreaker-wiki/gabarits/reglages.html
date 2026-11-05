@@ -2,7 +2,7 @@
 {% block contenu %}
 {% set r = extra %}
 <article class="article article-large">
-<p class="fil">Réglages › <code>assets/icebreaker/{{ r.chemin }}</code></p>
+<p class="fil">Réglages / <code>assets/icebreaker/{{ r.chemin }}</code></p>
 <h1>{{ r.chemin }}</h1>
 {% if r.entete_html %}<div class="intention">{{ r.entete_html | safe }}</div>{% endif %}
 {% if r.chiffres %}
@@ -17,7 +17,7 @@
 <tbody>
 {% for l in r.lignes %}
 <tr class="{{ 'groupe' if l.groupe else '' }} p{{ l.profondeur }}">
-  <td class="cle" style="padding-left: {{ 0.7 + l.profondeur * 1.2 }}rem">{% if l.cle %}<code>{{ l.cle }}</code>{% else %}<span class="puce">•</span>{% endif %}</td>
+  <td class="cle" style="padding-left: {{ 0.7 + l.profondeur * 1.2 }}rem">{% if l.cle %}<code>{{ l.cle }}</code>{% else %}<span class="puce"></span>{% endif %}</td>
   <td class="valeur">{% if l.valeur %}<code>{{ l.valeur }}</code>{% endif %}</td>
   <td class="commentaire">{{ l.commentaire_html | safe }}</td>
 </tr>

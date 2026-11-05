@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Icebreaker : logo du wiki, un bloc de glace. -->
+  <defs>
+    <linearGradient id="glace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eaf7ff"/><stop offset="1" stop-color="#7fd4ff"/></linearGradient>
+    <linearGradient id="fond" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b8fc4"/><stop offset="1" stop-color="#17395b"/></linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="#0e1420"/>
+  <path d="M32 6L45 21l11 13-13 4-11 20-11-20L8 34l11-13z" fill="url(#fond)"/>
+  <path d="M32 6L45 21l11 13H8l11-13z" fill="url(#glace)"/>
+  <path d="M32 6v28M19 21l13 13 13-13" fill="none" stroke="#0e1420" stroke-opacity=".35" stroke-width="1.5"/>
+  <path d="M8 34h48" stroke="#0e1420" stroke-opacity=".5" stroke-width="2"/>
+</svg>

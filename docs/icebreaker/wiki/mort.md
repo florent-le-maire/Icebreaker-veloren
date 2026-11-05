@@ -1,7 +1,7 @@
 +++
 ordre = 5
 titre = "À terre, mort et sac du mort"
-icone = "💀"
+icone = "voxygen/element/ui/generic/icons/skull_2.png"
 resume = "Tomber n'est pas mourir : un allié a trente secondes pour vous relever. Mourir, c'est laisser son sac en bas."
 design = ["combat.md"]
 reglages = ["mort.ron"]

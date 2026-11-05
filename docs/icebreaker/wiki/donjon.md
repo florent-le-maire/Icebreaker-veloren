@@ -1,7 +1,7 @@
 +++
 ordre = 6
 titre = "Le donjon généré"
-icone = "🏰"
+icone = "voxygen/element/ui/map/buttons/dungeon.png"
 resume = "Un graphe de mission, des salles préfaites assemblées sur plusieurs étages, des verrous, des dormeurs."
 design = ["generation.md", "creatures.md"]
 reglages = ["donjons/generation.ron"]

@@ -345,6 +345,7 @@ pub fn pages(fichiers: &[Fichier]) -> Vec<crate::Page> {
                 gabarit: "reglages.html",
                 extra: serde_json::to_value(&vue).expect("sérialisation des réglages"),
                 ordre: 0,
+                icone: None,
             }
         })
         .collect()

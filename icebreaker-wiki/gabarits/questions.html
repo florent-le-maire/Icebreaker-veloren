@@ -2,7 +2,13 @@
 {% block contenu %}
 {% set q = extra %}
 <article class="article article-large">
-<h1>Questions pour l'équipe</h1>
+<header class="entete-page">
+  <div class="entete-texte">
+    <p class="fil">Repères</p>
+    <h1>Questions pour l'équipe</h1>
+    <p class="resume">Ce qui attend une réponse de l'équipe, et les petites décisions déjà prises en route.</p>
+  </div>
+</header>
 <div class="tuiles">
   <div class="tuile"><div class="tuile-chiffre tuile-alerte">{{ q.nb_ouvertes }}</div><div class="tuile-nom">questions ouvertes</div></div>
   <div class="tuile"><div class="tuile-chiffre">{{ q.nb_tranchees }}</div><div class="tuile-nom">petites décisions tranchées</div></div>

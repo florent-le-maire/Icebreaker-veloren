@@ -37,7 +37,8 @@ chiffres, tableaux de stats). Lecteurs : l'équipe seulement ; le dépôt GitHub
 5. **Vision** : `VISION.md`, `design/piliers.md`.
 6. Recherche plein texte côté client (index JSON, petit script) et navigation latérale par rubrique.
 
-Design : thème sombre (bleu nuit / glace, accent chaud), barre latérale fixe, largeur de lecture ~72 caractères,
+Design : thème sombre (bleu nuit / glace, accent chaud), titres en Cinzel, **pas d'émoji** (Flo, 2026-11-05) : les
+pictogrammes sont les icônes en pixel art de Veloren (`assets/voxygen/element/`) et des SVG ; barre latérale fixe, largeur de lecture ~72 caractères,
 encart flottant sur les fiches, tableaux à lignes alternées, badges d'état, hash cliquable vers GitHub. Une feuille
 CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
 
@@ -58,6 +59,16 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
 - [ ] **W.7 Déploiement VPS** — *en cours : Veloren-wiki, 2026-11-05* — script `icebreaker-serveur/deployer-wiki.sh`
   écrit (Caddy, mot de passe, `ADRESSE` pour un nom de domaine) et note dans `CLAUDE.md` ; **pas encore lancé** : il
   faut choisir le mot de passe (et un nom de domaine, sinon `http://116.202.107.125:8090`).
+- [ ] **W.8 Identité visuelle sans émoji** — *en cours : Veloren-wiki, 2026-11-05* — logo SVG, icône de Veloren par fiche
+  (`icone` = chemin sous `assets/`), titres en Cinzel, en-tête de page avec icône et résumé, cartes des mécaniques en
+  accueil, pictogrammes en SVG (plus aucun émoji ni symbole texte).
+- [ ] **W.9 Schémas dessinés depuis les données** — module Rust qui produit du SVG avec les valeurs des `.ron` : frise
+  à terre → mort → sac, carte de campagne (`lieux.ron`, `campagne.ron`), circuit charrette et registre, étages du
+  donjon, niveaux de la grotte ; la fiche déclare son schéma dans l'en-tête.
+- [ ] **W.10 Captures d'écran** — `docs/icebreaker/wiki/images/`, `![légende](images/x.png)` dans une fiche rendu en
+  figure avec légende et zoom ; encadré « capture à prendre » tant qu'elle manque.
+- [ ] **W.11 Icônes dans les tableaux** — icône de Veloren à côté des armes des classes, des états et des objets dans
+  les tableaux de réglages et de design, quand elle existe.
 
 Hors périmètre pour l'instant : accès public, édition dans le navigateur, mise à jour automatique à chaque push,
 historique des valeurs des réglages dans le temps (`IDEES.md`).

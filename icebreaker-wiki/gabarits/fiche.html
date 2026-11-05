@@ -2,9 +2,15 @@
 {% block contenu %}
 {% set f = extra %}
 <article class="article article-large fiche">
-<p class="fil">Mécaniques › {{ f.titre }}</p>
-<h1>{% if f.icone %}<span class="icone">{{ f.icone }}</span> {% endif %}{{ f.titre }}</h1>
-{% if f.resume %}<p class="resume">{{ f.resume }}</p>{% endif %}
+<header class="entete-page">
+  {% if f.icone_url %}<div class="entete-icone"><img src="{{ racine | safe }}{{ f.icone_url | safe }}" alt=""></div>{% endif %}
+  <div class="entete-texte">
+    <p class="fil">Mécaniques</p>
+    <h1>{{ f.titre }}</h1>
+    {% if f.resume %}<p class="resume">{{ f.resume }}</p>{% endif %}
+    {% if f.jalons %}<p class="jalons-lies">{% for j in f.jalons %}<a class="jalon-lie" href="{{ racine | safe }}{{ j.url | safe }}"><span class="lettre">{{ j.lettres }}</span> {{ j.titre }} <span class="chiffre">{{ j.nb_faites }}/{{ j.nb_total }}</span></a> {% endfor %}</p>{% endif %}
+  </div>
+</header>
 
 <div class="fiche-corps">
 <section class="regle">
@@ -18,7 +24,7 @@
     <div class="encart-ligne-chiffre" title="{{ c.commentaire }}"><dt>{{ c.nom }}</dt><dd>{{ c.valeur }}</dd></div>
   {% endfor %}
   </dl>
-  <p class="encart-source">{% for r in f.reglages %}<a href="{{ racine | safe }}reglages/{{ r.chemin | replace(".ron", ".html") | safe }}"><code>{{ r.chemin }}</code></a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+  <p class="encart-source">Lu dans {% for r in f.reglages %}<a href="{{ racine | safe }}reglages/{{ r.chemin | replace(".ron", ".html") | safe }}"><code>{{ r.chemin }}</code></a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
 </aside>
 {% endif %}
 </div>
@@ -28,7 +34,7 @@
 <p class="etage-sous">Le document de conception, tel qu'il est écrit dans <code>docs/icebreaker/design/</code>.</p>
 {% for d in f.designs %}
 <details class="detail-design">
-  <summary><strong>{{ d.titre }}</strong> <span class="date">design/{{ d.nom }}</span> · <a href="{{ racine | safe }}{{ d.url | safe }}">page entière</a></summary>
+  <summary><svg class="ic chevron" aria-hidden="true"><use href="#i-chevron"/></svg><strong>{{ d.titre }}</strong> <span class="date">design/{{ d.nom }}</span> <a class="lien-page" href="{{ racine | safe }}{{ d.url | safe }}">page entière</a></summary>
   <div class="detail-contenu">{{ d.html | safe }}</div>
 </details>
 {% endfor %}
@@ -51,13 +57,13 @@
 <h3>Les réglages</h3>
 {% for r in f.reglages %}
 <details class="detail-reglages">
-  <summary><code>assets/icebreaker/{{ r.chemin }}</code> · <a href="{{ racine | safe }}reglages/{{ r.chemin | replace(".ron", ".html") | safe }}">page entière</a></summary>
+  <summary><svg class="ic chevron" aria-hidden="true"><use href="#i-chevron"/></svg><code>assets/icebreaker/{{ r.chemin }}</code> <a class="lien-page" href="{{ racine | safe }}reglages/{{ r.chemin | replace(".ron", ".html") | safe }}">page entière</a></summary>
   <table class="reglages">
   <thead><tr><th>Réglage</th><th>Valeur</th><th>Ce que ça fait</th></tr></thead>
   <tbody>
   {% for l in r.lignes %}
   <tr class="{{ 'groupe' if l.groupe else '' }}">
-    <td class="cle" style="padding-left: {{ 0.7 + l.profondeur * 1.2 }}rem">{% if l.cle %}<code>{{ l.cle }}</code>{% else %}<span class="puce">•</span>{% endif %}</td>
+    <td class="cle" style="padding-left: {{ 0.7 + l.profondeur * 1.2 }}rem">{% if l.cle %}<code>{{ l.cle }}</code>{% else %}<span class="puce"></span>{% endif %}</td>
     <td class="valeur">{% if l.valeur %}<code>{{ l.valeur }}</code>{% endif %}</td>
     <td class="commentaire">{{ l.commentaire_html | safe }}</td>
   </tr>
@@ -68,16 +74,13 @@
 {% endfor %}
 {% endif %}
 
-{% if f.jalons or f.taches %}
+{% if f.taches %}
 <h3>Ce qui a été fait</h3>
-{% if f.jalons %}
-<p class="jalons-lies">{% for j in f.jalons %}<a class="jalon-lie" href="{{ racine | safe }}{{ j.url | safe }}"><span class="lettre">{{ j.lettres }}</span> {{ j.titre }} <span class="chiffre">{{ j.nb_faites }}/{{ j.nb_total }}</span></a> {% endfor %}</p>
-{% endif %}
 <ol class="taches compactes">
 {% for t in f.taches %}
   <li class="tache {{ 'faite' if t.fait else 'reste' }}">
     <div class="tache-tete">
-      <span class="coche">{{ '✔' if t.fait else '○' }}</span>
+      <span class="coche"><svg class="ic" aria-hidden="true"><use href="{{ '#i-coche' if t.fait else '#i-rond' }}"/></svg></span>
       {% if t.id %}<a class="id" href="{{ racine | safe }}avancement/{{ t.jalon }}.html#{{ t.id }}">{{ t.id }}</a>{% endif %}
       <strong>{{ t.titre }}</strong>
       {% if t.en_cours %}<span class="badge badge-en-cours">en cours : {{ t.en_cours }}</span>{% endif %}

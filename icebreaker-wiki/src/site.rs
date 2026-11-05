@@ -18,12 +18,15 @@ const GABARIT_QUESTIONS: &str = include_str!("../gabarits/questions.html");
 const GABARIT_DECISIONS: &str = include_str!("../gabarits/decisions.html");
 const STYLE: &str = include_str!("../static/style.css");
 const SCRIPT: &str = include_str!("../static/wiki.js");
+const LOGO: &str = include_str!("../static/logo.svg");
 
 #[derive(Serialize)]
 struct LienNav {
     titre: String,
     url: String,
     actif: bool,
+    /// URL de l'icône de la page, depuis la page courante.
+    icone: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -62,6 +65,7 @@ fn navigation(pages: &[Page], courante: &Page, racine: &str) -> Vec<RubriqueNav>
                     titre: titre_court(p),
                     url: format!("{racine}{}", p.url),
                     actif: p.url == courante.url,
+                    icone: p.icone.as_ref().map(|i| format!("{racine}assets/{i}")),
                 })
                 .collect(),
         })
@@ -130,13 +134,27 @@ struct EntreeIndex<'a> {
     texte: String,
 }
 
-/// Écrit toutes les pages, la feuille de style, le script et l'index de recherche dans `sortie` ;
-/// renvoie le nombre de pages.
-pub fn ecrire(sortie: &Path, pages: &[Page]) -> Result<usize> {
+/// Copie dans `sortie/assets/` les images du dépôt (`assets/<chemin>`) dont les pages ont besoin.
+pub fn copier_images<'a>(assets: &Path, sortie: &Path, chemins: impl Iterator<Item = &'a str>) -> Result<()> {
+    for chemin in chemins {
+        let cible = sortie.join("assets").join(chemin);
+        if let Some(parent) = cible.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::copy(assets.join(chemin), &cible).with_context(|| format!("copie de assets/{chemin}"))?;
+    }
+    Ok(())
+}
+
+/// Écrit toutes les pages, la feuille de style, le script, le logo, les icônes et l'index de recherche dans
+/// `sortie` (`assets` est le dossier `assets/` du dépôt) ; renvoie le nombre de pages.
+pub fn ecrire(sortie: &Path, pages: &[Page], assets: &Path) -> Result<usize> {
     let env = environnement()?;
     std::fs::create_dir_all(sortie)?;
     std::fs::write(sortie.join("style.css"), STYLE)?;
     std::fs::write(sortie.join("wiki.js"), SCRIPT)?;
+    std::fs::write(sortie.join("logo.svg"), LOGO)?;
+    copier_images(assets, sortie, pages.iter().filter_map(|p| p.icone.as_deref()))?;
     let mut index: Vec<EntreeIndex> = Vec::with_capacity(pages.len());
     for page in pages {
         let racine = prefixe_racine(&page.url);
@@ -193,6 +211,7 @@ mod tests {
             gabarit: "page.html",
             extra: serde_json::Value::Null,
             ordre: 0,
+            icone: None,
         }
     }
 
@@ -224,7 +243,7 @@ mod tests {
         pages[0].html = "<p>bonjour</p>".into();
         pages[1].html = "<p>règles</p>".into();
         let dossier = std::env::temp_dir().join(format!("icebreaker-wiki-test-{}", std::process::id()));
-        let nb = ecrire(&dossier, &pages).unwrap();
+        let nb = ecrire(&dossier, &pages, &dossier).unwrap();
         assert_eq!(nb, 2);
         let combat = std::fs::read_to_string(dossier.join("design/combat.html")).unwrap();
         assert!(combat.contains("<p>règles</p>"));

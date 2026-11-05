@@ -35,6 +35,8 @@ pub struct Page {
     pub extra: serde_json::Value,
     /// Ordre dans la rubrique avant le tri par chemin (les jalons suivent l'ordre du README).
     pub ordre: usize,
+    /// Icône de la page : chemin d'une image sous `assets/` (celles de Veloren), copiée dans le site.
+    pub icone: Option<String>,
 }
 
 /// Les rubriques de la barre latérale, dans l'ordre d'affichage.
@@ -167,6 +169,7 @@ pub fn pages_markdown(fichiers: &[(String, String)]) -> Vec<Page> {
             gabarit: "page.html",
             extra: serde_json::Value::Null,
             ordre: 0,
+            icone: None,
         });
     }
     pages
@@ -213,6 +216,23 @@ pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
         )?);
     }
     pages.sort_by_key(cle_de_tri);
+    // Les cartes des mécaniques sur le tableau de bord, dans l'ordre de la barre latérale.
+    let mecaniques: Vec<serde_json::Value> = pages
+        .iter()
+        .filter(|p| p.gabarit == "fiche.html")
+        .map(|p| {
+            serde_json::json!({
+                "titre": p.titre,
+                "url": p.url,
+                "resume": p.extra["resume"],
+                "icone_url": p.extra["icone_url"],
+                "jalons": p.extra["jalons"],
+            })
+        })
+        .collect();
+    if let Some(accueil) = pages.iter_mut().find(|p| p.url == "index.html") {
+        accueil.extra["mecaniques"] = serde_json::Value::Array(mecaniques);
+    }
     Ok(pages)
 }
 
@@ -233,7 +253,7 @@ fn main() -> Result<()> {
     );
     let sortie = racine.join("site");
     let pages = collecter(&racine, &docs)?;
-    let nb = site::ecrire(&sortie, &pages)?;
+    let nb = site::ecrire(&sortie, &pages, &racine.join("assets"))?;
     println!("{nb} pages écrites dans {}", sortie.display());
     Ok(())
 }

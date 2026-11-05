@@ -1,18 +1,41 @@
 {% extends "base.html" %}
 {% block contenu %}
 {% set a = extra %}
-<article class="article article-large">
-<h1>Icebreaker, où on en est</h1>
-<p class="sous-titre">Prototype sur Veloren · dernier commit le {{ a.date }} · généré depuis <code>docs/icebreaker/</code></p>
+<article class="article article-large accueil">
+<header class="entete-page entete-accueil">
+  <div class="entete-icone entete-logo"><svg aria-hidden="true"><use href="#i-logo"/></svg></div>
+  <div class="entete-texte">
+    <p class="fil">Tableau de bord</p>
+    <h1>Icebreaker, où on en est</h1>
+    <p class="resume">Prototype sur Veloren. Dernier commit le {{ a.date }}, site généré depuis <code>docs/icebreaker/</code>.</p>
+  </div>
+</header>
 
 <div class="tuiles">
-  <div class="tuile"><div class="tuile-chiffre">{{ a.nb_faites }}<span class="tuile-sur">/{{ a.nb_total }}</span></div><div class="tuile-nom">tâches faites</div></div>
-  <div class="tuile"><div class="tuile-chiffre tuile-alerte">{{ a.nb_a_voir }}</div><div class="tuile-nom">à voir dans le vrai client</div></div>
+  <div class="tuile"><div class="tuile-chiffre">{{ a.nb_faites }}<span class="tuile-sur">/{{ a.nb_total }}</span></div><div class="tuile-nom">tâches faites</div><div class="jauge jauge-tuile"><div class="jauge-plein" style="width: {{ (100 * a.nb_faites / a.nb_total) if a.nb_total else 0 }}%"></div></div></div>
+  <div class="tuile tuile-attention"><div class="tuile-chiffre tuile-alerte">{{ a.nb_a_voir }}</div><div class="tuile-nom">à voir dans le vrai client</div></div>
   <div class="tuile"><div class="tuile-chiffre">{{ a.jalons | length }}</div><div class="tuile-nom">jalons</div></div>
-  <div class="tuile"><div class="tuile-chiffre">{{ a.nb_commits }}</div><div class="tuile-nom">commits</div></div>
+  <div class="tuile"><div class="tuile-chiffre">{{ a.nb_commits }}</div><div class="tuile-nom">commits Icebreaker</div></div>
 </div>
 
+{% if a.mecaniques %}
+<h2>Les mécaniques</h2>
+<div class="cartes">
+{% for m in a.mecaniques %}
+  <a class="carte" href="{{ m.url | safe }}">
+    {% if m.icone_url %}<div class="carte-icone"><img src="{{ m.icone_url | safe }}" alt=""></div>{% endif %}
+    <div class="carte-texte">
+      <h3>{{ m.titre }}</h3>
+      <p>{{ m.resume }}</p>
+      {% if m.jalons %}<p class="carte-jalons">{% for j in m.jalons %}<span class="lettre lettre-petite">{{ j.lettres }}</span>{% endfor %}</p>{% endif %}
+    </div>
+  </a>
+{% endfor %}
+</div>
+{% endif %}
+
 <h2>Les jalons</h2>
+<div class="cadre-table">
 <table class="jalons">
 <thead><tr><th></th><th>Jalon</th><th>Avancement</th><th>État</th><th>Dernier commit</th></tr></thead>
 <tbody>
@@ -22,7 +45,7 @@
   <td><a href="{{ j.url | safe }}">{{ j.titre }}</a></td>
   <td class="cellule-jauge">
     {% if j.nb_total %}<div class="jauge"><div class="jauge-plein" style="width: {{ 100 * j.nb_faites / j.nb_total }}%"></div></div>
-    <span class="chiffre">{{ j.nb_faites }}/{{ j.nb_total }}</span>{% else %}<span class="chiffre">—</span>{% endif %}
+    <span class="chiffre">{{ j.nb_faites }}/{{ j.nb_total }}</span>{% else %}<span class="chiffre">sans tâche</span>{% endif %}
     {% if j.nb_a_voir %}<span class="badge badge-a-voir" title="tâches faites mais pas vues dans le vrai client">{{ j.nb_a_voir }} à voir</span>{% endif %}
   </td>
   <td>{{ j.etat }}</td>
@@ -31,6 +54,7 @@
 {% endfor %}
 </tbody>
 </table>
+</div>
 
 <div class="deux-colonnes">
 <section>

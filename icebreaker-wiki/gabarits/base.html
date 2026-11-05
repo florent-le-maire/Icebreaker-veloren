@@ -4,15 +4,41 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block titre %}{{ titre }}{% endblock %} · Icebreaker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
 <link rel="stylesheet" href="{{ racine | safe }}style.css">
+<link rel="icon" href="{{ racine | safe }}logo.svg" type="image/svg+xml">
 </head>
 <body data-racine="{{ racine | safe }}">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-coche" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-rond" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-loupe" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10.2 10.2L14 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-lien" viewBox="0 0 16 16"><path d="M6.5 9.5l3-3M7 4.5l1.2-1.2a2.5 2.5 0 013.5 3.5L10.5 8M9 11.5l-1.2 1.2a2.5 2.5 0 01-3.5-3.5L5.5 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-oeil" viewBox="0 0 16 16"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 64 64">
+      <defs>
+        <linearGradient id="glace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eaf7ff"/><stop offset="1" stop-color="#7fd4ff"/></linearGradient>
+        <linearGradient id="fond-glace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b8fc4"/><stop offset="1" stop-color="#17395b"/></linearGradient>
+      </defs>
+      <path d="M32 4L46 20l12 14-14 4-12 22-12-22L6 34l12-14z" fill="url(#fond-glace)"/>
+      <path d="M32 4L46 20l12 14H6l12-14z" fill="url(#glace)"/>
+      <path d="M32 4v30M18 20l14 14 14-14" fill="none" stroke="#0e1420" stroke-opacity=".35" stroke-width="1.5"/>
+      <path d="M6 34h52" stroke="#0e1420" stroke-opacity=".5" stroke-width="2"/>
+    </symbol>
+  </defs>
+</svg>
 <input type="checkbox" id="menu" class="menu-bascule" aria-hidden="true">
 <header class="bandeau">
-  <label for="menu" class="menu-bouton" aria-label="Menu">☰</label>
-  <a class="marque" href="{{ racine | safe }}index.html"><span class="marque-icone">❄</span> Icebreaker <span class="marque-sous">wiki de l'équipe</span></a>
+  <label for="menu" class="menu-bouton" aria-label="Menu"><span></span><span></span><span></span></label>
+  <a class="marque" href="{{ racine | safe }}index.html"><svg class="marque-logo" aria-hidden="true"><use href="#i-logo"/></svg><span class="marque-nom">Icebreaker</span><span class="marque-sous">wiki de l'équipe</span></a>
   <div class="recherche">
-    <input type="search" id="recherche" placeholder="Chercher… (/)" autocomplete="off" aria-label="Chercher dans le wiki">
+    <svg class="recherche-loupe" aria-hidden="true"><use href="#i-loupe"/></svg>
+    <input type="search" id="recherche" placeholder="Chercher dans le wiki" autocomplete="off" aria-label="Chercher dans le wiki">
+    <kbd class="recherche-touche">/</kbd>
     <div id="recherche-resultats" class="recherche-resultats" hidden></div>
   </div>
 </header>
@@ -20,10 +46,10 @@
 <nav class="lateral">
   {% for rubrique in nav %}
   <details class="nav-rubrique" open data-rubrique="{{ rubrique.nom }}">
-    <summary><h2>{{ rubrique.nom }}</h2></summary>
+    <summary><h2>{{ rubrique.nom }}</h2><svg class="ic nav-chevron" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
     <ul>
       {% for lien in rubrique.liens %}
-      <li{% if lien.actif %} class="actif"{% endif %}><a href="{{ lien.url | safe }}">{{ lien.titre }}</a></li>
+      <li{% if lien.actif %} class="actif"{% endif %}><a href="{{ lien.url | safe }}">{% if lien.icone %}<img class="nav-icone" src="{{ lien.icone | safe }}" alt="">{% endif %}{{ lien.titre }}</a></li>
       {% endfor %}
     </ul>
   </details>

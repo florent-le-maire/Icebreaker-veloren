@@ -129,6 +129,7 @@ pub fn page_questions(texte: &str) -> Page {
         gabarit: "questions.html",
         extra: serde_json::to_value(&vue).expect("sérialisation des questions"),
         ordre: 0,
+        icone: None,
     }
 }
 
@@ -176,6 +177,7 @@ pub fn page_index(fichiers: &[(String, String)]) -> Page {
         gabarit: "decisions.html",
         extra: serde_json::json!({ "decisions": decisions }),
         ordre: 0,
+        icone: None,
     }
 }
 

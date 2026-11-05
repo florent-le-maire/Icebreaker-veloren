@@ -1,7 +1,7 @@
 +++
 ordre = 3
 titre = "Charrette, registre et classes"
-icone = "🎒"
+icone = "voxygen/element/items/item_bag_leather_large.png"
 resume = "On arrive en fantôme, on engage une recrue, et le personnage appartient à l'équipe, pas au joueur."
 design = ["classes.md"]
 reglages = ["registre.ron", "classes.ron"]

@@ -250,6 +250,7 @@ pub fn pages(sources: &Sources, jalons: &[JalonVue]) -> Vec<Page> {
         gabarit: "accueil.html",
         extra: serde_json::to_value(&accueil).expect("sérialisation de l'accueil"),
         ordre: 0,
+        icone: None,
     });
     for (ordre, jalon) in jalons.iter().enumerate() {
         pages.push(Page {
@@ -265,6 +266,7 @@ pub fn pages(sources: &Sources, jalons: &[JalonVue]) -> Vec<Page> {
             html: String::new(),
             gabarit: "jalon.html",
             extra: serde_json::to_value(jalon).expect("sérialisation d'un jalon"),
+            icone: None,
         });
     }
     pages
