@@ -44,17 +44,17 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
 ## Tâches (worktree `Veloren-wiki`, branche `icebreaker-wiki`)
 
 - [x] **W.1 Squelette du générateur** — crate `icebreaker-wiki`, Markdown rendu dans un gabarit à barre latérale,
-  thème sombre ; 33 pages, vues avec Edge sans fenêtre. c3b7887098
+  thème sombre ; 33 pages, vues avec Edge sans fenêtre. ad8ad8b7a3
 - [x] **W.2 Tâches et commits** — tâches de PLAN, HISTORIQUE et PLAN-* liées à `git log` (sujet, corps, « Testé »,
-  lien GitHub) ; tableau de bord en accueil et une page par jalon. Un hash de X (af89bed30e) est introuvable. f8bd44c0d6
+  lien GitHub) ; tableau de bord en accueil et une page par jalon. Un hash de X (af89bed30e) est introuvable. c78e057b7d
 - [x] **W.3 Réglages** — chaque `.ron` de `assets/icebreaker/` lu avec ses commentaires (groupes, listes) ; une page par
-  fichier avec chiffres clés et tableau réglage / valeur / ce que ça fait. a82d2c3cc6
+  fichier avec chiffres clés et tableau réglage / valeur / ce que ça fait. eb20c8b4f1
 - [x] **W.4 Fiches mécaniques** — `wiki/<domaine>.md` (en-tête TOML : design, réglages, tâches, systèmes, chiffres) → page
-  à trois étages ; sept fiches écrites (campagne, village, charrette, combat, mort, donjon, grotte), à relire. 2591c1daa7
+  à trois étages ; sept fiches écrites (campagne, village, charrette, combat, mort, donjon, grotte), à relire. 8ff80b6298
 - [x] **W.5 Décisions, questions, idées, vision** — page Questions (cartes Qn, badges, tranchées par date) et index des
-  décisions (date, statut) ; vision et idées en pages Markdown. e326cb002d
+  décisions (date, statut) ; vision et idées en pages Markdown. 8d4a8fe6ff
 - [x] **W.6 Recherche et finitions** — recherche plein texte (index généré, touche `/`), rubriques repliables, petit
-  écran vu à 600 px seulement ; recherche pas essayée dans un vrai navigateur. 2a7bdecb6c
+  écran vu à 600 px seulement ; recherche pas essayée dans un vrai navigateur. 8593daae75
 - [ ] **W.7 Déploiement VPS** — *en cours : Veloren-wiki, 2026-11-05* — script `icebreaker-serveur/deployer-wiki.sh`
   écrit (Caddy, mot de passe, `ADRESSE` pour un nom de domaine) et note dans `CLAUDE.md` ; **pas encore lancé** : il
   faut choisir le mot de passe (et un nom de domaine, sinon `http://116.202.107.125:8090`).
