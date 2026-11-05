@@ -37,6 +37,9 @@ pub struct Entete {
     /// Rang dans la barre latérale (les fiches sans rang passent après, par nom).
     #[serde(default = "rang_par_defaut")]
     pub ordre: usize,
+    /// Schéma dessiné depuis les réglages (`schemas::NOMS`), affiché en tête de la règle.
+    #[serde(default)]
+    pub schema: String,
 }
 
 fn rang_par_defaut() -> usize {
@@ -94,6 +97,8 @@ struct FicheVue {
     /// URL de l'icône relative à la racine du site, si le fichier existe.
     icone_url: Option<String>,
     resume: String,
+    schema_svg: Option<String>,
+    schema_legende: Option<String>,
     regle_html: String,
     chiffres: Vec<ChiffreVue>,
     designs: Vec<DesignVue>,
@@ -272,10 +277,29 @@ pub fn page(
         .collect();
     let (jalons_lies, taches) = taches_liees(&entete.taches, jalons);
     let icone_vue = icone_url(racine, &entete.icone, source);
+    let schema = if entete.schema.is_empty() {
+        None
+    } else {
+        let s = crate::schemas::dessiner(&entete.schema, reglages, "../");
+        if s.is_none() {
+            eprintln!(
+                "{source} : schéma inconnu ou réglages manquants, {} (connus : {})",
+                entete.schema,
+                crate::schemas::NOMS.join(", ")
+            );
+        }
+        s
+    };
+    let images = schema
+        .as_ref()
+        .map(|s| s.images.iter().map(|i| (format!("assets/{i}"), format!("assets/{i}"))).collect())
+        .unwrap_or_default();
     let vue = FicheVue {
         titre: entete.titre.clone(),
         icone_url: icone_vue.clone(),
         resume: entete.resume.clone(),
+        schema_svg: schema.as_ref().map(|s| s.svg.clone()),
+        schema_legende: schema.as_ref().map(|s| s.legende.clone()),
         regle_html: markdown::rendre(corps, source).html,
         chiffres: chiffres(&entete, reglages),
         designs,
@@ -301,6 +325,7 @@ pub fn page(
         extra: serde_json::to_value(&vue).expect("sérialisation d'une fiche"),
         ordre: entete.ordre,
         icone: icone_vue.clone().map(|_| entete.icone.clone()),
+        images,
     })
 }
 

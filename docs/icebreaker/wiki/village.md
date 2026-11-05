@@ -2,6 +2,7 @@
 ordre = 2
 titre = "Le village"
 icone = "voxygen/element/ui/map/buttons/town.png"
+schema = "plan-village"
 resume = "La base commune : on y range, on y paie, on y soigne, on y part. Il grandit avec l'or que l'équipe y met."
 design = ["village.md"]
 reglages = ["village.ron", "vue_village.ron"]

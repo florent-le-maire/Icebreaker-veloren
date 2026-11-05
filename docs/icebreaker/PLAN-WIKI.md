@@ -59,12 +59,12 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
 - [ ] **W.7 Déploiement VPS** — *en cours : Veloren-wiki, 2026-11-05* — script `icebreaker-serveur/deployer-wiki.sh`
   écrit (Caddy, mot de passe, `ADRESSE` pour un nom de domaine) et note dans `CLAUDE.md` ; **pas encore lancé** : il
   faut choisir le mot de passe (et un nom de domaine, sinon `http://116.202.107.125:8090`).
-- [ ] **W.8 Identité visuelle sans émoji** — *en cours : Veloren-wiki, 2026-11-05* — logo SVG, icône de Veloren par fiche
-  (`icone` = chemin sous `assets/`), titres en Cinzel, en-tête de page avec icône et résumé, cartes des mécaniques en
-  accueil, pictogrammes en SVG (plus aucun émoji ni symbole texte).
-- [ ] **W.9 Schémas dessinés depuis les données** — module Rust qui produit du SVG avec les valeurs des `.ron` : frise
-  à terre → mort → sac, carte de campagne (`lieux.ron`, `campagne.ron`), circuit charrette et registre, étages du
-  donjon, niveaux de la grotte ; la fiche déclare son schéma dans l'en-tête.
+- [x] **W.8 Identité visuelle sans émoji** — logo SVG, icône de Veloren par fiche (`icone` = chemin sous `assets/`),
+  titres en Cinzel, en-tête de page avec icône et résumé, cartes des mécaniques en accueil, pictogrammes en SVG ;
+  vu en captures Edge, pas dans un vrai navigateur. 8c35efc2b5
+- [x] **W.9 Schémas dessinés depuis les données** — `schemas.rs` : sept SVG dessinés avec les valeurs des `.ron` (frise à
+  terre et mort, carte de campagne, circuit charrette et registre, étages du donjon, coupe de la grotte, portée du
+  verrouillage, plan du village), déclarés par `schema = "…"` dans l'en-tête de la fiche ; vus en captures Edge. 8744fa0877
 - [ ] **W.10 Captures d'écran** — `docs/icebreaker/wiki/images/`, `![légende](images/x.png)` dans une fiche rendu en
   figure avec légende et zoom ; encadré « capture à prendre » tant qu'elle manque.
 - [ ] **W.11 Icônes dans les tableaux** — icône de Veloren à côté des armes des classes, des états et des objets dans

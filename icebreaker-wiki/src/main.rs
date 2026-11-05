@@ -9,6 +9,7 @@ mod decisions;
 mod fiches;
 mod markdown;
 mod reglages;
+mod schemas;
 mod site;
 mod taches;
 
@@ -37,6 +38,8 @@ pub struct Page {
     pub ordre: usize,
     /// Icône de la page : chemin d'une image sous `assets/` (celles de Veloren), copiée dans le site.
     pub icone: Option<String>,
+    /// Autres fichiers à copier dans le site : (chemin depuis la racine du dépôt, chemin dans le site).
+    pub images: Vec<(String, String)>,
 }
 
 /// Les rubriques de la barre latérale, dans l'ordre d'affichage.
@@ -170,6 +173,7 @@ pub fn pages_markdown(fichiers: &[(String, String)]) -> Vec<Page> {
             extra: serde_json::Value::Null,
             ordre: 0,
             icone: None,
+            images: Vec::new(),
         });
     }
     pages
@@ -253,7 +257,7 @@ fn main() -> Result<()> {
     );
     let sortie = racine.join("site");
     let pages = collecter(&racine, &docs)?;
-    let nb = site::ecrire(&sortie, &pages, &racine.join("assets"))?;
+    let nb = site::ecrire(&sortie, &pages, &racine)?;
     println!("{nb} pages écrites dans {}", sortie.display());
     Ok(())
 }

@@ -134,27 +134,33 @@ struct EntreeIndex<'a> {
     texte: String,
 }
 
-/// Copie dans `sortie/assets/` les images du dépôt (`assets/<chemin>`) dont les pages ont besoin.
-pub fn copier_images<'a>(assets: &Path, sortie: &Path, chemins: impl Iterator<Item = &'a str>) -> Result<()> {
-    for chemin in chemins {
-        let cible = sortie.join("assets").join(chemin);
+/// Copie dans le site les fichiers du dépôt dont les pages ont besoin : (chemin depuis `racine`, chemin dans `sortie`).
+pub fn copier_images<'a>(racine: &Path, sortie: &Path, fichiers: impl Iterator<Item = (&'a str, &'a str)>) -> Result<()> {
+    for (source, cible) in fichiers {
+        let cible = sortie.join(cible);
         if let Some(parent) = cible.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        std::fs::copy(assets.join(chemin), &cible).with_context(|| format!("copie de assets/{chemin}"))?;
+        std::fs::copy(racine.join(source), &cible).with_context(|| format!("copie de {source}"))?;
     }
     Ok(())
 }
 
 /// Écrit toutes les pages, la feuille de style, le script, le logo, les icônes et l'index de recherche dans
-/// `sortie` (`assets` est le dossier `assets/` du dépôt) ; renvoie le nombre de pages.
-pub fn ecrire(sortie: &Path, pages: &[Page], assets: &Path) -> Result<usize> {
+/// `sortie` (`racine` est la racine du dépôt, pour copier les images) ; renvoie le nombre de pages.
+pub fn ecrire(sortie: &Path, pages: &[Page], racine: &Path) -> Result<usize> {
     let env = environnement()?;
     std::fs::create_dir_all(sortie)?;
     std::fs::write(sortie.join("style.css"), STYLE)?;
     std::fs::write(sortie.join("wiki.js"), SCRIPT)?;
     std::fs::write(sortie.join("logo.svg"), LOGO)?;
-    copier_images(assets, sortie, pages.iter().filter_map(|p| p.icone.as_deref()))?;
+    let icones: Vec<(String, String)> = pages
+        .iter()
+        .filter_map(|p| p.icone.as_deref())
+        .map(|i| (format!("assets/{i}"), format!("assets/{i}")))
+        .collect();
+    let images = icones.iter().chain(pages.iter().flat_map(|p| p.images.iter()));
+    copier_images(racine, sortie, images.map(|(s, c)| (s.as_str(), c.as_str())))?;
     let mut index: Vec<EntreeIndex> = Vec::with_capacity(pages.len());
     for page in pages {
         let racine = prefixe_racine(&page.url);
@@ -212,6 +218,7 @@ mod tests {
             extra: serde_json::Value::Null,
             ordre: 0,
             icone: None,
+            images: Vec::new(),
         }
     }
 

@@ -2,6 +2,7 @@
 ordre = 4
 titre = "Combat létal et verrouillage"
 icone = "voxygen/element/weapons/swords_crossed.png"
+schema = "portee-verrouillage"
 resume = "Quelques coups suffisent, dans un sens comme dans l'autre. On verrouille sa cible façon Dark Souls."
 design = ["combat.md"]
 reglages = ["combat.ron", "verrouillage.ron"]

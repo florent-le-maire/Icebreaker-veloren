@@ -2,6 +2,7 @@
 ordre = 7
 titre = "La grotte"
 icone = "voxygen/element/weapons/pickaxe.png"
+schema = "coupe-grotte"
 resume = "Des poches et des boyaux creusés dans la roche, des filons à la pioche, un chef au fond. Façon Deep Rock Galactic."
 reglages = ["grottes/grotte.ron"]
 taches = ["K"]

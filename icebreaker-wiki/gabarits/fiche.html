@@ -12,6 +12,7 @@
   </div>
 </header>
 
+{% if f.schema_svg %}<figure class="schema">{{ f.schema_svg | safe }}<figcaption>{{ f.schema_legende }}</figcaption></figure>{% endif %}
 <div class="fiche-corps">
 <section class="regle">
 {{ f.regle_html | safe }}

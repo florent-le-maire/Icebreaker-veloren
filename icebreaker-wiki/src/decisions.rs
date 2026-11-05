@@ -130,6 +130,7 @@ pub fn page_questions(texte: &str) -> Page {
         extra: serde_json::to_value(&vue).expect("sérialisation des questions"),
         ordre: 0,
         icone: None,
+        images: Vec::new(),
     }
 }
 
@@ -178,6 +179,7 @@ pub fn page_index(fichiers: &[(String, String)]) -> Page {
         extra: serde_json::json!({ "decisions": decisions }),
         ordre: 0,
         icone: None,
+        images: Vec::new(),
     }
 }
 

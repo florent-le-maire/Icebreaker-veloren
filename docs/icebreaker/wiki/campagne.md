@@ -2,6 +2,7 @@
 ordre = 1
 titre = "La campagne et ses lieux"
 icone = "voxygen/element/ui/generic/buttons/map.png"
+schema = "carte-campagne"
 resume = "Un seul serveur : le village au centre, des emplacements de donjon loin autour, une partie qui dure."
 reglages = ["campagne.ron", "lieux.ron"]
 taches = ["I", "S"]
