@@ -17,6 +17,7 @@ const GABARIT_FICHE: &str = include_str!("../gabarits/fiche.html");
 const GABARIT_QUESTIONS: &str = include_str!("../gabarits/questions.html");
 const GABARIT_DECISIONS: &str = include_str!("../gabarits/decisions.html");
 const STYLE: &str = include_str!("../static/style.css");
+const SCRIPT: &str = include_str!("../static/wiki.js");
 
 #[derive(Serialize)]
 struct LienNav {
@@ -88,11 +89,55 @@ pub fn titre_court(page: &Page) -> String {
     titre.trim().to_string()
 }
 
-/// Écrit toutes les pages et la feuille de style dans `sortie` ; renvoie le nombre de pages.
+/// Le texte brut du contenu principal d'une page rendue (entre `<main` et `</main>`), balises enlevées,
+/// entités courantes décodées, espaces repliés, coupé à `max` caractères.
+pub fn texte_brut(html: &str, max: usize) -> String {
+    let debut = html.find("<main").map(|i| i + html[i..].find('>').map_or(0, |j| j + 1)).unwrap_or(0);
+    let fin = html.find("</main>").unwrap_or(html.len());
+    let mut texte = String::with_capacity(fin.saturating_sub(debut));
+    let mut dans_balise = false;
+    for c in html[debut..fin].chars() {
+        match c {
+            '<' => {
+                dans_balise = true;
+                texte.push(' ');
+            },
+            '>' if dans_balise => dans_balise = false,
+            _ if !dans_balise => texte.push(c),
+            _ => {},
+        }
+    }
+    let texte = texte
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#x27;", "'")
+        .replace("&#39;", "'");
+    let mots: Vec<&str> = texte.split_whitespace().collect();
+    let mut sortie = mots.join(" ");
+    if sortie.chars().count() > max {
+        sortie = sortie.chars().take(max).collect();
+    }
+    sortie
+}
+
+#[derive(Serialize)]
+struct EntreeIndex<'a> {
+    titre: &'a str,
+    url: &'a str,
+    rubrique: &'static str,
+    texte: String,
+}
+
+/// Écrit toutes les pages, la feuille de style, le script et l'index de recherche dans `sortie` ;
+/// renvoie le nombre de pages.
 pub fn ecrire(sortie: &Path, pages: &[Page]) -> Result<usize> {
     let env = environnement()?;
     std::fs::create_dir_all(sortie)?;
     std::fs::write(sortie.join("style.css"), STYLE)?;
+    std::fs::write(sortie.join("wiki.js"), SCRIPT)?;
+    let mut index: Vec<EntreeIndex> = Vec::with_capacity(pages.len());
     for page in pages {
         let racine = prefixe_racine(&page.url);
         let html = env
@@ -110,8 +155,20 @@ pub fn ecrire(sortie: &Path, pages: &[Page]) -> Result<usize> {
         if let Some(parent) = chemin.parent() {
             std::fs::create_dir_all(parent)?;
         }
+        index.push(EntreeIndex {
+            titre: &page.titre,
+            url: &page.url,
+            rubrique: page.rubrique.nom(),
+            texte: texte_brut(&html, 4000),
+        });
         std::fs::write(&chemin, html).with_context(|| format!("écriture de {}", chemin.display()))?;
     }
+    // Un fichier de script plutôt qu'un JSON : `fetch` est refusé sur `file://`, pas un `<script>`.
+    let json = serde_json::to_string(&index)?;
+    std::fs::write(
+        sortie.join("recherche-index.js"),
+        format!("// Icebreaker : index de recherche généré par icebreaker-wiki.\nwindow.ICEBREAKER_INDEX = {json};\n"),
+    )?;
     Ok(pages.len())
 }
 
@@ -176,6 +233,17 @@ mod tests {
         assert!(combat.contains("href=\"../readme.html\""));
         assert!(combat.contains("Lire les docs"));
         assert!(dossier.join("style.css").is_file());
+        let index = std::fs::read_to_string(dossier.join("recherche-index.js")).unwrap();
+        assert!(index.starts_with("// Icebreaker"));
+        assert!(index.contains("\"url\":\"design/combat.html\""));
+        assert!(index.contains("règles"));
         std::fs::remove_dir_all(&dossier).unwrap();
+    }
+
+    #[test]
+    fn texte_brut_sans_balises() {
+        let html = "<html><nav>menu</nav><main class=\"c\"><h1>Titre</h1><p>a &amp; <code>b</code>   c</p></main></html>";
+        assert_eq!(texte_brut(html, 100), "Titre a & b c");
+        assert_eq!(texte_brut(html, 5), "Titre");
     }
 }

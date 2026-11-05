@@ -51,8 +51,9 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
   fichier avec chiffres clés et tableau réglage / valeur / ce que ça fait. a82d2c3cc6
 - [x] **W.4 Fiches mécaniques** — `wiki/<domaine>.md` (en-tête TOML : design, réglages, tâches, systèmes, chiffres) → page
   à trois étages ; sept fiches écrites (campagne, village, charrette, combat, mort, donjon, grotte), à relire. 2591c1daa7
-- [ ] **W.5 Décisions, questions, idées, vision** — *en cours : Veloren-wiki, 2026-11-05* — rendu et badges d'état.
-- [ ] **W.6 Recherche et finitions** — index JSON, script de recherche, revue du CSS sur petit écran.
+- [x] **W.5 Décisions, questions, idées, vision** — page Questions (cartes Qn, badges, tranchées par date) et index des
+  décisions (date, statut) ; vision et idées en pages Markdown. e326cb002d
+- [ ] **W.6 Recherche et finitions** — *en cours : Veloren-wiki, 2026-11-05* — index JSON, script de recherche, revue du CSS sur petit écran.
 - [ ] **W.7 Déploiement VPS** — Caddy + mot de passe, `deployer-wiki.sh`, notes dans `README.md` et `CLAUDE.md`.
   Il faut l'adresse du VPS et un mot de passe.
 

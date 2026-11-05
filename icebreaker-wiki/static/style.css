@@ -209,3 +209,41 @@ table.reglages td.commentaire { color: var(--texte-2); }
 .question-texte em { color: var(--accent); font-style: normal; }
 .tranchee { padding: .5rem 0; border-bottom: 1px solid var(--bordure); }
 .tranchee .question-texte { color: var(--texte); }
+
+/* Recherche */
+.recherche { margin-left: auto; position: relative; width: min(26rem, 50vw); }
+.recherche input {
+  width: 100%; padding: .4rem .8rem; border-radius: 999px; border: 1px solid var(--bordure);
+  background: var(--fond-3); color: var(--texte); font: inherit; font-size: .9rem; outline: none;
+}
+.recherche input:focus { border-color: var(--accent); }
+.recherche-resultats {
+  position: absolute; top: 2.4rem; right: 0; width: min(34rem, 92vw); max-height: 70vh; overflow-y: auto;
+  background: var(--fond-2); border: 1px solid var(--bordure); border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,.5); z-index: 20;
+}
+.recherche-item { display: block; padding: .55rem .9rem; border-bottom: 1px solid var(--bordure); color: var(--texte); }
+.recherche-item:hover, .recherche-item.choisi { background: var(--fond-3); text-decoration: none; }
+.recherche-rubrique { display: inline-block; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--texte-2); margin-right: .5rem; }
+.recherche-titre { font-weight: 600; }
+.recherche-extrait { display: block; font-size: .82rem; color: var(--texte-2); margin-top: .15rem; }
+.recherche-vide { padding: .7rem .9rem; color: var(--texte-2); }
+
+/* Rubriques repliables */
+.nav-rubrique summary { list-style: none; cursor: pointer; display: flex; align-items: center; }
+.nav-rubrique summary::-webkit-details-marker { display: none; }
+.nav-rubrique summary::after { content: "▾"; color: var(--texte-2); font-size: .7rem; margin: 1rem 1.25rem 0 auto; }
+.nav-rubrique:not([open]) summary::after { content: "▸"; }
+@media (max-width: 900px) {
+  .marque-sous { display: none; }
+  .recherche { width: 100%; }
+  .recherche-resultats { position: fixed; top: var(--bandeau); left: 0; right: 0; width: auto; border-radius: 0; }
+}
+
+/* Petit écran : tuiles sur deux colonnes, tableaux qui défilent */
+@media (max-width: 600px) {
+  .tuiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+  .tuile-chiffre { font-size: 1.5rem; }
+  table.jalons, table.reglages { display: block; overflow-x: auto; }
+  .article-large { max-width: 100%; }
+  .contenu { overflow-x: hidden; }
+}

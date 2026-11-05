@@ -6,28 +6,34 @@
 <title>{% block titre %}{{ titre }}{% endblock %} · Icebreaker</title>
 <link rel="stylesheet" href="{{ racine | safe }}style.css">
 </head>
-<body>
+<body data-racine="{{ racine | safe }}">
 <input type="checkbox" id="menu" class="menu-bascule" aria-hidden="true">
 <header class="bandeau">
   <label for="menu" class="menu-bouton" aria-label="Menu">☰</label>
   <a class="marque" href="{{ racine | safe }}index.html"><span class="marque-icone">❄</span> Icebreaker <span class="marque-sous">wiki de l'équipe</span></a>
+  <div class="recherche">
+    <input type="search" id="recherche" placeholder="Chercher… (/)" autocomplete="off" aria-label="Chercher dans le wiki">
+    <div id="recherche-resultats" class="recherche-resultats" hidden></div>
+  </div>
 </header>
 <div class="cadre">
 <nav class="lateral">
   {% for rubrique in nav %}
-  <section class="nav-rubrique">
-    <h2>{{ rubrique.nom }}</h2>
+  <details class="nav-rubrique" open data-rubrique="{{ rubrique.nom }}">
+    <summary><h2>{{ rubrique.nom }}</h2></summary>
     <ul>
       {% for lien in rubrique.liens %}
       <li{% if lien.actif %} class="actif"{% endif %}><a href="{{ lien.url | safe }}">{{ lien.titre }}</a></li>
       {% endfor %}
     </ul>
-  </section>
+  </details>
   {% endfor %}
 </nav>
 <main class="contenu">
 {% block contenu %}{% endblock %}
 </main>
 </div>
+<script src="{{ racine | safe }}recherche-index.js" defer></script>
+<script src="{{ racine | safe }}wiki.js" defer></script>
 </body>
 </html>
