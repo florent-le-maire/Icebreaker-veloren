@@ -1,0 +1,21 @@
+# Icebreaker : générateur du wiki de l'équipe (docs/icebreaker/PLAN-WIKI.md).
+# `cargo run -p icebreaker-wiki` depuis la racine du dépôt écrit le site dans `site/`.
+[package]
+name = "icebreaker-wiki"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = "1"
+minijinja = "2"
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+walkdir = "2"

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titre %}{{ titre }}{% endblock %} · Icebreaker</title>
+<link rel="stylesheet" href="{{ racine | safe }}style.css">
+</head>
+<body>
+<input type="checkbox" id="menu" class="menu-bascule" aria-hidden="true">
+<header class="bandeau">
+  <label for="menu" class="menu-bouton" aria-label="Menu">☰</label>
+  <a class="marque" href="{{ racine | safe }}index.html"><span class="marque-icone">❄</span> Icebreaker <span class="marque-sous">wiki de l'équipe</span></a>
+</header>
+<div class="cadre">
+<nav class="lateral">
+  {% for rubrique in nav %}
+  <section class="nav-rubrique">
+    <h2>{{ rubrique.nom }}</h2>
+    <ul>
+      {% for lien in rubrique.liens %}
+      <li{% if lien.actif %} class="actif"{% endif %}><a href="{{ lien.url | safe }}">{{ lien.titre }}</a></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+</nav>
+<main class="contenu">
+{% block contenu %}{% endblock %}
+</main>
+</div>
+</body>
+</html>

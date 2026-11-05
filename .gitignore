@@ -16,6 +16,8 @@ todo.txt
 userdata
 # Icebreaker : données des serveurs lancés par icebreaker.ps1 (campagne, monde)
 userdata-icebreaker
+# Icebreaker : site généré par icebreaker-wiki
+/site
 Makefile
 
 ## Allow asset hud settings

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block contenu %}
+<article class="article">
+{{ contenu | safe }}
+<footer class="source">Source : <code>docs/icebreaker/{{ source }}</code></footer>
+</article>
+{% endblock %}
