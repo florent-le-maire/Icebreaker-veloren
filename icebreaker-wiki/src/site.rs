@@ -10,6 +10,8 @@ use crate::{Page, Rubrique};
 
 const GABARIT_BASE: &str = include_str!("../gabarits/base.html");
 const GABARIT_PAGE: &str = include_str!("../gabarits/page.html");
+const GABARIT_ACCUEIL: &str = include_str!("../gabarits/accueil.html");
+const GABARIT_JALON: &str = include_str!("../gabarits/jalon.html");
 const STYLE: &str = include_str!("../static/style.css");
 
 #[derive(Serialize)]
@@ -34,6 +36,8 @@ fn environnement() -> Result<Environment<'static>> {
     let mut env = Environment::new();
     env.add_template("base.html", GABARIT_BASE)?;
     env.add_template("page.html", GABARIT_PAGE)?;
+    env.add_template("accueil.html", GABARIT_ACCUEIL)?;
+    env.add_template("jalon.html", GABARIT_JALON)?;
     Ok(env)
 }
 
@@ -59,12 +63,14 @@ fn navigation(pages: &[Page], courante: &Page, racine: &str) -> Vec<RubriqueNav>
 /// Titre pour la barre latérale : nom fixe pour les repères, sinon le titre débarrassé du préfixe
 /// « Game design — », du sous-titre après le tiret et de la parenthèse finale.
 pub fn titre_court(page: &Page) -> String {
-    if let Some(nom) = crate::nom_repere(&page.source) {
-        return nom.to_string();
+    if page.rubrique == Rubrique::Reperes {
+        if let Some(nom) = crate::nom_repere(&page.source) {
+            return nom.to_string();
+        }
     }
     let titre = page.titre.trim_start_matches("Game design — ");
     let titre = match page.rubrique {
-        Rubrique::Decisions => titre,
+        Rubrique::Decisions | Rubrique::Avancement => titre,
         _ => titre.split(" — ").next().unwrap_or(titre),
     };
     let titre = match titre.find(" (") {
@@ -77,18 +83,19 @@ pub fn titre_court(page: &Page) -> String {
 /// Écrit toutes les pages et la feuille de style dans `sortie` ; renvoie le nombre de pages.
 pub fn ecrire(sortie: &Path, pages: &[Page]) -> Result<usize> {
     let env = environnement()?;
-    let gabarit = env.get_template("page.html")?;
     std::fs::create_dir_all(sortie)?;
     std::fs::write(sortie.join("style.css"), STYLE)?;
     for page in pages {
         let racine = prefixe_racine(&page.url);
-        let html = gabarit
+        let html = env
+            .get_template(page.gabarit)?
             .render(context! {
                 titre => page.titre,
                 contenu => page.html,
                 source => page.source,
                 racine => racine,
                 nav => navigation(pages, page, &racine),
+                extra => page.extra,
             })
             .with_context(|| format!("rendu de {}", page.source))?;
         let chemin = sortie.join(&page.url);
@@ -118,12 +125,15 @@ mod tests {
             rubrique,
             titre: titre.into(),
             html: String::new(),
+            gabarit: "page.html",
+            extra: serde_json::Value::Null,
+            ordre: 0,
         }
     }
 
     #[test]
     fn titres_courts() {
-        assert_eq!(titre_court(&page("README.md", Rubrique::Reperes, "Docs — point d'entrée")), "Accueil");
+        assert_eq!(titre_court(&page("README.md", Rubrique::Reperes, "Docs — point d'entrée")), "Lire les docs");
         assert_eq!(titre_court(&page("GAME_DESIGN.md", Rubrique::Reperes, "Game design")), "Index des règles");
         assert_eq!(titre_court(&page("design/combat.md", Rubrique::Regles, "Game design — Combat")), "Combat");
         assert_eq!(
@@ -142,22 +152,12 @@ mod tests {
 
     #[test]
     fn rendu_d_une_page() {
-        let pages = vec![
-            Page {
-                source: "README.md".into(),
-                url: "index.html".into(),
-                rubrique: Rubrique::Reperes,
-                titre: "Docs Icebreaker — point d'entrée".into(),
-                html: "<p>bonjour</p>".into(),
-            },
-            Page {
-                source: "design/combat.md".into(),
-                url: "design/combat.html".into(),
-                rubrique: Rubrique::Regles,
-                titre: "Combat".into(),
-                html: "<p>règles</p>".into(),
-            },
+        let mut pages = vec![
+            page("README.md", Rubrique::Reperes, "Docs Icebreaker — point d'entrée"),
+            page("design/combat.md", Rubrique::Regles, "Combat"),
         ];
+        pages[0].html = "<p>bonjour</p>".into();
+        pages[1].html = "<p>règles</p>".into();
         let dossier = std::env::temp_dir().join(format!("icebreaker-wiki-test-{}", std::process::id()));
         let nb = ecrire(&dossier, &pages).unwrap();
         assert_eq!(nb, 2);
@@ -165,7 +165,8 @@ mod tests {
         assert!(combat.contains("<p>règles</p>"));
         assert!(combat.contains("href=\"../style.css\""));
         assert!(combat.contains("href=\"../index.html\""));
-        assert!(combat.contains("Accueil"));
+        assert!(combat.contains("href=\"../readme.html\""));
+        assert!(combat.contains("Lire les docs"));
         assert!(dossier.join("style.css").is_file());
         std::fs::remove_dir_all(&dossier).unwrap();
     }

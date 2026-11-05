@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block contenu %}
+{% set j = extra %}
+<article class="article article-large">
+<p class="fil"><a href="{{ racine | safe }}index.html">Tableau de bord</a> › Jalon {{ j.lettres }}</p>
+<h1>{% if j.cle != "Prototype" %}<span class="lettre">{{ j.lettres }}</span> {% endif %}{{ j.titre }}</h1>
+
+<div class="encart-ligne">
+  <div class="jauge" title="{{ j.nb_faites }} tâches faites sur {{ j.nb_total }}"><div class="jauge-plein" style="width: {{ (100 * j.nb_faites / j.nb_total) if j.nb_total else 0 }}%"></div></div>
+  <span class="chiffre">{{ j.nb_faites }}/{{ j.nb_total }} faites</span>
+  {% if j.nb_a_voir %}<span class="badge badge-a-voir">{{ j.nb_a_voir }} à voir en jeu</span>{% endif %}
+  {% if j.etat %}<span class="badge">{{ j.etat }}</span>{% endif %}
+  {% if j.worktree and j.worktree != "—" %}<span class="badge badge-sobre">{{ j.worktree }}</span>{% endif %}
+  <span class="badge badge-sobre">plan : <a href="{{ racine | safe }}{{ j.plan_url | safe }}">{{ j.plan }}</a></span>
+</div>
+
+{% if j.description_html %}<div class="intention">{{ j.description_html | safe }}</div>{% endif %}
+
+<h2>Tâches</h2>
+<ol class="taches">
+{% for t in j.taches %}
+  <li class="tache {{ 'faite' if t.fait else 'reste' }}" id="{{ t.id or loop.index }}">
+    <div class="tache-tete">
+      <span class="coche">{{ '✔' if t.fait else '○' }}</span>
+      {% if t.id %}<span class="id">{{ t.id }}</span>{% endif %}
+      <strong>{{ t.titre }}</strong>
+      {% if t.en_cours %}<span class="badge badge-en-cours">en cours : {{ t.en_cours }}</span>{% endif %}
+      {% if t.a_voir_en_jeu %}<span class="badge badge-a-voir">à voir en jeu</span>{% endif %}
+    </div>
+    {% if t.detail_html %}<div class="tache-detail">{{ t.detail_html | safe }}</div>{% endif %}
+    {% for c in t.commits %}
+    <details class="commit">
+      <summary>
+        {% if c.url %}<a class="hash" href="{{ c.url | safe }}">{{ c.court }}</a>{% else %}<span class="hash">{{ c.court }}</span>{% endif %}
+        <span class="date">{{ c.date }}</span> {{ c.sujet }}
+      </summary>
+      {% if c.corps_html %}<div class="commit-corps">{{ c.corps_html | safe }}</div>{% endif %}
+      {% if c.teste_html %}<p class="commit-teste"><span class="etiquette">Testé</span> {{ c.teste_html | safe }}</p>{% endif %}
+    </details>
+    {% endfor %}
+    {% for h in t.hashes_inconnus %}<span class="hash hash-inconnu" title="hash absent de git log">{{ h }}</span>{% endfor %}
+  </li>
+{% endfor %}
+</ol>
+<footer class="source">Source : <code>docs/icebreaker/{{ j.plan }}</code> (et <code>HISTORIQUE.md</code> pour les tâches finies)</footer>
+</article>
+{% endblock %}

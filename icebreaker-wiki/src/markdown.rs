@@ -91,9 +91,25 @@ pub fn rendre(corps: &str, _source: &str) -> Rendu {
     Rendu { titre: titre.map(|t| t.trim().to_string()), html: sortie }
 }
 
+/// Rendu d'un bout de texte en ligne : comme `rendre`, sans le `<p>` autour quand il n'y a qu'un paragraphe.
+pub fn rendre_inline(texte: &str) -> String {
+    let html = rendre(texte, "").html;
+    let html = html.trim();
+    match html.strip_prefix("<p>").and_then(|h| h.strip_suffix("</p>")) {
+        Some(interieur) if !interieur.contains("<p>") => interieur.to_string(),
+        _ => html.to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rendu_en_ligne() {
+        assert_eq!(rendre_inline("du `code` et *gras*"), "du <code>code</code> et <em>gras</em>");
+        assert!(rendre_inline("un\n\ndeux").starts_with("<p>un</p>"));
+    }
 
     #[test]
     fn titre_et_tableau() {

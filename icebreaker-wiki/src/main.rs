@@ -3,8 +3,11 @@
 //! Lit `docs/icebreaker/**/*.md` et `assets/icebreaker/`, écrit un site statique dans `site/`.
 //! Lancer depuis la racine du dépôt : `cargo run -p icebreaker-wiki` (ou passer la racine en argument).
 
+mod avancement;
+mod commits;
 mod markdown;
 mod site;
+mod taches;
 
 use std::path::{Path, PathBuf};
 
@@ -21,14 +24,21 @@ pub struct Page {
     /// Rubrique de la barre latérale.
     pub rubrique: Rubrique,
     pub titre: String,
-    /// Corps rendu en HTML.
+    /// Corps rendu en HTML (pages Markdown).
     pub html: String,
+    /// Gabarit minijinja (`page.html` pour une page Markdown).
+    pub gabarit: &'static str,
+    /// Données propres au gabarit (tableau de bord, jalon), `Null` pour une page Markdown.
+    pub extra: serde_json::Value,
+    /// Ordre dans la rubrique avant le tri par chemin (les jalons suivent l'ordre du README).
+    pub ordre: usize,
 }
 
 /// Les rubriques de la barre latérale, dans l'ordre d'affichage.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rubrique {
     Reperes,
+    Avancement,
     Plans,
     Regles,
     Decisions,
@@ -38,14 +48,15 @@ impl Rubrique {
     pub fn nom(self) -> &'static str {
         match self {
             Rubrique::Reperes => "Repères",
+            Rubrique::Avancement => "Avancement",
             Rubrique::Plans => "Plans",
             Rubrique::Regles => "Règles du jeu",
             Rubrique::Decisions => "Décisions",
         }
     }
 
-    pub fn toutes() -> [Rubrique; 4] {
-        [Rubrique::Reperes, Rubrique::Plans, Rubrique::Regles, Rubrique::Decisions]
+    pub fn toutes() -> [Rubrique; 5] {
+        [Rubrique::Reperes, Rubrique::Avancement, Rubrique::Plans, Rubrique::Regles, Rubrique::Decisions]
     }
 
     /// La rubrique d'un fichier d'après son chemin relatif à `docs/icebreaker/`.
@@ -63,8 +74,9 @@ impl Rubrique {
 }
 
 /// Les fichiers repères, dans l'ordre de la barre latérale, avec leur nom court.
-const REPERES: [(&str, &str); 7] = [
-    ("README.md", "Accueil"),
+const REPERES: [(&str, &str); 8] = [
+    ("", "Tableau de bord"),
+    ("README.md", "Lire les docs"),
     ("PLAN.md", "Plan"),
     ("HISTORIQUE.md", "Historique"),
     ("QUESTIONS.md", "Questions"),
@@ -79,26 +91,28 @@ pub fn nom_repere(source: &str) -> Option<&'static str> {
 }
 
 /// Clé de tri dans la barre latérale : les repères dans l'ordre de `REPERES`, le reste par chemin.
-fn cle_de_tri(page: &Page) -> (Rubrique, usize, String) {
-    let rang = REPERES
-        .iter()
-        .position(|(s, _)| *s == page.source)
-        .unwrap_or(REPERES.len());
-    (page.rubrique, rang, page.source.clone())
+fn cle_de_tri(page: &Page) -> (Rubrique, usize, usize, String) {
+    let rang = match page.rubrique {
+        Rubrique::Reperes => REPERES.iter().position(|(s, _)| *s == page.source),
+        _ => None,
+    }
+    .unwrap_or(REPERES.len());
+    (page.rubrique, rang, page.ordre, page.source.clone())
 }
 
-/// L'URL d'une page d'après son fichier source : `README.md` devient l'accueil, les autres gardent leur chemin.
+/// L'URL d'une page d'après son fichier source : `README.md` devient `readme.html` (l'accueil est le tableau
+/// de bord), les autres gardent leur chemin.
 pub fn url_de_source(source: &str) -> String {
     if source == "README.md" {
-        "index.html".to_string()
+        "readme.html".to_string()
     } else {
         format!("{}.html", source.trim_end_matches(".md"))
     }
 }
 
-/// Lit tous les fichiers Markdown de `docs` et les rend en pages (sans les écrire).
-pub fn collecter(docs: &Path) -> Result<Vec<Page>> {
-    let mut pages = Vec::new();
+/// Lit tous les fichiers Markdown de `docs` : (chemin relatif avec des `/`, texte).
+pub fn lire_fichiers(docs: &Path) -> Result<Vec<(String, String)>> {
+    let mut fichiers = Vec::new();
     for entree in WalkDir::new(docs).sort_by_file_name() {
         let entree = entree?;
         let chemin = entree.path();
@@ -110,19 +124,57 @@ pub fn collecter(docs: &Path) -> Result<Vec<Page>> {
             .to_string_lossy()
             .replace('\\', "/");
         let texte = std::fs::read_to_string(chemin).with_context(|| format!("lecture de {source}"))?;
-        let (_entete, corps) = markdown::separer_entete(&texte);
-        let rendu = markdown::rendre(corps, &source);
+        fichiers.push((source, texte));
+    }
+    Ok(fichiers)
+}
+
+/// Rend chaque fichier Markdown en page (sans l'écrire).
+pub fn pages_markdown(fichiers: &[(String, String)]) -> Vec<Page> {
+    let mut pages = Vec::new();
+    for (source, texte) in fichiers {
+        let (_entete, corps) = markdown::separer_entete(texte);
+        let rendu = markdown::rendre(corps, source);
         let titre = rendu
             .titre
             .unwrap_or_else(|| source.trim_end_matches(".md").to_string());
         pages.push(Page {
-            url: url_de_source(&source),
-            rubrique: Rubrique::de_source(&source),
+            url: url_de_source(source),
+            rubrique: Rubrique::de_source(source),
             titre,
             html: rendu.html,
-            source,
+            source: source.clone(),
+            gabarit: "page.html",
+            extra: serde_json::Value::Null,
+            ordre: 0,
         });
     }
+    pages
+}
+
+/// Toutes les pages du site, triées pour la barre latérale.
+pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
+    let fichiers = lire_fichiers(docs)?;
+    let mut pages = pages_markdown(&fichiers);
+    let commits = commits::lire(racine);
+    let readme = fichiers
+        .iter()
+        .find(|(f, _)| f == "README.md")
+        .map(|(_, t)| t.as_str())
+        .unwrap_or("");
+    let sources = avancement::Sources {
+        jalons: taches::lire_jalons(readme),
+        fichiers: &fichiers,
+        commits: &commits,
+        url_github: commits::url_github(racine),
+    };
+    let toutes: Vec<taches::Tache> = fichiers
+        .iter()
+        .filter(|(f, _)| f == "PLAN.md" || f == "HISTORIQUE.md" || f.starts_with("PLAN-"))
+        .flat_map(|(f, t)| taches::lire(t, f))
+        .collect();
+    let jalons = avancement::jalons(&sources, &toutes);
+    pages.extend(avancement::pages(&sources, &jalons));
     pages.sort_by_key(cle_de_tri);
     Ok(pages)
 }
@@ -143,7 +195,7 @@ fn main() -> Result<()> {
         docs.display()
     );
     let sortie = racine.join("site");
-    let pages = collecter(&docs)?;
+    let pages = collecter(&racine, &docs)?;
     let nb = site::ecrire(&sortie, &pages)?;
     println!("{nb} pages écrites dans {}", sortie.display());
     Ok(())
@@ -153,23 +205,27 @@ fn main() -> Result<()> {
 mod tests {
     use super::*;
 
-    fn docs_du_depot() -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../docs/icebreaker")
+    fn racine_du_depot() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("..")
     }
 
     #[test]
     fn chaque_fichier_markdown_donne_une_page() {
-        let docs = docs_du_depot();
-        let pages = collecter(&docs).unwrap();
+        let racine = racine_du_depot();
+        let docs = racine.join("docs/icebreaker");
+        let pages = collecter(&racine, &docs).unwrap();
         let nb_md = WalkDir::new(&docs)
             .into_iter()
             .filter_map(Result::ok)
             .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("md"))
             .count();
-        assert_eq!(pages.len(), nb_md);
-        assert!(pages.iter().any(|p| p.url == "index.html" && p.source == "README.md"));
+        let markdown: Vec<&Page> = pages.iter().filter(|p| p.gabarit == "page.html").collect();
+        assert_eq!(markdown.len(), nb_md);
+        assert!(pages.iter().any(|p| p.url == "readme.html" && p.source == "README.md"));
+        assert_eq!(pages[0].url, "index.html");
         assert!(pages.iter().any(|p| p.url == "design/combat.html" && p.rubrique == Rubrique::Regles));
-        assert!(pages.iter().all(|p| !p.titre.is_empty() && !p.html.is_empty()));
+        assert!(pages.iter().any(|p| p.url == "avancement/T.html" && p.rubrique == Rubrique::Avancement));
+        assert!(markdown.iter().all(|p| !p.titre.is_empty() && !p.html.is_empty()));
     }
 
     #[test]
@@ -178,7 +234,7 @@ mod tests {
         assert_eq!(Rubrique::de_source("PLAN-MOD.md"), Rubrique::Plans);
         assert_eq!(Rubrique::de_source("design/ames.md"), Rubrique::Regles);
         assert_eq!(Rubrique::de_source("decisions/0016-x.md"), Rubrique::Decisions);
-        assert_eq!(url_de_source("README.md"), "index.html");
+        assert_eq!(url_de_source("README.md"), "readme.html");
         assert_eq!(url_de_source("decisions/0016-x.md"), "decisions/0016-x.html");
     }
 }

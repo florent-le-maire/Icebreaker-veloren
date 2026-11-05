@@ -43,9 +43,9 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
 
 ## Tâches (worktree `Veloren-wiki`, branche `icebreaker-wiki`)
 
-- [ ] **W.1 Squelette du générateur** — *en cours : Veloren-wiki, 2026-11-05* — crate `icebreaker-wiki`, lecture de `docs/icebreaker/**.md`, rendu Markdown
-  dans un gabarit de base avec barre latérale ; `site/` ignoré par git ; test : chaque fichier produit une page.
-- [ ] **W.2 Tâches et commits** — parseur des lignes `- [x] **X.n …** … <hash>` (PLAN, HISTORIQUE, PLAN-*),
+- [x] **W.1 Squelette du générateur** — crate `icebreaker-wiki`, Markdown rendu dans un gabarit à barre latérale,
+  thème sombre ; 33 pages, vues avec Edge sans fenêtre. c3b7887098
+- [ ] **W.2 Tâches et commits** — *en cours : Veloren-wiki, 2026-11-05* — parseur des lignes `- [x] **X.n …** … <hash>` (PLAN, HISTORIQUE, PLAN-*),
   jonction avec `git log` (résumé, corps, paragraphe « Testé ») ; pages Avancement et tableau de bord.
 - [ ] **W.3 Réglages** — lecture des `.ron` de `assets/icebreaker/` (clé, valeur, commentaire) → tableau et encart.
 - [ ] **W.4 Fiches mécaniques** — gabarit à trois étages, en-tête de liaison, première fiche « À terre et mort »

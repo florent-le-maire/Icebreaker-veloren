@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block contenu %}
+{% set a = extra %}
+<article class="article article-large">
+<h1>Icebreaker, où on en est</h1>
+<p class="sous-titre">Prototype sur Veloren · dernier commit le {{ a.date }} · généré depuis <code>docs/icebreaker/</code></p>
+
+<div class="tuiles">
+  <div class="tuile"><div class="tuile-chiffre">{{ a.nb_faites }}<span class="tuile-sur">/{{ a.nb_total }}</span></div><div class="tuile-nom">tâches faites</div></div>
+  <div class="tuile"><div class="tuile-chiffre tuile-alerte">{{ a.nb_a_voir }}</div><div class="tuile-nom">à voir dans le vrai client</div></div>
+  <div class="tuile"><div class="tuile-chiffre">{{ a.jalons | length }}</div><div class="tuile-nom">jalons</div></div>
+  <div class="tuile"><div class="tuile-chiffre">{{ a.nb_commits }}</div><div class="tuile-nom">commits</div></div>
+</div>
+
+<h2>Les jalons</h2>
+<table class="jalons">
+<thead><tr><th></th><th>Jalon</th><th>Avancement</th><th>État</th><th>Dernier commit</th></tr></thead>
+<tbody>
+{% for j in a.jalons %}
+<tr>
+  <td class="lettre-cellule">{% if j.cle != "Prototype" %}<span class="lettre">{{ j.lettres }}</span>{% endif %}</td>
+  <td><a href="{{ j.url | safe }}">{{ j.titre }}</a></td>
+  <td class="cellule-jauge">
+    {% if j.nb_total %}<div class="jauge"><div class="jauge-plein" style="width: {{ 100 * j.nb_faites / j.nb_total }}%"></div></div>
+    <span class="chiffre">{{ j.nb_faites }}/{{ j.nb_total }}</span>{% else %}<span class="chiffre">—</span>{% endif %}
+    {% if j.nb_a_voir %}<span class="badge badge-a-voir" title="tâches faites mais pas vues dans le vrai client">{{ j.nb_a_voir }} à voir</span>{% endif %}
+  </td>
+  <td>{{ j.etat }}</td>
+  <td class="date">{{ j.derniere_date or "" }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<div class="deux-colonnes">
+<section>
+<h2>Dernières tâches faites</h2>
+<ul class="recentes">
+{% for t in a.recentes %}
+  <li><a href="avancement/{{ t.jalon }}.html#{{ t.id }}">{% if t.id %}<span class="id">{{ t.id }}</span> {% endif %}{{ t.titre }}</a>
+    {% if t.commits %}<span class="date">{{ t.commits[0].date }}</span>{% endif %}
+    {% if t.a_voir_en_jeu %}<span class="badge badge-a-voir">à voir en jeu</span>{% endif %}</li>
+{% endfor %}
+</ul>
+</section>
+<section class="a-verifier">
+<h2>À vérifier en jeu</h2>
+<div class="a-verifier-liste">{{ a.a_verifier_html | safe }}</div>
+</section>
+</div>
+<footer class="source">Sources : <code>docs/icebreaker/README.md</code> (jalons), <code>PLAN.md</code>, <code>HISTORIQUE.md</code>, <code>PLAN-*.md</code> (tâches), <code>git log</code> (commits)</footer>
+</article>
+{% endblock %}
