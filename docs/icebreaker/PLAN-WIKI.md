@@ -53,9 +53,11 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
   à trois étages ; sept fiches écrites (campagne, village, charrette, combat, mort, donjon, grotte), à relire. 2591c1daa7
 - [x] **W.5 Décisions, questions, idées, vision** — page Questions (cartes Qn, badges, tranchées par date) et index des
   décisions (date, statut) ; vision et idées en pages Markdown. e326cb002d
-- [ ] **W.6 Recherche et finitions** — *en cours : Veloren-wiki, 2026-11-05* — index JSON, script de recherche, revue du CSS sur petit écran.
-- [ ] **W.7 Déploiement VPS** — Caddy + mot de passe, `deployer-wiki.sh`, notes dans `README.md` et `CLAUDE.md`.
-  Il faut l'adresse du VPS et un mot de passe.
+- [x] **W.6 Recherche et finitions** — recherche plein texte (index généré, touche `/`), rubriques repliables, petit
+  écran vu à 600 px seulement ; recherche pas essayée dans un vrai navigateur. 2a7bdecb6c
+- [ ] **W.7 Déploiement VPS** — *en cours : Veloren-wiki, 2026-11-05* — script `icebreaker-serveur/deployer-wiki.sh`
+  écrit (Caddy, mot de passe, `ADRESSE` pour un nom de domaine) et note dans `CLAUDE.md` ; **pas encore lancé** : il
+  faut choisir le mot de passe (et un nom de domaine, sinon `http://116.202.107.125:8090`).
 
 Hors périmètre pour l'instant : accès public, édition dans le navigateur, mise à jour automatique à chaque push,
 historique des valeurs des réglages dans le temps (`IDEES.md`).
