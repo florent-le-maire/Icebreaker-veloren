@@ -336,6 +336,15 @@ impl IcebreakerRegistre {
         self.save();
         Ok(format!("{nom} est de nouveau à tout le monde."))
     }
+
+    /// Icebreaker : le personnage `id`, mort en expédition, quitte le registre pour de bon
+    /// (T.6) ; sa fiche, s'il en avait une.
+    pub fn retirer(&mut self, id: CharacterId) -> Option<Fiche> {
+        let index = self.etat.personnages.iter().position(|fiche| fiche.id == id.0)?;
+        let fiche = self.etat.personnages.remove(index);
+        self.save();
+        Some(fiche)
+    }
 }
 
 /// Who plays a character: account and name.
@@ -732,5 +741,19 @@ mod tests {
         let labels: Vec<&str> = buttons.iter().map(|(label, _)| label.as_str()).collect();
         assert!(!labels.iter().any(|l| l.starts_with("Engager")), "a character does not hire");
         assert!(labels.iter().any(|l| l.starts_with("Rendre")));
+    }
+
+    #[test]
+    fn icebreaker_registre_a_dead_character_leaves_the_registry() {
+        let (config, mut rng) = (config(), rand::rng());
+        let mut registre = IcebreakerRegistre::default();
+        registre.renouveler(0, &config, &mut rng);
+        let mut world = World::new();
+        let a = entity(&mut world);
+        registre.engager(0, a, &config).unwrap();
+        registre.cree(a, CharacterId(7));
+        assert!(registre.retirer(CharacterId(7)).is_some());
+        assert!(registre.fiche(CharacterId(7)).is_none());
+        assert!(registre.retirer(CharacterId(7)).is_none(), "already gone");
     }
 }

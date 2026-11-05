@@ -27,3 +27,4 @@ icebreaker-sac_du_mort = Sac du mort
 icebreaker-fouiller-sac = Fouiller le sac
 icebreaker-mort-village = { $key } : retour au village
 icebreaker-mort-regarder = clic gauche : regarder un allié
+icebreaker-mort-definitive = Mort en expédition, ce personnage est perdu pour de bon.

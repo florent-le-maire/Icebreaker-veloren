@@ -304,6 +304,8 @@ pub fn handle_client_disconnect(
 pub(super) fn persist_entity(state: &mut State, entity: EcsEntity) -> EcsEntity {
     // NOTE: `Client` component may already be removed by the caller to close the
     // connection. Don't depend on it here!
+    // Icebreaker : le nom du personnage du registre mort en expédition (T.6).
+    let mut icebreaker_mort = None;
     if let (
         Some(presence),
         Some(skill_set),
@@ -333,12 +335,32 @@ pub(super) fn persist_entity(state: &mut State, entity: EcsEntity) -> EcsEntity 
                 );
             },
             PresenceKind::Character(char_id) => {
-                if state.read_storage::<comp::Hardcore>().get(entity).is_some()
-                    && state
-                        .read_storage::<comp::Health>()
-                        .get(entity)
-                        .is_some_and(|health| health.is_dead)
+                let mort = state
+                    .read_storage::<comp::Health>()
+                    .get(entity)
+                    .is_some_and(|health| health.is_dead);
+                // Icebreaker : mort en expédition, un personnage du registre est supprimé pour
+                // de bon (T.6).
+                if crate::icebreaker_registre::active()
+                    && mort
+                    && state.read_storage::<comp::Pos>().get(entity).is_some_and(|pos| {
+                        state
+                            .ecs()
+                            .read_resource::<crate::icebreaker_slots::IcebreakerSlots>()
+                            .at(pos.0.xy())
+                            .is_some()
+                    })
+                    && let Some(fiche) = state
+                        .ecs()
+                        .write_resource::<crate::icebreaker_registre::IcebreakerRegistre>()
+                        .retirer(char_id)
                 {
+                    character_updater.queue_character_deletion(
+                        crate::icebreaker_registre::REGISTRE_UUID.to_string(),
+                        char_id,
+                    );
+                    icebreaker_mort = Some(fiche.nom);
+                } else if state.read_storage::<comp::Hardcore>().get(entity).is_some() && mort {
                     // Delete dead hardcore characters instead of persisting
                     character_updater
                         .queue_character_deletion(player_info.uuid().to_string(), char_id);
@@ -394,6 +416,12 @@ pub(super) fn persist_entity(state: &mut State, entity: EcsEntity) -> EcsEntity 
             PresenceKind::Spectator => { /* Do nothing, spectators do not need persisting */ },
             PresenceKind::Possessor => { /* Do nothing, possessor's are not persisted */ },
         };
+    }
+    if let Some(nom) = icebreaker_mort {
+        state.notify_players(ServerGeneral::server_msg(
+            comp::ChatType::Meta,
+            Content::Plain(format!("{nom} est mort en expédition : il quitte le registre.")),
+        ));
     }
 
     entity

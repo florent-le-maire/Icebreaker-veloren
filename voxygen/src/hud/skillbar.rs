@@ -538,6 +538,9 @@ impl<'a> Skillbar<'a> {
             };
             let penalty_msg = if hardcore {
                 self.localized_strings.get_msg("hud-hardcore_char_deleted")
+            } else if crate::icebreaker_mort::registre() {
+                // Icebreaker : mort en expédition, le personnage est perdu (T.6).
+                self.localized_strings.get_msg("icebreaker-mort-definitive")
             } else {
                 self.localized_strings.get_msg("hud-items_lost_dur")
             };
