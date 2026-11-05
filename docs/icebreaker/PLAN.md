@@ -211,7 +211,7 @@ tâche pour ce qui casse.
 
 **Divers**
 - M.1 : téléchargement du plugin par le vrai client.
-- S.2 : vrai client sur le VPS (`116.202.107.125:14100`), depuis chez un pote ; un départ en expédition là-bas.
+- S.2 / S.3 : le zip du client chez un pote (autre réseau, PC sans outils de dev) ; un départ en expédition sur le VPS.
 
 ## Plus tard (à découper le moment venu)
 

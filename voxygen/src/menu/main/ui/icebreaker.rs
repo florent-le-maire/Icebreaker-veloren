@@ -31,6 +31,11 @@ pub struct Lieu {
     /// the other places are the destinations of expeditions).
     #[serde(default)]
     pub au_menu: bool,
+    /// Icebreaker S.3 : adresse d'un serveur distant (« hôte:port ») ; le
+    /// bouton s'y connecte directement, sans choix de partie ni serveur lancé
+    /// sur ce PC.
+    #[serde(default)]
+    pub adresse: Option<String>,
 }
 
 pub fn lieux() -> AssetHandle<Ron<Vec<Lieu>>> {
@@ -145,6 +150,10 @@ pub fn nom_partie(saisie: &str, existantes: &[Partie]) -> Result<String, NomRefu
 /// renvoie l'adresse où se connecter. Un serveur qui tourne déjà pour une autre
 /// partie est refusé (on ne peut en faire tourner qu'une à la fois).
 pub fn lancer(lieu: &Lieu, partie: &str) -> Result<String, String> {
+    // Icebreaker S.3 : un serveur distant tourne déjà, avec sa partie.
+    if let Some(adresse) = &lieu.adresse {
+        return Ok(adresse.clone());
+    }
     let adresse = format!("localhost:{}", lieu.port);
     let local = SocketAddr::from((Ipv4Addr::LOCALHOST, lieu.port));
     if TcpStream::connect_timeout(&local, Duration::from_millis(300)).is_ok() {
@@ -207,10 +216,21 @@ mod tests {
             .0
             .clone();
         assert!(lieux.iter().any(|l| l.au_menu && l.actif));
-        let mut ports: Vec<u16> = lieux.iter().flat_map(|l| [l.port, l.port + 1]).collect();
+        let mut ports: Vec<u16> = lieux
+            .iter()
+            .filter(|l| l.adresse.is_none())
+            .flat_map(|l| [l.port, l.port + 1])
+            .collect();
         ports.sort_unstable();
         ports.dedup();
-        assert_eq!(ports.len(), 2 * lieux.len(), "deux lieux partagent un port");
+        let locaux = lieux.iter().filter(|l| l.adresse.is_none()).count();
+        assert_eq!(ports.len(), 2 * locaux, "deux lieux partagent un port");
+        assert!(
+            lieux
+                .iter()
+                .filter_map(|l| l.adresse.as_ref())
+                .all(|a| a.contains(':'))
+        );
     }
 
     fn partie(nom: &str) -> Partie {

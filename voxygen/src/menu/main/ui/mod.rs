@@ -607,8 +607,15 @@ impl Controls {
                     server_address: self.login_info.server.trim().to_string(),
                 });
             },
-            // Icebreaker X.10 : « Campagne » ouvre le choix de la partie.
+            // Icebreaker X.10 : « Campagne » ouvre le choix de la partie ; S.3 : un lieu
+            // distant (le VPS) n'a pas de partie à choisir, on s'y connecte.
             Message::Campagne(lieu) => {
+                let lieux = icebreaker::lieux();
+                let distant = lieux.read().0.get(lieu).and_then(|l| l.adresse.clone());
+                if let Some(adresse) = distant {
+                    events.push(self.icebreaker_connect(ui, adresse));
+                    return;
+                }
                 self.icebreaker_parties = Some(icebreaker::MenuParties {
                     lieu,
                     parties: icebreaker::parties(),
