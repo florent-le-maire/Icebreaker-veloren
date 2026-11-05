@@ -70,7 +70,7 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
   le fichier ; deux captures demandées par fiche, aucune prise encore ; zoom pas essayé dans un vrai navigateur. 9d93e2b3ff
 - [x] **W.11 Icônes dans les tableaux** — `icones.rs` : vingt-quatre règles (mots → icône de Veloren) appliquées à la
   première cellule des tableaux Markdown et aux lignes des réglages (armes, classes, lieux, états, sac, potion) ;
-  vu en captures Edge sur combat, classes et lieux. HASH_W11
+  vu en captures Edge sur combat, classes et lieux. b57250ae8d
 
 Hors périmètre pour l'instant : accès public, édition dans le navigateur, mise à jour automatique à chaque push,
 historique des valeurs des réglages dans le temps (`IDEES.md`).
