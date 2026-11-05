@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block contenu %}
+{% set q = extra %}
+<article class="article article-large">
+<h1>Questions pour l'équipe</h1>
+<div class="tuiles">
+  <div class="tuile"><div class="tuile-chiffre tuile-alerte">{{ q.nb_ouvertes }}</div><div class="tuile-nom">questions ouvertes</div></div>
+  <div class="tuile"><div class="tuile-chiffre">{{ q.nb_tranchees }}</div><div class="tuile-nom">petites décisions tranchées</div></div>
+</div>
+<div class="intention">{{ q.intro_html | safe }}</div>
+
+{% for s in q.sections %}
+<h2>{{ s.nom }}</h2>
+<ol class="questions">
+{% for x in s.questions %}
+  <li class="question" id="{{ x.numero }}">
+    <div class="question-tete"><span class="id">{{ x.numero }}</span> <strong>{{ x.titre }}</strong> <span class="badge badge-a-voir">ouverte</span></div>
+    <div class="question-texte">{{ x.texte_html | safe }}</div>
+  </li>
+{% endfor %}
+</ol>
+{% endfor %}
+
+<h2 class="etage">Tranché</h2>
+<p class="etage-sous">Les petites décisions prises en route, les plus récentes d'abord.</p>
+<ol class="tranchees">
+{% for t in q.tranchees %}
+  <li class="tranchee"><span class="date">{{ t.date }}</span> {% if t.contexte_html %}<span class="badge badge-sobre">{{ t.contexte_html | safe }}</span>{% endif %}
+    <div class="question-texte">{{ t.texte_html | safe }}</div></li>
+{% endfor %}
+</ol>
+<footer class="source">Source : <code>docs/icebreaker/QUESTIONS.md</code></footer>
+</article>
+{% endblock %}

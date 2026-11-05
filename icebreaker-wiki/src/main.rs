@@ -5,6 +5,7 @@
 
 mod avancement;
 mod commits;
+mod decisions;
 mod fiches;
 mod markdown;
 mod reglages;
@@ -149,8 +150,8 @@ pub fn lire_fichiers(docs: &Path) -> Result<Vec<(String, String)>> {
 pub fn pages_markdown(fichiers: &[(String, String)]) -> Vec<Page> {
     let mut pages = Vec::new();
     for (source, texte) in fichiers {
-        if source.starts_with("wiki/") {
-            continue; // les fiches mécaniques ont leur propre gabarit (`fiches.rs`)
+        if source.starts_with("wiki/") || source == "QUESTIONS.md" {
+            continue; // les fiches mécaniques et les questions ont leur propre gabarit
         }
         let (_entete, corps) = markdown::separer_entete(texte);
         let rendu = markdown::rendre(corps, source);
@@ -196,6 +197,10 @@ pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
     pages.extend(avancement::pages(&sources, &jalons));
     let fichiers_ron = reglages::lire_dossier(&racine.join("assets").join("icebreaker"))?;
     pages.extend(reglages::pages(&fichiers_ron));
+    if let Some((_, texte)) = fichiers.iter().find(|(f, _)| f == "QUESTIONS.md") {
+        pages.push(decisions::page_questions(texte));
+    }
+    pages.push(decisions::page_index(&fichiers));
     for (source, texte) in fichiers.iter().filter(|(f, _)| f.starts_with("wiki/")) {
         pages.push(fiches::page(
             racine,
@@ -253,7 +258,9 @@ mod tests {
             .count();
         let markdown: Vec<&Page> = pages.iter().filter(|p| p.gabarit == "page.html").collect();
         let fiches = pages.iter().filter(|p| p.gabarit == "fiche.html").count();
-        assert_eq!(markdown.len() + fiches, nb_md);
+        assert_eq!(markdown.len() + fiches + 1, nb_md); // + QUESTIONS.md, rendue par son gabarit
+        assert!(pages.iter().any(|p| p.url == "QUESTIONS.html" && p.gabarit == "questions.html"));
+        assert!(pages.iter().any(|p| p.url == "decisions/index.html"));
         assert!(pages.iter().any(|p| p.url == "fiches/mort.html" && p.rubrique == Rubrique::Mecaniques));
         assert!(pages.iter().any(|p| p.url == "readme.html" && p.source == "README.md"));
         assert_eq!(pages[0].url, "index.html");
