@@ -53,3 +53,9 @@ l'expédition arrive.
 L'**intelligence du donjon** (G.11 à G.16, `design/creatures.md` et `design/menace.md`) : appel à l'aide,
 encerclement, déroute, alerte, embuscades. Et tout ce que propose `PLAN-DONJON.md` pour rendre la descente
 intéressante : ressources, inventaire à formes, foreuse, trous, monstres à coop.
+
+## En images
+
+![L’entrée du donjon généré, le tunnel qui descend de la surface](images/donjon-entree.png)
+
+![Une salle de garde devant une porte verrouillée, avec ses dormeurs](images/donjon-salle-garde.png)

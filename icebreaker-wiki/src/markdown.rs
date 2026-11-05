@@ -1,4 +1,6 @@
-//! Rendu Markdown → HTML, avec les liens `.md` réécrits vers les pages du site.
+//! Rendu Markdown → HTML, avec les liens `.md` réécrits vers les pages du site et les images en figures.
+
+use std::path::Path;
 
 use pulldown_cmark::{CowStr, Event, HeadingLevel, Options, Parser, Tag, TagEnd, html};
 
@@ -6,6 +8,8 @@ pub struct Rendu {
     /// Texte du premier titre de niveau 1, s'il y en a un.
     pub titre: Option<String>,
     pub html: String,
+    /// Images relatives trouvées sur le disque (chemin tel qu'écrit dans le Markdown), à copier dans le site.
+    pub images: Vec<String>,
 }
 
 /// Sépare un en-tête TOML (`+++` … `+++` en tête de fichier) du corps. Sans en-tête, renvoie tout le texte.
@@ -49,7 +53,34 @@ pub fn reecrire_lien(cible: &str) -> String {
     }
 }
 
-pub fn rendre(corps: &str, _source: &str) -> Rendu {
+fn echapper(t: &str) -> String {
+    t.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+}
+
+/// Une image en figure avec sa légende (le texte alternatif), cliquable pour l'agrandir.
+fn figure(cible: &str, legende: &str) -> String {
+    format!(
+        "<figure class=\"capture\"><a class=\"zoom\" href=\"{0}\"><img src=\"{0}\" alt=\"{1}\" loading=\"lazy\"></a>\
+<figcaption>{1}</figcaption></figure>",
+        echapper(cible),
+        echapper(legende)
+    )
+}
+
+/// L'encadré qui remplace une image absente : ce qu'il faut photographier en jeu et où déposer le fichier.
+fn capture_a_prendre(cible: &str, legende: &str, dossier_doc: &str) -> String {
+    format!(
+        "<div class=\"capture-a-prendre\"><span class=\"etiquette etiquette-chaud\">Capture à prendre</span> \
+<span class=\"capture-legende\">{}</span><span class=\"capture-ou\">à déposer dans <code>{}{}</code></span></div>",
+        echapper(legende),
+        echapper(dossier_doc),
+        echapper(cible)
+    )
+}
+
+/// Rend un corps Markdown ; `source` est le chemin du fichier relatif à `docs/icebreaker/`, `dossier` le dossier
+/// absolu qui le contient (pour vérifier que les images existent ; `None` : on ne vérifie pas).
+pub fn rendre_images(corps: &str, source: &str, dossier: Option<&Path>) -> Rendu {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_STRIKETHROUGH);
@@ -57,9 +88,15 @@ pub fn rendre(corps: &str, _source: &str) -> Rendu {
     options.insert(Options::ENABLE_FOOTNOTES);
     options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
     options.insert(Options::ENABLE_SMART_PUNCTUATION);
+    let dossier_doc = match source.rfind('/') {
+        Some(i) => format!("docs/icebreaker/{}", &source[..=i]),
+        None => "docs/icebreaker/".to_string(),
+    };
 
     let mut titre: Option<String> = None;
     let mut dans_h1 = false;
+    let mut image: Option<(String, String)> = None;
+    let mut images = Vec::new();
     let mut evenements = Vec::new();
     for evenement in Parser::new_ext(corps, options) {
         match &evenement {
@@ -82,13 +119,42 @@ pub fn rendre(corps: &str, _source: &str) -> Rendu {
                 title,
                 id,
             }),
+            Event::Start(Tag::Image { dest_url, .. }) => {
+                image = Some((dest_url.to_string(), String::new()));
+                continue;
+            },
+            Event::Text(t) | Event::Code(t) if image.is_some() => {
+                if let Some((_, legende)) = image.as_mut() {
+                    legende.push_str(&t);
+                }
+                continue;
+            },
+            Event::End(TagEnd::Image) => {
+                let Some((cible, legende)) = image.take() else { continue };
+                let relative = !cible.contains("://") && !cible.starts_with('/');
+                let html = match dossier {
+                    Some(d) if relative && !d.join(&cible).is_file() => capture_a_prendre(&cible, &legende, &dossier_doc),
+                    _ => {
+                        if relative && dossier.is_some() {
+                            images.push(cible.clone());
+                        }
+                        figure(&cible, &legende)
+                    },
+                };
+                Event::Html(CowStr::from(html))
+            },
             autre => autre,
         };
         evenements.push(evenement);
     }
     let mut sortie = String::new();
     html::push_html(&mut sortie, evenements.into_iter());
-    Rendu { titre: titre.map(|t| t.trim().to_string()), html: sortie }
+    Rendu { titre: titre.map(|t| t.trim().to_string()), html: sortie, images }
+}
+
+/// Rendu sans vérification des images (elles sont laissées telles quelles).
+pub fn rendre(corps: &str, source: &str) -> Rendu {
+    rendre_images(corps, source, None)
 }
 
 /// Rendu d'un bout de texte en ligne : comme `rendre`, sans le `<p>` autour quand il n'y a qu'un paragraphe.
@@ -147,5 +213,25 @@ mod tests {
         let rendu = rendre("- [x] **T.1 Fait** — ok 63f57ce830\n- [ ] **T.2 Reste**\n", "x.md");
         assert!(rendu.html.contains("type=\"checkbox\""));
         assert!(rendu.html.contains("checked"));
+    }
+
+    #[test]
+    fn images_presentes_et_absentes() {
+        let dossier = std::env::temp_dir().join(format!("icebreaker-wiki-images-{}", std::process::id()));
+        std::fs::create_dir_all(dossier.join("images")).unwrap();
+        std::fs::write(dossier.join("images/la.png"), b"png").unwrap();
+        let md = "![Un allié à terre](images/la.png)\n\n![La charrette & ses recrues](images/pas-la.png)\n";
+        let rendu = rendre_images(md, "wiki/mort.md", Some(&dossier));
+        assert_eq!(rendu.images, vec!["images/la.png"]);
+        assert!(rendu.html.contains("<figure class=\"capture\"><a class=\"zoom\" href=\"images/la.png\">"));
+        assert!(rendu.html.contains("<figcaption>Un allié à terre</figcaption>"));
+        assert!(rendu.html.contains("Capture à prendre"));
+        assert!(rendu.html.contains("La charrette &amp; ses recrues"));
+        assert!(rendu.html.contains("<code>docs/icebreaker/wiki/images/pas-la.png</code>"));
+        // Sans dossier, l'image est laissée telle quelle et n'est pas à copier.
+        let rendu = rendre(md, "wiki/mort.md");
+        assert!(rendu.images.is_empty());
+        assert_eq!(rendu.html.matches("<figure").count(), 2);
+        std::fs::remove_dir_all(&dossier).unwrap();
     }
 }

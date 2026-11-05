@@ -290,17 +290,20 @@ pub fn page(
         }
         s
     };
-    let images = schema
-        .as_ref()
-        .map(|s| s.images.iter().map(|i| (format!("assets/{i}"), format!("assets/{i}"))).collect())
-        .unwrap_or_default();
+    let regle = markdown::rendre_images(corps, source, Some(&racine.join("docs").join("icebreaker").join("wiki")));
+    let nom = source.trim_start_matches("wiki/").trim_end_matches(".md");
+    let url = format!("fiches/{nom}.html");
+    let mut images = crate::images_de_page(source, &url, &regle.images);
+    if let Some(s) = &schema {
+        images.extend(s.images.iter().map(|i| (format!("assets/{i}"), format!("assets/{i}"))));
+    }
     let vue = FicheVue {
         titre: entete.titre.clone(),
         icone_url: icone_vue.clone(),
         resume: entete.resume.clone(),
         schema_svg: schema.as_ref().map(|s| s.svg.clone()),
         schema_legende: schema.as_ref().map(|s| s.legende.clone()),
-        regle_html: markdown::rendre(corps, source).html,
+        regle_html: regle.html,
         chiffres: chiffres(&entete, reglages),
         designs,
         reglages: entete
@@ -314,10 +317,9 @@ pub fn page(
         taches,
         source: source.to_string(),
     };
-    let nom = source.trim_start_matches("wiki/").trim_end_matches(".md");
     Ok(Page {
         source: source.to_string(),
-        url: format!("fiches/{nom}.html"),
+        url,
         rubrique: Rubrique::Mecaniques,
         titre: entete.titre,
         html: String::new(),

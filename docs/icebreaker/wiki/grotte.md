@@ -48,3 +48,9 @@ surface, or et gemmes tout en bas. Au bout des culs-de-sac, parfois une créatur
 Un lieu « Deep Rock Galactic » pour varier des donjons bâtis : on y descend pour la matière, et la forme libre du
 réseau donne des combats dans des espaces ouverts plutôt que dans des couloirs. K.1 à K.5 sont faits mais pas
 encore parcourus dans le vrai client.
+
+## En images
+
+![La bouche de la grotte en surface et le boyau d’entrée](images/grotte-bouche.png)
+
+![Une poche d’ambiance « cristaux », avec un filon au pied de la paroi](images/grotte-poche.png)

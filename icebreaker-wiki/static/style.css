@@ -368,3 +368,22 @@ table.reglages td.commentaire { color: var(--texte-2); }
 .sch .sch-batiment { fill: rgba(242, 182, 98, .18); stroke: var(--accent-2); stroke-width: 1; }
 .sch .sch-maison { fill: rgba(127, 212, 255, .16); stroke: var(--accent); stroke-width: 1; }
 .sch .sch-terrain { fill: none; stroke: var(--bordure-claire); stroke-width: 1; stroke-dasharray: 4 3; }
+
+/* Captures d'écran (W.10) : figure avec légende, zoom au clic ; encadré quand la capture manque */
+p:empty { display: none; }
+.capture { margin: 1.25rem 0; }
+.capture img { display: block; width: 100%; border-radius: 10px; border: 1px solid var(--bordure-claire); box-shadow: var(--ombre); cursor: zoom-in; }
+.capture figcaption { margin-top: .5rem; font-size: .88rem; color: var(--texte-2); line-height: 1.45; }
+.capture-a-prendre {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; margin: 1rem 0; padding: .7rem 1rem;
+  border: 1px dashed rgba(242, 182, 98, .55); border-radius: 10px; background: rgba(242, 182, 98, .06); font-size: .93rem;
+}
+.etiquette-chaud { color: var(--alerte); border-color: var(--alerte); }
+.capture-legende { color: var(--texte); }
+.capture-ou { flex-basis: 100%; font-size: .8rem; color: var(--texte-2); }
+.zoom-overlay {
+  position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center;
+  background: rgba(5, 9, 15, .92); cursor: zoom-out; padding: 2rem;
+}
+.zoom-overlay img { max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 20px 60px rgba(0, 0, 0, .7); }
+.zoom-overlay figcaption { position: absolute; left: 0; right: 0; bottom: 1rem; text-align: center; color: var(--texte-2); font-size: .9rem; padding: 0 2rem; }

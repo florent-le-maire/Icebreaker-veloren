@@ -107,3 +107,31 @@
     }
   });
 })();
+
+// Icebreaker : zoom des captures d'écran (W.10). Clic sur l'image : plein écran ; clic ou Échap : retour.
+(function () {
+  "use strict";
+  document.querySelectorAll(".capture a.zoom").forEach(function (lien) {
+    lien.addEventListener("click", function (e) {
+      e.preventDefault();
+      var image = lien.querySelector("img");
+      var fond = document.createElement("div");
+      fond.className = "zoom-overlay";
+      var grande = document.createElement("img");
+      grande.src = lien.href;
+      grande.alt = image ? image.alt : "";
+      var legende = document.createElement("figcaption");
+      legende.textContent = grande.alt;
+      fond.appendChild(grande);
+      fond.appendChild(legende);
+      function fermer() {
+        fond.remove();
+        document.removeEventListener("keydown", surTouche);
+      }
+      function surTouche(ev) { if (ev.key === "Escape") fermer(); }
+      fond.addEventListener("click", fermer);
+      document.addEventListener("keydown", surTouche);
+      document.body.appendChild(fond);
+    });
+  });
+})();

@@ -37,3 +37,9 @@ La commande `/rentrer` ramène au village avec le bilan de ce qu'on rapporte. Le
 
 Le serveur tourne sur le VPS (S.2) ; il reste le client pour les potes (S.3) et le pillage sur la route (jalon P),
 puis la soirée de démo (D.1).
+
+## En images
+
+![Le menu principal avec le bouton « Campagne »](images/campagne-menu.png)
+
+![Le message de bord de zone quand on s’éloigne trop d’un lieu](images/campagne-zone.png)

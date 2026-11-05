@@ -151,20 +151,39 @@ pub fn lire_fichiers(docs: &Path) -> Result<Vec<(String, String)>> {
     Ok(fichiers)
 }
 
-/// Rend chaque fichier Markdown en page (sans l'écrire).
-pub fn pages_markdown(fichiers: &[(String, String)]) -> Vec<Page> {
+/// Le dossier d'un chemin relatif avec des `/`, barre comprise (`design/combat.md` → `design/`, `PLAN.md` → ``).
+fn dossier_de(chemin: &str) -> &str {
+    match chemin.rfind('/') {
+        Some(i) => &chemin[..=i],
+        None => "",
+    }
+}
+
+/// Les images d'une page à copier dans le site : écrites relativement au fichier source, elles restent relatives à
+/// la page écrite.
+pub fn images_de_page(source: &str, url: &str, images: &[String]) -> Vec<(String, String)> {
+    images
+        .iter()
+        .map(|i| (format!("docs/icebreaker/{}{i}", dossier_de(source)), format!("{}{i}", dossier_de(url))))
+        .collect()
+}
+
+/// Rend chaque fichier Markdown en page (sans l'écrire) ; `docs` est le dossier `docs/icebreaker/`.
+pub fn pages_markdown(fichiers: &[(String, String)], docs: &Path) -> Vec<Page> {
     let mut pages = Vec::new();
     for (source, texte) in fichiers {
         if source.starts_with("wiki/") || source == "QUESTIONS.md" {
             continue; // les fiches mécaniques et les questions ont leur propre gabarit
         }
         let (_entete, corps) = markdown::separer_entete(texte);
-        let rendu = markdown::rendre(corps, source);
+        let rendu = markdown::rendre_images(corps, source, Some(&docs.join(dossier_de(source))));
         let titre = rendu
             .titre
             .unwrap_or_else(|| source.trim_end_matches(".md").to_string());
+        let url = url_de_source(source);
         pages.push(Page {
-            url: url_de_source(source),
+            images: images_de_page(source, &url, &rendu.images),
+            url,
             rubrique: Rubrique::de_source(source),
             titre,
             html: rendu.html,
@@ -173,7 +192,6 @@ pub fn pages_markdown(fichiers: &[(String, String)]) -> Vec<Page> {
             extra: serde_json::Value::Null,
             ordre: 0,
             icone: None,
-            images: Vec::new(),
         });
     }
     pages
@@ -182,7 +200,7 @@ pub fn pages_markdown(fichiers: &[(String, String)]) -> Vec<Page> {
 /// Toutes les pages du site, triées pour la barre latérale.
 pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
     let fichiers = lire_fichiers(docs)?;
-    let mut pages = pages_markdown(&fichiers);
+    let mut pages = pages_markdown(&fichiers, docs);
     let commits = commits::lire(racine);
     let readme = fichiers
         .iter()

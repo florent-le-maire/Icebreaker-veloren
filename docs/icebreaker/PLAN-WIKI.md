@@ -64,9 +64,10 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
   vu en captures Edge, pas dans un vrai navigateur. 8c35efc2b5
 - [x] **W.9 Schémas dessinés depuis les données** — `schemas.rs` : sept SVG dessinés avec les valeurs des `.ron` (frise à
   terre et mort, carte de campagne, circuit charrette et registre, étages du donjon, coupe de la grotte, portée du
-  verrouillage, plan du village), déclarés par `schema = "…"` dans l'en-tête de la fiche ; vus en captures Edge. 8744fa0877
-- [ ] **W.10 Captures d'écran** — `docs/icebreaker/wiki/images/`, `![légende](images/x.png)` dans une fiche rendu en
-  figure avec légende et zoom ; encadré « capture à prendre » tant qu'elle manque.
+  verrouillage, plan du village), déclarés par `schema = "…"` dans l'en-tête de la fiche ; vus en captures Edge. 3c4f1b7fcd
+- [x] **W.10 Captures d'écran** — `![légende](images/x.png)` dans une fiche (ou une page de doc) rendu en figure avec
+  légende et zoom ; tant que le fichier manque, un encadré « capture à prendre » dit quoi photographier et où déposer
+  le fichier ; deux captures demandées par fiche, aucune prise encore ; zoom pas essayé dans un vrai navigateur. HASH_W10
 - [ ] **W.11 Icônes dans les tableaux** — icône de Veloren à côté des armes des classes, des états et des objets dans
   les tableaux de réglages et de design, quand elle existe.
 

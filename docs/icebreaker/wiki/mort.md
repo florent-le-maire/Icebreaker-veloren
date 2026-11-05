@@ -55,3 +55,9 @@ restent en bas jusqu'à ce que l'emplacement du donjon soit remis à neuf.
 C'est la règle qui rend le combat létal (voir la fiche Combat) jouable à plusieurs sans être punitif : une erreur
 coûte un relevé, pas une mort. Elle oblige à rester groupés et donne une vraie raison de revenir sur ses pas pour
 récupérer le sac d'un camarade.
+
+## En images
+
+![Un allié à terre qui rampe, la barre et le compte à rebours « Mort dans N s » au-dessus de lui](images/mort-a-terre.png)
+
+![Le sac du mort au sol et la fenêtre de fouille, vus par un allié](images/mort-sac.png)

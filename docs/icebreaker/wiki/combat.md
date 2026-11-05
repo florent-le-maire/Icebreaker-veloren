@@ -55,3 +55,9 @@ arme dans l'ordre de Veloren.
 Le pilier, c'est que la victoire vient de la coordination, pas du matériel : un combat court où chaque coup compte
 oblige à se couvrir, à relever (voir la fiche À terre et mort) et à choisir ses affrontements. Le verrouillage
 rend ces combats courts lisibles à la troisième personne.
+
+## En images
+
+![L’anneau de verrouillage sur un gnarling, la caméra tournée vers lui](images/combat-verrouillage.png)
+
+![Un gnarling tué en trois coups d’épée de départ](images/combat-trois-coups.png)

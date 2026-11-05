@@ -63,3 +63,9 @@ des habitants. Ce qui est bâti est gardé dans la partie, d'une session à l'au
 Le chantier visible qui pousse sans relancer (C.4), les nouveaux habitants (C.5), les paliers d'or qui ouvrent des
 terrains plus loin (C.6). `PLAN-BOUCLES.md` propose de remplacer les maisons anonymes par des bâtiments nommés à
 niveaux (forge, salle d'armes, taverne…) : à trancher avant C.5.
+
+## En images
+
+![La vue de dessus du village (touche U), chaque bâtiment dans son cadre coloré](images/village-vue-dessus.png)
+
+![Un chantier de maison en cours, payé par la caisse](images/village-chantier.png)

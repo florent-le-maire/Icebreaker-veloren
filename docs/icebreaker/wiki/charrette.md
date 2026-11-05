@@ -50,3 +50,9 @@ le monde a aussi une potion, du fromage et une pioche pour les filons de la grot
 Décision 0017 : le registre commun fait du village une vraie base d'équipe (on gère un roster, comme dans Darkest
 Dungeon) et permet de changer de personnage pendant qu'un autre se soigne. Les neuf classes à combos de
 `design/classes.md` restent une proposition pour plus tard.
+
+## En images
+
+![La charrette du village, les recrues du jour debout devant avec leur équipement](images/charrette-recrues.png)
+
+![Le registre : la liste des personnages de l’équipe, libres, pris ou réservés](images/charrette-registre.png)

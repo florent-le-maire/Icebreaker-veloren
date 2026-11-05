@@ -73,7 +73,8 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   `<userdata>/voxygen/settings.ron`, `VELOREN_USERDATA` pour un dossier à part) ; journal dans `<userdata>/voxygen/logs`.
 - Wiki de l'équipe (jalon W, `docs/icebreaker/PLAN-WIKI.md`) : `cargo run -p icebreaker-wiki` écrit `site/` (ouvrir
   `site/index.html`) depuis `docs/icebreaker/` et `assets/icebreaker/` ; la vulgarisation s'écrit dans
-  `docs/icebreaker/wiki/<domaine>.md` (en-tête TOML : design, réglages, tâches, systèmes, chiffres). Sur le VPS :
+  `docs/icebreaker/wiki/<domaine>.md` (en-tête TOML : design, réglages, tâches, systèmes, chiffres, icone, schema) ;
+  pas d'émoji ; les captures d'écran vont dans `docs/icebreaker/wiki/images/` (`![légende](images/x.png)`). Sur le VPS :
   `MOT_DE_PASSE=… icebreaker-serveur/deployer-wiki.sh root@<ip>` (Caddy, mot de passe).
 - Lancer depuis la racine du dépôt (le jeu y cherche `assets/`). Un serveur qui tourne verrouille son `.exe` :
   le renommer avant de recompiler plutôt que d'arrêter un serveur qu'on n'a pas lancé.
