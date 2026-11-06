@@ -158,11 +158,11 @@ charge, rendue 10 s après la pose ou tout de suite en ramassant une balise (E).
 `assets/icebreaker/balise.ron` ; fiche wiki `wiki/balise.md`.
 
 - [x] **J.1 Poser une balise** — objet donné à l'arrivée en donjon, touche `<`, `/balise poser`, recharge et
-  « Balise prête », plafond de 6 au sol. Client texte ; lumière et touche pas vues en vrai client. 2d35de4754
+  « Balise prête », plafond de 6 au sol. Client texte ; lumière et touche pas vues en vrai client. ce1de1d86c
 - [x] **J.2 Retirer une balise (E)** — éteinte, charge rendue à qui la ramasse ; effacées quand l'emplacement se
-  vide (pas testé). Client texte. 1109c7bbe7
+  vide (pas testé). Client texte. ae868b2ad1
 - [x] **J.3 Menu des couleurs** — F9 ou `/balise` : panneau à boutons, montré hors vue de dessus. Panneau reçu au
-  client texte ; affichage en jeu pas vu. cc18475e36
+  client texte ; affichage en jeu pas vu. 7a16e3223b
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
