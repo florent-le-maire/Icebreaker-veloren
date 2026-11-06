@@ -43,6 +43,7 @@ impl<'a> System<'a> for Sys {
                     ChatType::CommandInfo,
                     Content::Plain("Balise prête.".to_string()),
                 ));
+                client.send_fallible(ServerGeneral::IcebreakerBaliseRecharge(0.0));
             }
             false
         });

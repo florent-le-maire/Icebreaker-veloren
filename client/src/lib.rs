@@ -148,6 +148,8 @@ pub enum Event {
     IcebreakerJouer(Option<CharacterId>),
     /// Icebreaker: the expedition being prepared at the village, or none.
     IcebreakerExpedition(Option<(comp::Content, Vec<(String, bool)>)>),
+    /// Icebreaker : secondes avant que la balise se recharge (0 : prête).
+    IcebreakerBaliseRecharge(f32),
     /// Icebreaker: the village buildings and plots to build on (name, bounds in
     /// world coordinates, whether a plot).
     IcebreakerBuildings(Vec<(comp::Content, Aabr<i32>, i32, String)>),
@@ -3037,6 +3039,9 @@ impl Client {
             },
             ServerGeneral::IcebreakerPanel(title, lines, actions) => {
                 frontend_events.push(Event::IcebreakerPanel(title, lines, actions));
+            },
+            ServerGeneral::IcebreakerBaliseRecharge(reste) => {
+                frontend_events.push(Event::IcebreakerBaliseRecharge(reste));
             },
             ServerGeneral::MapMarker(event) => {
                 frontend_events.push(Event::MapMarker(event));

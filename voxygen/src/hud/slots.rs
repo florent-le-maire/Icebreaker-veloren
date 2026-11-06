@@ -161,6 +161,13 @@ impl<'a> SlotKey<HotbarSource<'a>, HotbarImageSource<'a>> for HotbarSlot {
             hotbar::SlotContents::Inventory(item_hash, item_key) => {
                 let item = inventory.get_by_hash(item_hash);
                 match item {
+                    // Icebreaker : la balise lumineuse en recharge est grisée (jalon J).
+                    Some(item)
+                        if common::icebreaker_balise::est_balise(item)
+                            && crate::icebreaker_balise::reste().is_some() =>
+                    {
+                        Some((HotbarImage::Item(item.into()), Some(GREYED_OUT)))
+                    },
                     Some(item) => Some((HotbarImage::Item(item.into()), None)),
                     None => Some((HotbarImage::Item(item_key), Some(GREYED_OUT))),
                 }
@@ -227,8 +234,15 @@ impl<'a> SlotKey<HotbarSource<'a>, HotbarImageSource<'a>> for HotbarSlot {
                 hotbar::SlotContents::Inventory(item_hash, _) => inventory.get_by_hash(item_hash),
                 hotbar::SlotContents::Ability(_) => None,
             })
-            .map(|item| item.amount())
-            .filter(|amount| *amount > 1)
+            .and_then(|item| {
+                // Icebreaker : les secondes de recharge de la balise lumineuse (jalon J).
+                if common::icebreaker_balise::est_balise(item)
+                    && let Some(reste) = crate::icebreaker_balise::reste()
+                {
+                    return Some(reste);
+                }
+                Some(item.amount()).filter(|amount| *amount > 1)
+            })
     }
 
     fn image_ids(

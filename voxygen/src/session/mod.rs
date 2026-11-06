@@ -450,6 +450,9 @@ impl SessionState {
                 },
                 // Only on the character screen.
                 client::Event::IcebreakerFantome => {},
+                client::Event::IcebreakerBaliseRecharge(reste) => {
+                    crate::icebreaker_balise::recharge(reste);
+                },
                 client::Event::Dialogue(sender_uid, dialogue) => {
                     if let Some(sender) = client.state().ecs().entity_from_uid(sender_uid) {
                         self.hud.dialogue(sender, pos, dialogue, global_state);
@@ -1976,6 +1979,25 @@ impl PlayState for SessionState {
                         slot,
                         bypass_dialog,
                     } => {
+                        // Icebreaker : utiliser la balise lumineuse (sac, barre de raccourcis) la pose
+                        // (jalon J), comme la touche « Poser une balise ».
+                        let balise = match slot {
+                            Slot::Inventory(inv_slot) => {
+                                let client = self.client.borrow();
+                                client
+                                    .inventories()
+                                    .get(client.entity())
+                                    .and_then(|inventory| inventory.get(inv_slot))
+                                    .is_some_and(common::icebreaker_balise::est_balise)
+                            },
+                            _ => false,
+                        };
+                        if balise {
+                            self.client
+                                .borrow_mut()
+                                .send_command("balise".to_string(), vec!["poser".to_string()]);
+                            continue;
+                        }
                         let mut move_allowed = true;
 
                         if !bypass_dialog

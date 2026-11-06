@@ -353,6 +353,7 @@ fn main() {
                 ),
                 Event::Disconnect => {}, // TODO
                 Event::IcebreakerFantome => println!("Registre ouvert : !fantome pour entrer"),
+                Event::IcebreakerBaliseRecharge(reste) => println!("Balise : recharge {reste} s"),
                 Event::StartSpectate(pos) => println!("Fantôme en {:?}", pos.map(|e| e.round())),
                 Event::IcebreakerBuildings(buildings) => {
                     if buildings.is_empty() {

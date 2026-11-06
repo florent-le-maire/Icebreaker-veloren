@@ -21,6 +21,7 @@ pub mod error;
 pub mod game_input;
 pub mod hud;
 pub mod icebreaker;
+pub mod icebreaker_balise;
 pub mod icebreaker_mort;
 pub mod key_state;
 pub mod menu;

@@ -238,6 +238,9 @@ pub enum ServerGeneral {
     /// Icebreaker: the expedition being prepared at the village (title, members:
     /// alias and whether ready), or none; sent every second to the village.
     IcebreakerExpedition(Option<(Content, Vec<(String, bool)>)>),
+    /// Icebreaker : secondes avant que la balise lumineuse se recharge (0 : prête),
+    /// envoyé à la pose et quand on en ramasse une (jalon J).
+    IcebreakerBaliseRecharge(f32),
     /// Icebreaker: the village buildings and plots to build on (name, bounds in
     /// world coordinates, whether a plot).
     IcebreakerBuildings(Vec<(Content, Aabr<i32>, i32, String)>),
@@ -403,6 +406,7 @@ impl ServerMsg {
                         | ServerGeneral::IcebreakerJouer(_)
                         | ServerGeneral::IcebreakerExpedition(_)
                         | ServerGeneral::IcebreakerBuildings(_)
+                        | ServerGeneral::IcebreakerBaliseRecharge(_)
                         | ServerGeneral::MapMarker(_)
                         | ServerGeneral::WeatherUpdate(_)
                         | ServerGeneral::LocalWindUpdate(_)

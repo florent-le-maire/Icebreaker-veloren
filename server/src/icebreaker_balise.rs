@@ -235,6 +235,11 @@ fn poser(server: &mut Server, client: EcsEntity, regles: &IcebreakerBalise) -> R
     let mut balises = server.state.ecs().write_resource::<IcebreakerBalises>();
     balises.au_sol.push((balise, client));
     balises.posee_a.insert(client, maintenant);
+    drop(balises);
+    server.notify_client(
+        client,
+        ServerGeneral::IcebreakerBaliseRecharge(regles.delai_recharge as f32),
+    );
     Ok(())
 }
 

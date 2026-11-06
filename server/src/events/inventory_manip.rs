@@ -220,6 +220,7 @@ impl ServerEvent for InventoryManipEvent {
                                 comp::ChatType::CommandInfo,
                                 comp::Content::Plain("Balise prête.".to_string()),
                             ));
+                            client.send_fallible(ServerGeneral::IcebreakerBaliseRecharge(0.0));
                         }
                         continue;
                     }
