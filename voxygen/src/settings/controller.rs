@@ -513,6 +513,7 @@ impl ControllerSettings {
             GameInput::ToggleWalk => Some(Button::Simple(GilButton::Unknown)),
             GameInput::IcebreakerTopView => Some(Button::Simple(GilButton::Unknown)),
             GameInput::IcebreakerLockTarget => Some(Button::Simple(GilButton::Unknown)),
+            GameInput::IcebreakerBalise => Some(Button::Simple(GilButton::Unknown)),
         }
     }
 
@@ -930,6 +931,11 @@ impl ControllerSettings {
                 mod2: Button::Simple(GilButton::Unknown),
             }),
             GameInput::IcebreakerLockTarget => Some(LayerEntry {
+                button: Button::Simple(GilButton::Unknown),
+                mod1: Button::Simple(GilButton::Unknown),
+                mod2: Button::Simple(GilButton::Unknown),
+            }),
+            GameInput::IcebreakerBalise => Some(LayerEntry {
                 button: Button::Simple(GilButton::Unknown),
                 mod1: Button::Simple(GilButton::Unknown),
                 mod2: Button::Simple(GilButton::Unknown),

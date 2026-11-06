@@ -17,6 +17,7 @@ pub mod connection_handler;
 mod data_dir;
 pub mod error;
 pub mod events;
+pub mod icebreaker_balise;
 pub mod icebreaker_buildings;
 pub mod icebreaker_charrette;
 pub mod icebreaker_classes;
@@ -720,6 +721,8 @@ impl Server {
         state.ecs_mut().insert(sleep.unwrap_or_default());
         // Icebreaker : à terre et mort (jalon T).
         state.ecs_mut().insert(sys::icebreaker_mort::IcebreakerATerre::default());
+        // Icebreaker : balise lumineuse (jalon J).
+        state.ecs_mut().insert(icebreaker_balise::IcebreakerBalises::default());
 
         // Set the spawn point we calculated above
         state.ecs_mut().insert(spawn_point);

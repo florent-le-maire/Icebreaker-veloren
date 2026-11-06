@@ -18,6 +18,8 @@ pub mod combat;
 // Icebreaker : combat létal (multiplicateurs de dégâts).
 pub mod icebreaker_combat;
 pub mod icebreaker_mort;
+// Icebreaker : balise lumineuse (jalon J).
+pub mod icebreaker_balise;
 pub mod comp;
 pub mod consts;
 pub mod resources;

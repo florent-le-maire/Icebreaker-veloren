@@ -298,6 +298,7 @@ impl ControlSettings {
             GameInput::ToggleWalk => char("B"),
             GameInput::IcebreakerTopView => char("U"),
             GameInput::IcebreakerLockTarget => char("W"),
+            GameInput::IcebreakerBalise => char("<"),
         }))
     }
 

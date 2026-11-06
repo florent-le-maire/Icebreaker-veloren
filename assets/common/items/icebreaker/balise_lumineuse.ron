@@ -1,0 +1,10 @@
+// Icebreaker : la balise lumineuse (jalon J, `assets/icebreaker/balise.ron`). Dans l'inventaire, elle permet
+// de poser une balise (touche « Poser une balise ») ; au sol, elle éclaire dans la couleur choisie et se
+// ramasse (E) pour rendre la charge. Donnée à l'arrivée dans un donjon.
+ItemDef(
+    legacy_name: "Light beacon",
+    legacy_description: "Drops a coloured light to find your way in the dungeon.",
+    kind: Quest,
+    quality: Common,
+    tags: [],
+)

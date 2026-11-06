@@ -2,6 +2,7 @@ pub mod agent;
 pub mod chunk_send;
 pub mod chunk_serialize;
 pub mod entity_sync;
+pub mod icebreaker_balise;
 pub mod icebreaker_charrette;
 pub mod icebreaker_clock;
 pub mod icebreaker_expedition;
@@ -50,6 +51,7 @@ pub fn add_server_systems(dispatch_builder: &mut DispatcherBuilder) {
     dispatch::<icebreaker_slots::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_village::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_mort::Sys>(dispatch_builder, &[]);
+    dispatch::<icebreaker_balise::Sys>(dispatch_builder, &[]);
     // Icebreaker: after the movements, so that sleepers keep lying.
     dispatch::<icebreaker_sleep::Sys>(dispatch_builder, &[
         &phys::Sys::sys_name(),

@@ -1515,6 +1515,10 @@
         Simple(
             "common.items.armor.misc.bag.reliable_backpack",
         ): "armor-misc-bag-reliable_backpack",
+        // Icebreaker : balise lumineuse (jalon J)
+        Simple(
+            "common.items.icebreaker.balise_lumineuse",
+        ): "icebreaker-balise_lumineuse",
         // Icebreaker : sac du mort (T.3)
         Simple(
             "common.items.icebreaker.sac_du_mort",

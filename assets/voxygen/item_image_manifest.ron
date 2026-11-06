@@ -3739,6 +3739,11 @@
         "voxel.armor.misc.bag.reliable_backpack",
         (0.0, 0.0, 0.0), (-75.0, 20.0, 5.0), 0.9,
     ),
+    // Icebreaker : balise lumineuse (jalon J)
+    Simple("common.items.icebreaker.balise_lumineuse"): VoxTrans(
+        "voxel.item.mineral.gem.diamond",
+        (0.0, 0.0, 0.0), (-55.0, 30.0, 20.0), 0.6,
+    ),
     // Icebreaker : sac du mort (T.3)
     Simple("common.items.icebreaker.sac_du_mort"): VoxTrans(
         "voxel.armor.misc.bag.reliable_backpack",

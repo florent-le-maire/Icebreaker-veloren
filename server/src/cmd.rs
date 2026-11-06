@@ -154,6 +154,7 @@ fn do_command(
         ServerChatCommand::AreaList => handle_area_list,
         ServerChatCommand::AreaRemove => handle_area_remove,
         ServerChatCommand::Aura => handle_aura,
+        ServerChatCommand::Balise => crate::icebreaker_balise::handle_balise,
         ServerChatCommand::Ban => handle_ban,
         ServerChatCommand::BanIp => handle_ban_ip,
         ServerChatCommand::BanLog => handle_ban_log,

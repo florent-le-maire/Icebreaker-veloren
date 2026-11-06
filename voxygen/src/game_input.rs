@@ -77,6 +77,9 @@ pub enum GameInput {
     /// Icebreaker: lock on an enemy (Dark Souls).
     #[strum(serialize = "gameinput-icebreaker-locktarget")]
     IcebreakerLockTarget,
+    /// Icebreaker: drop a light beacon (jalon J).
+    #[strum(serialize = "gameinput-icebreaker-balise")]
+    IcebreakerBalise,
     #[strum(serialize = "gameinput-togglewalk")]
     ToggleWalk,
     #[strum(serialize = "gameinput-autowalk")]

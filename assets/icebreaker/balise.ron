@@ -1,0 +1,20 @@
+// Icebreaker : la balise lumineuse (jalon J, `common/src/icebreaker_balise.rs`).
+// Une touche (« Poser une balise ») pose aux pieds du joueur une balise qui éclaire dans sa couleur, pour se
+// repérer dans le donjon. Une seule charge : elle revient `delai_recharge` secondes après la pose, ou tout de
+// suite quand on ramasse une balise au sol (E, n'importe quel joueur). Au-delà de `max_au_sol` balises posées
+// par un joueur, la plus ancienne s'éteint (le client n'affiche que les 20 lumières les plus proches).
+// `couleurs` : (nom sans espace, (rouge, vert, bleu) de 0 à 255) ; la première est celle par défaut.
+(
+    delai_recharge: 10.0,
+    max_au_sol: 6,
+    force: 4.0,
+    vacillement: 0.3,
+    couleurs: [
+        ("blanc", (255, 255, 255)),
+        ("rouge", (255, 40, 30)),
+        ("vert", (40, 255, 60)),
+        ("bleu", (40, 110, 255)),
+        ("jaune", (255, 220, 40)),
+        ("violet", (190, 60, 255)),
+    ],
+)

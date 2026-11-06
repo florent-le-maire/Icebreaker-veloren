@@ -1414,6 +1414,12 @@ impl PlayState for SessionState {
                             GameInput::IcebreakerLockTarget if state => {
                                 self.toggle_icebreaker_lock();
                             },
+                            // Icebreaker : poser une balise lumineuse (jalon J).
+                            GameInput::IcebreakerBalise if state => {
+                                self.client
+                                    .borrow_mut()
+                                    .send_command("balise".to_string(), vec!["poser".to_string()]);
+                            },
                             _ => {},
                         }
                     },

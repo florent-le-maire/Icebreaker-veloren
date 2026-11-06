@@ -369,6 +369,8 @@ pub enum ServerChatCommand {
     AreaList,
     AreaRemove,
     Aura,
+    /// Icebreaker: light beacon (jalon J).
+    Balise,
     Ban,
     BanIp,
     BanLog,
@@ -533,6 +535,11 @@ impl ServerChatCommand {
                 ],
                 Content::localized("command-buff-desc"),
                 Some(Admin),
+            ),
+            ServerChatCommand::Balise => cmd(
+                vec![Any("action", Optional), Any("couleur", Optional)],
+                Content::localized("command-balise-desc"),
+                None,
             ),
             ServerChatCommand::Ban => cmd(
                 vec![
@@ -1226,6 +1233,7 @@ impl ServerChatCommand {
             ServerChatCommand::AreaList => "area_list",
             ServerChatCommand::AreaRemove => "area_remove",
             ServerChatCommand::Aura => "aura",
+            ServerChatCommand::Balise => "balise",
             ServerChatCommand::Ban => "ban",
             ServerChatCommand::BanIp => "ban_ip",
             ServerChatCommand::BanLog => "ban_log",

@@ -34,7 +34,7 @@ impl<'a> System<'a> for Sys {
         ReadStorage<'a, Pos>,
         ReadStorage<'a, Player>,
         ReadStorage<'a, Client>,
-        ReadStorage<'a, Inventory>,
+        WriteStorage<'a, Inventory>,
         WriteStorage<'a, Arrival>,
     );
 
@@ -54,7 +54,7 @@ impl<'a> System<'a> for Sys {
             positions,
             players,
             clients,
-            inventories,
+            mut inventories,
             mut arrivals,
         ): Self::SystemData,
     ) {
@@ -124,8 +124,10 @@ impl<'a> System<'a> for Sys {
                     entity,
                     position: slot.arrival + offset,
                 });
-                if let Some(inventory) = inventories.get(entity) {
-                    let _ = arrivals.insert(entity, Arrival::of(inventory));
+                if let Some(mut inventory) = inventories.get_mut(entity) {
+                    // Icebreaker : une balise lumineuse pour le donjon (jalon J).
+                    crate::icebreaker_balise::donner_si_absente(&mut inventory);
+                    let _ = arrivals.insert(entity, Arrival::of(&inventory));
                 }
             }
             return;

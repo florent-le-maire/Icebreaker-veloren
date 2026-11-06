@@ -748,6 +748,12 @@ impl StateExt for State {
             self.write_component_ignore_entity_dead(entity, stats);
             self.write_component_ignore_entity_dead(entity, active_abilities);
             self.write_component_ignore_entity_dead(entity, skill_set);
+            // Icebreaker : dans un donjon lancé seul, une balise lumineuse (jalon J), avant
+            // l'inventaire d'arrivée pour qu'elle ne compte pas dans le bilan.
+            let mut inventory = inventory;
+            if world::icebreaker::is_instance() && !world::icebreaker::is_village() {
+                crate::icebreaker_balise::donner_si_absente(&mut inventory);
+            }
             // Icebreaker: what the character arrives with, for the summary of `/rentrer`.
             self.write_component_ignore_entity_dead(
                 entity,
