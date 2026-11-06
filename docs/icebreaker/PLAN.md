@@ -67,7 +67,7 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
   (test ciblé, client compilé) ; tir pas encore vu en jeu. — c9d929adf2
 - [x] **X.13 Le tir ne dérive pas avec le tireur** — flèches, sorts et objets lancés ne reprennent plus la vitesse du
   tireur (`combat.ron` → `part_vitesse_tireur: 0.0`) : on touche en se déplaçant de côté, une cible qui change de
-  direction esquive ; vaut aussi pour les archers ennemis. Testé (test ciblé, donjon démarre) ; pas vu en jeu. — 78d9c38f54
+  direction esquive ; vaut aussi pour les archers ennemis. Testé (test ciblé, donjon démarre) ; pas vu en jeu. — f2b57a7e8d
 
 ## Jalon 3 — Pillage sur la route
 
