@@ -5,4 +5,7 @@
 (
     degats_contre_creatures: 5.0,
     degats_contre_joueurs: 9.0,
+    // Part de la vitesse du tireur que reprennent ses projectiles (flèches, sorts, objets lancés) :
+    // 0 = le tir part droit vers le viseur même en se déplaçant de côté (X.13), 1 = comme Veloren.
+    part_vitesse_tireur: 0.0,
 )

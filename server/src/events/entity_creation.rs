@@ -434,7 +434,11 @@ pub fn handle_shoot(server: &mut Server, ev: ShootEvent) {
 
     let pos = ev.pos.0;
 
-    let vel = *ev.dir * ev.speed + ev.source_vel.map_or(Vec3::zero(), |v| v.0);
+    // Icebreaker : le tir ne dérive pas avec le tireur (X.13, `combat.ron`).
+    let vel = common::icebreaker_combat::IcebreakerCombat::vitesse_projectile_actuelle(
+        *ev.dir * ev.speed,
+        ev.source_vel.map_or(Vec3::zero(), |v| v.0),
+    );
 
     // Add an outcome
     state
@@ -504,12 +508,15 @@ pub fn handle_throw(server: &mut Server, ev: ThrowEvent) {
 
         let pos = ev.pos.0;
 
-        let vel = *ev.dir * ev.speed
-            + state
+        // Icebreaker : le lancer ne dérive pas avec le lanceur (X.13, `combat.ron`).
+        let vel = common::icebreaker_combat::IcebreakerCombat::vitesse_projectile_actuelle(
+            *ev.dir * ev.speed,
+            state
                 .ecs()
                 .read_storage::<Vel>()
                 .get(ev.entity)
-                .map_or(Vec3::zero(), |v| v.0);
+                .map_or(Vec3::zero(), |v| v.0),
+        );
 
         // Add an outcome
         state
