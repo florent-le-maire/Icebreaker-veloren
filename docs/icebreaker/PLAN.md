@@ -167,7 +167,7 @@ charge, rendue 10 s après la pose ou tout de suite en ramassant une balise (E).
 - [x] **J.3 Menu des couleurs** — F9 ou `/balise` : panneau à boutons, montré hors vue de dessus. Panneau reçu au
   client texte ; affichage en jeu pas vu. 7a16e3223b
 - [x] **J.5 Utiliser la balise, voir sa recharge** — l’utiliser (sac, barre de raccourcis) la pose ; la barre la
-  grise et affiche les secondes qui restent (message `IcebreakerBaliseRecharge`). Message vu au client texte. HASH
+  grise et affiche les secondes qui restent (message `IcebreakerBaliseRecharge`). Message vu au client texte. d4d6273e8f
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
