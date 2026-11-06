@@ -35,8 +35,8 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | Lettre | Jalon | Plan | État (2026-11-04) | Worktree |
 |---|---|---|---|---|
 | I | Instances propres | `HISTORIQUE.md` | fait | — |
-| V | Village, première version | `HISTORIQUE.md` | fait | `Veloren-village` |
-| C | Le village qui grandit | `PLAN.md` | C.1 à C.3 faits ; C.4 à C.6 restent | `Veloren-village` |
+| V | Village, première version | `HISTORIQUE.md` | fait | — (supprimé) |
+| C | Le village qui grandit | `PLAN.md` | C.1 à C.3 faits ; C.4 à C.6 restent | — (supprimé) |
 | P | Pillage sur la route | `PLAN.md` | pas commencé | à créer |
 | G | Donjon généré | `PLAN.md` | G.1 à G.10 faits ; IA G.11 à G.16 restent | `Veloren-donjon` |
 | F | Forme et vie du donjon généré | `PLAN.md` | F.1 à F.6 faits ; F.7 si besoin | `Veloren-donjon` |
