@@ -1680,6 +1680,11 @@ impl PlayState for SessionState {
             }
 
             match self.scene.camera().get_mode() {
+                // Icebreaker: the village plan open, neither the character nor
+                // a ghost's free camera moves (as in front of a map, X.11).
+                _ if self.icebreaker_top_view.is_some() => {
+                    self.inputs.move_dir = Vec2::zero();
+                },
                 CameraMode::FirstPerson | CameraMode::ThirdPerson => {
                     if mutable_viewpoint {
                         // Move the player character based on their walking direction.
@@ -1895,6 +1900,8 @@ impl PlayState for SessionState {
                             view.last_click = None;
                         }
                     },
+                    // Icebreaker: Escape closes the village plan (X.11).
+                    HudEvent::IcebreakerTopViewClosed => self.quitter_icebreaker_top_view(),
                     HudEvent::SendCommand(name, args) => {
                         match run_command(self, global_state, &name, args) {
                             Ok(Some(info)) => {
@@ -2521,13 +2528,11 @@ fn auto_glide(
     Dir::from_unnormalized(dir)
 }
 
-/// Icebreaker: the top view of the village. The camera, free of the character,
-/// looks straight down from above where it was; the cursor is free to point at
-/// a building (named on screen, highlighted under the cursor) and click it for
-/// its panel. The movement keys move the view.
+/// Icebreaker: the village plan (X.11). The HUD draws a panel with a box per
+/// building, placed from its real bounds and scaled to fit; the camera does
+/// not move and the character stands still. The cursor is free to point at a
+/// building (named, highlighted under the cursor) and click it for its panel.
 struct IcebreakerTopView {
-    /// The camera orientation to go back to.
-    ori: Vec3<f32>,
     /// Where the character was when the view opened: the view closes if it
     /// gets far from there (teleported away, X.1).
     entree: Vec3<f32>,
@@ -2553,22 +2558,11 @@ impl SessionState {
             return;
         }
         // Read apart: the client is borrowed again below to ask for the buildings.
-        // A ghost of the registry (spectator, jalon R) looks from its camera.
-        let spectator = self.client.borrow().presence() == Some(PresenceKind::Spectator);
-        let position = self.client.borrow().position().or_else(|| {
-            spectator.then(|| self.scene.camera().get_focus_pos() - Vec3::unit_z() * 20.0)
-        });
-        let Some(pos) = position else {
-            return;
-        };
-        let reglages = &self.icebreaker_vue_settings;
-        let camera = self.scene.camera_mut();
-        let ori = camera.get_orientation();
-        camera.set_mode(CameraMode::Freefly);
-        camera.set_orientation_instant(Vec3::new(0.0, std::f32::consts::FRAC_PI_2, 0.0));
-        camera.force_focus_pos(pos + Vec3::unit_z() * reglages.hauteur);
+        // A ghost of the registry (spectator, jalon R) has no position: `sortie`
+        // never compares it with `entree`, the camera's focus will do.
+        let position = self.client.borrow().position();
+        let pos = position.unwrap_or_else(|| self.scene.camera().get_focus_pos());
         self.icebreaker_top_view = Some(IcebreakerTopView {
-            ori,
             entree: pos,
             hors_village: false,
             buildings: Vec::new(),
@@ -2580,21 +2574,11 @@ impl SessionState {
         self.client.borrow_mut().request_icebreaker_building(None);
     }
 
-    /// Back to the usual camera (a ghost keeps flying), panel and buildings
-    /// gone from the HUD.
+    /// Plan, panel and buildings gone from the HUD (the camera never moved).
     fn quitter_icebreaker_top_view(&mut self) {
-        let Some(view) = self.icebreaker_top_view.take() else {
-            return;
-        };
-        let spectator = self.client.borrow().presence() == Some(PresenceKind::Spectator);
-        let camera = self.scene.camera_mut();
-        camera.set_mode(if spectator {
-            CameraMode::Freefly
-        } else {
-            CameraMode::ThirdPerson
-        });
-        camera.set_orientation_instant(view.ori);
-        self.hud.icebreaker_top_view(false);
+        if self.icebreaker_top_view.take().is_some() {
+            self.hud.icebreaker_top_view(false);
+        }
     }
 
     /// The cursor, as a screen point (-1 to 1, y up).
@@ -2627,8 +2611,8 @@ impl SessionState {
             .request_icebreaker_building(Some(wpos));
     }
 
-    /// Where the buildings are on screen this frame, for the HUD: name, screen
-    /// rectangle (-1 to 1, y up), whether the cursor is over it, whether a plot.
+    /// The plan drawn this frame, for the HUD: panel, each building's screen
+    /// rectangle (-1 to 1, y up) and whether the cursor is over it, player dot.
     fn update_icebreaker_top_view(&mut self, global_state: &GlobalState) {
         // The view closes by itself once the player is not in the village any
         // more (X.1): teleported away, dead, or no building sent by the server.
@@ -2667,35 +2651,44 @@ impl SessionState {
         let Some(view) = &mut self.icebreaker_top_view else {
             return;
         };
-        // Each building projected with the camera's own matrix, at its own
-        // altitude (X.2): the rectangle drawn is the one clicked, in a slope too.
-        let camera = self.scene.camera();
-        let dependents = camera.dependents();
-        let vue_proj = dependents.proj_mat
-            * dependents.view_mat
-            * Mat4::translation_3d(-camera.get_focus_pos().map(f32::trunc));
-        let cursor = Self::icebreaker_cursor_ndc(global_state);
+        // The real bounds scaled into the panel, the same way for every
+        // building and for the player (X.11); the click sends the building's
+        // world centre, as before.
         let reglages = &self.icebreaker_vue_settings;
+        let aspect = self.scene.camera().get_aspect_ratio();
+        let cadre = icebreaker_vue::cadre(reglages.taille, reglages.marge, aspect);
+        let emprises: Vec<Aabr<i32>> = view.buildings.iter().map(|(_, bounds, _, _)| *bounds).collect();
+        let joueur = self.client.borrow().position().map(|p| p.xy());
+        let (rects, joueur) = icebreaker_vue::plan(&emprises, joueur, cadre, aspect);
+        let cursor = Self::icebreaker_cursor_ndc(global_state);
         let mut survole = None;
-        let on_screen = view
+        let batiments = view
             .buildings
             .iter()
-            .filter_map(|(name, bounds, alt, kind)| {
-                let bounds_f = Aabr {
-                    min: bounds.min.as_::<f32>(),
-                    max: bounds.max.as_::<f32>(),
-                };
-                let rect =
-                    icebreaker_vue::rect_ecran(&vue_proj, bounds_f, *alt as f32 + reglages.plan)?;
+            .zip(rects)
+            .map(|((name, bounds, _, kind), rect)| {
                 let hovered = rect.contains_point(cursor);
                 if hovered {
-                    survole = Some(bounds_f.center());
+                    survole = Some(Aabr {
+                        min: bounds.min.as_::<f32>(),
+                        max: bounds.max.as_::<f32>(),
+                    }
+                    .center());
                 }
-                Some((name.clone(), rect, hovered, reglages.apparence(kind)))
+                (name.clone(), rect, hovered, reglages.apparence(kind))
             })
             .collect();
         view.survole = survole;
-        self.hud.icebreaker_buildings(on_screen);
+        let demi = Vec2::new(reglages.taille.0, reglages.taille.1);
+        self.hud.icebreaker_plan(icebreaker_vue::Plan {
+            panneau: Aabr {
+                min: -demi,
+                max: demi,
+            },
+            batiments,
+            joueur,
+            couleur_joueur: reglages.couleur_joueur,
+        });
     }
 }
 

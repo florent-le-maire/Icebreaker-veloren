@@ -56,6 +56,15 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
 - [ ] **C.5 Nouveaux habitants** — une maison finie amène des habitants.
 - [ ] **C.6 Paliers** — l'or investi (300, 1000, 3000) ouvre des terrains plus loin de la place.
 
+## Jalon X — Interface du village, suite (Flo, 2026-11-06)
+
+- [ ] **X.11 Plan schématique du village** — *en cours : Veloren-village, 2026-11-06*. La vue U ne déplace plus la
+  caméra (elle cassait pour un fantôme en vol ou en pente) : panneau centré dessiné par le HUD, une case colorée par
+  bâtiment (icône, nom) à sa place réelle, l'ensemble mis à l'échelle pour tenir ; point du joueur ; le personnage ne
+  bouge pas plan ouvert ; U ou Échap ferme ; fermetures automatiques gardées ; `vue_village.ron` → `taille`, `marge`,
+  `couleur_joueur` (plus de `hauteur` ni `plan`). *Fin* : sur la place et en fantôme en vol, le même plan ; clic sur
+  l'entrepôt → son panneau.
+
 ## Jalon 3 — Pillage sur la route
 
 - [ ] **P.1 Instance route** — un tronçon de route dans un paysage, zone fermée (I.2).
@@ -179,7 +188,7 @@ tâche pour ce qui casse.
 - V.5 : bilan au retour avec du vrai butin.
 - C.1 à C.3 : maison bâtie contre terrain vide, bouton « Bâtir (300 or) », maison dessinée après relance
   (`heures_chantier` à baisser pour l'essai).
-- X.1 fermeture de la vue U au départ et à la mort ; X.2 alignement des clics sur les maisons en pente ; X.3 et X.9
+- X.1 fermeture de la vue U au départ et à la mort ; X.11 plan : cases à leur place, clic, point du joueur, Échap, fantôme en vol ; X.3 et X.9
   panneau, icônes, Échap, fermeture pour de bon ; X.4 couleurs et icônes des bâtiments ; X.5 E et T sur les PNJ dans
   leur maison ; X.8 recrues devant la charrette (posées 8 blocs trop haut sur le village d'essai ? `QUESTIONS.md`, Q30).
 - X.10 : panneau « Campagne » (continuer, nouvelle partie), passage de l'ancienne campagne en « Partie 1 ».

@@ -51,8 +51,9 @@ sont les **bâtiments** de l'équipe, chacun tenu par un personnage devant sa po
 - **Départ** : le chef choisit la destination, les autres rejoignent, et on part groupés par téléportation.
 - **Charrette** : les recrues du jour (voir la fiche Charrette et registre).
 
-La touche **U** ouvre la **vue de dessus** : la caméra monte, chaque bâtiment a son cadre coloré et son icône, un
-clic ouvre son panneau. C'est de là qu'on commande et qu'on part.
+La touche **U** ouvre le **plan du village**, dessiné par-dessus le jeu : une case colorée par bâtiment, à sa place,
+avec son icône et son nom, et un point pour le joueur ; un clic ouvre le panneau du bâtiment. C'est de là qu'on
+commande et qu'on part ; le personnage ne bouge pas tant que le plan est ouvert.
 
 Le village **grandit** : les autres maisons sont des terrains à bâtir, les plus proches de la place d'abord. Un
 chantier se paie avec l'or de la caisse et la maison sort de terre au fil du temps de carte ; une maison finie amène
@@ -66,6 +67,6 @@ niveaux (forge, salle d'armes, taverne…) : à trancher avant C.5.
 
 ## En images
 
-![La vue de dessus du village (touche U), chaque bâtiment dans son cadre coloré](images/village-vue-dessus.png)
+![Le plan du village (touche U), une case colorée par bâtiment et le point du joueur](images/village-vue-dessus.png)
 
 ![Un chantier de maison en cours, payé par la caisse](images/village-chantier.png)

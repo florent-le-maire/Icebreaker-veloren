@@ -356,6 +356,9 @@ widget_ids! {
         icebreaker_building_fills[],
         icebreaker_building_icons[],
         icebreaker_building_names[],
+        icebreaker_plan_bg,
+        icebreaker_plan_cadre,
+        icebreaker_plan_joueur,
         // Icebreaker: ring on the locked enemy
         icebreaker_lock_ring,
         icebreaker_lock_halo,
@@ -731,6 +734,8 @@ pub enum Event {
     /// Icebreaker: the building's panel was closed (cross or Escape): stop
     /// asking the server for it again.
     IcebreakerPanelClosed,
+    /// Icebreaker: Escape closes the village plan (X.11).
+    IcebreakerTopViewClosed,
 
     CharacterSelection,
     UseSlot {
@@ -1411,10 +1416,9 @@ pub struct Hud {
     /// Icebreaker: the expedition being prepared at the village (title,
     /// members: alias and whether ready), shown on the left (V.11).
     icebreaker_expedition: Option<(comp::Content, Vec<(String, bool)>)>,
-    /// Icebreaker: the buildings and plots on screen in the top view (name,
-    /// rectangle from -1 to 1 with y up, whether under the cursor, whether a
-    /// plot to build on).
-    icebreaker_buildings: Vec<(comp::Content, Aabr<f32>, bool, crate::session::icebreaker_vue::Apparence)>,
+    /// Icebreaker: the village plan drawn in the top view (panel, buildings,
+    /// player dot), from -1 to 1 with y up (X.11).
+    icebreaker_plan: crate::session::icebreaker_vue::Plan,
     force_chat_input: Option<String>,
     force_chat_cursor: Option<Index>,
     tab_complete: Option<String>,
@@ -1522,7 +1526,7 @@ impl Hud {
             icebreaker_top_view: false,
             icebreaker_panel: None,
             icebreaker_expedition: None,
-            icebreaker_buildings: Vec::new(),
+            icebreaker_plan: Default::default(),
             force_chat_input: None,
             force_chat_cursor: None,
             tab_complete: None,
@@ -4280,10 +4284,27 @@ impl Hud {
                 .set(self.ids.zoom_lock_txt, ui_widgets);
         }
 
-        // Icebreaker: top view of the village, and the panel of the clicked building.
+        // Icebreaker: the village plan (X.11), and the panel of the clicked building.
         if self.icebreaker_top_view {
+            let half_win = Vec2::new(ui_widgets.win_w, ui_widgets.win_h) / 2.0;
+            // The panel first (under everything): Veloren's dark frame of the
+            // Escape menu, which stretches well, and an outline.
+            let panneau = self.icebreaker_plan.panneau;
+            let panneau_size = [
+                f64::from(panneau.size().w) * half_win.x,
+                f64::from(panneau.size().h) * half_win.y,
+            ];
+            Image::new(self.imgs.esc_frame)
+                .w_h(panneau_size[0], panneau_size[1])
+                .x_y(0.0, 0.0)
+                .color(Some(Color::Rgba(1.0, 1.0, 1.0, 0.9)))
+                .set(self.ids.icebreaker_plan_bg, ui_widgets);
+            Rectangle::outline_styled(panneau_size, widget::line::Style::solid().thickness(2.0))
+                .color(UI_HIGHLIGHT_0)
+                .x_y(0.0, 0.0)
+                .set(self.ids.icebreaker_plan_cadre, ui_widgets);
             // The buildings, named, the one under the cursor highlighted.
-            let count = self.icebreaker_buildings.len();
+            let count = self.icebreaker_plan.batiments.len();
             if self.ids.icebreaker_building_rects.len() < count {
                 let ids = &mut ui_widgets.widget_id_generator();
                 self.ids.icebreaker_building_rects.resize(count, ids);
@@ -4294,8 +4315,7 @@ impl Hud {
                 self.ids.icebreaker_building_fills.resize(count, ids);
                 self.ids.icebreaker_building_icons.resize(count, ids);
             }
-            let half_win = Vec2::new(ui_widgets.win_w, ui_widgets.win_h) / 2.0;
-            for (i, (name, rect, hovered, look)) in self.icebreaker_buildings.iter().enumerate() {
+            for (i, (name, rect, hovered, look)) in self.icebreaker_plan.batiments.iter().enumerate() {
                 let min = rect.min.as_::<f64>() * half_win;
                 let max = rect.max.as_::<f64>() * half_win;
                 let center = (min + max) / 2.0;
@@ -4334,6 +4354,15 @@ impl Hud {
                     .font_size(self.fonts.cyri.scale(font_size))
                     .set(self.ids.icebreaker_building_names[i], ui_widgets);
             }
+            // The player, as a dot over the buildings (none for a ghost).
+            if let Some(joueur) = self.icebreaker_plan.joueur {
+                let (r, g, b) = self.icebreaker_plan.couleur_joueur;
+                let p = joueur.as_::<f64>() * half_win;
+                widget::Circle::fill(5.0)
+                    .color(Color::Rgba(r, g, b, 1.0))
+                    .x_y(p.x, p.y)
+                    .set(self.ids.icebreaker_plan_joueur, ui_widgets);
+            }
 
             let key = global_state
                 .settings
@@ -4344,7 +4373,7 @@ impl Hud {
                 "key" => key,
             }))
             .color(TEXT_COLOR)
-            .mid_top_with_margin_on(ui_widgets.window, indicator_offset)
+            .mid_top_with_margin_on(self.ids.icebreaker_plan_bg, 6.0)
             .font_id(self.fonts.cyri.conrod_id)
             .font_size(self.fonts.cyri.scale(20))
             .set(self.ids.icebreaker_hint, ui_widgets);
@@ -5393,6 +5422,9 @@ impl Hud {
                     // Icebreaker: Escape closes the building's panel first (X.3).
                     self.icebreaker_panel = None;
                     self.events.push(Event::IcebreakerPanelClosed);
+                } else if self.icebreaker_top_view {
+                    // Icebreaker: then the village plan itself (X.11).
+                    self.events.push(Event::IcebreakerTopViewClosed);
                 } else if self.show.trade {
                     self.events.push(Event::TradeAction(TradeAction::Decline));
                 } else {
@@ -5743,7 +5775,7 @@ impl Hud {
     pub fn icebreaker_top_view(&mut self, on: bool) {
         self.icebreaker_top_view = on;
         self.icebreaker_panel = None;
-        self.icebreaker_buildings.clear();
+        self.icebreaker_plan = Default::default();
     }
 
     /// Icebreaker: whether a click at the cursor is on the village of the top
@@ -5752,7 +5784,12 @@ impl Hud {
     pub fn icebreaker_cursor_free(&self) -> bool {
         self.ui.widget_capturing_mouse().is_none_or(|id| {
             self.ids.icebreaker_building_rects.contains(&id)
+                || self.ids.icebreaker_building_fills.contains(&id)
+                || self.ids.icebreaker_building_icons.contains(&id)
                 || self.ids.icebreaker_building_names.contains(&id)
+                || id == self.ids.icebreaker_plan_bg
+                || id == self.ids.icebreaker_plan_cadre
+                || id == self.ids.icebreaker_plan_joueur
         })
     }
 
@@ -5764,11 +5801,8 @@ impl Hud {
         self.icebreaker_panel = panel;
     }
 
-    pub fn icebreaker_buildings(
-        &mut self,
-        buildings: Vec<(comp::Content, Aabr<f32>, bool, crate::session::icebreaker_vue::Apparence)>,
-    ) {
-        self.icebreaker_buildings = buildings;
+    pub fn icebreaker_plan(&mut self, plan: crate::session::icebreaker_vue::Plan) {
+        self.icebreaker_plan = plan;
     }
 
     /// Start showing a temporary notification ([ChangeNotification]) that zoom
