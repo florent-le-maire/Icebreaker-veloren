@@ -106,8 +106,12 @@ pub(crate) fn handle_balise(
             dire(server, client, format!("Balise : couleur {nom}."));
             Ok(())
         },
+        None => {
+            ouvrir_menu(server, client, &regles);
+            Ok(())
+        },
         _ => Err(Content::Plain(format!(
-            "/balise poser, ou /balise couleur <{}>.",
+            "/balise, /balise poser, ou /balise couleur <{}>.",
             noms(&regles).replace(", ", "|")
         ))),
     }
@@ -120,6 +124,45 @@ fn noms(regles: &IcebreakerBalise) -> String {
         .map(|(nom, _)| nom.as_str())
         .collect::<Vec<_>>()
         .join(", ")
+}
+
+/// Le choix de la couleur (J.3) : le panneau des bâtiments du village (jalon X), avec un bouton
+/// par couleur qui envoie `/balise couleur <nom>` ; le client le montre hors de la vue de dessus.
+fn ouvrir_menu(server: &Server, client: EcsEntity, regles: &IcebreakerBalise) {
+    let actuelle = server
+        .state
+        .ecs()
+        .read_resource::<IcebreakerBalises>()
+        .couleur
+        .get(&client)
+        .cloned()
+        .unwrap_or_else(|| regles.couleur_par_defaut().to_string());
+    let lignes = vec![(
+        Content::Plain(format!(
+            "Couleur actuelle : {actuelle}. La touche « Poser une balise » en pose une à ses pieds ; \
+             E sur une balise posée la retire et rend la charge."
+        )),
+        Vec::new(),
+    )];
+    let boutons = regles
+        .couleurs
+        .iter()
+        .map(|(nom, _)| {
+            let mut libelle = nom.clone();
+            if let Some(premiere) = libelle.get_mut(0..1) {
+                premiere.make_ascii_uppercase();
+            }
+            (Content::Plain(libelle), vec![
+                "balise".to_string(),
+                "couleur".to_string(),
+                nom.clone(),
+            ])
+        })
+        .collect();
+    server.notify_client(
+        client,
+        ServerGeneral::IcebreakerPanel(Content::Plain("Balise lumineuse".to_string()), lignes, boutons),
+    );
 }
 
 fn poser(server: &mut Server, client: EcsEntity, regles: &IcebreakerBalise) -> Result<(), Content> {

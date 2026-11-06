@@ -299,6 +299,7 @@ impl ControlSettings {
             GameInput::IcebreakerTopView => char("U"),
             GameInput::IcebreakerLockTarget => char("W"),
             GameInput::IcebreakerBalise => char("<"),
+            GameInput::IcebreakerBaliseCouleur => Key::Named(NamedKey::F9),
         }))
     }
 

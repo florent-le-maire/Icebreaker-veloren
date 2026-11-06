@@ -113,6 +113,9 @@ pub struct SessionState {
     freecam_pos: Vec3<f32>,
     /// Icebreaker: the top view of the village, when on.
     icebreaker_top_view: Option<IcebreakerTopView>,
+    /// Icebreaker : le choix de la couleur de la balise est demandé (J.3) : le prochain panneau
+    /// s'ouvre hors de la vue de dessus.
+    icebreaker_menu_balise: bool,
     /// Icebreaker: the locked enemy (Dark Souls), when on.
     icebreaker_lock: Option<icebreaker_lock::Verrou>,
     icebreaker_lock_settings: icebreaker_lock::Reglages,
@@ -193,6 +196,7 @@ impl SessionState {
             free_look: false,
             freecam_pos: Vec3::zero(),
             icebreaker_top_view: None,
+            icebreaker_menu_balise: false,
             icebreaker_lock: None,
             icebreaker_lock_settings: icebreaker_lock::Reglages::charger(),
             icebreaker_vue_settings: icebreaker_vue::Reglages::charger(),
@@ -417,6 +421,10 @@ impl SessionState {
                         .is_some_and(|view| view.last_click.is_some())
                     {
                         self.hud.icebreaker_panel(Some((title, lines, actions)));
+                    } else if self.icebreaker_menu_balise {
+                        // Icebreaker : le choix de la couleur de la balise, en jeu (J.3).
+                        self.icebreaker_menu_balise = false;
+                        self.hud.icebreaker_panel_libre(Some((title, lines, actions)));
                     }
                 },
                 // Icebreaker: off to another place of the campaign, through the main
@@ -1420,6 +1428,13 @@ impl PlayState for SessionState {
                                     .borrow_mut()
                                     .send_command("balise".to_string(), vec!["poser".to_string()]);
                             },
+                            // Icebreaker : le choix de la couleur de la balise (J.3).
+                            GameInput::IcebreakerBaliseCouleur if state => {
+                                self.icebreaker_menu_balise = true;
+                                self.client
+                                    .borrow_mut()
+                                    .send_command("balise".to_string(), Vec::new());
+                            },
                             _ => {},
                         }
                     },
@@ -1909,6 +1924,10 @@ impl PlayState for SessionState {
                     // Icebreaker: Escape closes the village plan (X.11).
                     HudEvent::IcebreakerTopViewClosed => self.quitter_icebreaker_top_view(),
                     HudEvent::SendCommand(name, args) => {
+                        // Icebreaker : « /balise » tapé dans le chat ouvre le choix des couleurs (J.3).
+                        if name == "balise" && args.is_empty() {
+                            self.icebreaker_menu_balise = true;
+                        }
                         match run_command(self, global_state, &name, args) {
                             Ok(Some(info)) => {
                                 self.hud.new_message(ChatType::CommandInfo.into_msg(info))

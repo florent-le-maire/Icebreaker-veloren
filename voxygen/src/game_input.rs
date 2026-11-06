@@ -80,6 +80,9 @@ pub enum GameInput {
     /// Icebreaker: drop a light beacon (jalon J).
     #[strum(serialize = "gameinput-icebreaker-balise")]
     IcebreakerBalise,
+    /// Icebreaker: choose the colour of the light beacon (jalon J).
+    #[strum(serialize = "gameinput-icebreaker-balisecouleur")]
+    IcebreakerBaliseCouleur,
     #[strum(serialize = "gameinput-togglewalk")]
     ToggleWalk,
     #[strum(serialize = "gameinput-autowalk")]

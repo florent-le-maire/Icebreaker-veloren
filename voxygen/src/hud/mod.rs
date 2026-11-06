@@ -1413,6 +1413,9 @@ pub struct Hud {
     /// the last building clicked there (title, lines).
     icebreaker_top_view: bool,
     icebreaker_panel: Option<IcebreakerPanel>,
+    /// Icebreaker : le panneau est montré hors de la vue de dessus (choix de la couleur de la
+    /// balise, J.3) ; il libère la souris et se ferme au premier bouton.
+    icebreaker_panel_libre: bool,
     /// Icebreaker: the expedition being prepared at the village (title,
     /// members: alias and whether ready), shown on the left (V.11).
     icebreaker_expedition: Option<(comp::Content, Vec<(String, bool)>)>,
@@ -1525,6 +1528,7 @@ impl Hud {
             force_ungrab: false,
             icebreaker_top_view: false,
             icebreaker_panel: None,
+            icebreaker_panel_libre: false,
             icebreaker_expedition: None,
             icebreaker_plan: Default::default(),
             force_chat_input: None,
@@ -4389,7 +4393,7 @@ impl Hud {
         const ICEBREAKER_GAP: f64 = 6.0;
         const ICEBREAKER_BUTTON_H: f64 = 32.0;
         let icebreaker_panel_shown = self.icebreaker_top_view && self.icebreaker_panel.is_some();
-        if self.icebreaker_top_view
+        if (self.icebreaker_top_view || self.icebreaker_panel_libre)
             && let Some((title, lines, actions)) = &self.icebreaker_panel
         {
             let ids = &mut self.ids;
@@ -4496,11 +4500,14 @@ impl Hud {
                     && let Some((name, args)) = command.split_first()
                 {
                     icebreaker_command = Some(Event::SendCommand(name.clone(), args.to_vec()));
+                    // Icebreaker : la couleur choisie, le panneau de la balise se ferme (J.3).
+                    icebreaker_close |= self.icebreaker_panel_libre;
                 }
             }
         }
         if icebreaker_close {
             self.icebreaker_panel = None;
+            self.icebreaker_panel_libre = false;
             self.events.push(Event::IcebreakerPanelClosed);
         }
         self.events.extend(icebreaker_command);
@@ -5626,7 +5633,10 @@ impl Hud {
         };
         // Handle cursor grab (Icebreaker: free in the top view of the village).
         global_state.window.grab_cursor(
-            !self.force_ungrab && !self.icebreaker_top_view && self.show.want_grab,
+            !self.force_ungrab
+                && !self.icebreaker_top_view
+                && !(self.icebreaker_panel_libre && self.icebreaker_panel.is_some())
+                && self.show.want_grab,
         );
 
         handled
@@ -5798,6 +5808,13 @@ impl Hud {
     }
 
     pub fn icebreaker_panel(&mut self, panel: Option<IcebreakerPanel>) {
+        self.icebreaker_panel = panel;
+        self.icebreaker_panel_libre = false;
+    }
+
+    /// Icebreaker : un panneau montré en jeu, hors de la vue de dessus (couleur de la balise, J.3).
+    pub fn icebreaker_panel_libre(&mut self, panel: Option<IcebreakerPanel>) {
+        self.icebreaker_panel_libre = panel.is_some();
         self.icebreaker_panel = panel;
     }
 
