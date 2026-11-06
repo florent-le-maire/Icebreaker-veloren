@@ -1580,6 +1580,9 @@ impl PlayState for SessionState {
                         self.walk_forward_dir = self.scene.camera().forward_xy();
                         self.walk_right_dir = self.scene.camera().right_xy();
 
+                        // Icebreaker: while an enemy is locked, attacks go toward its ring (X.12).
+                        let lock_aim_point = self.icebreaker_lock_aim_point();
+
                         let client = self.client.borrow();
 
                         let holding_ranged = client
@@ -1602,7 +1605,12 @@ impl PlayState for SessionState {
                                     matches!(char_state, CharacterState::Throw(_))
                                 });
 
-                        let dir = if is_aiming
+                        let dir = if let Some(aim_point) = lock_aim_point
+                            && let Some(start) = icebreaker_lock_shot_start(&client, player_entity)
+                        {
+                            // Icebreaker: from the hand to the locked enemy (X.12).
+                            aim_point - start
+                        } else if is_aiming
                             && holding_ranged
                             && self.scene.camera().get_mode() == CameraMode::ThirdPerson
                         {
@@ -2717,6 +2725,16 @@ impl SessionState {
     }
 }
 
+/// Icebreaker: where the player's shots leave from (hand), as Veloren's own aiming does (X.12).
+fn icebreaker_lock_shot_start(client: &Client, player: specs::Entity) -> Option<Vec3<f32>> {
+    let ecs = client.state().ecs();
+    let ori = *ecs.read_storage::<comp::Ori>().get(player)?;
+    let body = *ecs.read_storage::<comp::Body>().get(player)?;
+    let pos = ecs.read_storage::<Pos>().get(player)?.0;
+    let scale = ecs.read_storage::<comp::Scale>().get(player).map_or(1.0, |s| s.0);
+    Some(pos + body.projectile_offsets(ori.look_vec(), scale))
+}
+
 /// Icebreaker: lock on an enemy (Dark Souls, `icebreaker_lock`).
 impl SessionState {
     /// The living enemies around, with the middle of their body.
@@ -2790,6 +2808,31 @@ impl SessionState {
             lock.cible = next;
             lock.depuis_molette = 0.0;
         }
+    }
+
+    /// Where attacks go while an enemy is locked: the ring drawn on it (X.12).
+    fn icebreaker_lock_aim_point(&self) -> Option<Vec3<f32>> {
+        let target = self.icebreaker_lock.as_ref()?.cible;
+        let client = self.client.borrow();
+        let ecs = client.state().ecs();
+        let feet = ecs
+            .read_storage::<crate::ecs::comp::Interpolated>()
+            .get(target)
+            .map(|i| i.pos)
+            .or_else(|| ecs.read_storage::<Pos>().get(target).map(|p| p.0))?;
+        let height = ecs
+            .read_storage::<comp::Body>()
+            .get(target)
+            .map_or(1.8, |b| b.height())
+            * ecs
+                .read_storage::<comp::Scale>()
+                .get(target)
+                .map_or(1.0, |s| s.0);
+        Some(icebreaker_lock::point_vise(
+            feet,
+            height,
+            self.icebreaker_lock_settings.ancrage,
+        ))
     }
 
     /// Turns the camera toward the locked enemy; the lock drops when it dies or is too far.

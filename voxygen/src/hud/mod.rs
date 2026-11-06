@@ -1718,7 +1718,10 @@ impl Hud {
                         .set(self.ids.death_bg, ui_widgets);
                 }
                 // Crosshair
-                let show_crosshair = (info.is_aiming || info.is_first_person) && !health.is_dead;
+                // Icebreaker: no crosshair while an enemy is locked, the ring is the sight (X.12).
+                let show_crosshair = (info.is_aiming || info.is_first_person)
+                    && !health.is_dead
+                    && info.icebreaker_lock_target.is_none();
                 self.crosshair_opacity = Lerp::lerp(
                     self.crosshair_opacity,
                     if show_crosshair { 1.0 } else { 0.0 },

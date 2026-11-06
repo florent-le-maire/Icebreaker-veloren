@@ -62,6 +62,9 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
   une case colorée par bâtiment à sa place réelle, mise à l'échelle ; point du joueur ; personnage immobile ; U ou Échap
   ferme ; `vue_village.ron` → `taille`, `marge`, `couleur_joueur`. Testé (6 tests, client entre en jeu) ; plan,
   clic, Échap et fantôme en vol pas encore vus en jeu. — 249040251e
+- [x] **X.12 Viser la cible verrouillée** — tant qu'un ennemi est verrouillé, le réticule disparaît et les attaques
+  (arc, bâton, mêlée) partent de la main vers le cercle ; angle de caméra inchangé ; touche dans Contrôles. Testé
+  (test ciblé, client compilé) ; tir pas encore vu en jeu. — HASH
 
 ## Jalon 3 — Pillage sur la route
 
@@ -208,7 +211,8 @@ tâche pour ce qui casse.
 
 **Combat (donjon Gnarling)**
 - L.1 : nombre de coups pour tuer et mourir (cible : 3 et 3 à 4), autres armes, boss.
-- L.2 à L.4, X.6 : verrouillage W, molette, anneau centré (sinon régler `ancrage` dans `verrouillage.ron`).
+- L.2 à L.4, X.6 : verrouillage W, molette, anneau centré (sinon régler `ancrage` dans `verrouillage.ron`) ;
+  X.12 : sans réticule, flèches et coups vont au cercle.
 
 **Donjon généré**
 - F.1 : la caméra reste-t-elle dans le donjon à l'échelle 7 ? Sinon 8/8, puis F.7.

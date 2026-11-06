@@ -1,4 +1,5 @@
-// Icebreaker : verrouillage d'une cible, façon Dark Souls (touche W par défaut,
+// Icebreaker : verrouillage d'une cible, façon Dark Souls (touche W par défaut, à changer dans
+// Paramètres > Contrôles ; tant qu'un ennemi est verrouillé, les attaques partent vers le cercle,
 // `voxygen/src/session/icebreaker_lock.rs`). Distances en blocs (1 bloc ≈ 1 m).
 (
     // Distance jusqu'à laquelle on peut verrouiller un ennemi.

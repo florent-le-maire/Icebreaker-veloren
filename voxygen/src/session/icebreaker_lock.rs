@@ -1,7 +1,8 @@
 //! Icebreaker : verrouillage d'une cible, façon Dark Souls
 //! (`assets/icebreaker/verrouillage.ron`). Une touche verrouille l'ennemi le plus
 //! proche du centre de l'écran ; la caméra le suit, la molette passe à l'ennemi
-//! voisin, un cercle le marque à l'écran (HUD).
+//! voisin, un cercle le marque à l'écran (HUD) et sert de viseur :
+//! les attaques partent vers lui (X.12).
 
 use common::assets::{AssetExt, Ron};
 use serde::Deserialize;
@@ -100,6 +101,12 @@ pub fn suivante<E: Copy + PartialEq>(
         .map(|(e, _)| e)
 }
 
+/// Le point visé sur la cible, là où le HUD pose le cercle : à `ancrage` de sa `hauteur`
+/// au-dessus de ses `pieds`. Les attaques partent vers ce point tant qu'elle est verrouillée.
+pub fn point_vise(pieds: Vec3<f32>, hauteur: f32, ancrage: f32) -> Vec3<f32> {
+    pieds + Vec3::unit_z() * hauteur * ancrage
+}
+
 /// Orientation de la caméra (lacet, tangage, roulis) pour regarder `cible` depuis `origine`.
 pub fn orientation_vers(origine: Vec3<f32>, cible: Vec3<f32>, inclinaison: f32) -> Vec3<f32> {
     let d = cible - origine;
@@ -134,6 +141,14 @@ mod tests {
         // Au bout à droite, on repart de la gauche.
         assert_eq!(suivante(O, droite, &tous, 20.0, true), Some(3));
         assert_eq!(suivante(O, devant, &[devant], 20.0, true), None);
+    }
+
+    #[test]
+    fn vise_le_cercle() {
+        // Cible de 2 blocs posée en (3, 4, 1) : cercle au milieu du corps, à 2 de haut.
+        let pieds = Vec3::new(3.0, 4.0, 1.0);
+        assert_eq!(point_vise(pieds, 2.0, 0.5), Vec3::new(3.0, 4.0, 2.0));
+        assert_eq!(point_vise(pieds, 2.0, 0.0), pieds);
     }
 
     #[test]
