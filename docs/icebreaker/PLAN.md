@@ -64,7 +64,7 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
   clic, Échap et fantôme en vol pas encore vus en jeu. — 249040251e
 - [x] **X.12 Viser la cible verrouillée** — tant qu'un ennemi est verrouillé, le réticule disparaît et les attaques
   (arc, bâton, mêlée) partent de la main vers le cercle ; angle de caméra inchangé ; touche dans Contrôles. Testé
-  (test ciblé, client compilé) ; tir pas encore vu en jeu. — HASH
+  (test ciblé, client compilé) ; tir pas encore vu en jeu. — c9d929adf2
 
 ## Jalon 3 — Pillage sur la route
 
