@@ -329,3 +329,18 @@ S.2, S.3 et D.1 restent dans `PLAN.md`.
   serveur de test (VPS Hetzner CAX11, ARM64, 2 vCPU, 4 Go).
   *Fin* : `./icebreaker.sh village` démarre un serveur qui écoute sur 14100.
   Village et donjon démarrent (Git Bash + serveur Windows) ; pas encore lancé sur un vrai Linux. — df6e34479d
+
+## Jalon J — Balise lumineuse (Flo, 2026-11-06) — vu en jeu le 2026-11-06
+
+Une touche pose aux pieds une balise qui éclaire dans la couleur choisie, pour se repérer dans le donjon ; une seule
+charge, rendue 10 s après la pose ou tout de suite en ramassant une balise (E). Réglages :
+`assets/icebreaker/balise.ron` ; fiche wiki `wiki/balise.md`.
+
+- [x] **J.1 Poser une balise** — objet donné à l'arrivée en donjon, touche `<`, `/balise poser`, recharge et
+  « Balise prête », plafond de 6 au sol. Client texte ; lumière et touche pas vues en vrai client. ce1de1d86c
+- [x] **J.2 Retirer une balise (E)** — éteinte, charge rendue à qui la ramasse ; effacées quand l'emplacement se
+  vide (pas testé). Client texte. ae868b2ad1
+- [x] **J.3 Menu des couleurs** — F9 ou `/balise` : panneau à boutons, montré hors vue de dessus. Panneau reçu au
+  client texte ; affichage en jeu pas vu. 7a16e3223b
+- [x] **J.5 Utiliser la balise, voir sa recharge** — l’utiliser (sac, barre de raccourcis) la pose ; la barre la
+  grise et affiche les secondes qui restent (message `IcebreakerBaliseRecharge`). Message vu au client texte. d4d6273e8f

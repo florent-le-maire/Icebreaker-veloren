@@ -154,21 +154,6 @@ tombe, tous rentrent. Le personnage mort est perdu : il quitte le registre et il
 - [x] **T.6 Le mort est perdu pour de bon** — fiche retirée du registre, personnage supprimé de la base. Client
   texte : registre à 0/10 après la mort, plus dans la base ; texte de mort du vrai client pas vu. 186c82f80d
 
-## Jalon J — Balise lumineuse (Flo, 2026-11-06)
-
-Une touche pose aux pieds une balise qui éclaire dans la couleur choisie, pour se repérer dans le donjon ; une seule
-charge, rendue 10 s après la pose ou tout de suite en ramassant une balise (E). Réglages :
-`assets/icebreaker/balise.ron` ; fiche wiki `wiki/balise.md`.
-
-- [x] **J.1 Poser une balise** — objet donné à l'arrivée en donjon, touche `<`, `/balise poser`, recharge et
-  « Balise prête », plafond de 6 au sol. Client texte ; lumière et touche pas vues en vrai client. ce1de1d86c
-- [x] **J.2 Retirer une balise (E)** — éteinte, charge rendue à qui la ramasse ; effacées quand l'emplacement se
-  vide (pas testé). Client texte. ae868b2ad1
-- [x] **J.3 Menu des couleurs** — F9 ou `/balise` : panneau à boutons, montré hors vue de dessus. Panneau reçu au
-  client texte ; affichage en jeu pas vu. 7a16e3223b
-- [x] **J.5 Utiliser la balise, voir sa recharge** — l’utiliser (sac, barre de raccourcis) la pose ; la barre la
-  grise et affiche les secondes qui restent (message `IcebreakerBaliseRecharge`). Message vu au client texte. d4d6273e8f
-
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
 Ce qui rend l'enchaînement village → donjon → village intéressant (risque, butin, besoins du village) : règles et
@@ -234,11 +219,6 @@ tâche pour ce qui casse.
 - T.2 : barre « Mort dans N s » du joueur à terre et au-dessus du corps (position, lisibilité).
 - T.3 : modèle du sac au sol, libellé « Fouiller le sac », fouille interrompue si on bouge.
 - T.4 : texte de mort, clic pour regarder un allié (vue à la première personne), R pour rentrer en fantôme.
-
-**Balise (jalon J)**
-- J.1 : lumière de couleur visible et assez forte, modèle au sol (diamant), touche `<` ; J.2 : invite E sur la
-  balise, balises effacées quand l'emplacement se vide ; J.3 : panneau des couleurs en donjon (F9), souris libérée,
-  fermeture au clic ; J.5 : balise de la barre de raccourcis qui pose, grise et décompte pendant la recharge.
 
 **Divers**
 - M.1 : téléchargement du plugin par le vrai client.
