@@ -58,12 +58,10 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
 
 ## Jalon X — Interface du village, suite (Flo, 2026-11-06)
 
-- [ ] **X.11 Plan schématique du village** — *en cours : Veloren-village, 2026-11-06*. La vue U ne déplace plus la
-  caméra (elle cassait pour un fantôme en vol ou en pente) : panneau centré dessiné par le HUD, une case colorée par
-  bâtiment (icône, nom) à sa place réelle, l'ensemble mis à l'échelle pour tenir ; point du joueur ; le personnage ne
-  bouge pas plan ouvert ; U ou Échap ferme ; fermetures automatiques gardées ; `vue_village.ron` → `taille`, `marge`,
-  `couleur_joueur` (plus de `hauteur` ni `plan`). *Fin* : sur la place et en fantôme en vol, le même plan ; clic sur
-  l'entrepôt → son panneau.
+- [x] **X.11 Plan schématique du village** — la vue U ne déplace plus la caméra : panneau centré dessiné par le HUD,
+  une case colorée par bâtiment à sa place réelle, mise à l'échelle ; point du joueur ; personnage immobile ; U ou Échap
+  ferme ; `vue_village.ron` → `taille`, `marge`, `couleur_joueur`. Testé (6 tests, client entre en jeu) ; plan,
+  clic, Échap et fantôme en vol pas encore vus en jeu. — 249040251e
 
 ## Jalon 3 — Pillage sur la route
 
