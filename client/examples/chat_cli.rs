@@ -184,6 +184,30 @@ fn main() {
                     },
                     None => println!("Aucune cible"),
                 }
+            } else if msg == "!balises" || msg == "!ramasser" {
+                // Icebreaker : les balises lumineuses posées (couleur, distance) ; « !ramasser »
+                // ramasse la plus proche, comme E (jalon J).
+                use veloren_client::{Join, WorldExt};
+                let proche = {
+                    let ecs = client.state().ecs();
+                    let me = client.position().unwrap_or_default();
+                    let items = ecs.read_storage::<comp::PickupItem>();
+                    let lumieres = ecs.read_storage::<comp::LightEmitter>();
+                    let mut balises = (&ecs.entities(), &ecs.read_storage::<comp::Pos>(), &items, &lumieres)
+                        .join()
+                        .filter(|(_, _, i, _)| common::icebreaker_balise::est_balise(i.item()))
+                        .map(|(e, p, _, l)| (e, p.0.distance(me), l.col))
+                        .collect::<Vec<_>>();
+                    balises.sort_by(|a, b| a.1.total_cmp(&b.1));
+                    for (_, d, col) in &balises {
+                        println!("Balise à {d:.1} blocs, couleur {col:?}");
+                    }
+                    println!("{} balise(s)", balises.len());
+                    balises.first().map(|(e, _, _)| *e)
+                };
+                if msg == "!ramasser" && let Some(e) = proche {
+                    client.pick_up(e);
+                }
             } else if msg == "!revivre" {
                 // Icebreaker : la touche de réapparition après la mort (jalon T).
                 client.respawn();

@@ -117,6 +117,8 @@ pub struct InventoryManipData<'a> {
     masses: ReadStorage<'a, comp::Mass>,
     #[cfg(feature = "worldgen")]
     rtsim_actors: ReadStorage<'a, common::rtsim::ActorId>,
+    // Icebreaker : balises lumineuses (jalon J).
+    icebreaker_balises: Write<'a, crate::icebreaker_balise::IcebreakerBalises>,
 }
 
 impl ServerEvent for InventoryManipEvent {
@@ -197,6 +199,28 @@ impl ServerEvent for InventoryManipEvent {
                             ?entity_cylinder,
                             "Failed to pick up item as not within range, Uid: {}", pickup_uid
                         );
+                        continue;
+                    }
+                    // Icebreaker : une balise lumineuse au sol s'éteint au lieu d'aller dans le
+                    // sac, et la charge revient tout de suite à qui la ramasse (jalon J). Posée,
+                    // elle éclaire ; une balise du sac jetée par terre se ramasse comme un objet.
+                    if data.light_emitters.contains(item_entity)
+                        && data
+                            .items
+                            .get(item_entity)
+                            .is_some_and(|item| common::icebreaker_balise::est_balise(item.item()))
+                    {
+                        data.items.remove(item_entity);
+                        emitters.emit(DeleteEvent(item_entity));
+                        data.icebreaker_balises.retirer(item_entity);
+                        if data.icebreaker_balises.rendre_charge(entity)
+                            && let Some(client) = data.clients.get(entity)
+                        {
+                            client.send_fallible(ServerGeneral::server_msg(
+                                comp::ChatType::CommandInfo,
+                                comp::Content::Plain("Balise prête.".to_string()),
+                            ));
+                        }
                         continue;
                     }
 

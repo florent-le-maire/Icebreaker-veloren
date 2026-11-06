@@ -70,7 +70,10 @@ impl<'a> System<'a> for Sys {
                 for (sac, _, _) in (&entities, &pickup_items, &positions)
                     .join()
                     .filter(|(_, item, pos)| {
-                        common::icebreaker_mort::est_sac(item.item()) && slot.holds(pos.0.xy())
+                        // Icebreaker : les sacs des morts et les balises lumineuses (jalon J).
+                        (common::icebreaker_mort::est_sac(item.item())
+                            || common::icebreaker_balise::est_balise(item.item()))
+                            && slot.holds(pos.0.xy())
                     })
                 {
                     delete.emit(DeleteEvent(sac));
