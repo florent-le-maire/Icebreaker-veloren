@@ -46,7 +46,7 @@ reprises dans la liste « À vérifier en jeu » de `PLAN.md` : quand un point e
 - [x] **I.9 Remise à neuf** — quand le dernier membre rentre, terrain regénéré, créatures et coffres de retour.
   *Fin* : une deuxième expédition retrouve monstres et coffres.
   Traces de la zone oubliées, tronçons regénérés. Testé (client texte : créatures revenues) ; tués au combat et
-  coffres pas encore vus en jeu. — 89e9fd2fb3
+  coffres pas encore vus en jeu. — 89e9fd2fb3 Vu en jeu (Flo, 2026-11-07).
 
 ## Jalon 2 — Le village (première version)
 
