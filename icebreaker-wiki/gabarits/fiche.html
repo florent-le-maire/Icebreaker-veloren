@@ -85,7 +85,7 @@
       {% if t.id %}<a class="id" href="{{ racine | safe }}avancement/{{ t.jalon }}.html#{{ t.id }}">{{ t.id }}</a>{% endif %}
       <strong>{{ t.titre }}</strong>
       {% if t.en_cours %}<span class="badge badge-en-cours">en cours : {{ t.en_cours }}</span>{% endif %}
-      {% if t.a_voir_en_jeu %}<span class="badge badge-a-voir">à voir en jeu</span>{% endif %}
+      {% if t.a_voir_en_jeu %}<a class="badge badge-a-voir" href="{{ racine }}a-voir.html#{{ t.id }}">à voir en jeu</a>{% endif %}
       {% for c in t.commits %}{% if c.url %}<a class="hash" href="{{ c.url | safe }}" title="{{ c.sujet }}">{{ c.court }}</a>{% else %}<span class="hash">{{ c.court }}</span>{% endif %}{% endfor %}
     </div>
     {% if t.detail_html %}<div class="tache-detail">{{ t.detail_html | safe }}</div>{% endif %}

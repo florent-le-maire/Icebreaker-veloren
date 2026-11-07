@@ -48,6 +48,9 @@ static A_VOIR: LazyLock<Regex> = LazyLock::new(|| {
         .unwrap()
 });
 
+/// Icebreaker : « Vu en jeu (Flo, 2026-11-07) », écrit depuis le wiki local (W.16) : la tâche n'est plus à voir.
+static VU: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"Vu en jeu \(").unwrap());
+
 /// Lit les tâches d'un fichier Markdown ; `fichier` est son chemin relatif, gardé dans chaque tâche.
 pub fn lire(texte: &str, fichier: &str) -> Vec<Tache> {
     let mut taches = Vec::new();
@@ -99,7 +102,7 @@ fn construire(fait: bool, ligne: &str, fichier: &str, section: &str) -> Tache {
         .map(str::to_string)
         .unwrap_or_else(|| "Prototype".to_string());
     Tache {
-        a_voir_en_jeu: fait && A_VOIR.is_match(&detail),
+        a_voir_en_jeu: fait && A_VOIR.is_match(&detail) && !VU.is_match(&detail),
         id,
         jalon,
         titre,
@@ -223,6 +226,8 @@ après une seconde chute. 63f57ce830\n\
         assert_eq!(i1.hashes, vec!["13e0816046", "34dcab4f61"]);
         assert_eq!(i1.detail, "ni faune. Pas encore vérifié 5 min en jeu.");
         assert!(i1.a_voir_en_jeu);
+        let vu = lire("- [x] **I.2 Zone** — pas vu en jeu. 13e0816046 Vu en jeu (Flo, 2026-11-07).\n", "PLAN.md");
+        assert!(!vu[0].a_voir_en_jeu);
     }
 
     #[test]

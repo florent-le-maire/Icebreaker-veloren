@@ -223,13 +223,7 @@ pub fn pages(sources: &Sources, jalons: &[JalonVue]) -> Vec<Page> {
         .filter_map(|t| t.commits.iter().map(|c| &c.date).max().map(|d| (d, t)))
         .collect();
     recentes.sort_by(|a, b| b.0.cmp(a.0));
-    let a_verifier = sources
-        .fichiers
-        .iter()
-        .find(|(f, _)| f == "PLAN.md")
-        .and_then(|(_, c)| taches::extraire_section(c, "## À vérifier en jeu"))
-        .map(|s| markdown::rendre(s, "PLAN.md").html)
-        .unwrap_or_default();
+    let a_verifier = a_verifier_html_de(sources);
     let notres = crate::commits::notres(sources.commits);
     let accueil = Accueil {
         jalons,
@@ -238,7 +232,7 @@ pub fn pages(sources: &Sources, jalons: &[JalonVue]) -> Vec<Page> {
         nb_a_voir: jalons.iter().map(|j| j.nb_a_voir).sum(),
         nb_commits: notres.len(),
         recentes: recentes.iter().take(8).map(|(_, t)| *t).collect(),
-        a_verifier_html: a_verifier,
+        a_verifier_html: a_verifier.clone(),
         date: notres.iter().map(|c| c.date.clone()).max().unwrap_or_default(),
     };
     pages.push(Page {
@@ -271,7 +265,55 @@ pub fn pages(sources: &Sources, jalons: &[JalonVue]) -> Vec<Page> {
             images: Vec::new(),
         });
     }
+    pages.push(page_a_voir(jalons, a_verifier));
     pages
+}
+
+#[derive(Serialize)]
+struct JalonAVoir<'a> {
+    lettres: &'a str,
+    titre: &'a str,
+    url: &'a str,
+    taches: Vec<&'a TacheVue>,
+}
+
+/// La liste « À vérifier en jeu » de `PLAN.md`, rendue.
+fn a_verifier_html_de(sources: &Sources) -> String {
+    sources
+        .fichiers
+        .iter()
+        .find(|(f, _)| f == "PLAN.md")
+        .and_then(|(_, c)| taches::extraire_section(c, "## À vérifier en jeu"))
+        .map(|s| markdown::rendre(s, "PLAN.md").html)
+        .unwrap_or_default()
+}
+
+/// Icebreaker : la page « À voir en jeu » (W.16) : les tâches faites pas encore vues dans le vrai client, par jalon,
+/// avec en mode saisie « Vu, ça marche » et « Ça casse ».
+fn page_a_voir(jalons: &[JalonVue], a_verifier_html: String) -> Page {
+    let groupes: Vec<JalonAVoir> = jalons
+        .iter()
+        .map(|j| JalonAVoir {
+            lettres: &j.lettres,
+            titre: &j.titre,
+            url: &j.url,
+            taches: j.taches.iter().filter(|t| t.a_voir_en_jeu).collect(),
+        })
+        .filter(|g| !g.taches.is_empty())
+        .collect();
+    let nb: usize = groupes.iter().map(|g| g.taches.len()).sum();
+    Page {
+        source: "a-voir".to_string(),
+        url: "a-voir.html".to_string(),
+        rubrique: Rubrique::Reperes,
+        titre: "À voir en jeu".to_string(),
+        html: String::new(),
+        gabarit: "a-voir.html",
+        extra: serde_json::json!({ "jalons": groupes, "nb": nb, "a_verifier_html": a_verifier_html }),
+        ordre: 0,
+        icone: None,
+        images: Vec::new(),
+    }
 }
 
 #[cfg(test)]
@@ -317,5 +359,8 @@ mod tests {
         let pages = pages(&sources, &vues);
         assert!(pages.iter().any(|p| p.url == "index.html" && p.gabarit == "accueil.html"));
         assert!(pages.iter().any(|p| p.url == "avancement/T.html"));
+        let a_voir = pages.iter().find(|p| p.url == "a-voir.html").expect("page à voir en jeu");
+        let nb_a_voir: usize = vues.iter().map(|j| j.nb_a_voir).sum();
+        assert_eq!(a_voir.extra["nb"], nb_a_voir);
     }
 }

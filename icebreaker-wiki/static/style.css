@@ -314,6 +314,8 @@ table.reglages td.commentaire { color: var(--texte-2); }
 .todo-texte { margin-top: .25rem; }
 .bouton-ligne { display: flex; gap: .4rem; margin-top: .45rem; }
 a.tuile { color: inherit; text-decoration: none; }
+a.badge { text-decoration: none; }
+a.badge-a-voir:hover { border-color: var(--alerte); }
 a.tuile:hover { border-color: var(--alerte); }
 
 /* Recherche */

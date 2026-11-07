@@ -11,7 +11,8 @@ Le projet principal, sa vision et sa méthode sont dans le dépôt `../Icebreake
 - Début de session : traiter la boîte de l'équipe, remplie depuis le wiki local. Une question de `QUESTIONS.md` qui porte
   une `*Réponse de … (date)*` passe dans « Tranché » (date, fichier où la règle est écrite) après report dans le plan
   ou le design ; une entrée « Ouvert » de `A-FAIRE.md` devient tâche, question ou idée (avec l'accord de l'équipe),
-  puis passe dans « Pris en compte » avec `→ <où>`.
+  puis passe dans « Pris en compte » avec `→ <où>` ; une tâche marquée « Vu en jeu (…) » sort de la liste « À vérifier en
+  jeu » de `PLAN.md`.
 - Un commit par tâche, message en français, détail dans le corps ; cocher la tâche avec le hash. Ce qui n'est pas
   vérifié en jeu s'ajoute aussi à « À vérifier en jeu » de `PLAN.md` ; un jalon fini part dans `HISTORIQUE.md`.
 - Nos changements restent **regroupés et repérables** (commentaire « Icebreaker : … ») pour pouvoir suivre les

@@ -104,10 +104,11 @@ impl Rubrique {
 }
 
 /// Les fichiers repères, dans l'ordre de la barre latérale, avec leur nom court.
-const REPERES: [(&str, &str); 9] = [
+const REPERES: [(&str, &str); 10] = [
     ("", "Tableau de bord"),
     ("README.md", "Lire les docs"),
     ("PLAN.md", "Plan"),
+    ("a-voir", "À voir en jeu"),
     ("HISTORIQUE.md", "Historique"),
     ("QUESTIONS.md", "Questions"),
     ("A-FAIRE.md", "À faire"),

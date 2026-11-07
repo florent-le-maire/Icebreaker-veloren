@@ -29,7 +29,7 @@
       {% if t.id %}<span class="id">{{ t.id }}</span>{% endif %}
       <strong>{{ t.titre }}</strong>
       {% if t.en_cours %}<span class="badge badge-en-cours">en cours : {{ t.en_cours }}</span>{% endif %}
-      {% if t.a_voir_en_jeu %}<span class="badge badge-a-voir">à voir en jeu</span>{% endif %}
+      {% if t.a_voir_en_jeu %}<a class="badge badge-a-voir" href="{{ racine }}a-voir.html#{{ t.id }}">à voir en jeu</a>{% endif %}
     </div>
     {% if t.detail_html %}<div class="tache-detail">{{ t.detail_html | safe }}</div>{% endif %}
     {% for c in t.commits %}

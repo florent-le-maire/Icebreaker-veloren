@@ -13,7 +13,7 @@
 
 <div class="tuiles">
   <div class="tuile"><div class="tuile-chiffre">{{ a.nb_faites }}<span class="tuile-sur">/{{ a.nb_total }}</span></div><div class="tuile-nom">tâches faites</div><div class="jauge jauge-tuile"><div class="jauge-plein" style="width: {{ (100 * a.nb_faites / a.nb_total) if a.nb_total else 0 }}%"></div></div></div>
-  <div class="tuile tuile-attention"><div class="tuile-chiffre tuile-alerte">{{ a.nb_a_voir }}</div><div class="tuile-nom">à voir dans le vrai client</div></div>
+  <a class="tuile tuile-attention" href="a-voir.html"><div class="tuile-chiffre tuile-alerte">{{ a.nb_a_voir }}</div><div class="tuile-nom">à voir dans le vrai client</div></a>
   {% if a.nb_reponses %}<a class="tuile tuile-attention" href="QUESTIONS.html"><div class="tuile-chiffre tuile-alerte">{{ a.nb_reponses }}</div><div class="tuile-nom">réponses à traiter par l'agent</div></a>{% endif %}
   {% if a.nb_todos %}<a class="tuile tuile-attention" href="A-FAIRE.html"><div class="tuile-chiffre tuile-alerte">{{ a.nb_todos }}</div><div class="tuile-nom">todos ouverts</div></a>{% endif %}
   <div class="tuile"><div class="tuile-chiffre">{{ a.jalons | length }}</div><div class="tuile-nom">jalons</div></div>
@@ -65,7 +65,7 @@
 {% for t in a.recentes %}
   <li><a href="avancement/{{ t.jalon }}.html#{{ t.id }}">{% if t.id %}<span class="id">{{ t.id }}</span> {% endif %}{{ t.titre }}</a>
     {% if t.commits %}<span class="date">{{ t.commits[0].date }}</span>{% endif %}
-    {% if t.a_voir_en_jeu %}<span class="badge badge-a-voir">à voir en jeu</span>{% endif %}</li>
+    {% if t.a_voir_en_jeu %}<a class="badge badge-a-voir" href="{{ racine }}a-voir.html#{{ t.id }}">à voir en jeu</a>{% endif %}</li>
 {% endfor %}
 </ul>
 </section>

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block contenu %}
+{% set v = extra %}
+<article class="article article-large">
+<header class="entete-page">
+  <div class="entete-texte">
+    <p class="fil">Repères</p>
+    <h1>À voir en jeu</h1>
+    <p class="resume">Les tâches faites qui n'ont été vérifiées qu'en test ou au client texte : à parcourir dans le vrai client.</p>
+  </div>
+</header>
+<div class="tuiles">
+  <div class="tuile tuile-attention"><div class="tuile-chiffre tuile-alerte">{{ v.nb }}</div><div class="tuile-nom">tâches à voir dans le vrai client</div></div>
+</div>
+{% if edition %}<p class="saisie-note">Saisie active : « Vu, ça marche » ajoute « Vu en jeu (nom, date) » à la tâche dans son plan (commit) ; « Ça casse » ajoute ton texte aux todos (<code>A-FAIRE.md</code>), l'agent en fera une tâche de correction.</p>{% endif %}
+
+{% for j in v.jalons %}
+<h2><a href="{{ j.url | safe }}">{{ j.lettres }} · {{ j.titre }}</a></h2>
+<ol class="questions">
+{% for t in j.taches %}
+  <li class="question" id="{{ t.id or '' }}">
+    <div class="question-tete">{% if t.id %}<span class="id">{{ t.id }}</span>{% endif %} <strong>{{ t.titre }}</strong> <span class="badge badge-sobre">{{ t.fichier }}</span></div>
+    <div class="question-texte">{{ t.detail_html | safe }}</div>
+    {% if edition and t.id %}<form class="saisie" method="post" action="/en-jeu/vu" accept-charset="utf-8">
+      <input type="hidden" name="id" value="{{ t.id }}">
+      <input type="hidden" name="fichier" value="{{ t.fichier }}">
+      <input type="hidden" name="titre" value="{{ t.titre }}">
+      <textarea name="texte" rows="1" placeholder="Commentaire (facultatif pour « Vu », obligatoire pour « Ça casse »)…"></textarea>
+      <div class="saisie-boutons">
+        <button type="submit">Vu, ça marche</button>
+        <button type="submit" class="bouton-danger" formaction="/en-jeu/casse">Ça casse</button>
+      </div>
+    </form>{% endif %}
+  </li>
+{% endfor %}
+</ol>
+{% endfor %}
+
+{% if v.a_verifier_html %}
+<details class="detail-design">
+<summary><svg class="ic chevron" aria-hidden="true"><use href="#i-chevron"/></svg> <strong>La liste « À vérifier en jeu » du plan</strong></summary>
+<div style="padding: 0 1rem 1rem"><p class="etage-sous">Dans <code>PLAN.md</code>, regroupée par lieu ; l'agent la met à jour d'après ce qui est vu.</p>
+<div class="a-verifier-liste">{{ v.a_verifier_html | safe }}</div></div>
+</details>
+{% endif %}
+<footer class="source">Sources : tâches de <code>PLAN.md</code>, <code>HISTORIQUE.md</code>, <code>PLAN-*.md</code> dont le détail dit « pas vu en jeu »</footer>
+</article>
+{% endblock %}

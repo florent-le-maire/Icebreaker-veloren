@@ -196,7 +196,13 @@ fn servir(mut flux: TcpStream, etat: &Etat) -> Result<()> {
     match requete.methode.as_str() {
         "GET" | "HEAD" => servir_fichier(&mut flux, etat, chemin),
         "POST" => {
-            let retour = if chemin.starts_with("/todo/") { "/A-FAIRE.html" } else { "/QUESTIONS.html" };
+            let retour = if chemin.starts_with("/todo/") {
+                "/A-FAIRE.html"
+            } else if chemin.starts_with("/en-jeu/") {
+                "/a-voir.html"
+            } else {
+                "/QUESTIONS.html"
+            };
             if let Some(refus) = &etat.refus {
                 return page_erreur(&mut flux, "403 Forbidden", refus, retour);
             }
@@ -237,8 +243,16 @@ fn saisir(etat: &Etat, chemin: &str, champs: &HashMap<String, String>) -> Result
     let nom = etat.nom.as_str();
     let (fichier, vers) = if chemin.starts_with("/questions/") {
         ("QUESTIONS.md", format!("/QUESTIONS.html#{}", champ("numero")))
-    } else if chemin.starts_with("/todo/") {
-        ("A-FAIRE.md", "/A-FAIRE.html".to_string())
+    } else if chemin.starts_with("/todo/") || chemin == "/en-jeu/casse" {
+        ("A-FAIRE.md", if chemin == "/en-jeu/casse" { "/a-voir.html" } else { "/A-FAIRE.html" }.to_string())
+    } else if chemin == "/en-jeu/vu" {
+        // Seulement les plans : `PLAN.md`, `HISTORIQUE.md`, `PLAN-*.md`.
+        let f = champ("fichier");
+        let plan = f == "PLAN.md" || f == "HISTORIQUE.md" || (f.starts_with("PLAN-") && f.ends_with(".md"));
+        if !plan || f.contains(['/', '\\']) {
+            bail!("fichier de plan refusé : {f}");
+        }
+        (f, "/a-voir.html".to_string())
     } else {
         bail!("adresse inconnue : {chemin}");
     };
@@ -276,6 +290,21 @@ fn saisir(etat: &Etat, chemin: &str, champs: &HashMap<String, String>) -> Result
             edition::supprimer_todo(&avant, index()?, champ("texte"))?,
             format!("Icebreaker wiki : todo supprimé ({nom})\n\n{}", resume(champ("texte"))),
         ),
+        "/en-jeu/vu" => (
+            edition::marquer_vu(&avant, champ("id"), champ("texte"), nom, &date)?,
+            format!("Icebreaker wiki : {} vu en jeu ({nom})\n\n{}", champ("id"), champ("texte").trim()),
+        ),
+        "/en-jeu/casse" => {
+            let texte = champ("texte").trim();
+            if texte.is_empty() {
+                bail!("dire ce qui casse dans le commentaire");
+            }
+            let entree = format!("[en jeu] {} {} : {texte}", champ("id"), champ("titre"));
+            (
+                edition::ajouter_todo(&avant, &entree, nom, &date)?,
+                format!("Icebreaker wiki : {} casse en jeu ({nom})\n\n{texte}", champ("id")),
+            )
+        },
         _ => bail!("adresse inconnue : {chemin}"),
     };
     std::fs::write(&chemin_fichier, &apres).with_context(|| format!("écriture de {relatif}"))?;

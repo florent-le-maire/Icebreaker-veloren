@@ -214,6 +214,46 @@ pub fn supprimer_todo(texte: &str, index: usize, attendu: &str) -> Result<String
     Ok(joindre(&l, fin))
 }
 
+// Icebreaker : ce qui est vu dans le vrai client (W.16).
+
+/// Ajoute « Vu en jeu (nom, date) » (avec le commentaire s'il y en a un) à la fin de la tâche cochée `id` d'un plan ;
+/// la tâche ne compte plus dans « à voir dans le vrai client ».
+pub fn marquer_vu(texte: &str, id: &str, commentaire: &str, nom: &str, date: &str) -> Result<String> {
+    let valide = id.split_once('.').is_some_and(|(lettres, n)| {
+        !lettres.is_empty()
+            && lettres.bytes().all(|b| b.is_ascii_uppercase())
+            && !n.is_empty()
+            && n.bytes().all(|b| b.is_ascii_digit())
+    });
+    if !valide {
+        bail!("identifiant de tâche invalide : {id}");
+    }
+    let (mut l, fin) = lignes(texte);
+    let tete = format!("- [x] **{id} ");
+    let Some(debut) = l.iter().position(|x| x.starts_with(&tete)) else {
+        bail!("tâche {id} introuvable (ou pas cochée) dans ce fichier");
+    };
+    let mut apres = debut + 1;
+    while apres < l.len() && l[apres].starts_with("  ") && !l[apres].trim_start().starts_with("- ") {
+        apres += 1;
+    }
+    let commentaire = commentaire.split_whitespace().collect::<Vec<_>>().join(" ");
+    let note = if commentaire.is_empty() {
+        format!("Vu en jeu ({nom}, {date}).")
+    } else {
+        format!("Vu en jeu ({nom}, {date}) : {}.", commentaire.trim_end_matches('.'))
+    };
+    let derniere = apres - 1;
+    let (retrait1, contenu) = if derniere == debut {
+        ("", l[derniere].clone())
+    } else {
+        ("  ", l[derniere].trim().to_string())
+    };
+    let nouvelles = couper(&format!("{contenu} {note}"), retrait1, "  ");
+    l.splice(derniere..apres, nouvelles);
+    Ok(joindre(&l, fin))
+}
+
 /// La date du jour (UTC) au format `AAAA-MM-JJ`.
 pub fn aujourd_hui() -> String {
     let secondes = SystemTime::now()
@@ -336,6 +376,25 @@ mod tests {
         .unwrap();
         let t = ajouter_todo(&texte, "essai", "Flo", "2026-11-07").unwrap();
         assert_eq!(crate::todo::lire(&t).0.len(), crate::todo::lire(&texte).0.len() + 1);
+    }
+
+    #[test]
+    fn vu_en_jeu() {
+        let plan = "## Jalon X\r\n\r\n- [x] **X.1 Vue U** — fermée au départ ; pas vu en jeu.\r\n  Suite du détail. 6107c3c00d\r\n- [x] **X.11 Plan** — pas vu en jeu. c9d929adf2\r\n- [ ] **X.2 Reste** — à faire.\r\n";
+        let t = marquer_vu(plan, "X.1", "", "Flo", "2026-11-07").unwrap();
+        assert!(t.contains("  Suite du détail. 6107c3c00d Vu en jeu (Flo, 2026-11-07).\r\n- [x] **X.11"));
+        let taches = crate::taches::lire(&t, "PLAN.md");
+        assert!(!taches[0].a_voir_en_jeu);
+        assert!(taches[1].a_voir_en_jeu);
+        let t = marquer_vu(plan, "X.11", "marche à deux.", "Flo", "2026-11-07").unwrap();
+        assert!(t.contains("c9d929adf2 Vu en jeu (Flo, 2026-11-07) : marche à deux.\r\n"));
+        assert!(!crate::taches::lire(&t, "PLAN.md")[1].a_voir_en_jeu);
+        let longue = marquer_vu(plan, "X.11", &"mot ".repeat(40), "Flo", "2026-11-07").unwrap();
+        assert!(longue.lines().all(|x| x.trim_end_matches('\r').chars().count() <= LARGEUR));
+        assert_eq!(crate::taches::lire(&longue, "PLAN.md").len(), 3);
+        assert!(marquer_vu(plan, "X.2", "", "Flo", "2026-11-07").is_err()); // pas cochée
+        assert!(marquer_vu(plan, "X.9", "", "Flo", "2026-11-07").is_err());
+        assert!(marquer_vu(plan, "x.1", "", "Flo", "2026-11-07").is_err());
     }
 
     #[test]
