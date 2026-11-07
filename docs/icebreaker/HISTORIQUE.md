@@ -87,7 +87,7 @@ reprises dans la liste « À vérifier en jeu » de `PLAN.md` : quand un point e
   on rejoint le village par le menu. Testé (bilan, commande reçue) ; pas encore en jeu avec du butin. — 046140d4fb
 - [x] **V.7 Maison « Départ »** — 5e bâtiment, « Chef d'expédition » à la porte : sur E, les destinations de
   `lieux.ron` (sauf le village). Village de départ à 7 maisons. Testé (démarrage, place du chef) ; dialogue pas
-  encore vu en jeu. — fc773b6a5e
+  encore vu en jeu. — fc773b6a5e Vu en jeu (Flo, 2026-11-07).
 - [x] **V.8 Voyage automatique** — choisir une destination fait partir le joueur : le serveur village lance le
   serveur du lieu s'il ne tourne pas, le jeu s'y connecte seul ; `/rentrer` ramène au village de même.
   *Fin* : village → donjon → `/rentrer` → village sans passer par le menu.
