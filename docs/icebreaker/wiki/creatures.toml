@@ -1,0 +1,46 @@
+# Icebreaker : rubrique « Créatures » du wiki (W.15).
+#
+# Les créatures des donjons, de la grotte et les classes jouables sont lues dans `assets/icebreaker/` (generation.ron,
+# grottes/grotte.ron, classes.ron) et leurs noms dans `assets/voxygen/i18n/fr/name.ftl`. Ce fichier ne garde que ce
+# que les données ne disent pas : les PNJ du village (posés par le code du serveur) et une phrase par créature.
+#
+# Capture d'une créature : `docs/icebreaker/wiki/images/creatures/<identifiant>.png` ; l'identifiant est affiché
+# sur sa carte du wiki tant que la capture manque.
+
+# Les PNJ du village. icone : chemin sous `assets/`.
+[[pnj]]
+id = "intendant"
+nom = "Intendant"
+role = "Marchand de l'intendance"
+icone = "voxygen/element/animation/loaders/coins1.png"
+entite = "common.entity.village.merchant"
+note = "Vend les fournitures de base et des pièces contre les trouvailles des expéditions (server/src/icebreaker_services.rs)."
+
+[[pnj]]
+id = "infirmier"
+nom = "Infirmier"
+role = "Soigneur de l'infirmerie"
+icone = "voxygen/element/de_buffs/buff_campfire_heal_0.png"
+note = "Soigne contre quelques pièces de la caisse ; le prix est dans les réglages du village."
+
+[[pnj]]
+id = "recrue"
+nom = "Recrue de la charrette"
+role = "Personnage à engager"
+icone = "voxygen/element/ui/map/buttons/character.png"
+note = "Attend devant la charrette, avec l'équipement de sa classe ; engagée, elle entre au registre et tout le monde peut la jouer."
+
+[[pnj]]
+id = "habitant"
+nom = "Habitants"
+role = "Gardes, marchands, aventuriers, villageois"
+icone = "voxygen/element/ui/map/buttons/town.png"
+note = "Les habitants de Veloren, deux par maison bâtie : plus le village grandit, plus il est peuplé."
+
+# Une phrase par créature, par chemin d'entité (sinon la phrase de son rôle).
+[notes]
+"common.entity.dungeon.gnarling.harvester" = "Le boss des gnarlings : un épouvantail géant qui moissonne tout ce qui passe à portée de faux."
+"common.entity.dungeon.adlet.yeti" = "Le boss des adlets : une bête des glaces énorme, qui frappe large et fort."
+"common.entity.dungeon.cultist.mindflayer" = "Le boss des cultistes : un mage qui invoque et téléporte, à combattre en restant mobile."
+"common.entity.dungeon.gnarling.chieftain" = "Le chef gnarling, bâton en main : il lance des sorts et appelle ses totems."
+"common.entity.wild.aggressive.cave_troll" = "Le chef de la grotte aux champignons : lent, mais chaque coup compte."

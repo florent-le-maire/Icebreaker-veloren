@@ -225,6 +225,7 @@ tâche pour ce qui casse.
 **Divers**
 - M.1 : téléchargement du plugin par le vrai client.
 - S.2 / S.3 : le zip du client chez un pote (autre réseau, PC sans outils de dev) ; un départ en expédition sur le VPS.
+- W.15 : prendre en jeu les captures des créatures du wiki (rubrique Créatures, nom du fichier sur chaque carte).
 
 ## Plus tard (à découper le moment venu)
 

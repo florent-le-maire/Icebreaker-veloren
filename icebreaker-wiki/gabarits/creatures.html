@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block contenu %}
+{% set c = extra %}
+<article class="article article-large">
+<header class="entete-page">
+  <div class="entete-icone"><img src="{{ racine | safe }}assets/{{ c.icone | safe }}" alt=""></div>
+  <div class="entete-texte">
+    <p class="fil">Créatures</p>
+    <h1>{{ c.titre }}</h1>
+    <p class="resume">{{ c.resume }} <span class="chiffre">{{ c.nombre }}</span></p>
+  </div>
+</header>
+{% for g in c.groupes %}
+<h2>{{ g.titre }}</h2>
+<div class="creatures">
+  {% for k in g.cartes %}
+  <section class="creature" id="{{ k.id }}">
+    <div class="creature-image{% if not k.capture %} creature-sans-capture{% endif %}">
+      {% if k.capture %}
+      <a class="zoom" href="{{ racine | safe }}{{ k.capture | safe }}"><img src="{{ racine | safe }}{{ k.capture | safe }}" alt="{{ k.nom }}" loading="lazy"></a>
+      {% else %}
+      <img class="pixel creature-icone" src="{{ racine | safe }}assets/{{ k.icone | safe }}" alt="">
+      {% endif %}
+      <img class="pixel creature-role-icone" src="{{ racine | safe }}assets/{{ k.icone_role | safe }}" alt="" title="{{ k.role }}">
+    </div>
+    <div class="creature-texte">
+      <h3><a href="#{{ k.id }}">{{ k.nom }}</a></h3>
+      <p class="creature-badges"><span class="etiquette">{{ k.role }}</span>{% for l in k.lieux %}<span class="etiquette etiquette-lieu">{{ l }}</span>{% endfor %}</p>
+      {% if k.note_html %}<p class="creature-note">{{ k.note_html | safe }}</p>{% endif %}
+      {% if k.entite %}<p class="creature-entite"><code>{{ k.entite }}</code></p>{% endif %}
+      {% if k.capture_a_deposer %}<p class="creature-capture"><span class="etiquette etiquette-chaud">Capture à prendre</span> <code title="{{ k.capture_a_deposer }}">{{ k.id }}.png</code></p>{% endif %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endfor %}
+<footer class="source">Lu dans <code>assets/icebreaker/donjons/generation.ron</code>, <code>grottes/grotte.ron</code>, <code>classes.ron</code>, <code>assets/voxygen/i18n/fr/name.ftl</code> et <code>docs/icebreaker/wiki/creatures.toml</code>. Une capture se dépose dans <code>{{ c.dossier_captures }}</code>.</footer>
+</article>
+{% endblock %}

@@ -78,7 +78,7 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
 - Wiki de l'équipe (jalon W, `docs/icebreaker/PLAN-WIKI.md`) : `cargo run -p icebreaker-wiki` écrit `site/` (ouvrir
   `site/index.html`) depuis `docs/icebreaker/` et `assets/icebreaker/` ; la vulgarisation s'écrit dans
   `docs/icebreaker/wiki/<domaine>.md` (en-tête TOML : design, réglages, tâches, systèmes, chiffres, icone, schema) ;
-  pas d'émoji ; les captures d'écran vont dans `docs/icebreaker/wiki/images/` (`![légende](images/x.png)`). Sur le VPS :
+  pas d'émoji ; les captures d'écran vont dans `docs/icebreaker/wiki/images/` (`![légende](images/x.png)`), celles des créatures dans `images/creatures/<id>.png`. Sur le VPS :
   `MOT_DE_PASSE=… icebreaker-serveur/deployer-wiki.sh root@<ip>` (Caddy, mot de passe). En local avec saisie :
   `cargo run -p icebreaker-wiki -- serve` depuis `Veloren-test` (http://localhost:8095, `--nom Sayanel`) : répondre aux
   questions et noter des todos, chaque saisie fait un commit sur master.

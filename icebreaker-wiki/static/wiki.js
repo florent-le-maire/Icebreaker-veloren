@@ -111,7 +111,7 @@
 // Icebreaker : zoom des captures d'écran (W.10). Clic sur l'image : plein écran ; clic ou Échap : retour.
 (function () {
   "use strict";
-  document.querySelectorAll(".capture a.zoom").forEach(function (lien) {
+  document.querySelectorAll(".capture a.zoom, .creature a.zoom").forEach(function (lien) {
     lien.addEventListener("click", function (e) {
       e.preventDefault();
       var image = lien.querySelector("img");
