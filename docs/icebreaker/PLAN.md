@@ -82,11 +82,11 @@ expédition. Les paramètres de mission restent ceux du lanceur (`ICEBREAKER_DON
 
 - [x] **I.10 Mission et dormeurs par emplacement** — chaque emplacement (et le lieu seul) a sa mission et ses
   dormeurs. Testé (2 tests ciblés, campagne démarre : 3 missions) ; annonce et dormeurs pas vus en jeu. — 14fd998fa4
-- [ ] **I.11 Plan remplaçable dans le monde** — le plot du donjon généré et de la grotte devient remplaçable
-  (`regenerate_slot`), dans une emprise maximale réservée à la génération du monde.
-  — *en cours : Veloren-instances, 2026-11-07*
-- [ ] **I.12 Plan neuf à chaque expédition** — la remise à neuf (I.9) et le premier départ tirent un nouveau plan ;
-  arrivée, mission et dormeurs recalculés.
+- [x] **I.11 Plan remplaçable dans le monde** — plan du donjon généré et de la grotte remplaçable
+  (`regenerate_slot`) dans une emprise réservée (`generation.ron` → `placement.emprise`, `grotte.ron` → `emprise`).
+  Testé (2 tests ciblés, exemples sans problème, campagne démarre). — 7e6358e554
+- [ ] **I.12 Plan neuf à chaque expédition** — au lancement du serveur et à chaque remise à neuf (I.9), un nouveau
+  plan ; arrivée, mission et dormeurs recalculés. — *en cours : Veloren-instances, 2026-11-07*
 
 ## Jalon 3 — Pillage sur la route
 
