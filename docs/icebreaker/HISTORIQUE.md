@@ -214,7 +214,7 @@ Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (j
 - [x] **F.3 Donjon plus grand** — `sizes` : moyen chemin (7, 9), branches (3, 5), boucles (1, 2) ; grand chemin (9, 12),
   branches (5, 8), étages (3, 4) ; `search_limit` et `margin` inchangés (ça suffit). Mesuré : 13,7 salles en moyenne en
   moyen (test, 40 graines, au moins 10 chacun) ; assemblage vert sur 100 graines ; exemple sur 5 graines ; serveur
-  Genere lancé (graine 7). Pas encore vu en jeu. — 198820aeea
+  Genere lancé (graine 7). Pas encore vu en jeu. — 198820aeea Vu en jeu (Flo, 2026-11-07).
 - [x] **F.4 Plus d'ennemis** — `population` relevée (base ×2 environ, `default_density` reste « peu »), couloirs
   peuplés (`corridors` : un guetteur par tranche de 10 cases, jamais sur un escalier, un palier ni devant une porte),
   entrée 0–1 guetteur, sorte `beast` pour les nids (mandragora, hound, frostfang). Mesuré (test, 40 graines) : 42,5
