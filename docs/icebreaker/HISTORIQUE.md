@@ -100,7 +100,7 @@ reprises dans la liste « À vérifier en jeu » de `PLAN.md` : quand un point e
   en jeu. — 8a708aeddc
 - [x] **V.10 Panneaux à boutons** (menu village en vue U, Flo) — plusieurs boutons par panneau, panneau redemandé
   chaque seconde ; Caisse : verser 10/50/100/tout (`/caisse`) ; Infirmerie : se soigner (`/soigner`). Testé (client
-  texte) ; boutons pas encore vus en jeu. — c8fb316e52
+  texte) ; boutons pas encore vus en jeu. — c8fb316e52 Vu en jeu (Flo, 2026-11-07).
 - [x] **V.11 Départ depuis la vue U** — boutons du chef (destination, rejoindre, prêt/attendre, se désinscrire) ;
   liste des inscrits (et qui est prêt) à gauche, en direct, pour tout le village ; inscrit tant qu'on est au village.
   Commande `/expedition`. Testé (client texte : inscription, prêt, départ, retour) ; boutons et liste pas encore vus
