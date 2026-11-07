@@ -42,7 +42,7 @@ reprises dans la liste « À vérifier en jeu » de `PLAN.md` : quand un point e
   ramène sur la place ; emplacement occupé tant qu'un membre y est.
   *Fin* : village → donjon → village sans changer de serveur.
   Pas de place libre : on attend. Testé (logique ; `/rentrer` depuis un emplacement au client texte) ; départ par
-  le chef pas encore vu en jeu. — e1cdcaee54
+  le chef pas encore vu en jeu. — e1cdcaee54 Vu en jeu (Flo, 2026-11-07).
 - [x] **I.9 Remise à neuf** — quand le dernier membre rentre, terrain regénéré, créatures et coffres de retour.
   *Fin* : une deuxième expédition retrouve monstres et coffres.
   Traces de la zone oubliées, tronçons regénérés. Testé (client texte : créatures revenues) ; tués au combat et
