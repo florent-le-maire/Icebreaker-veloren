@@ -84,9 +84,10 @@ expédition. Les paramètres de mission restent ceux du lanceur (`ICEBREAKER_DON
   dormeurs. Testé (2 tests ciblés, campagne démarre : 3 missions) ; annonce et dormeurs pas vus en jeu. — 14fd998fa4
 - [x] **I.11 Plan remplaçable dans le monde** — plan du donjon généré et de la grotte remplaçable
   (`regenerate_slot`) dans une emprise réservée (`generation.ron` → `placement.emprise`, `grotte.ron` → `emprise`).
-  Testé (2 tests ciblés, exemples sans problème, campagne démarre). — 7e6358e554
-- [ ] **I.12 Plan neuf à chaque expédition** — au lancement du serveur et à chaque remise à neuf (I.9), un nouveau
-  plan ; arrivée, mission et dormeurs recalculés. — *en cours : Veloren-instances, 2026-11-07*
+  Testé (2 tests ciblés, exemples sans problème, campagne démarre). — 5711768528
+- [x] **I.12 Plan neuf à chaque expédition** — au lancement du serveur et à chaque remise à neuf (I.9), un nouveau
+  plan ; arrivée, mission et dormeurs recalculés. Testé (client texte : entrée puis sortie, deux fois, deux plans
+  neufs) ; nouveau plan dessiné pas vu dans le vrai client. — ee8758bfcf
 
 ## Jalon 3 — Pillage sur la route
 
@@ -207,7 +208,9 @@ tâche pour ce qui casse.
   occupé tant qu'un membre y est.
 - I.9 remise à neuf : monstres tués au combat et coffres ouverts de retour à la deuxième expédition.
 - I.10 : en campagne, tuer le chef d'un donjon généré ou de la grotte annonce « Mission accomplie » ; les dormeurs
-  d'un emplacement Genere dorment.
+  d'un emplacement Genere dorment (des « Zzz » vus au client texte).
+- I.12 : deux expéditions de suite vers « Genere » ou « Grotte » donnent deux plans différents, dessinés entiers
+  (aucun reste de l'ancien, pas de tronçon vide), arrivée devant l'entrée.
 - V.2 entrepôt : dépôt par un joueur, retrait par un autre après redémarrage ; V.12 fenêtre d'échange à distance.
 - V.4 : acheter une potion à l'intendant, se faire soigner (60 or).
 - V.5 : bilan au retour avec du vrai butin.
