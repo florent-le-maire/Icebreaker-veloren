@@ -2,11 +2,13 @@
 // Une touche (« Poser une balise ») pose aux pieds du joueur une balise qui éclaire dans sa couleur, pour se
 // repérer dans le donjon. Une seule charge : elle revient `delai_recharge` secondes après la pose, ou tout de
 // suite quand on ramasse une balise au sol (E, n'importe quel joueur). Au-delà de `max_au_sol` balises posées
-// par un joueur, la plus ancienne s'éteint (le client n'affiche que les 20 lumières les plus proches).
+// par un joueur, ou de `max_total` sur tout le serveur (tous joueurs confondus), la plus ancienne s'éteint
+// (le client n'affiche que les 20 lumières les plus proches).
 // `couleurs` : (nom sans espace, (rouge, vert, bleu) de 0 à 255) ; la première est celle par défaut.
 (
     delai_recharge: 10.0,
-    max_au_sol: 6,
+    max_au_sol: 200,
+    max_total: 200,
     force: 4.0,
     vacillement: 0.3,
     couleurs: [

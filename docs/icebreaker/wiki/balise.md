@@ -20,6 +20,10 @@ unite = "s"
 [[chiffre]]
 cle = "max_au_sol"
 nom = "Balises au sol par joueur"
+
+[[chiffre]]
+cle = "max_total"
+nom = "Balises au sol en tout"
 +++
 
 ## La règle
@@ -33,7 +37,8 @@ La balise n'a **qu'une charge**. Après une pose, il faut attendre dix secondes 
 dit « Balise prête » quand c'est possible. Ramasser une balise posée (E) l'éteint et **rend la charge tout de
 suite**. N'importe quel joueur peut ramasser une balise, même celle d'un autre.
 
-Un joueur a au plus six balises au sol : à la septième, la plus ancienne s'éteint. Les balises restent jusqu'à la fin
+Un joueur a au plus deux cents balises au sol, et il n'y en a pas plus de deux cents en tout, tous joueurs
+confondus : au-delà, la plus ancienne s'éteint. Les balises restent jusqu'à la fin
 de l'expédition. On ne peut pas en poser au village.
 
 ## Pourquoi

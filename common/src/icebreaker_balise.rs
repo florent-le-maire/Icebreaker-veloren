@@ -14,6 +14,10 @@ pub struct IcebreakerBalise {
     /// Balises au sol par joueur au plus ; au-delà, la plus ancienne s'éteint (le client n'affiche
     /// que les 20 lumières dynamiques les plus proches).
     pub max_au_sol: usize,
+    /// Balises au sol sur tout le serveur au plus, tous joueurs confondus ; au-delà, la plus
+    /// ancienne s'éteint.
+    #[serde(default = "max_total_par_defaut")]
+    pub max_total: usize,
     /// Force de la lumière (comme une lanterne : 1 à 10).
     pub force: f32,
     /// Vacillement de la lumière (0 : fixe).
@@ -26,13 +30,16 @@ impl Default for IcebreakerBalise {
     fn default() -> Self {
         Self {
             delai_recharge: 10.0,
-            max_au_sol: 6,
+            max_au_sol: 200,
+            max_total: max_total_par_defaut(),
             force: 4.0,
             vacillement: 0.3,
             couleurs: vec![("blanc".to_string(), (255, 255, 255))],
         }
     }
 }
+
+fn max_total_par_defaut() -> usize { 200 }
 
 /// L'objet « balise lumineuse » : dans l'inventaire, il permet de poser ; au sol, il éclaire.
 pub const BALISE: &str = "common.items.icebreaker.balise_lumineuse";
@@ -103,6 +110,7 @@ mod tests {
         let b = Ron::<IcebreakerBalise>::load_expect("icebreaker.balise").read().0.clone();
         assert!(b.delai_recharge > 0.0);
         assert!(b.max_au_sol >= 1);
+        assert!(b.max_total >= 1);
         assert!(b.force > 0.0);
         assert!(!b.couleurs.is_empty());
         for (nom, _) in &b.couleurs {

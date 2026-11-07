@@ -37,17 +37,31 @@ impl IcebreakerBalises {
     pub fn retirer(&mut self, balise: EcsEntity) { self.au_sol.retain(|(b, _)| *b != balise); }
 }
 
-/// Les balises de `poseur` à éteindre pour qu'il en reste au plus `max` en en posant une de plus :
-/// les plus anciennes.
-pub fn a_eteindre<T: Copy + PartialEq>(au_sol: &[(T, T)], poseur: T, max: usize) -> Vec<T> {
+/// Les balises à éteindre pour qu'en en posant une de plus, `poseur` en ait au plus `max` au sol et
+/// le serveur au plus `max_total` : les plus anciennes de `poseur`, puis les plus anciennes de tous.
+pub fn a_eteindre<T: Copy + PartialEq>(
+    au_sol: &[(T, T)],
+    poseur: T,
+    max: usize,
+    max_total: usize,
+) -> Vec<T> {
     let siennes = au_sol
         .iter()
         .filter(|(_, p)| *p == poseur)
         .map(|(b, _)| *b)
         .collect::<Vec<_>>();
-    let garder = max.saturating_sub(1);
-    let trop = siennes.len().saturating_sub(garder);
-    siennes.into_iter().take(trop).collect()
+    let trop = siennes.len().saturating_sub(max.saturating_sub(1));
+    let mut eteindre = siennes.into_iter().take(trop).collect::<Vec<_>>();
+    // Icebreaker : plafond pour tout le serveur, tous joueurs confondus.
+    let trop_total = (au_sol.len() - eteindre.len()).saturating_sub(max_total.saturating_sub(1));
+    let autres = au_sol
+        .iter()
+        .map(|(b, _)| *b)
+        .filter(|b| !eteindre.contains(b))
+        .take(trop_total)
+        .collect::<Vec<_>>();
+    eteindre.extend(autres);
+    eteindre
 }
 
 /// `joueur` est dans un donjon : un emplacement d'expédition dans la campagne (décision 0016), ou
@@ -197,7 +211,7 @@ fn poser(server: &mut Server, client: EcsEntity, regles: &IcebreakerBalise) -> R
             .get(&client)
             .map_or(regles.couleur_par_defaut(), String::as_str);
         let col = regles.couleur(nom).unwrap_or(Rgb::one());
-        (col, a_eteindre(&balises.au_sol, client, regles.max_au_sol))
+        (col, a_eteindre(&balises.au_sol, client, regles.max_au_sol, regles.max_total))
     };
     for vieille in eteindre {
         server.state.ecs().write_resource::<IcebreakerBalises>().retirer(vieille);
@@ -251,11 +265,18 @@ mod tests {
     fn eteindre_les_plus_anciennes() {
         // (balise, poseur) : le joueur 1 a posé 10, 11, 12 ; le joueur 2 a posé 20.
         let au_sol = [(10, 1), (20, 2), (11, 1), (12, 1)];
-        assert_eq!(a_eteindre(&au_sol, 1, 6), Vec::<i32>::new());
-        assert_eq!(a_eteindre(&au_sol, 1, 3), vec![10]);
-        assert_eq!(a_eteindre(&au_sol, 1, 2), vec![10, 11]);
-        assert_eq!(a_eteindre(&au_sol, 1, 1), vec![10, 11, 12]);
-        assert_eq!(a_eteindre(&au_sol, 2, 1), vec![20]);
-        assert_eq!(a_eteindre(&au_sol, 3, 1), Vec::<i32>::new());
+        assert_eq!(a_eteindre(&au_sol, 1, 6, 200), Vec::<i32>::new());
+        assert_eq!(a_eteindre(&au_sol, 1, 3, 200), vec![10]);
+        assert_eq!(a_eteindre(&au_sol, 1, 2, 200), vec![10, 11]);
+        assert_eq!(a_eteindre(&au_sol, 1, 1, 200), vec![10, 11, 12]);
+        assert_eq!(a_eteindre(&au_sol, 2, 1, 200), vec![20]);
+        assert_eq!(a_eteindre(&au_sol, 3, 1, 200), Vec::<i32>::new());
+        // Plafond total : 4 au sol, 4 au plus → la plus ancienne de tous (celle du joueur 1),
+        // même pour un autre poseur.
+        assert_eq!(a_eteindre(&au_sol, 3, 200, 4), vec![10]);
+        assert_eq!(a_eteindre(&au_sol, 3, 200, 3), vec![10, 20]);
+        // Les deux plafonds : la sienne d'abord, puis la plus ancienne qui reste.
+        assert_eq!(a_eteindre(&au_sol, 1, 3, 3), vec![10, 20]);
+        assert_eq!(a_eteindre(&au_sol, 1, 3, 4), vec![10]);
     }
 }
