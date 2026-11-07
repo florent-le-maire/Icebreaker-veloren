@@ -23,7 +23,8 @@ reprises dans la liste « À vérifier en jeu » de `PLAN.md` : quand un point e
   gérées. — b166c0e2e4 Vu en jeu (Flo, 2026-11-07).
 - [x] **I.3 Personnages communs à toutes les instances** — base de personnages dans `ICEBREAKER_CAMPAIGN_DIR`, monde
   recréé à chaque lancement ; en instance, le waypoint sauvé (d'un autre monde) est ignoré. Vérifié : deux lancements
-  successifs utilisent la même base ; pas encore vérifié en jeu avec un objet ramassé. — 159c42400d
+  successifs utilisent la même base ; pas encore vérifié en jeu avec un objet ramassé. — 159c42400d Vu en jeu (Flo,
+  2026-11-07).
 - [x] **I.4 Lanceur unique** — `icebreaker.ps1 village | donjon <type> | route` : dossier et ports par lieu, graine au
   hasard, journée de 48 min. `donjon` (port 14110) et `village` (14100, V.1) marchent ; `route` arrive avec P.1. — 159c42400d
 - [x] **I.5 Temps de carte** — 1 min réelle = 30 min de carte (journée de 48 min, I.4) ; horloge dans
