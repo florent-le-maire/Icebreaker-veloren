@@ -75,6 +75,18 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
   moins par touche ; un coup retire au plus 40 % des PV max, plafond relevé par les bonus de dégâts (`combat.ron`).
   Testé (5 tests ciblés, donjon démarre) ; nombre de coups pas vu en jeu. — d295d68c42
 
+## Jalon I — suite : un donjon neuf à chaque expédition (Flo, 2026-11-07)
+
+Option 2 de `0016` pour le donjon généré et la grotte : l'emplacement garde sa place, son plan est retiré à chaque
+expédition. Les paramètres de mission restent ceux du lanceur (`ICEBREAKER_DONJON_*`) en attendant les contrats.
+
+- [ ] **I.10 Mission et dormeurs par emplacement** — en campagne, but de mission (G.7) et dormeurs (G.9) sont vides
+  (le site d'instance est le village) : les ranger dans chaque emplacement. — *en cours : Veloren-instances, 2026-11-07*
+- [ ] **I.11 Plan remplaçable dans le monde** — le plot du donjon généré et de la grotte devient remplaçable
+  (`regenerate_slot`), dans une emprise maximale réservée à la génération du monde.
+- [ ] **I.12 Plan neuf à chaque expédition** — la remise à neuf (I.9) et le premier départ tirent un nouveau plan ;
+  arrivée, mission et dormeurs recalculés.
+
 ## Jalon 3 — Pillage sur la route
 
 - [ ] **P.1 Instance route** — un tronçon de route dans un paysage, zone fermée (I.2).

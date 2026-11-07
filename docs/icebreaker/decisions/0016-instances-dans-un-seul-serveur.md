@@ -2,7 +2,8 @@
 
 - **Date** : 2026-10-29
 - **Statut** : proposé par Flo (« des instances, et toujours le même serveur quand on lance une expédition ») ;
-  découpage à valider
+  découpage à valider ; 2026-11-07 : Flo retient aussi l'option 2 pour le donjon généré et la grotte (un plan neuf
+  à chaque expédition, `PLAN.md`, I.10 à I.12)
 
 ## Problème
 
