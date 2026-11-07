@@ -10,8 +10,10 @@ pub mod rooms;
 pub mod settings;
 pub mod shapes;
 
+use super::butin::Butin;
 use plan::{Cell, Plan};
 use rooms::RoomRole;
+use std::collections::BTreeMap;
 pub use settings::{Mission, RenderSettings, Settings};
 
 /// Where the dungeon data lives, under `assets/`.
@@ -56,6 +58,56 @@ pub struct Dungeon {
     pub lights: Vec<(Cell, Option<(i32, i32)>)>,
     /// The decor of the rooms (Icebreaker F.6).
     pub decor: Vec<Decor>,
+    /// Icebreaker B.5: the loot settings, and the tier of each chest and
+    /// creature of the plan.
+    pub butin: Butin,
+    pub paliers: BTreeMap<Cell, usize>,
+}
+
+/// Icebreaker B.5: the tier of each chest and creature of `plan` by its
+/// depth, the passages from the entrance to its room (in a corridor, the
+/// nearest room).
+fn place_tiers(
+    plan: &Plan,
+    rooms: &[assemble::PlacedRoom],
+    graph: &graph::MissionGraph,
+    butin: &Butin,
+) -> BTreeMap<Cell, usize> {
+    // Passages from the entrance (room 0) to each room, either way.
+    let mut distances = vec![usize::MAX; graph.rooms.len()];
+    distances[0] = 0;
+    let mut queue = std::collections::VecDeque::from([0]);
+    while let Some(room) = queue.pop_front() {
+        for p in graph.passages.iter().filter(|p| p.from == room || p.to == room) {
+            let next = p.other(room);
+            if distances[next] == usize::MAX {
+                distances[next] = distances[room] + 1;
+                queue.push_back(next);
+            }
+        }
+    }
+    let distances: Vec<usize> = distances.into_iter().map(|d| if d == usize::MAX { 0 } else { d }).collect();
+    let depths = distances.iter().max().map_or(1, |d| d + 1);
+    let room_of: BTreeMap<Cell, usize> = rooms
+        .iter()
+        .flat_map(|r| r.footprint().map(move |c| (c, r.graph_room)))
+        .collect();
+    plan.cells
+        .iter()
+        .filter(|(_, s)| **s == '$' || populate::kind_of(**s).is_some())
+        .map(|(cell, _)| {
+            let room = room_of.get(cell).copied().or_else(|| {
+                room_of
+                    .iter()
+                    .min_by_key(|(c, _)| {
+                        (c.x - cell.x).abs() + (c.y - cell.y).abs() + 4 * (c.level - cell.level).abs()
+                    })
+                    .map(|(_, r)| *r)
+            });
+            let depth = room.and_then(|r| distances.get(r).copied()).unwrap_or(0);
+            (*cell, butin.palier(depth, depths))
+        })
+        .collect()
 }
 
 /// The lights of a dungeon by its inhabitants (Icebreaker G.10): on the free
@@ -264,6 +316,8 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
         sleep: settings.sleep.clone(),
         lights,
         decor,
+        butin: Butin::load()?,
+        paliers: BTreeMap::new(),
     })
 }
 
@@ -302,6 +356,7 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
             })
             .collect::<Result<Vec<_>, String>>()
     };
+    let butin = Butin::load()?;
     let mut failures = Vec::new();
     for seed in mission.seed..mission.seed + SEED_TRIES {
         let graph = graph::generate(&resolved, seed);
@@ -329,16 +384,28 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
             let lights = place_lights(&assembled.plan, &room_cells, &keys, &settings.lighting, seed);
             let taken = keys.iter().map(|(c, _)| *c).chain(lights.iter().map(|(c, _)| *c)).collect();
             let decor = place_decor(&assembled.plan, &room_cells, &taken, &settings.decor, seed);
+            // Icebreaker B.5: the tier of each chest and creature.
+            let paliers = place_tiers(&assembled.plan, &assembled.rooms, &graph, &butin);
+            let chests_by_tier: Vec<String> = (1..=butin.paliers())
+                .map(|p| {
+                    paliers
+                        .iter()
+                        .filter(|(c, t)| **t == p && assembled.plan.get(**c) == '$')
+                        .count()
+                        .to_string()
+                })
+                .collect();
             return Ok(Dungeon {
                 plan: assembled.plan,
                 tunnel: assembled.tunnel,
                 summary: format!(
                     "{} {} ({}), graine {seed} ({} tentative(s)), {creatures} créature(s), {chests} \
-                     coffre(s) ; salles : {}\n{}",
+                     coffre(s) ({} par palier) ; salles : {}\n{}",
                     mission.size,
                     mission.objective,
                     resolved.modifiers.join(", "),
                     assembled.attempts,
+                    chests_by_tier.join(" / "),
                     rooms.join(", "),
                     graph.describe()
                 ),
@@ -348,6 +415,8 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 sleep: settings.sleep.clone(),
                 lights,
                 decor,
+                butin,
+                paliers,
             });
         }
     }
@@ -557,5 +626,30 @@ mod tests {
             .collect();
         let distinct: std::collections::BTreeSet<Cell> = furniture.iter().copied().collect();
         assert_eq!(furniture.len(), distinct.len());
+    }
+
+    /// Icebreaker B.5: every chest and creature has a tier; the chests of the
+    /// entrance side are of the first tier, those of the far end of the last
+    /// one, and the chief never stands among the first.
+    #[test]
+    fn loot_gets_richer_with_depth() {
+        let settings = Settings::load().unwrap();
+        let mut chests = [0; 3];
+        for seed in 0..30 {
+            let mission = Mission { seed, ..Mission::default() };
+            let dungeon = generate(&settings, &mission).unwrap();
+            for (cell, symbol) in &dungeon.plan.cells {
+                if *symbol == '$' || populate::kind_of(*symbol).is_some() {
+                    let palier = *dungeon.paliers.get(cell).unwrap_or_else(|| panic!("graine {seed} : {cell:?} sans palier"));
+                    if *symbol == '$' {
+                        chests[palier - 1] += 1;
+                    }
+                    if symbol.eq_ignore_ascii_case(&'c') {
+                        assert!(palier > 1, "graine {seed} : chef au palier 1");
+                    }
+                }
+            }
+        }
+        assert!(chests.iter().all(|n| *n > 0), "coffres par palier : {chests:?}");
     }
 }

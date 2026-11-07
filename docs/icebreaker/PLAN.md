@@ -233,6 +233,8 @@ tâche pour ce qui casse.
 - F.8 : un donjon généré de la campagne se finit en entier (aucune salle coupée par le bord du monde).
 - G.7 : descendre à pied jusqu'au chef et le tuer ; G.8 ouvrir une porte à clé à la main ; G.9 pose des dormeurs
   (à moitié dans le sol ?), approche accroupie.
+- B.5 (et grotte) : ouvrir un coffre près de l'entrée puis un du fond : or et prise utile, plus riche au fond
+  (`butin.ron`) ; rien d'inutile.
 
 **Grotte**
 - K.3 : les trois ambiances se reconnaissent-elles, la roche luisante suffit-elle sans lanterne (`QUESTIONS.md`, Q22) ;

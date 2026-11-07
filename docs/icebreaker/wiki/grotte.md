@@ -4,11 +4,12 @@ titre = "La grotte"
 icone = "voxygen/element/weapons/pickaxe.png"
 schema = "coupe-grotte"
 resume = "Des poches et des boyaux creusés dans la roche, des filons à la pioche, un chef au fond. Façon Deep Rock Galactic."
-reglages = ["grottes/grotte.ron"]
-taches = ["K"]
+reglages = ["grottes/grotte.ron", "butin.ron"]
+taches = ["K", "B.5"]
 systemes = [
   "world/src/icebreaker/grotte/mod.rs",
   "world/src/site/plot/icebreaker_grotte.rs",
+  "world/src/icebreaker/butin.rs",
 ]
 
 [[chiffre]]
@@ -41,7 +42,8 @@ les sprites au sol et au plafond, les créatures et le **chef**, qui attend dans
 tuer, c'est la victoire.
 
 Au pied des parois, des **filons** à miner à la pioche (chaque personnage en a une) : cuivre et étain près de la
-surface, or et gemmes tout en bas. Au bout des culs-de-sac, parfois une créature et un coffre.
+surface, or et gemmes tout en bas. Au bout des culs-de-sac, parfois une créature et un coffre, d'autant plus
+riche que sa poche est profonde (`butin.ron`).
 
 ## Pourquoi
 

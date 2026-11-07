@@ -26,6 +26,9 @@ pub struct Settings {
     pub population: PopulationSettings,
     /// The moods of the cave (Icebreaker K.3), by name; one is drawn per cave.
     pub ambiances: BTreeMap<String, Ambiance>,
+    /// Icebreaker B.5: the loot by depth (`butin.ron`), read by `load`.
+    #[serde(skip)]
+    pub butin: Option<super::butin::Butin>,
 }
 
 /// The entrance: a bore from the mouth, at the surface, down to the first pocket.
@@ -247,7 +250,9 @@ impl Settings {
     pub fn load() -> Result<Self, String> {
         let path = common::assets::ASSETS_PATH.join("icebreaker/grottes/grotte.ron");
         let text = std::fs::read_to_string(&path).map_err(|e| format!("{} : {e}", path.display()))?;
-        Self::parse(&text)
+        let mut settings = Self::parse(&text)?;
+        settings.butin = Some(super::butin::Butin::load()?);
+        Ok(settings)
     }
 }
 
@@ -351,6 +356,10 @@ pub struct Grotte {
     pub inhabitants: Vec<Inhabitant>,
     /// Where the chests lie, and their sprite.
     pub chests: Vec<Vec3<i32>>,
+    /// Icebreaker B.5: the tier of each chest (same order), by the level of
+    /// its pocket, and the loot settings.
+    pub chest_tiers: Vec<usize>,
+    pub butin: Option<super::butin::Butin>,
     pub chest: String,
     pub summary: String,
 }
@@ -700,6 +709,7 @@ pub fn generate(
     let pop = &settings.population;
     let mut inhabitants: Vec<Inhabitant> = Vec::new();
     let mut chests = Vec::new();
+    let mut chest_levels = Vec::new();
     let pick = |rng: &mut ChaCha8Rng| look.creatures[rng.random_range(0..look.creatures.len())].clone();
     for pocket in &pockets {
         let count = roll(&mut rng, pop.par_poche).max(0) + pocket.level * pop.par_niveau;
@@ -744,6 +754,12 @@ pub fn generate(
         }
         if rng.random_bool(pop.coffres as f64) {
             chests.push(stand(1.0));
+            // Icebreaker B.5: the depth of its pocket (the one it starts from).
+            let level = pockets
+                .iter()
+                .min_by_key(|p| (p.center.xy() - bore.a.xy()).map(|e| e as i64 * e as i64).sum())
+                .map_or(0, |p| p.level);
+            chest_levels.push(level.max(0) as usize);
         }
     }
     if let Some(deep) = pockets.iter().min_by_key(|p| p.center.z) {
@@ -755,18 +771,28 @@ pub fn generate(
     }
 
     let levels = pockets.iter().map(|p| p.level).max().unwrap_or(0) + 1;
+    let butin = settings.butin.clone();
+    let chest_tiers: Vec<usize> = chest_levels
+        .iter()
+        .map(|l| butin.as_ref().map_or(1, |b| b.palier(*l, levels.max(1) as usize)))
+        .collect();
+    let tiers = butin.as_ref().map_or(1, |b| b.paliers());
+    let chests_by_tier: Vec<String> = (1..=tiers)
+        .map(|p| chest_tiers.iter().filter(|t| **t == p).count().to_string())
+        .collect();
     Grotte {
         mouth,
         dir,
         summary: format!(
             "grotte {ambiance}, graine {seed} : {} poche(s) sur {levels} niveau(x), {} boyau(x) dont {loops} boucle(s), {} \
-             cul(s)-de-sac, {} concrétion(s), {} habitant(s), {} coffre(s), fond en {:?}",
+             cul(s)-de-sac, {} concrétion(s), {} habitant(s), {} coffre(s) ({} par palier), fond en {:?}",
             pockets.len(),
             bores.len(),
             dead_ends.len(),
             speleothems.len(),
             inhabitants.len(),
             chests.len(),
+            chests_by_tier.join(" / "),
             pockets.iter().min_by_key(|p| p.center.z).map(|p| p.center)
         ),
         pockets,
@@ -779,6 +805,8 @@ pub fn generate(
         filons: settings.filons.clone(),
         inhabitants,
         chests,
+        chest_tiers,
+        butin,
         chest: settings.population.coffre.clone(),
     }
 }
@@ -882,6 +910,24 @@ mod tests {
         assert!(!top.is_empty() && !bottom.is_empty(), "pas de filon");
         assert!(top.is_disjoint(&bottom), "les mêmes minerais en haut et au fond : {top:?} / {bottom:?}");
         assert!(bottom.contains(&SpriteKind::Gold) && !top.contains(&SpriteKind::Gold), "l'or n'est pas au fond");
+    }
+
+    /// Icebreaker B.5: each chest has a tier (its pocket's level); over a few
+    /// caves, chests of every tier.
+    #[test]
+    fn chests_get_richer_with_depth() {
+        let settings = Settings::load().unwrap();
+        assert!(settings.butin.is_some());
+        let mouth = Vec3::new(1000, 1000, 200);
+        let mut by_tier = [0; 3];
+        for seed in 0..40 {
+            let grotte = generate(&settings, seed, mouth, None, &|_| mouth.z);
+            assert_eq!(grotte.chest_tiers.len(), grotte.chests.len());
+            for tier in &grotte.chest_tiers {
+                by_tier[tier - 1] += 1;
+            }
+        }
+        assert!(by_tier.iter().all(|n| *n > 0), "coffres par palier : {by_tier:?}");
     }
 
     #[test]

@@ -526,7 +526,12 @@ impl Structure for IcebreakerDungeon {
             let center = (min.xy() + c / 2).with_z(min.z + 1);
             let noise = RandomField::new(11).get(Vec3::new(cell.x, cell.y, cell.level));
             if *symbol == '$' {
-                painter.rotated_sprite(center, chest, (noise % 4) as u8 * 2);
+                // Icebreaker B.5: the loot of its tier (butin.ron), not the sprite's.
+                let palier = self.dungeon.paliers.get(cell).copied().unwrap_or(1);
+                painter.rotated_sprite_with_cfg(center, chest, (noise % 4) as u8 * 2, SpriteCfg {
+                    loot_table: Some(self.dungeon.butin.coffre(palier).to_string()),
+                    ..SpriteCfg::default()
+                });
             } else if let Some(kind) = populate::kind_of(*symbol)
                 && let Some(assets) = faction.creatures.get(kind).filter(|a| !a.is_empty())
             {
@@ -578,7 +583,7 @@ impl Structure for IcebreakerDungeon {
     }
 }
 
-/// The chest sprite named in the data (its loot comes from Veloren).
+/// The chest sprite named in the data (its loot comes from `butin.ron`, B.5).
 fn chest_sprite(name: &str) -> SpriteKind {
     match name {
         "DungeonChest1" => SpriteKind::DungeonChest1,

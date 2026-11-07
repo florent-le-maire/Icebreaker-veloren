@@ -46,7 +46,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | R | Charrette et registre commun | `HISTORIQUE.md` | fait | — (supprimé) |
 | X | Interface du village | `HISTORIQUE.md` | fait, vu en jeu | — (supprimé) |
 | S, D | Démo à l'équipe (serveur, soirée) | `PLAN.md` | S.1 fait ; S.2, S.3, D.1 restent | `Veloren-serveur` |
-| B | Boucles de jeu | `PLAN-BOUCLES.md` | proposition à valider | `Veloren-boucles` (à créer) |
+| B | Boucles de jeu | `PLAN-BOUCLES.md` | proposition à valider ; B.5 et B.14 (butin) pris par Flo | `Veloren-butin` (butin), `Veloren-boucles` (à créer) |
 | E | Le donjon à jouer | `PLAN-DONJON.md` | proposition à valider | `Veloren-donjon` |
 | K | La grotte | `PLAN-GROTTE.md` | K.1 à K.5 faits, à voir en jeu | `Veloren-grotte` |
 | M | Mod Veloren | `PLAN-MOD.md` | M.1 fait ; la suite après la démo | `Veloren-mod` |

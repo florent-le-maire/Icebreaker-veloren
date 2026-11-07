@@ -162,6 +162,7 @@ réglages de départ, à ajuster en jouant.
 - **Ce que rapporte le donjon** (`loot/loot.json`) : brutes et archers lâchent du bois, du fer, des herbes ; les coffres
   des matériaux, ingrédients et parfois une relique ; chaque chef a une chance sur quatre de laisser chaque sorte de
   relique. Au retour, tout objet du village va à l'entrepôt (même plein : on ne jette pas ce qu'on a rapporté).
+  Sur Veloren : `assets/icebreaker/butin.ron`, coffres par palier de profondeur (B.5, `PLAN-BOUCLES.md`).
 - **Rang** (0 à 5) : chaque expédition dont on revient vivant rapporte de l'expérience (réussie 3, échouée ou
   écourtée 1, moitié si la menace de la mission est sous le rang du personnage) ; seuils 3, 8, 15, 25, 40.
 - **Traits** (`village/traits.json`) : une recrue arrive avec 1 ou 2 traits (qualités : Robuste, Vif, Infatigable,

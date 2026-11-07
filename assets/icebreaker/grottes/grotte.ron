@@ -26,7 +26,7 @@
     // bord du sol (bord : à partir de quelle part du rayon, au carré, le sol compte comme le bord) ; minerais par
     // niveau de profondeur (nom de sprite, poids), le dernier palier servant aux niveaux plus profonds.
     // Habitants (K.5) : dans chaque poche, par_poche créatures (min, max) plus par_niveau par niveau de profondeur ;
-    // au bout de chaque cul-de-sac, une créature avec la chance trous et un coffre (sprite coffre) avec la chance
+    // au bout de chaque cul-de-sac, une créature avec la chance trous et un coffre (sprite coffre, butin de butin.ron selon le niveau de la poche, B.5) avec la chance
     // coffres ; le chef de l'ambiance dans la poche la plus profonde. Les créatures sont celles de l'ambiance.
     population: (par_poche: (2, 3), par_niveau: 1, trous: 0.5, coffres: 0.3, coffre: "DungeonChest2"),
     filons: (

@@ -135,7 +135,7 @@
     // escalier, un palier ni devant une porte) ; mêmes facteurs de menace et de nombre d'ennemis que les salles.
     corridors: (creatures: {"lookout": (1, 1)}, per_cells: 10),
     // Qui habite le donjon : pour chaque sorte des plans, des créatures de Veloren (tirées au hasard dans la liste) ;
-    // chest : le coffre (son butin vient de Veloren, DungeonChest0 = gnarlings, 1 = adlets, 5 = cultistes).
+    // chest : le sprite du coffre (DungeonChest0 = gnarlings, 1 = adlets, 5 = cultistes) ; son butin vient de butin.ron (B.5).
     default_faction: "gnarling",
     factions: {
         "gnarling": (

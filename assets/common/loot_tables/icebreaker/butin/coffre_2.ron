@@ -1,0 +1,15 @@
+// Icebreaker B.5 : coffre du deuxième tiers du lieu (donjon généré, grotte), assets/icebreaker/butin.ron.
+[
+    (1.0, All([
+        MultiDrop(Item("common.items.utility.coins"), 30, 80),
+        Lottery([
+            (3.0, MultiDrop(Item("common.items.consumable.potion_med"), 1, 2)),
+            (1.5, MultiDrop(Item("common.items.utility.bomb"), 1, 2)),
+            (2.0, MultiDrop(Item("common.items.mineral.ore.iron"), 2, 4)),
+            (1.0, MultiDrop(Item("common.items.mineral.ingot.iron"), 1, 2)),
+            (2.0, MultiDrop(Item("common.items.crafting_ing.leather.rigid_leather"), 2, 4)),
+            (1.25, LootTable("common.loot_tables.weapons.tier-2")),
+            (1.25, LootTable("common.loot_tables.armor.tier-2")),
+        ]),
+    ])),
+]

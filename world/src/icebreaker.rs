@@ -2,6 +2,7 @@
 //! `ICEBREAKER_INSTANCE_SITE` set generates a small world around one chosen
 //! site, without the wildlife and roaming monsters of a whole living world.
 
+pub mod butin;
 pub mod dungeon;
 pub mod grotte;
 
@@ -361,6 +362,21 @@ pub fn check_generated_dungeon(
             }
             others.retain(|p| *p != pos);
         }
+        // Icebreaker B.5: each chest holds the table of its tier.
+        if *symbol == '$' {
+            let pos = dungeon.spawn_pos(*cell).map(|e| e.floor() as i32);
+            let key = key_of(pos.xy());
+            let table = chunks
+                .get(&key)
+                .and_then(|c| c.as_ref())
+                .and_then(|c| c.meta().sprite_cfg_at(pos - (key * chunk_size).with_z(0)))
+                .and_then(|cfg| cfg.loot_table.clone());
+            let d = dungeon.dungeon();
+            let expected = d.butin.coffre(d.paliers.get(cell).copied().unwrap_or(1)).to_string();
+            if table.as_ref() != Some(&expected) {
+                problems.push(format!("coffre en {cell:?} : butin {table:?} au lieu de {expected}"));
+            }
+        }
     }
     let report = format!(
         "{}\n{}\n{} créature(s) apparue(s) dans le donjon, {} autre(s) dans la zone",
@@ -556,9 +572,23 @@ pub fn check_generated_grotte(
         }
     }
     let chest = crate::icebreaker::dungeon::settings::sprite_kind(&grotte.chest);
-    for pos in &grotte.chests {
+    for (i, pos) in grotte.chests.iter().enumerate() {
         if block_at(*pos).and_then(|b| b.get_sprite()) != chest {
             problems.push(format!("coffre absent en {pos:?}"));
+        }
+        // Icebreaker B.5: the table of its tier, not the sprite's.
+        let key = key_of(pos.xy());
+        let table = chunks
+            .get(&key)
+            .and_then(|c| c.as_ref())
+            .and_then(|c| c.meta().sprite_cfg_at(*pos - (key * chunk_size).with_z(0)))
+            .and_then(|cfg| cfg.loot_table.clone());
+        let expected = grotte
+            .butin
+            .as_ref()
+            .map(|b| b.coffre(grotte.chest_tiers.get(i).copied().unwrap_or(1)).to_string());
+        if table != expected {
+            problems.push(format!("coffre en {pos:?} : butin {table:?} au lieu de {expected:?}"));
         }
     }
     // The ores (K.4): one stands on them (a mineable sprite is solid); counted

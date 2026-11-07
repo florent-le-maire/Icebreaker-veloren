@@ -13,7 +13,7 @@ use crate::{
 };
 use common::{
     generation::EntityInfo,
-    terrain::{Block, BlockKind},
+    terrain::{Block, BlockKind, SpriteCfg},
 };
 use rand_chacha::ChaCha8Rng;
 use rand::prelude::*;
@@ -214,7 +214,15 @@ impl Structure for IcebreakerGrotte {
         }
         if let Some(chest) = sprite_kind(&grotte.chest) {
             for (i, pos) in grotte.chests.iter().enumerate() {
-                painter.rotated_sprite(*pos, chest, (i % 4) as u8 * 2);
+                // Icebreaker B.5: the loot of its tier (butin.ron), not the sprite's.
+                let loot_table = grotte
+                    .butin
+                    .as_ref()
+                    .map(|b| b.coffre(grotte.chest_tiers.get(i).copied().unwrap_or(1)).to_string());
+                painter.rotated_sprite_with_cfg(*pos, chest, (i % 4) as u8 * 2, SpriteCfg {
+                    loot_table,
+                    ..SpriteCfg::default()
+                });
             }
         }
     }

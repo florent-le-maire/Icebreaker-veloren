@@ -1,0 +1,12 @@
+// Icebreaker : butin du donjon généré et de la grotte selon la profondeur (B.5, PLAN-BOUCLES.md).
+// Palier d'un coffre : sa profondeur rapportée à la plus grande du lieu, coupée en autant de parts que de tables
+// (3 : premier, deuxième, dernier tiers). Donjon généré : salles de passage depuis l'entrée (un couloir prend la salle
+// la plus proche) ; grotte : niveau de la poche (un cul-de-sac prend celui de sa poche). Les coffres à clé du donjon
+// (generation.ron, keys) gardent leur table. Tables Veloren dans assets/common/loot_tables/icebreaker/butin/.
+(
+    coffres: [
+        "common.loot_tables.icebreaker.butin.coffre_1",
+        "common.loot_tables.icebreaker.butin.coffre_2",
+        "common.loot_tables.icebreaker.butin.coffre_3",
+    ],
+)

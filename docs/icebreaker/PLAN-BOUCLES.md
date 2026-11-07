@@ -184,9 +184,12 @@ Chaque tâche = quelques heures, un critère de fin, le jeu reste lançable. Les
   *Fin* : rester 12 min fait arriver une patrouille annoncée.
 
 **Bloc 2 — que le butin ait un sens**
-- [ ] **B.5 Butin par profondeur** — palier 1 à 3 selon la distance à l'entrée (fonction du lieu, pas du générateur) ;
-  tables `butin.ron`.
-  *Fin* : coffre du fond nettement plus riche que celui de l'entrée (test sur 3 graines).
+- [x] **B.5 Butin par profondeur** — coffres du donjon généré et de la grotte : table de leur palier (1 à 3, salles
+  depuis l'entrée ou niveau de la poche), `butin.ron` ; or + une prise utile (potion, bombe, matériaux, arme ou
+  armure), plus de recettes ni d'objets de quête. Testé (tests, exemples : tables posées sur les coffres) ; pas ouvert en jeu.
+- [ ] **B.14 Butin des créatures par profondeur** (Flo, 2026-11-07) — les créatures du donjon généré et de la grotte
+  lâchent la table de leur palier (`butin.ron`), chef et boss la leur ; rien d'inutile (recettes, objets de quête).
+  *Fin* : une créature du fond lâche plus qu'une de l'entrée ; le chef lâche gros. — *en cours : Veloren-butin, 2026-11-07*
 - [ ] **B.6 Reliques** — 4 objets nouveaux, invendables, dans les tables palier 3 et chef.
   *Fin* : un chef en laisse une sur deux (test).
 - [ ] **B.7 Consommables** — ration → feu de camp (soigne, avance la patrouille), parchemin de retour, potions par

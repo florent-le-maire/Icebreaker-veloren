@@ -1,0 +1,16 @@
+// Icebreaker B.5 : coffre du premier tiers du lieu (donjon généré, grotte), assets/icebreaker/butin.ron.
+// Rien d'inutile : de l'or toujours, puis une prise utile en bas (potion, nourriture) ou au village (matériaux,
+// équipement à porter ou à vendre). Chiffres de départ de PLAN-BOUCLES.md (B.5), à régler en jouant.
+[
+    (1.0, All([
+        MultiDrop(Item("common.items.utility.coins"), 10, 30),
+        Lottery([
+            (3.0, MultiDrop(Item("common.items.consumable.potion_minor"), 1, 2)),
+            (2.0, MultiDrop(LootTable("common.loot_tables.food.prepared"), 1, 2)),
+            (2.0, MultiDrop(Item("common.items.log.wood"), 3, 6)),
+            (2.0, MultiDrop(Item("common.items.mineral.stone.granite"), 3, 6)),
+            (1.0, LootTable("common.loot_tables.weapons.tier-1")),
+            (1.0, LootTable("common.loot_tables.armor.tier-1")),
+        ]),
+    ])),
+]
