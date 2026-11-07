@@ -92,12 +92,6 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q38 Les idées** (`IDEES.md`) : lesquelles passent en tâches ? *Proposé* : curiosités (3) (relever un allié, 1, est fait : jalon T),
   dépouilles de chef (4) avec bâtiments débloqués (7), puis tribut (8) et mémorial (10).
 
-## 6. Atelier
-
-- **Q39 Worktrees fusionnés** : `Veloren-classes`, `-combat`, `-interface`, `-menu`, `-mod`, `-serveur`, `-village`
-  et la branche `icebreaker-traces` sont à 0 commit devant `master` (2026-11-04). Les supprimer (`git worktree
-  remove`, libère un `target/` chacun) ou les garder pour la suite de leur piste ? *Qui* : Flo.
-
 ## Tranché
 
 Petites décisions, par date ; les règles qui en sortent sont dans le fichier indiqué.
@@ -128,3 +122,5 @@ Petites décisions, par date ; les règles qui en sortent sont dans le fichier i
   dernier vivant tombe, tous rentrent (ex-Q9, en partie).
 - **2026-11-05 (Flo, `PLAN.md`, T.6)** : un personnage mort en expédition est perdu pour de bon : il quitte le
   registre et il est supprimé (ex-Q9 et Q28 ; pas de blessure ni de corps à rapporter pour l'instant).
+- **2026-11-07 (Flo, Q39)** : tous les worktrees fusionnés sont supprimés avec leur branche (donjon, grotte, menu,
+  mod, mort, serveur, wiki) ; une piste reprise se recrée depuis `master`.
