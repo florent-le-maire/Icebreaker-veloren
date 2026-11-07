@@ -243,7 +243,7 @@ Les grottes façon Deep Rock Galactic sont un lieu à part : `PLAN-GROTTE.md` (j
   plus forte encaisse plus. La mise à terre des humanoïdes reste. Testé : tests ciblés, le donjon Gnarling démarre ; nombre de coups en jeu, autres armes et boss pas vérifiés. — 373c5671c8
 - [x] **L.2 Verrouiller une cible** — touche W : l'ennemi le plus proche du centre de l'écran (20 m), la caméra le
   suit ; saute à sa mort ou au-delà de 30 m (`assets/icebreaker/verrouillage.ron`). Testé : tests ciblés, le client
-  compile ; pas vérifié en jeu. — df0932cf53
+  compile ; pas vérifié en jeu. — df0932cf53 Vu en jeu (Flo, 2026-11-07).
 - [x] **L.3 Changer de cible à la molette** — pendant un verrouillage, molette vers le haut : ennemi à droite, vers le
   bas : à gauche, en faisant le tour ; plus de zoom. Même commit que L.2 (code entremêlé) ; pas vérifié en jeu. — df0932cf53
 - [x] **L.4 Cercle sur la cible** — anneau doré qui respire, halo, point et quatre traits, par-dessus tout, au milieu
