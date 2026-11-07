@@ -104,7 +104,7 @@ reprises dans la liste « À vérifier en jeu » de `PLAN.md` : quand un point e
 - [x] **V.11 Départ depuis la vue U** — boutons du chef (destination, rejoindre, prêt/attendre, se désinscrire) ;
   liste des inscrits (et qui est prêt) à gauche, en direct, pour tout le village ; inscrit tant qu'on est au village.
   Commande `/expedition`. Testé (client texte : inscription, prêt, départ, retour) ; boutons et liste pas encore vus
-  en jeu. — 16423be9bb
+  en jeu. — 16423be9bb Vu en jeu (Flo, 2026-11-07).
 - [x] **V.12 Échanges à distance** — Entrepôt et Intendance : « Ouvrir l'échange » depuis le panneau, sans aller au PNJ.
   Commande `/echanger`. Testé (client texte : échange ouvert à ~85 blocs) ; fenêtre pas encore vue en jeu. — 6ba0e5f24f
 
