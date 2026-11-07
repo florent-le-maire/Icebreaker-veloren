@@ -20,7 +20,7 @@ reprises dans la liste « À vérifier en jeu » de `PLAN.md` : quand un point e
   2026-11-07).
 - [x] **I.2 Zone fermée avec horizon** — cercle autour du site (rayon du site + `icebreaker.zone_margin`, 120 blocs) ;
   le serveur remet le joueur sur le bord avec un message. À vérifier en jeu (pied, planeur, nage) ; montures non
-  gérées. — b166c0e2e4
+  gérées. — b166c0e2e4 Vu en jeu (Flo, 2026-11-07).
 - [x] **I.3 Personnages communs à toutes les instances** — base de personnages dans `ICEBREAKER_CAMPAIGN_DIR`, monde
   recréé à chaque lancement ; en instance, le waypoint sauvé (d'un autre monde) est ignoré. Vérifié : deux lancements
   successifs utilisent la même base ; pas encore vérifié en jeu avec un objet ramassé. — 159c42400d
