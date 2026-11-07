@@ -81,7 +81,7 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
   les réponses de `QUESTIONS.md` et les todos ouverts de `A-FAIRE.md` ; commande `serve`. 09e8dd63da
 - [x] **W.15 Créatures** — rubrique à quatre pages (boss et chefs, base, jouables, PNJ du village) lue dans
   `generation.ron`, `grotte.ron`, `classes.ron`, les entités et noms français de Veloren, et `wiki/creatures.toml` ;
-  icône de Veloren par carte, capture dans `wiki/images/creatures/<id>.png` ; aucune capture prise, vu en Edge seulement.
+  icône de Veloren par carte, capture dans `wiki/images/creatures/<id>.png` ; aucune capture prise, vu en Edge seulement. d6502b1825
 
 Hors périmètre pour l'instant : accès public, édition dans le navigateur (sauf questions et todos en local, W.12 et
 W.13), mise à jour automatique à chaque push, historique des valeurs des réglages dans le temps (`IDEES.md`).
