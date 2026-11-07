@@ -80,10 +80,11 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
 Option 2 de `0016` pour le donjon généré et la grotte : l'emplacement garde sa place, son plan est retiré à chaque
 expédition. Les paramètres de mission restent ceux du lanceur (`ICEBREAKER_DONJON_*`) en attendant les contrats.
 
-- [ ] **I.10 Mission et dormeurs par emplacement** — en campagne, but de mission (G.7) et dormeurs (G.9) sont vides
-  (le site d'instance est le village) : les ranger dans chaque emplacement. — *en cours : Veloren-instances, 2026-11-07*
+- [x] **I.10 Mission et dormeurs par emplacement** — chaque emplacement (et le lieu seul) a sa mission et ses
+  dormeurs. Testé (2 tests ciblés, campagne démarre : 3 missions) ; annonce et dormeurs pas vus en jeu. — 14fd998fa4
 - [ ] **I.11 Plan remplaçable dans le monde** — le plot du donjon généré et de la grotte devient remplaçable
   (`regenerate_slot`), dans une emprise maximale réservée à la génération du monde.
+  — *en cours : Veloren-instances, 2026-11-07*
 - [ ] **I.12 Plan neuf à chaque expédition** — la remise à neuf (I.9) et le premier départ tirent un nouveau plan ;
   arrivée, mission et dormeurs recalculés.
 
