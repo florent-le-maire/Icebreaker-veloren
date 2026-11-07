@@ -64,10 +64,10 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
   clic, Échap et fantôme en vol pas encore vus en jeu. — 249040251e
 - [x] **X.12 Viser la cible verrouillée** — tant qu'un ennemi est verrouillé, le réticule disparaît et les attaques
   (arc, bâton, mêlée) partent de la main vers le cercle ; angle de caméra inchangé ; touche dans Contrôles. Testé
-  (test ciblé, client compilé) ; tir pas encore vu en jeu. — c9d929adf2
+  (test ciblé, client compilé), vu en jeu. — c9d929adf2
 - [x] **X.13 Le tir ne dérive pas avec le tireur** — flèches, sorts et objets lancés ne reprennent plus la vitesse du
   tireur (`combat.ron` → `part_vitesse_tireur: 0.0`) : on touche en se déplaçant de côté, une cible qui change de
-  direction esquive ; vaut aussi pour les archers ennemis. Testé (test ciblé, donjon démarre) ; pas vu en jeu. — f2b57a7e8d
+  direction esquive ; vaut aussi pour les archers ennemis. Testé (test ciblé, donjon démarre), vu en jeu. — f2b57a7e8d
 
 ## Jalon 3 — Pillage sur la route
 
@@ -201,8 +201,7 @@ tâche pour ce qui casse.
 
 **Combat (donjon Gnarling)**
 - L.1 : nombre de coups pour tuer et mourir (cible : 3 et 3 à 4), autres armes, boss.
-- L.2 à L.4, X.6 : verrouillage W, molette, anneau centré (sinon régler `ancrage` dans `verrouillage.ron`) ;
-  X.12 : sans réticule, flèches et coups vont au cercle. X.13 : tirer en se déplaçant de côté touche.
+- L.2 à L.4, X.6 : verrouillage W, molette, anneau centré (sinon régler `ancrage` dans `verrouillage.ron`).
 
 **Donjon généré**
 - F.1 : la caméra reste-t-elle dans le donjon à l'échelle 7 ? Sinon 8/8, puis F.7.
