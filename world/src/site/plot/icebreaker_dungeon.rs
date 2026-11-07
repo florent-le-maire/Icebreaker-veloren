@@ -543,9 +543,13 @@ impl Structure for IcebreakerDungeon {
                 }
                 let asset = &assets[noise as usize % assets.len()];
                 let mut rng = ChaCha8Rng::seed_from_u64(noise as u64);
+                // Icebreaker B.14: it drops the loot of its tier (butin.ron).
+                let palier = self.dungeon.paliers.get(cell).copied().unwrap_or(1);
+                let loot = self.dungeon.butin.creature(kind, palier).to_string();
                 painter.spawn(
                     EntityInfo::at(self.spawn_pos(*cell))
-                        .with_asset_expect(asset, &mut rng, None),
+                        .with_asset_expect(asset, &mut rng, None)
+                        .with_loot_drop(common::lottery::LootSpec::LootTable(loot)),
                 );
             }
         }

@@ -1,0 +1,10 @@
+// Icebreaker B.14 : ce que lâche le chef (donjon généré, grotte), assets/icebreaker/butin.ron. Il lâche gros :
+// de l'or, deux coffres du dernier tiers et une armure.
+[
+    (1.0, All([
+        MultiDrop(Item("common.items.utility.coins"), 150, 300),
+        LootTable("common.loot_tables.icebreaker.butin.coffre_3"),
+        LootTable("common.loot_tables.icebreaker.butin.coffre_3"),
+        LootTable("common.loot_tables.armor.tier-3"),
+    ])),
+]

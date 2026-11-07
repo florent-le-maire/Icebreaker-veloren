@@ -322,11 +322,18 @@ pub fn check_generated_dungeon(
     let (low, high) = (key_of(bounds.min), key_of(bounds.max));
     let mut chunks = HashMap::new();
     let mut spawned = Vec::new();
+    // Icebreaker B.14: what each of them drops.
+    let mut loots = Vec::new();
     for x in low.x..=high.x {
         for y in low.y..=high.y {
             let key = vek::Vec2::new(x, y);
             let generated = world.generate_chunk(index, key, None, || false, None).ok();
             if let Some((_, supplement)) = &generated {
+                for spawn in &supplement.entity_spawns {
+                    if let common::generation::EntitySpawn::Entity(e) = spawn {
+                        loots.push((e.pos, e.loot.clone()));
+                    }
+                }
                 spawned.extend(supplement
                     .entity_spawns
                     .iter()
@@ -354,11 +361,18 @@ pub fn check_generated_dungeon(
     // One creature on each marker of the plan; others (from caves) are only counted.
     let mut others = spawned.clone();
     for (cell, symbol) in &plan.cells {
-        if dungeon::populate::kind_of(*symbol).is_some() {
+        if let Some(kind) = dungeon::populate::kind_of(*symbol) {
             let pos = dungeon.spawn_pos(*cell);
             let here = spawned.iter().filter(|p| **p == pos).count();
             if here != 1 {
                 problems.push(format!("{here} créature(s) au lieu d'une sur '{symbol}' en {cell:?}"));
+            }
+            let d = dungeon.dungeon();
+            let expected = common::lottery::LootSpec::LootTable(
+                d.butin.creature(kind, d.paliers.get(cell).copied().unwrap_or(1)).to_string(),
+            );
+            if loots.iter().any(|(p, loot)| *p == pos && *loot != expected) {
+                problems.push(format!("créature '{symbol}' en {cell:?} : butin autre que {expected:?}"));
             }
             others.retain(|p| *p != pos);
         }
@@ -417,11 +431,18 @@ pub fn check_generated_grotte(
     let (low, high) = (key_of(bounds.min), key_of(bounds.max));
     let mut chunks = HashMap::new();
     let mut spawned: Vec<vek::Vec3<f32>> = Vec::new();
+    // Icebreaker B.14: what each of them drops.
+    let mut loots = Vec::new();
     for x in low.x..=high.x {
         for y in low.y..=high.y {
             let key = vek::Vec2::new(x, y);
             let generated = world.generate_chunk(index, key, None, || false, None).ok();
             if let Some((_, supplement)) = &generated {
+                for spawn in &supplement.entity_spawns {
+                    if let common::generation::EntitySpawn::Entity(e) = spawn {
+                        loots.push((e.pos.map(|c| c.floor() as i32), e.loot.clone()));
+                    }
+                }
                 spawned.extend(supplement.entity_spawns.iter().flat_map(|spawn| match spawn {
                     common::generation::EntitySpawn::Entity(e) => vec![e.pos],
                     common::generation::EntitySpawn::Group(g) => g.iter().map(|e| e.pos).collect(),
@@ -562,6 +583,10 @@ pub fn check_generated_grotte(
     for inhabitant in &grotte.inhabitants {
         let n = spawned.iter().filter(|p| p.map(|e| e.floor() as i32) == inhabitant.pos).count();
         appeared += n;
+        let expected = inhabitant.loot.clone().map(common::lottery::LootSpec::LootTable);
+        if expected.is_none() || loots.iter().any(|(p, loot)| *p == inhabitant.pos && Some(loot) != expected.as_ref()) {
+            problems.push(format!("habitant {} en {:?} : butin autre que {expected:?}", inhabitant.asset, inhabitant.pos));
+        }
         if n != 1 {
             problems.push(format!("habitant {} apparu {n} fois en {:?}", inhabitant.asset, inhabitant.pos));
         }

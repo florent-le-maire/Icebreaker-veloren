@@ -186,10 +186,10 @@ Chaque tâche = quelques heures, un critère de fin, le jeu reste lançable. Les
 **Bloc 2 — que le butin ait un sens**
 - [x] **B.5 Butin par profondeur** — coffres du donjon généré et de la grotte : table de leur palier (1 à 3, salles
   depuis l'entrée ou niveau de la poche), `butin.ron` ; or + une prise utile (potion, bombe, matériaux, arme ou
-  armure), plus de recettes ni d'objets de quête. Testé (tests, exemples : tables posées sur les coffres) ; pas ouvert en jeu.
-- [ ] **B.14 Butin des créatures par profondeur** (Flo, 2026-11-07) — les créatures du donjon généré et de la grotte
-  lâchent la table de leur palier (`butin.ron`), chef et boss la leur ; rien d'inutile (recettes, objets de quête).
-  *Fin* : une créature du fond lâche plus qu'une de l'entrée ; le chef lâche gros. — *en cours : Veloren-butin, 2026-11-07*
+  armure), plus de recettes ni d'objets de quête. Testé (tests, exemples : tables posées sur les coffres) ; pas ouvert en jeu. f0f92e481b
+- [x] **B.14 Butin des créatures par profondeur** (Flo, 2026-11-07) — créatures du donjon généré et de la grotte :
+  table de leur palier (souvent rien, sinon or, potion, matériau), chef et boss la leur (or + coffres du fond).
+  Testé (tests, exemples : table de chaque créature) ; rien vu tomber en jeu.
 - [ ] **B.6 Reliques** — 4 objets nouveaux, invendables, dans les tables palier 3 et chef.
   *Fin* : un chef en laisse une sur deux (test).
 - [ ] **B.7 Consommables** — ration → feu de camp (soigne, avance la patrouille), parchemin de retour, potions par

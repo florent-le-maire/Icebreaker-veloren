@@ -208,9 +208,13 @@ impl Structure for IcebreakerGrotte {
                 continue;
             }
             let mut rng = ChaCha8Rng::seed_from_u64(i as u64);
-            painter.spawn(
-                EntityInfo::at(pos.as_::<f32>() + Vec3::new(0.5, 0.5, 0.0)).with_asset_expect(&inhabitant.asset, &mut rng, None),
-            );
+            let mut info =
+                EntityInfo::at(pos.as_::<f32>() + Vec3::new(0.5, 0.5, 0.0)).with_asset_expect(&inhabitant.asset, &mut rng, None);
+            // Icebreaker B.14: it drops the loot of its tier (butin.ron).
+            if let Some(loot) = &inhabitant.loot {
+                info = info.with_loot_drop(common::lottery::LootSpec::LootTable(loot.clone()));
+            }
+            painter.spawn(info);
         }
         if let Some(chest) = sprite_kind(&grotte.chest) {
             for (i, pos) in grotte.chests.iter().enumerate() {

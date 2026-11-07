@@ -1,0 +1,11 @@
+// Icebreaker B.14 : ce que lâche une créature du dernier tiers du lieu, assets/icebreaker/butin.ron.
+[
+    (4.0, Nothing),
+    (2.5, MultiDrop(Item("common.items.utility.coins"), 15, 40)),
+    (1.0, Item("common.items.consumable.potion_big")),
+    (0.7, Item("common.items.utility.bomb")),
+    (1.0, Item("common.items.mineral.ingot.steel")),
+    (0.5, Item("common.items.mineral.gem.ruby")),
+    (0.4, LootTable("common.loot_tables.weapons.tier-3")),
+    (0.4, LootTable("common.loot_tables.armor.tier-3")),
+]

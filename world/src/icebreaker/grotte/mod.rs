@@ -331,6 +331,10 @@ pub struct Inhabitant {
     pub asset: String,
     /// The leader: killing it wins the mission (G.7).
     pub chief: bool,
+    /// Icebreaker B.14: the depth of its pocket, and the loot table it drops
+    /// (`butin.ron`; `None`: its own, from Veloren).
+    pub level: i32,
+    pub loot: Option<String>,
 }
 
 /// A generated cave, ready to be drawn.
@@ -733,6 +737,8 @@ pub fn generate(
                     pos: xy.with_z(pocket.floor_z(xy, relief.bosses) + 1),
                     asset,
                     chief: false,
+                    level: pocket.level,
+                    loot: None,
                 });
                 break;
             }
@@ -748,17 +754,17 @@ pub fn generate(
             let axis = bore.a.z as f32 + t * (bore.b.z - bore.a.z) as f32;
             xy.map(|e| e.round() as i32).with_z(axis.round() as i32 - (bore.radius as i32 - 1))
         };
+        // Icebreaker B.5: the depth of its pocket (the one it starts from).
+        let level = pockets
+            .iter()
+            .min_by_key(|p| (p.center.xy() - bore.a.xy()).map(|e| e as i64 * e as i64).sum())
+            .map_or(0, |p| p.level);
         if rng.random_bool(pop.trous as f64) {
             let asset = pick(&mut rng);
-            inhabitants.push(Inhabitant { pos: stand(3.0), asset, chief: false });
+            inhabitants.push(Inhabitant { pos: stand(3.0), asset, chief: false, level, loot: None });
         }
         if rng.random_bool(pop.coffres as f64) {
             chests.push(stand(1.0));
-            // Icebreaker B.5: the depth of its pocket (the one it starts from).
-            let level = pockets
-                .iter()
-                .min_by_key(|p| (p.center.xy() - bore.a.xy()).map(|e| e as i64 * e as i64).sum())
-                .map_or(0, |p| p.level);
             chest_levels.push(level.max(0) as usize);
         }
     }
@@ -767,6 +773,8 @@ pub fn generate(
             pos: deep.center.xy().with_z(deep.floor_z(deep.center.xy(), relief.bosses) + 1),
             asset: look.chef.clone(),
             chief: true,
+            level: deep.level,
+            loot: None,
         });
     }
 
@@ -776,6 +784,12 @@ pub fn generate(
         .iter()
         .map(|l| butin.as_ref().map_or(1, |b| b.palier(*l, levels.max(1) as usize)))
         .collect();
+    if let Some(b) = &butin {
+        for i in &mut inhabitants {
+            let kind = if i.chief { "chief" } else { "" };
+            i.loot = Some(b.creature(kind, b.palier(i.level.max(0) as usize, levels.max(1) as usize)).to_string());
+        }
+    }
     let tiers = butin.as_ref().map_or(1, |b| b.paliers());
     let chests_by_tier: Vec<String> = (1..=tiers)
         .map(|p| chest_tiers.iter().filter(|t| **t == p).count().to_string())
@@ -928,6 +942,29 @@ mod tests {
             }
         }
         assert!(by_tier.iter().all(|n| *n > 0), "coffres par palier : {by_tier:?}");
+    }
+
+    /// Icebreaker B.14: every inhabitant drops a table of `butin.ron`, the
+    /// chief its own, the others that of their pocket's level.
+    #[test]
+    fn inhabitants_drop_the_loot_of_their_depth() {
+        let settings = Settings::load().unwrap();
+        let butin = settings.butin.clone().unwrap();
+        let mouth = Vec3::new(1000, 1000, 200);
+        for seed in 0..10 {
+            let grotte = generate(&settings, seed, mouth, None, &|_| mouth.z);
+            let levels = grotte.pockets.iter().map(|p| p.level).max().unwrap() as usize + 1;
+            for i in &grotte.inhabitants {
+                let expected = if i.chief {
+                    butin.chef.as_str()
+                } else {
+                    butin.creature("", butin.palier(i.level as usize, levels))
+                };
+                assert_eq!(i.loot.as_deref(), Some(expected), "graine {seed} : {i:?}");
+            }
+            let deepest = grotte.inhabitants.iter().filter(|i| !i.chief).map(|i| i.level).max().unwrap();
+            assert!(deepest > 0, "graine {seed} : personne en bas");
+        }
     }
 
     #[test]

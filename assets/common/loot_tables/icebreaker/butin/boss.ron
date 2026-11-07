@@ -1,0 +1,14 @@
+// Icebreaker B.14 : ce que lâche le boss du donjon généré, assets/icebreaker/butin.ron : de l'or, trois coffres du
+// dernier tiers et une arme ou une armure du palier au-dessus.
+[
+    (1.0, All([
+        MultiDrop(Item("common.items.utility.coins"), 200, 400),
+        LootTable("common.loot_tables.icebreaker.butin.coffre_3"),
+        LootTable("common.loot_tables.icebreaker.butin.coffre_3"),
+        LootTable("common.loot_tables.icebreaker.butin.coffre_3"),
+        Lottery([
+            (1.0, LootTable("common.loot_tables.weapons.tier-4")),
+            (1.0, LootTable("common.loot_tables.armor.tier-4")),
+        ]),
+    ])),
+]
