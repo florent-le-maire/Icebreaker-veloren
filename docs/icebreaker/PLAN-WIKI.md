@@ -77,8 +77,8 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
 - [x] **W.13 Todos** — `A-FAIRE.md` (Ouvert, Pris en compte) et page « À faire » : ajouter, cocher (→ fait), supprimer,
   un commit par saisie ; tuiles « réponses à traiter » et « todos ouverts » sur l'accueil ; essayé avec curl et vu en
   capture Edge, pas cliqué dans un vrai navigateur. 7078d916c2
-- [ ] **W.14 Règle pour les agents** — en début de session, traiter les réponses de `QUESTIONS.md` et les todos
-  ouverts de `A-FAIRE.md` (`CLAUDE.md`, `README.md`).
+- [x] **W.14 Règle pour les agents** — `CLAUDE.md` (Règles, Commandes) et `README.md` : en début de session, traiter
+  les réponses de `QUESTIONS.md` et les todos ouverts de `A-FAIRE.md` ; commande `serve`. 09e8dd63da
 
 Hors périmètre pour l'instant : accès public, édition dans le navigateur (sauf questions et todos en local, W.12 et
 W.13), mise à jour automatique à chaque push, historique des valeurs des réglages dans le temps (`IDEES.md`).
