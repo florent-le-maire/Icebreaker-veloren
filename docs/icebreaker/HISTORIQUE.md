@@ -162,7 +162,7 @@ de Veloren (`world/src/site/plot/icebreaker_dungeon.rs`). Données dans `assets/
   coffres et butin de Veloren). Les endormies sont notées dans le plan (majuscules) mais apparaissent éveillées.
   Vérifié : tests (un seul chef, dans la salle de l'objectif ; personne devant une porte ; donjon toujours
   finissable) ; contrôle des blocs et des apparitions (une créature par marqueur, 11 à 20 par donjon) pour 5 graines.
-  Pas encore joué : à vérifier en jeu que le chef se tue au fond. — dee9e5fca1
+  Pas encore joué : à vérifier en jeu que le chef se tue au fond. — dee9e5fca1 Vu en jeu (Flo, 2026-11-07).
 - [x] **G.6 Paramètres de mission** — `icebreaker.ps1 donjon -Site Genere -Taille -Objectif -Region -Saison -Menace
   -Ennemis -Faction` (variables `ICEBREAKER_DONJON_*`) ; effets dans `generation.ron` → `parameters` (valeurs du
   projet Icebreaker : écarts qui s'ajoutent, facteurs qui se multiplient, chef et boss uniques). Le résumé du
