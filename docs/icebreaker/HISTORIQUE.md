@@ -78,7 +78,8 @@ reprises dans la liste « À vérifier en jeu » de `PLAN.md` : quand un point e
   Bâtiments = les 4 maisons les plus proches de la place, PNJ devant la porte. Touche U : caméra au-dessus, clic →
   le serveur répond par le panneau du bâtiment visé (contenu, total, prix ; pas de niveau ni d'action pour
   l'instant). Testé (clic → bâtiment, démarrage, PNJ devant les maisons) ; pas encore en jeu. — 4237d4e1a7
-  Ajout : bâtiments nommés et surlignés sous la souris en vue de dessus ; pas encore vu en jeu. — e6aaf6d11a
+  Ajout : bâtiments nommés et surlignés sous la souris en vue de dessus ; pas encore vu en jeu. — e6aaf6d11a Vu en jeu
+  (Flo, 2026-11-07).
 - [x] **V.5 Retour au village** — commande `/rentrer` en instance : bilan dans le chat, le joueur repart vers le
   village (reconnexion à la main pour l'instant).
   *Fin* : donjon → `/rentrer` → village, avec le butin.
