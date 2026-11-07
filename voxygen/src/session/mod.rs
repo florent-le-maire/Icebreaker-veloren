@@ -1738,7 +1738,12 @@ impl PlayState for SessionState {
                     let up_axis = self.key_state.swim_up as i32 as f32
                         - self.key_state.swim_down as i32 as f32;
 
-                    let dir = (right * axis_right + forward * axis_up + up * up_axis).normalized();
+                    // Icebreaker : sans touche enfoncée, `normalized()` d'un vecteur nul donne NaN ;
+                    // tant que le serveur n'a pas donné le point de départ du spectateur (fantôme du
+                    // registre, juste après la mort), la caméra prenait ce NaN et le son plantait.
+                    let dir = (right * axis_right + forward * axis_up + up * up_axis)
+                        .try_normalized()
+                        .unwrap_or_default();
 
                     let speed = FREEFLY_SPEED
                         * if self.inputs_state.contains(&GameInput::SpectateSpeedBoost) {

@@ -176,6 +176,8 @@ tombe, tous rentrent. Le personnage mort est perdu : il quitte le registre et il
   fantôme. 3e9abc6ef2
 - [x] **T.6 Le mort est perdu pour de bon** — fiche retirée du registre, personnage supprimé de la base. Client
   texte : registre à 0/10 après la mort, plus dans la base ; texte de mort du vrai client pas vu. 186c82f80d
+- [x] **T.7 Plantage du client au passage en fantôme** — caméra libre sans touche enfoncée : NaN dans la caméra
+  avant le point de départ du serveur, le son plantait (build debug). Compilé, pas revu en jeu. HASH_T7
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
@@ -249,6 +251,7 @@ tâche pour ce qui casse.
 - T.2 : barre « Mort dans N s » du joueur à terre et au-dessus du corps (position, lisibilité).
 - T.3 : modèle du sac au sol, libellé « Fouiller le sac », fouille interrompue si on bouge.
 - T.4 : texte de mort, clic pour regarder un allié (vue à la première personne), R pour rentrer en fantôme.
+- T.7 : mourir (maintenir Espace à terre) puis rentrer en fantôme sans toucher au clavier : plus de plantage.
 
 **Divers**
 - M.1 : téléchargement du plugin par le vrai client.
