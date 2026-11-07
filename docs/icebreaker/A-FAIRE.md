@@ -8,4 +8,7 @@ dans « Pris en compte » en disant où elle est partie (`→ PLAN.md, X.14`). U
 
 ## Ouvert
 
+- [ ] **2026-11-07 (Flo)** : Ajouter un ennemie qui un assemblage de vers qui crawl comme le monstre de Princesse
+  Mononoké
+
 ## Pris en compte
