@@ -16,7 +16,8 @@ reprises dans la liste « À vérifier en jeu » de `PLAN.md` : quand un point e
 ## Jalon 1 — Des instances propres (la base de tout)
 
 - [x] **I.1 Pas de faune sauvage en instance** — ni faune des chunks, ni oiseaux et monstres errants de rtsim ;
-  restent les habitants du donjon et de la ville. Pas encore vérifié 5 min en jeu. — c1c1aa969c
+  restent les habitants du donjon et de la ville. Pas encore vérifié 5 min en jeu. — c1c1aa969c Vu en jeu (Flo,
+  2026-11-07).
 - [x] **I.2 Zone fermée avec horizon** — cercle autour du site (rayon du site + `icebreaker.zone_margin`, 120 blocs) ;
   le serveur remet le joueur sur le bord avec un message. À vérifier en jeu (pied, planeur, nage) ; montures non
   gérées. — b166c0e2e4
