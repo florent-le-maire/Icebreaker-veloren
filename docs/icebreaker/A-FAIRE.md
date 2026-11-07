@@ -10,5 +10,6 @@ dans « Pris en compte » en disant où elle est partie (`→ PLAN.md, X.14`). U
 
 - [ ] **2026-11-07 (Flo)** : Ajouter un ennemie qui un assemblage de vers qui crawl comme le monstre de Princesse
   Mononoké
+- [ ] **2026-11-07 (Flo)** : [en jeu] G.7 Victoire : ça ne fonctionne pas.
 
 ## Pris en compte
