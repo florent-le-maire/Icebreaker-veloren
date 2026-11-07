@@ -292,6 +292,24 @@ table.reglages td.commentaire { color: var(--texte-2); }
 .question-texte em { color: var(--accent); font-style: normal; }
 .tranchee { padding: .5rem 0; border-bottom: 1px solid var(--bordure); }
 .tranchee .question-texte { color: var(--texte); }
+/* Icebreaker : saisie du wiki local (W.12) */
+.reponse { margin-top: .45rem; padding: .4rem .7rem; border-left: 3px solid var(--accent); background: rgba(127, 212, 255, .06); border-radius: 0 8px 8px 0; font-size: .94rem; }
+.reponse-tete { color: var(--accent); font-weight: 600; margin-right: .3rem; }
+.saisie { margin-top: .55rem; display: flex; flex-direction: column; gap: .4rem; }
+.saisie textarea, .saisie input[type="text"] {
+  width: 100%; box-sizing: border-box; padding: .45rem .6rem; border-radius: 8px; border: 1px solid var(--bordure);
+  background: var(--fond); color: var(--texte); font: inherit; font-size: .94rem; resize: vertical;
+}
+.saisie textarea:focus, .saisie input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(127, 212, 255, .15); }
+.saisie-boutons { display: flex; flex-wrap: wrap; gap: .4rem; }
+.saisie button, .bouton-ligne button {
+  padding: .3rem .85rem; border-radius: 999px; border: 1px solid var(--accent-fonce); background: rgba(127, 212, 255, .12);
+  color: var(--accent); font: inherit; font-size: .88rem; cursor: pointer;
+}
+.saisie button:hover, .bouton-ligne button:hover { border-color: var(--accent); background: rgba(127, 212, 255, .2); }
+.saisie .bouton-sobre, .bouton-ligne .bouton-sobre { border-color: var(--bordure-claire); background: transparent; color: var(--texte-2); }
+.saisie .bouton-danger, .bouton-ligne .bouton-danger { border-color: rgba(240, 138, 138, .45); background: transparent; color: var(--danger); }
+.saisie-note { color: var(--alerte); font-size: .9rem; }
 
 /* Recherche */
 .recherche { margin-left: auto; position: relative; width: min(26rem, 50vw); display: flex; align-items: center; }

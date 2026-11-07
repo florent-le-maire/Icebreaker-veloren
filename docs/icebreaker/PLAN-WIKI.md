@@ -71,6 +71,12 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
 - [x] **W.11 Icônes dans les tableaux** — `icones.rs` : vingt-quatre règles (mots → icône de Veloren) appliquées à la
   première cellule des tableaux Markdown et aux lignes des réglages (armes, classes, lieux, états, sac, potion) ;
   vu en captures Edge sur combat, classes et lieux. b57250ae8d
+- [x] **W.12 Répondre aux questions depuis le site** — `cargo run -p icebreaker-wiki -- serve` sert le site sur
+  127.0.0.1:8095 ; sous chaque question, Répondre / Obsolète / Supprimer modifient `QUESTIONS.md` et font un commit de
+  ce seul fichier (sur master seulement) ; essayé avec curl et vu en capture Edge, pas cliqué dans un vrai navigateur.
+- [ ] **W.13 Todos** — page « À faire » : ajouter, cocher, supprimer ; écrit dans `TODO.md`, même commit par saisie.
+- [ ] **W.14 Règle pour les agents** — en début de session, traiter les réponses de `QUESTIONS.md` et les todos
+  ouverts de `TODO.md` (`CLAUDE.md`, `README.md`).
 
-Hors périmètre pour l'instant : accès public, édition dans le navigateur, mise à jour automatique à chaque push,
+Hors périmètre pour l'instant : accès public, édition dans le navigateur hors questions et todos (W.12, W.13), mise à jour automatique à chaque push,
 historique des valeurs des réglages dans le temps (`IDEES.md`).

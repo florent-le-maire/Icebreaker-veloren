@@ -6,11 +6,13 @@
 mod avancement;
 mod commits;
 mod decisions;
+mod edition;
 mod fiches;
 mod icones;
 mod markdown;
 mod reglages;
 mod schemas;
+mod serveur;
 mod site;
 mod taches;
 
@@ -262,24 +264,38 @@ pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
     Ok(pages)
 }
 
-fn racine_depot() -> PathBuf {
-    std::env::args()
-        .nth(1)
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("."))
-}
-
+/// `icebreaker-wiki [racine]` écrit le site statique ; `icebreaker-wiki serve [--port N] [--nom X]
+/// [--branche-libre] [racine]` le sert en local avec la saisie (Icebreaker : W.12).
 fn main() -> Result<()> {
-    let racine = racine_depot();
+    let mut args: Vec<String> = std::env::args().skip(1).collect();
+    let serve = args.first().is_some_and(|a| a == "serve");
+    let mut options = serveur::Options { port: 8095, nom: "Flo".to_string(), branche_libre: false };
+    let mut racine = PathBuf::from(".");
+    if serve {
+        args.remove(0);
+    }
+    let mut args = args.into_iter();
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--port" if serve => options.port = args.next().context("--port N")?.parse().context("--port N")?,
+            "--nom" if serve => options.nom = args.next().context("--nom X")?,
+            "--branche-libre" if serve => options.branche_libre = true,
+            a if a.starts_with("--") => anyhow::bail!("option inconnue : {a}"),
+            _ => racine = PathBuf::from(arg),
+        }
+    }
     let docs = racine.join("docs").join("icebreaker");
     anyhow::ensure!(
         docs.is_dir(),
         "dossier {} introuvable : lancer depuis la racine du dépôt ou passer la racine en argument",
         docs.display()
     );
+    if serve {
+        return serveur::lancer(&racine, options);
+    }
     let sortie = racine.join("site");
     let pages = collecter(&racine, &docs)?;
-    let nb = site::ecrire(&sortie, &pages, &racine)?;
+    let nb = site::ecrire(&sortie, &pages, &racine, false)?;
     println!("{nb} pages écrites dans {}", sortie.display());
     Ok(())
 }

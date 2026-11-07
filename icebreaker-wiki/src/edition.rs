@@ -1,0 +1,211 @@
+//! Icebreaker : ce que le wiki local (`serve`) écrit dans la doc : réponses aux questions de `QUESTIONS.md` (W.12).
+//!
+//! Fonctions pures sur le texte du fichier ; ses fins de ligne (CRLF ou LF) sont gardées et les lignes ajoutées sont
+//! coupées à la largeur du reste de la doc.
+
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use anyhow::{Result, bail};
+
+use crate::decisions::QUESTION;
+
+/// Largeur des lignes ajoutées, comme dans le reste de `docs/icebreaker/`.
+const LARGEUR: usize = 118;
+
+/// Les lignes d'un texte, sans fin de ligne, et la fin de ligne du fichier.
+fn lignes(texte: &str) -> (Vec<String>, &'static str) {
+    let fin = if texte.contains("\r\n") { "\r\n" } else { "\n" };
+    (texte.lines().map(|l| l.trim_end_matches('\r').to_string()).collect(), fin)
+}
+
+fn joindre(lignes: &[String], fin: &str) -> String {
+    let mut texte = lignes.join(fin);
+    texte.push_str(fin);
+    texte
+}
+
+/// Coupe `contenu` en lignes de `LARGEUR` caractères au plus : `retrait1` devant la première, `retrait` devant les
+/// suivantes. Les retours à la ligne de `contenu` deviennent des espaces.
+fn couper(contenu: &str, retrait1: &str, retrait: &str) -> Vec<String> {
+    let mut sortie = Vec::new();
+    let mut courante = String::new();
+    for mot in contenu.split_whitespace() {
+        if courante.is_empty() {
+            courante = format!("{retrait1}{mot}");
+        } else if courante.chars().count() + 1 + mot.chars().count() > LARGEUR {
+            sortie.push(std::mem::take(&mut courante));
+            courante = format!("{retrait}{mot}");
+        } else {
+            courante.push(' ');
+            courante.push_str(mot);
+        }
+    }
+    if !courante.is_empty() {
+        sortie.push(courante);
+    }
+    sortie
+}
+
+/// Un texte saisi, sur une ligne : espaces repliés, vide refusé.
+fn une_ligne(texte: &str, quoi: &str) -> Result<String> {
+    let texte = texte.split_whitespace().collect::<Vec<_>>().join(" ");
+    if texte.is_empty() {
+        bail!("{quoi} vide");
+    }
+    Ok(texte)
+}
+
+/// Les lignes `[debut, fin)` de la question `numero` : sa ligne `- **Qn …` et ses continuations en retrait.
+fn bloc_question(lignes: &[String], numero: &str) -> Result<(usize, usize)> {
+    if !numero.starts_with('Q') || numero.len() < 2 || !numero[1..].bytes().all(|b| b.is_ascii_digit()) {
+        bail!("numéro de question invalide : {numero}");
+    }
+    let tete = format!("- **{numero} ");
+    let Some(debut) = lignes.iter().position(|l| l.starts_with(&tete)) else {
+        bail!("{numero} introuvable dans QUESTIONS.md (déjà traitée ?)");
+    };
+    let mut fin = debut + 1;
+    while fin < lignes.len() && lignes[fin].starts_with("  ") {
+        fin += 1;
+    }
+    Ok((debut, fin))
+}
+
+/// Ajoute sous la question `numero` la ligne `*Réponse de <nom> (<date>)* : <reponse>`.
+pub fn repondre(texte: &str, numero: &str, reponse: &str, nom: &str, date: &str) -> Result<String> {
+    let reponse = une_ligne(reponse, "réponse")?;
+    let (mut l, fin) = lignes(texte);
+    let (_, apres) = bloc_question(&l, numero)?;
+    let nouvelles = couper(&format!("*Réponse de {nom} ({date})* : {reponse}"), "  ", "  ");
+    l.splice(apres..apres, nouvelles);
+    Ok(joindre(&l, fin))
+}
+
+/// Retire la question `numero` du fichier.
+pub fn supprimer_question(texte: &str, numero: &str) -> Result<String> {
+    let (mut l, fin) = lignes(texte);
+    let (debut, apres) = bloc_question(&l, numero)?;
+    l.drain(debut..apres);
+    Ok(joindre(&l, fin))
+}
+
+/// Retire la question `numero` et note dans « Tranché » qu'elle est obsolète.
+pub fn rendre_obsolete(texte: &str, numero: &str, nom: &str, date: &str) -> Result<String> {
+    let (mut l, fin) = lignes(texte);
+    let (debut, apres) = bloc_question(&l, numero)?;
+    let bloc: Vec<&str> = l[debut..apres].iter().map(|x| x.trim()).collect();
+    let bloc = bloc.join(" ");
+    let titre = QUESTION
+        .captures(bloc.trim_start_matches("- "))
+        .map(|c| c[2].trim().trim_end_matches(['.', ':']).trim().to_string())
+        .unwrap_or_default();
+    l.drain(debut..apres);
+    let Some(tranche) = l.iter().position(|x| x.starts_with("## Tranché")) else {
+        bail!("section « Tranché » introuvable dans QUESTIONS.md");
+    };
+    let mut ou = l[tranche + 1..]
+        .iter()
+        .position(|x| x.starts_with("## "))
+        .map_or(l.len(), |i| tranche + 1 + i);
+    while ou > tranche + 1 && l[ou - 1].trim().is_empty() {
+        ou -= 1;
+    }
+    let ligne = couper(&format!("- **{date} ({nom})** : {numero} *{titre}* : obsolète."), "", "  ");
+    l.splice(ou..ou, ligne);
+    Ok(joindre(&l, fin))
+}
+
+/// La date du jour (UTC) au format `AAAA-MM-JJ`.
+pub fn aujourd_hui() -> String {
+    let secondes = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs()) as i64;
+    // Jours depuis 1970 → date du calendrier (algorithme « civil_from_days » de H. Hinnant).
+    let z = secondes.div_euclid(86_400) + 719_468;
+    let ere = z.div_euclid(146_097);
+    let jour_ere = z - ere * 146_097;
+    let annee_ere = (jour_ere - jour_ere / 1460 + jour_ere / 36_524 - jour_ere / 146_096) / 365;
+    let jour_annee = jour_ere - (365 * annee_ere + annee_ere / 4 - annee_ere / 100);
+    let mp = (5 * jour_annee + 2) / 153;
+    let jour = jour_annee - (153 * mp + 2) / 5 + 1;
+    let mois = if mp < 10 { mp + 3 } else { mp - 9 };
+    let annee = annee_ere + ere * 400 + i64::from(mois <= 2);
+    format!("{annee:04}-{mois:02}-{jour:02}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::decisions::lire_questions;
+
+    const TEXTE: &str = "# Questions\r\n\r\n## 1. Stratégie\r\n\r\n- **Q1 Contenu de la démo.** Le scénario suppose\r\n  la route. *Qui* : Flo.\r\n- **Q12 Le moteur** : Veloren ou Godot.\r\n\r\n## Tranché\r\n\r\nTexte.\r\n\r\n- **2026-10-19 (donjon)** : mort = cadavre.\r\n";
+
+    #[test]
+    fn repondre_garde_le_fichier() {
+        let t = repondre(TEXTE, "Q1", "Une démo\nsans route.", "Flo", "2026-11-07").unwrap();
+        assert!(t.contains("  la route. *Qui* : Flo.\r\n  *Réponse de Flo (2026-11-07)* : Une démo sans route.\r\n- **Q12"));
+        assert!(!t.contains("\n\n") && t.matches('\n').count() == t.matches("\r\n").count());
+        let (q, _) = lire_questions(&t);
+        assert_eq!(q.len(), 2);
+        assert_eq!(q[0].reponses[0].texte_html, "Une démo sans route.");
+        assert!(q[1].reponses.is_empty());
+        // Q1 ne doit pas attraper Q12, ni l'inverse.
+        let t = repondre(TEXTE, "Q12", "Veloren", "Flo", "2026-11-07").unwrap();
+        assert_eq!(lire_questions(&t).0[1].reponses.len(), 1);
+    }
+
+    #[test]
+    fn longue_reponse_coupee() {
+        let longue = "mot ".repeat(80);
+        let t = repondre(TEXTE, "Q12", &longue, "Flo", "2026-11-07").unwrap();
+        assert!(t.lines().all(|l| l.trim_end_matches('\r').chars().count() <= LARGEUR));
+        assert_eq!(lire_questions(&t).0[1].reponses.len(), 1);
+    }
+
+    #[test]
+    fn supprimer_et_obsolete() {
+        let t = supprimer_question(TEXTE, "Q1").unwrap();
+        let (q, tr) = lire_questions(&t);
+        assert_eq!(q.len(), 1);
+        assert_eq!(q[0].numero, "Q12");
+        assert_eq!(tr.len(), 1);
+        let t = rendre_obsolete(TEXTE, "Q1", "Flo", "2026-11-07").unwrap();
+        let (q, tr) = lire_questions(&t);
+        assert_eq!(q.len(), 1);
+        assert_eq!(tr.len(), 2);
+        assert_eq!(tr[1].date, "2026-11-07");
+        assert_eq!(tr[1].texte_html, "Q1 <em>Contenu de la démo</em> : obsolète.");
+        assert!(t.ends_with("cadavre.\r\n- **2026-11-07 (Flo)** : Q1 *Contenu de la démo* : obsolète.\r\n"));
+    }
+
+    #[test]
+    fn erreurs() {
+        assert!(repondre(TEXTE, "Q3", "x", "Flo", "2026-11-07").is_err());
+        assert!(repondre(TEXTE, "Q1", "  \n ", "Flo", "2026-11-07").is_err());
+        assert!(supprimer_question(TEXTE, "Q1 ").is_err());
+        assert!(supprimer_question(TEXTE, "").is_err());
+    }
+
+    #[test]
+    fn sur_le_vrai_fichier() {
+        let texte = std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../docs/icebreaker/QUESTIONS.md"),
+        )
+        .unwrap();
+        let (avant, tranchees) = lire_questions(&texte);
+        let premiere = &avant[0].numero;
+        let t = rendre_obsolete(&texte, premiere, "Flo", "2026-11-07").unwrap();
+        let (apres, tranchees_apres) = lire_questions(&t);
+        assert_eq!(apres.len(), avant.len() - 1);
+        assert_eq!(tranchees_apres.len(), tranchees.len() + 1);
+        let t = repondre(&texte, premiere, "oui", "Flo", "2026-11-07").unwrap();
+        assert_eq!(lire_questions(&t).0.len(), avant.len());
+    }
+
+    #[test]
+    fn date_du_jour() {
+        let d = aujourd_hui();
+        assert_eq!(d.len(), 10);
+        assert!(d.as_str() >= "2026-01-01");
+    }
+}

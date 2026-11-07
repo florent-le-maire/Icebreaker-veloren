@@ -11,17 +11,29 @@
 </header>
 <div class="tuiles">
   <div class="tuile"><div class="tuile-chiffre tuile-alerte">{{ q.nb_ouvertes }}</div><div class="tuile-nom">questions ouvertes</div></div>
-  <div class="tuile"><div class="tuile-chiffre">{{ q.nb_tranchees }}</div><div class="tuile-nom">petites décisions tranchées</div></div>
+  {% if q.nb_repondues %}<div class="tuile tuile-attention"><div class="tuile-chiffre">{{ q.nb_repondues }}</div><div class="tuile-nom">réponses à traiter par l'agent</div></div>
+  {% endif %}<div class="tuile"><div class="tuile-chiffre">{{ q.nb_tranchees }}</div><div class="tuile-nom">petites décisions tranchées</div></div>
 </div>
 <div class="intention">{{ q.intro_html | safe }}</div>
+{% if edition %}<p class="saisie-note">Saisie active : chaque envoi modifie <code>docs/icebreaker/QUESTIONS.md</code> et fait un commit. Une réponse reste sous la question jusqu'à ce que l'agent la passe dans « Tranché ».</p>{% endif %}
 
 {% for s in q.sections %}
 <h2>{{ s.nom }}</h2>
 <ol class="questions">
 {% for x in s.questions %}
   <li class="question" id="{{ x.numero }}">
-    <div class="question-tete"><span class="id">{{ x.numero }}</span> <strong>{{ x.titre }}</strong> <span class="badge badge-a-voir">ouverte</span></div>
+    <div class="question-tete"><span class="id">{{ x.numero }}</span> <strong>{{ x.titre }}</strong> {% if x.reponses %}<span class="badge badge-en-cours">répondue, à traiter</span>{% else %}<span class="badge badge-a-voir">ouverte</span>{% endif %}</div>
     <div class="question-texte">{{ x.texte_html | safe }}</div>
+    {% for r in x.reponses %}<div class="reponse"><span class="reponse-tete">Réponse de {{ r.nom }}, {{ r.date }}</span> {{ r.texte_html | safe }}</div>{% endfor %}
+    {% if edition %}<form class="saisie" method="post" action="/questions/repondre" accept-charset="utf-8">
+      <input type="hidden" name="numero" value="{{ x.numero }}">
+      <textarea name="reponse" rows="2" placeholder="Répondre à {{ x.numero }}…"></textarea>
+      <div class="saisie-boutons">
+        <button type="submit">Répondre</button>
+        <button type="submit" class="bouton-sobre" formaction="/questions/obsolete" onclick="return confirm('Marquer {{ x.numero }} obsolète (elle part dans Tranché) ?')">Obsolète</button>
+        <button type="submit" class="bouton-danger" formaction="/questions/supprimer" onclick="return confirm('Supprimer {{ x.numero }} de QUESTIONS.md ?')">Supprimer</button>
+      </div>
+    </form>{% endif %}
   </li>
 {% endfor %}
 </ol>

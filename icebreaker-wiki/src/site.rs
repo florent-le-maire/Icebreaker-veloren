@@ -147,8 +147,9 @@ pub fn copier_images<'a>(racine: &Path, sortie: &Path, fichiers: impl Iterator<I
 }
 
 /// Écrit toutes les pages, la feuille de style, le script, le logo, les icônes et l'index de recherche dans
-/// `sortie` (`racine` est la racine du dépôt, pour copier les images) ; renvoie le nombre de pages.
-pub fn ecrire(sortie: &Path, pages: &[Page], racine: &Path) -> Result<usize> {
+/// `sortie` (`racine` est la racine du dépôt, pour copier les images) ; renvoie le nombre de pages. `edition` :
+/// formulaires de saisie (wiki local, `serve`).
+pub fn ecrire(sortie: &Path, pages: &[Page], racine: &Path, edition: bool) -> Result<usize> {
     let env = environnement()?;
     std::fs::create_dir_all(sortie)?;
     std::fs::write(sortie.join("style.css"), STYLE)?;
@@ -173,6 +174,7 @@ pub fn ecrire(sortie: &Path, pages: &[Page], racine: &Path) -> Result<usize> {
                 racine => racine,
                 nav => navigation(pages, page, &racine),
                 extra => page.extra,
+                edition => edition,
             })
             .with_context(|| format!("rendu de {}", page.source))?;
         let chemin = sortie.join(&page.url);
@@ -250,7 +252,7 @@ mod tests {
         pages[0].html = "<p>bonjour</p>".into();
         pages[1].html = "<p>règles</p>".into();
         let dossier = std::env::temp_dir().join(format!("icebreaker-wiki-test-{}", std::process::id()));
-        let nb = ecrire(&dossier, &pages, &dossier).unwrap();
+        let nb = ecrire(&dossier, &pages, &dossier, false).unwrap();
         assert_eq!(nb, 2);
         let combat = std::fs::read_to_string(dossier.join("design/combat.html")).unwrap();
         assert!(combat.contains("<p>règles</p>"));

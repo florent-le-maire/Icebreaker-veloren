@@ -14,6 +14,16 @@ pub struct Question {
     pub titre: String,
     pub texte_html: String,
     pub section: String,
+    /// Icebreaker : les réponses écrites depuis le wiki local (`*Réponse de Flo (2026-11-07)* : …`), que l'agent
+    /// passe dans « Tranché » au début de la session suivante.
+    pub reponses: Vec<Reponse>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct Reponse {
+    pub nom: String,
+    pub date: String,
+    pub texte_html: String,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -23,7 +33,9 @@ pub struct Tranchee {
     pub texte_html: String,
 }
 
-static QUESTION: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\*\*(Q\d+) ([^*]+?)\*\*\s*:?\s*(.*)$").unwrap());
+pub static QUESTION: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\*\*(Q\d+) ([^*]+?)\*\*\s*:?\s*(.*)$").unwrap());
+static REPONSE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^([^(*]+?) \((\d{4}-\d{2}-\d{2})\)\*\s*:?\s*(.*)$").unwrap());
 static TRANCHEE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\*\*(\d{4}-\d{2}-\d{2})\s*(?:\(([^)]*)\))?\*\*\s*:?\s*(.*)$").unwrap());
 
@@ -72,10 +84,21 @@ pub fn lire_questions(texte: &str) -> (Vec<Question>, Vec<Tranchee>) {
                 });
             }
         } else if let Some(cap) = QUESTION.captures(&ligne) {
+            let mut morceaux = cap[3].split("*Réponse de ");
+            let texte = morceaux.next().unwrap_or("").trim();
+            let reponses = morceaux
+                .filter_map(|m| REPONSE.captures(m.trim()))
+                .map(|r| Reponse {
+                    nom: r[1].trim().to_string(),
+                    date: r[2].to_string(),
+                    texte_html: markdown::rendre_inline(&r[3]),
+                })
+                .collect();
             questions.push(Question {
                 numero: cap[1].to_string(),
                 titre: cap[2].trim().trim_end_matches(['.', ':']).trim().to_string(),
-                texte_html: markdown::rendre_inline(&cap[3]),
+                texte_html: markdown::rendre_inline(texte),
+                reponses,
                 section: section.clone(),
             });
         }
@@ -93,6 +116,8 @@ struct SectionVue {
 struct QuestionsVue {
     intro_html: String,
     nb_ouvertes: usize,
+    /// Questions qui ont une réponse pas encore traitée par l'agent.
+    nb_repondues: usize,
     nb_tranchees: usize,
     sections: Vec<SectionVue>,
     tranchees: Vec<Tranchee>,
@@ -116,6 +141,11 @@ pub fn page_questions(texte: &str) -> Page {
     let vue = QuestionsVue {
         intro_html: markdown::rendre(intro, "QUESTIONS.md").html,
         nb_ouvertes: sections.iter().map(|s| s.questions.len()).sum(),
+        nb_repondues: sections
+            .iter()
+            .flat_map(|s| &s.questions)
+            .filter(|q| !q.reponses.is_empty())
+            .count(),
         nb_tranchees: tranchees.len(),
         sections,
         tranchees: tranchees.into_iter().rev().collect(),
@@ -207,6 +237,19 @@ mod tests {
         let page = page_questions(texte);
         assert_eq!(page.extra["nb_ouvertes"], 2);
         assert!(page.extra["intro_html"].as_str().unwrap().contains("Intro."));
+    }
+
+    #[test]
+    fn reponses_du_wiki() {
+        let texte = "## 1. S\n\n- **Q4 Le moteur** : Veloren ou Godot. *Qui* : équipe.\n  *Réponse de Flo (2026-11-07)* : Veloren,\n  on garde. *Réponse de Sayanel (2026-11-08)* : d'accord.\n";
+        let (q, _) = lire_questions(texte);
+        assert_eq!(q[0].texte_html, "Veloren ou Godot. <em>Qui</em> : équipe.");
+        assert_eq!(q[0].reponses.len(), 2);
+        assert_eq!(q[0].reponses[0].nom, "Flo");
+        assert_eq!(q[0].reponses[0].date, "2026-11-07");
+        assert_eq!(q[0].reponses[0].texte_html, "Veloren, on garde.");
+        assert_eq!(q[0].reponses[1].nom, "Sayanel");
+        assert_eq!(page_questions(texte).extra["nb_repondues"], 1);
     }
 
     #[test]
