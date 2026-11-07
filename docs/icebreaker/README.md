@@ -52,7 +52,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | M | Mod Veloren | `PLAN-MOD.md` | M.1 fait ; la suite après la démo | `Veloren-mod` |
 | T | À terre, mort et sac du mort | `PLAN.md` | T.1 à T.6 faits, à voir en jeu | `Veloren-mort` |
 | J | Balise lumineuse | `HISTORIQUE.md` | fait, vu en jeu | — (supprimé) |
-| W | Wiki de l'équipe | `PLAN-WIKI.md` | W.1 à W.6 et W.8 à W.14 faits ; W.7 (VPS) à lancer | `Veloren-wiki` |
+| W | Wiki de l'équipe | `PLAN-WIKI.md` | W.1 à W.6 et W.8 à W.16 faits ; W.7 (VPS) à lancer | `Veloren-wiki` |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 
