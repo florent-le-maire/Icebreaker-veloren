@@ -69,6 +69,12 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
   tireur (`combat.ron` → `part_vitesse_tireur: 0.0`) : on touche en se déplaçant de côté, une cible qui change de
   direction esquive ; vaut aussi pour les archers ennemis. Testé (test ciblé, donjon démarre), vu en jeu. — f2b57a7e8d
 
+## Jalon L — Combat, suite (Flo, 2026-11-07)
+
+- [ ] **L.5 Dégâts selon le type d'attaque** — contre une créature : épée 3–4 coups, arme à distance 5–6, lance-flammes
+  moins par touche ; un coup retire au plus 40 % des PV max, plafond relevé par les bonus de dégâts. — *en cours :
+  Veloren-combat, 2026-11-07*
+
 ## Jalon 3 — Pillage sur la route
 
 - [ ] **P.1 Instance route** — un tronçon de route dans un paysage, zone fermée (I.2).
@@ -201,6 +207,8 @@ tâche pour ce qui casse.
 
 **Combat (donjon Gnarling)**
 - L.1 : nombre de coups pour tuer et mourir (cible : 3 et 3 à 4), autres armes, boss.
+- L.5 : gnarling en 5 à 6 flèches ou boules de feu, ~10 touches de lance-flammes ; tir chargé et onde de feu ne tuent
+  pas d'un coup (plafond 40 %).
 - L.2 à L.4, X.6 : verrouillage W, molette, anneau centré (sinon régler `ancrage` dans `verrouillage.ron`).
 
 **Donjon généré**

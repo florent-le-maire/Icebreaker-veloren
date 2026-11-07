@@ -402,11 +402,23 @@ impl Attack {
         let damage_modifier = attacker
             .and_then(|a| a.stats)
             .map_or(1.0, |s| s.attack_damage_modifier);
-        // Icebreaker : combat létal, dégâts multipliés selon la cible (`icebreaker.combat`).
+        // Icebreaker : combat létal, dégâts multipliés selon la cible et le type
+        // d'attaque ; un coup sur une créature ne retire pas plus d'une part de
+        // ses PV max, relevée par le bonus de dégâts (`icebreaker.combat`, L.5).
+        let mut plafond_restant = target
+            .health
+            .filter(|_| attacker.is_some() && target.player.is_none())
+            .and_then(|h| {
+                crate::icebreaker_combat::IcebreakerCombat::plafond_actuel(
+                    h.maximum(),
+                    damage_modifier,
+                )
+            });
         let damage_modifier = damage_modifier
             * crate::icebreaker_combat::IcebreakerCombat::multiplicateur_actuel(
                 attacker.is_some(),
                 target.player.is_some(),
+                attack_source,
             );
         for damage in self
             .damages
@@ -441,7 +453,7 @@ impl Attack {
                 &mut emit_outcome,
             );
 
-            let change = damage.damage.calculate_health_change(
+            let mut change = damage.damage.calculate_health_change(
                 damage_reduction,
                 block_damage_decrement,
                 attacker.map(|x| x.into()),
@@ -452,6 +464,13 @@ impl Attack {
                 damage_instance,
                 DamageSource::from(attack_source),
             );
+            // Icebreaker : plafond d'un coup sur une créature (L.5).
+            if let Some(restant) = plafond_restant.as_mut()
+                && change.amount < 0.0
+            {
+                change.amount = change.amount.max(-*restant);
+                *restant += change.amount;
+            }
             let applied_damage = -change.amount;
             accumulated_damage += applied_damage;
 
@@ -468,7 +487,12 @@ impl Attack {
                         if let Some(target_energy) = target.energy {
                             let energy_change = applied_damage * SLASHING_ENERGY_FRACTION;
                             if energy_change > target_energy.current() {
-                                let health_damage = energy_change - target_energy.current();
+                                let mut health_damage = energy_change - target_energy.current();
+                                // Icebreaker : le supplément compte dans le plafond (L.5).
+                                if let Some(restant) = plafond_restant.as_mut() {
+                                    health_damage = health_damage.min(*restant);
+                                    *restant -= health_damage;
+                                }
                                 accumulated_damage += health_damage;
                                 let health_change = HealthChange {
                                     amount: -health_damage,

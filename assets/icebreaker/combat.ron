@@ -1,10 +1,25 @@
 // Icebreaker : combat létal façon Dark Souls (`common/src/icebreaker_combat.rs`).
 // Multiplicateurs des dégâts des attaques selon la cible (les pièges et l'environnement ne changent pas).
-// Repères : une épée de départ (5–7 × 0,6 dégâts) tue un gnarling (50 PV) en ~3 coups ; un gnarling
-// (2,5 à 4 dégâts) tue un joueur de 100 PV en 3 à 4 coups. Une créature plus forte encaisse plus.
+// Repères avec une arme de départ (puissance 0,6) contre un gnarling (50 PV, ~10 % d'armure) :
+// - épée (5–7 × 0,6 dégâts) : ~3 coups ;
+// - arc, tir simple (7) : ~5,5 coups ; bâton, boule de feu (13) : ~5 coups ;
+// - bâton, lance-flammes (5 par touche, 3 touches/s) : ~10 touches, la moitié d'une flèche par touche ;
+// - un gnarling (2,5 à 4 dégâts) tue un joueur de 100 PV en 3 à 4 coups.
+// Une créature plus forte encaisse plus.
+#![enable(implicit_some)]
 (
+    // Contre une créature : corps à corps, et tout type d'attaque sans valeur ci-dessous.
     degats_contre_creatures: 5.0,
     degats_contre_joueurs: 9.0,
+    // Contre une créature, selon le type d'attaque (L.5) :
+    creatures_projectile: 2.4, // flèches, sorts et objets lancés
+    creatures_rayon: 1.8,      // lance-flammes et autres rayons, à chaque touche
+    creatures_explosion: 1.4,  // boule de feu, flèche explosive
+    creatures_onde: 1.5,       // ondes de choc (onde de feu : ~3 coups)
+    creatures_autre: 2.0,      // arcs électriques, zones persistantes
+    // Un coup ne retire pas plus de cette part des PV max d'une créature (3 coups au moins) ;
+    // multipliée par le bonus de dégâts de l'attaquant (potions, puis forge et âmes) : gagner en puissance la relève.
+    plafond_coup_creature: 0.4,
     // Part de la vitesse du tireur que reprennent ses projectiles (flèches, sorts, objets lancés) :
     // 0 = le tir part droit vers le viseur même en se déplaçant de côté (X.13), 1 = comme Veloren.
     part_vitesse_tireur: 0.0,

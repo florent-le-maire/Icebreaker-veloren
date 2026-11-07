@@ -405,6 +405,7 @@ fn portee_verrouillage(verrouillage: &Fichier, combat: &Fichier, racine: &str) -
     let perte = nombre(verrouillage, "rayon_perte", 30.0);
     let creatures = nombre(combat, "degats_contre_creatures", 5.0);
     let joueurs = nombre(combat, "degats_contre_joueurs", 9.0);
+    let plafond = nombre(combat, "plafond_coup_creature", 0.4);
     let echelle = 4.6;
     let (cx, cy) = (170.0, 160.0);
     let mut c = String::new();
@@ -425,13 +426,14 @@ fn portee_verrouillage(verrouillage: &Fichier, combat: &Fichier, racine: &str) -
         c += &boite(x, y + 8.0, 300.0 * val / maxi, 26.0, classe);
         c += &texte(x + 8.0, y + 26.0, "sch-fort", &format!("× {}", entier(*val)));
     }
-    c += &texte(x, 250.0, "sch-petit", "une épée de départ tue un gnarling en ~3 coups ;");
-    c += &texte(x, 268.0, "sch-petit", "un gnarling tue un joueur en 3 à 4 coups");
+    c += &texte(x, 250.0, "sch-petit", "gnarling : ~3 coups d'épée, 5 à 6 à distance ;");
+    c += &texte(x, 268.0, "sch-petit", &format!("un coup lui retire au plus {} % de ses PV ;", entier(plafond * 100.0)));
+    c += &texte(x, 286.0, "sch-petit", "un gnarling tue un joueur en 3 à 4 coups");
     Schema {
         svg: svg(740.0, 320.0, &c),
         legende: format!(
             "On verrouille un ennemi jusqu'à {} blocs, le verrouillage saute passé {} blocs. Les dégâts sont multipliés par {} \
-contre les créatures et par {} contre les joueurs.",
+au corps à corps contre les créatures (moins à distance) et par {} contre les joueurs.",
             entier(rayon),
             entier(perte),
             entier(creatures),
