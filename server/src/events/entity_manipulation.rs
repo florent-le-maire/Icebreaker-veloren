@@ -1411,8 +1411,8 @@ impl ServerEvent for DestroyEvent {
                 if should_delete && let Some(slot) = data.dungeon_slots.get(ev.entity) {
                     data.rtsim.hook_dungeon_npc_killed(*slot);
                     // Icebreaker: killing the leader of a generated dungeon wins its mission.
-                    if data.icebreaker_mission.is_leader(slot) {
-                        let content = data.icebreaker_mission.accomplished_message(
+                    if let Some(mission) = data.icebreaker_mission.led_by(slot) {
+                        let content = mission.accomplished_message(
                             |slot| data.rtsim.is_dungeon_npc_killed(slot),
                             |wpos| data.rtsim.is_dungeon_sprite_collected(wpos),
                         );

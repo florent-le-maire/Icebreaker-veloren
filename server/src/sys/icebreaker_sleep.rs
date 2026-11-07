@@ -9,12 +9,14 @@ use common::{
     event::{ChatEvent, EventBus},
     resources::Time,
     rtsim::DungeonSlot,
+    store::Id,
     uid::Uid,
 };
 use common_ecs::{Job, Origin, Phase, System};
 use hashbrown::{HashMap, HashSet};
 use specs::{Entities, Entity, Join, LendJoin, Read, ReadStorage, Write, WriteStorage};
 use std::f32::consts::FRAC_PI_2;
+use world::site::Site;
 use vek::*;
 
 /// How asleep creatures wake up (`generation.ron` → `sleep`).
@@ -47,24 +49,41 @@ struct Sleeper {
     next_zzz: f64,
 }
 
-/// Icebreaker: who sleeps in the generated dungeon of this server.
+/// Icebreaker: who sleeps in the generated dungeons of this server, by site
+/// (one per dungeon slot of the campaign, I.10).
 #[derive(Default)]
 pub struct IcebreakerSleep {
-    /// Spawn positions (dungeon slots) of the creatures asleep at first.
-    spots: HashSet<Vec3<i32>>,
-    rules: SleepRules,
+    /// Spawn positions (dungeon slots) of the creatures asleep at first, by
+    /// dungeon.
+    spots: Vec<(Id<Site>, HashSet<Vec3<i32>>)>,
+    pub(crate) rules: SleepRules,
     /// Slots already woken up: they don't fall asleep again.
     woken: HashSet<Vec3<i32>>,
     asleep: HashMap<Entity, Sleeper>,
 }
 
 impl IcebreakerSleep {
-    pub fn new(spots: HashSet<Vec3<i32>>, rules: SleepRules) -> Self {
+    pub fn new(rules: SleepRules) -> Self {
         Self {
-            spots,
             rules,
             ..Self::default()
         }
+    }
+
+    /// Sets who sleeps at first in the dungeon of `site`; the slots of its
+    /// former sleepers may fall asleep again.
+    pub fn set(&mut self, site: Id<Site>, spots: HashSet<Vec3<i32>>) {
+        if let Some(i) = self.spots.iter().position(|(s, _)| *s == site) {
+            let (_, old) = self.spots.swap_remove(i);
+            self.woken.retain(|wpos| !old.contains(wpos));
+        }
+        if !spots.is_empty() {
+            self.spots.push((site, spots));
+        }
+    }
+
+    fn sleeps(&self, wpos: &Vec3<i32>) -> bool {
+        !self.woken.contains(wpos) && self.spots.iter().any(|(_, spots)| spots.contains(wpos))
     }
 }
 
@@ -119,8 +138,7 @@ impl<'a> System<'a> for Sys {
         {
             if agent.icebreaker_asleep
                 || slot.nth != 0
-                || !sleep.spots.contains(&slot.wpos)
-                || sleep.woken.contains(&slot.wpos)
+                || !sleep.sleeps(&slot.wpos)
             {
                 continue;
             }
@@ -224,5 +242,21 @@ mod tests {
         // Sneaking, one gets much closer.
         assert!(!rules.wakes(pos, false, false, &[(at(4.0), true)]));
         assert!(rules.wakes(pos, false, false, &[(at(2.0), true)]));
+    }
+
+    #[test]
+    fn each_dungeon_has_its_sleepers() {
+        let spot = |x| Vec3::new(x, 0, 10);
+        let mut sleep = IcebreakerSleep::new(SleepRules::default());
+        sleep.set(Id::new(0), [spot(1)].into_iter().collect());
+        sleep.set(Id::new(1), [spot(1000), spot(1001)].into_iter().collect());
+        assert!(sleep.sleeps(&spot(1)) && sleep.sleeps(&spot(1000)));
+        sleep.woken.insert(spot(1000));
+        assert!(!sleep.sleeps(&spot(1000)));
+        // A new plan for dungeon 1: its old sleepers are gone, and forgotten.
+        sleep.set(Id::new(1), [spot(2000)].into_iter().collect());
+        assert!(!sleep.sleeps(&spot(1001)) && sleep.sleeps(&spot(2000)));
+        assert!(sleep.woken.is_empty());
+        assert!(sleep.sleeps(&spot(1)));
     }
 }

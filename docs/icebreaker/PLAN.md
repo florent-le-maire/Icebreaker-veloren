@@ -205,6 +205,8 @@ tâche pour ce qui casse.
 - I.8 / V.9 / V.11 : départ groupé décidé par le chef, à deux joueurs, depuis la vue U ; `/rentrer` ; emplacement
   occupé tant qu'un membre y est.
 - I.9 remise à neuf : monstres tués au combat et coffres ouverts de retour à la deuxième expédition.
+- I.10 : en campagne, tuer le chef d'un donjon généré ou de la grotte annonce « Mission accomplie » ; les dormeurs
+  d'un emplacement Genere dorment.
 - V.2 entrepôt : dépôt par un joueur, retrait par un autre après redémarrage ; V.12 fenêtre d'échange à distance.
 - V.4 : acheter une potion à l'intendant, se faire soigner (60 or).
 - V.5 : bilan au retour avec du vrai butin.

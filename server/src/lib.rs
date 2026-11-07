@@ -695,30 +695,6 @@ impl Server {
             .ecs_mut()
             .insert(icebreaker_charrette::IcebreakerCharrette::new(recruit_posts));
 
-        // Icebreaker: a generated dungeon's mission is won by killing its leader;
-        // some of its creatures sleep.
-        #[cfg(feature = "worldgen")]
-        let (mission, sleep) = instance_site
-            .and_then(|site| world::icebreaker::dungeon_mission(&index.sites[site]))
-            .inspect(|t| {
-                let (creatures, chests, asleep) = (t.creatures.len(), t.chests.len(), t.sleepers.len());
-                info!(leader = ?t.leader, creatures, chests, asleep, sleepers = ?t.sleepers, "Icebreaker dungeon mission");
-            })
-            .map(|t| {
-                let rules = sys::icebreaker_sleep::SleepRules {
-                    wake_radius: t.sleep.wake_radius,
-                    wake_radius_sneaking: t.sleep.wake_radius_sneaking,
-                    alert_radius: t.sleep.alert_radius,
-                    zzz_interval: t.sleep.zzz_interval,
-                };
-                let sleep = sys::icebreaker_sleep::IcebreakerSleep::new(t.sleepers.iter().copied().collect(), rules);
-                (icebreaker_mission::IcebreakerMission::new(t.leader, t.creatures, t.chests), sleep)
-            })
-            .unzip();
-        #[cfg(not(feature = "worldgen"))]
-        let (mission, sleep) = (None, None);
-        state.ecs_mut().insert(mission.unwrap_or_default());
-        state.ecs_mut().insert(sleep.unwrap_or_default());
         // Icebreaker : à terre et mort (jalon T).
         state.ecs_mut().insert(sys::icebreaker_mort::IcebreakerATerre::default());
         // Icebreaker : balise lumineuse (jalon J).
@@ -736,6 +712,17 @@ impl Server {
         );
         #[cfg(not(feature = "worldgen"))]
         let slots = icebreaker_slots::IcebreakerSlots::default();
+
+        // Icebreaker: a generated dungeon's mission is won by killing its leader;
+        // some of its creatures sleep. One per dungeon: the lone one, or each slot (I.10).
+        let mut mission = icebreaker_mission::IcebreakerMission::default();
+        let mut sleep = sys::icebreaker_sleep::IcebreakerSleep::default();
+        #[cfg(feature = "worldgen")]
+        for site in instance_site.into_iter().chain(slots.0.iter().map(|slot| slot.site)) {
+            icebreaker_mission::set_dungeon(&mut mission, &mut sleep, site, &index.sites[site]);
+        }
+        state.ecs_mut().insert(mission);
+        state.ecs_mut().insert(sleep);
 
         // Icebreaker: players can't leave the area of an encounter instance; in
         // the campaign, of the village or of the dungeon slot they are in.
