@@ -705,7 +705,7 @@ impl Server {
 
         // Icebreaker: the dungeon slots of the campaign (decision 0016).
         #[cfg(feature = "worldgen")]
-        let slots = icebreaker_slots::IcebreakerSlots::new(
+        let mut slots = icebreaker_slots::IcebreakerSlots::new(
             &world,
             index.as_index_ref(),
             settings.icebreaker.zone_margin,
@@ -720,6 +720,12 @@ impl Server {
         #[cfg(feature = "worldgen")]
         for site in instance_site.into_iter().chain(slots.0.iter().map(|slot| slot.site)) {
             icebreaker_mission::set_dungeon(&mut mission, &mut sleep, site, &index.sites[site]);
+        }
+        // Icebreaker I.12: the generated dungeons and the cave of the campaign get a new plan at
+        // each launch, not the one of the world seed kept by the save.
+        #[cfg(feature = "worldgen")]
+        for slot in slots.0.iter_mut() {
+            sys::icebreaker_slots::new_layout(slot, &world, index.as_index_ref(), &mut mission, &mut sleep, rand::random());
         }
         state.ecs_mut().insert(mission);
         state.ecs_mut().insert(sleep);
