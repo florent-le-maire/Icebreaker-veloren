@@ -83,11 +83,13 @@ impl IcebreakerDungeon {
             min: chunk * placement.edge_margin,
             max: (world - placement.edge_margin) * chunk,
         };
+        // Icebreaker I.11: and within the area kept for it.
+        let kept = Self::emprise(&settings, origin);
         let fits = |b: Aabr<i32>| {
-            b.min.x >= inside.min.x
-                && b.min.y >= inside.min.y
-                && b.max.x <= inside.max.x
-                && b.max.y <= inside.max.y
+            b.min.x >= inside.min.x.max(kept.min.x)
+                && b.min.y >= inside.min.y.max(kept.min.y)
+                && b.max.x <= inside.max.x.min(kept.max.x)
+                && b.max.y <= inside.max.y.min(kept.max.y)
         };
         let mut plot = None;
         for attempt in 1..=placement.fit_tries {
@@ -96,19 +98,30 @@ impl IcebreakerDungeon {
             let bounds = tried.bounds();
             if fits(bounds) {
                 if attempt > 1 {
-                    info!(attempt, "Icebreaker dungeon redrawn to fit inside the world");
+                    info!(attempt, "Icebreaker dungeon redrawn to fit inside the world and its kept area");
                 }
                 return Ok((tried, true));
             }
-            debug!(attempt, ?bounds, ?inside, "Icebreaker dungeon past the edge of the world");
+            debug!(attempt, ?bounds, ?inside, "Icebreaker dungeon past the edge of the world or of its kept area");
             plot = Some(tried);
         }
         error!(
             ?origin,
             tries = placement.fit_tries,
-            "Icebreaker dungeon goes past the edge of the world: it cannot be finished"
+            "Icebreaker dungeon goes past the edge of the world or of its kept area"
         );
         Ok((plot.expect("fit_tries is at least 1"), false))
+    }
+
+    /// Icebreaker I.11: the area kept for the dungeons whose tunnel comes out
+    /// at `origin`, the first one and those drawn again in its place
+    /// (`placement.emprise` chunks on each side).
+    fn emprise(settings: &dungeon::Settings, origin: Vec2<i32>) -> Aabr<i32> {
+        let half = TerrainChunkSize::RECT_SIZE.map(|e| e as i32) * settings.placement.emprise;
+        Aabr {
+            min: origin - half,
+            max: origin + half,
+        }
     }
 
     /// Where players arrive, on the surface just outside the tunnel.
@@ -618,25 +631,20 @@ impl Site {
                 return site;
             },
         };
-        info!("Icebreaker dungeon: {}\n{}", plot.dungeon.summary, plot.dungeon.plan.to_text());
-        for (cell, key) in &plot.dungeon.locks {
-            let (keyhole, dir) = (plot.keyhole_pos(*cell), plot.door_dir(*cell));
-            info!(?keyhole, ?dir, key = key.item, "Icebreaker dungeon locked door");
-        }
-        for (cell, key) in &plot.dungeon.keys {
-            info!(chest = ?plot.spot(*cell), key = key.item, "Icebreaker dungeon key");
-        }
-        let lights = &plot.dungeon.lights;
-        let torches = lights.iter().filter(|(_, t)| t.is_some()).count();
-        info!(torches, braziers = lights.len() - torches, "Icebreaker dungeon lights");
-        let bounds = plot.bounds();
+        plot.log();
+        // Icebreaker I.11: the site covers the area kept for the dungeon, so
+        // that one drawn again in its place (I.12) is drawn whole.
+        let bounds = match dungeon::Settings::load() {
+            Ok(settings) => IcebreakerDungeon::emprise(&settings, origin),
+            Err(_) => plot.bounds(),
+        };
         let tile_size = TILE_SIZE as i32;
         let aabr = Aabr {
             min: (bounds.min - origin).map(|e| e.div_euclid(tile_size)) - 1,
             max: (bounds.max - origin).map(|e| e.div_euclid(tile_size)) + 2,
         };
         let plot = site.create_plot(Plot {
-            kind: PlotKind::IcebreakerDungeon(plot),
+            kind: PlotKind::IcebreakerDungeon(Remplacable::new(plot)),
             root_tile: aabr.center(),
             tiles: aabr_tiles(aabr).collect(),
         });
@@ -646,6 +654,40 @@ impl Site {
             hard_alt: None,
         });
         site
+    }
+}
+
+impl IcebreakerDungeon {
+    /// Tells what was generated.
+    fn log(&self) {
+        info!("Icebreaker dungeon: {}\n{}", self.dungeon.summary, self.dungeon.plan.to_text());
+        for (cell, key) in &self.dungeon.locks {
+            let (keyhole, dir) = (self.keyhole_pos(*cell), self.door_dir(*cell));
+            info!(?keyhole, ?dir, key = key.item, "Icebreaker dungeon locked door");
+        }
+        for (cell, key) in &self.dungeon.keys {
+            info!(chest = ?self.spot(*cell), key = key.item, "Icebreaker dungeon key");
+        }
+        let lights = &self.dungeon.lights;
+        let torches = lights.iter().filter(|(_, t)| t.is_some()).count();
+        info!(torches, braziers = lights.len() - torches, "Icebreaker dungeon lights");
+    }
+}
+
+impl Remplacable<IcebreakerDungeon> {
+    /// Icebreaker I.11: draws in its place a new dungeon of `seed`, its
+    /// tunnel coming out at the same `origin`, within the area kept for it.
+    /// The current one stays if none fits; says whether it was replaced.
+    pub fn regenerate(&self, land: &Land, origin: Vec2<i32>, seed: u64) -> Result<bool, String> {
+        let world = land.size().map(|e| e as i32);
+        let mut rng = ChaCha8Rng::seed_from_u64(seed);
+        let (plot, fits) =
+            IcebreakerDungeon::generate_inside(land, world, &mut rng, origin, dungeon::Mission::from_env)?;
+        if fits {
+            plot.log();
+            self.replace(plot);
+        }
+        Ok(fits)
     }
 }
 
@@ -703,5 +745,42 @@ mod tests {
         // A world too small for the margin is kept whole.
         let tiny = Aabr { min: Vec2::zero(), max: Vec2::broadcast(4) };
         assert_eq!(site_area(SiteKind::IcebreakerDungeon, tiny), tiny);
+    }
+
+    /// Icebreaker I.11: a dungeon drawn again in its place is another one,
+    /// its tunnel at the same entrance, within the area kept for it.
+    #[test]
+    fn a_dungeon_drawn_again_is_new_and_stays_in_its_area() {
+        let settings = dungeon::Settings::load().unwrap();
+        let land = Land::empty();
+        let origin = Vec2::broadcast(64 * 32);
+        let mission = |seed| Ok(dungeon::Mission { seed, ..dungeon::Mission::default() });
+        let mut rng = ChaCha8Rng::seed_from_u64(0);
+        let (first, fits) =
+            IcebreakerDungeon::generate_inside(&land, Vec2::broadcast(128), &mut rng, origin, mission).unwrap();
+        assert!(fits);
+        let kept = IcebreakerDungeon::emprise(&settings, origin);
+        let slot = Remplacable::new(first);
+        let mut plans = vec![slot.get().dungeon.plan.to_text()];
+        for seed in 1..6 {
+            let (plot, fits) = IcebreakerDungeon::generate_inside(
+                &land,
+                Vec2::broadcast(128),
+                &mut ChaCha8Rng::seed_from_u64(seed),
+                origin,
+                mission,
+            )
+            .unwrap();
+            assert!(fits, "graine {seed}");
+            slot.replace(plot);
+            let now = slot.get();
+            let b = now.bounds();
+            assert!(kept.contains_point(b.min) && kept.contains_point(b.max), "graine {seed} : {b:?} hors de {kept:?}");
+            assert!(now.entrance().distance_squared(origin) < 32 * 32, "graine {seed} : entrée loin du site");
+            plans.push(now.dungeon.plan.to_text());
+        }
+        plans.sort();
+        plans.dedup();
+        assert_eq!(plans.len(), 6, "deux plans identiques");
     }
 }

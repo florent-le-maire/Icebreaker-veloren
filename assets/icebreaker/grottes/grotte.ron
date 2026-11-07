@@ -2,6 +2,9 @@
 (
     // Entrée (K.1) : un boyau de la bouche (en surface) au centre de la première poche.
     entree: (profondeur: 18, longueur: 36, rayon: 3.0),
+    // Icebreaker I.11 : tronçons (32 blocs) réservés autour de la bouche, de chaque côté ; une grotte refaite pour une
+    // expédition (I.12) doit y tenir (elles tiennent toutes sous 8 aujourd'hui), sinon on garde la précédente.
+    emprise: 9,
     // Poche : un ellipsoïde ; rayon horizontal et demi-hauteur en blocs (min, max).
     poche: (rayon: (10, 14), hauteur: (5, 7)),
     // Réseau (K.2) : poches (la première comprise) réparties sur des niveaux de profondeur, chacune accrochée par un

@@ -249,20 +249,17 @@ impl Site {
                 return site;
             },
         };
-        let mouth = origin.with_z(land.get_alt_approx(origin) as i32);
-        // The mood asked for (`-Ambiance` of the launcher), or one drawn by the seed.
-        let ambiance = std::env::var("ICEBREAKER_GROTTE_AMBIANCE").ok().filter(|a| !a.is_empty());
-        let grotte = grotte::generate(&settings, rng.random(), mouth, ambiance.as_deref(), &|xy| land.get_alt_approx(xy) as i32);
-        info!("Icebreaker grotte: {}", grotte.summary);
-        let plot = IcebreakerGrotte::new(grotte);
-        let bounds = plot.bounds();
+        let (plot, _) = IcebreakerGrotte::generate_inside(&settings, land, origin, rng.random());
+        // Icebreaker I.11: the site covers the area kept for the cave, so that
+        // one drawn again in its place (I.12) is drawn whole.
+        let bounds = IcebreakerGrotte::emprise(&settings, origin);
         let tile_size = TILE_SIZE as i32;
         let aabr = Aabr {
             min: (bounds.min - origin).map(|e| e.div_euclid(tile_size)) - 1,
             max: (bounds.max - origin).map(|e| e.div_euclid(tile_size)) + 2,
         };
         let plot = site.create_plot(Plot {
-            kind: PlotKind::IcebreakerGrotte(plot),
+            kind: PlotKind::IcebreakerGrotte(Remplacable::new(plot)),
             root_tile: aabr.center(),
             tiles: aabr_tiles(aabr).collect(),
         });
@@ -272,5 +269,87 @@ impl Site {
             hard_alt: None,
         });
         site
+    }
+}
+
+/// Seeds tried in turn for a cave that stays within the area kept for it.
+const FIT_TRIES: u64 = 10;
+
+impl IcebreakerGrotte {
+    /// Icebreaker I.11: the area kept for the caves whose mouth is at
+    /// `origin`, the first one and those drawn again in its place (`emprise`
+    /// chunks on each side).
+    fn emprise(settings: &grotte::Settings, origin: Vec2<i32>) -> Aabr<i32> {
+        let half = TerrainChunkSize::RECT_SIZE.map(|e| e as i32) * settings.emprise;
+        Aabr {
+            min: origin - half,
+            max: origin + half,
+        }
+    }
+
+    /// The cave of `seed` whose mouth is at `origin`, drawn again with the
+    /// next seeds while it goes past the area kept for it; and whether it fits.
+    fn generate_inside(settings: &grotte::Settings, land: &Land, origin: Vec2<i32>, seed: u64) -> (Self, bool) {
+        let mouth = origin.with_z(land.get_alt_approx(origin) as i32);
+        // The mood asked for (`-Ambiance` of the launcher), or one drawn by the seed.
+        let ambiance = std::env::var("ICEBREAKER_GROTTE_AMBIANCE").ok().filter(|a| !a.is_empty());
+        let kept = Self::emprise(settings, origin);
+        let mut plot = None;
+        for seed in seed..seed + FIT_TRIES {
+            let grotte = grotte::generate(settings, seed, mouth, ambiance.as_deref(), &|xy| land.get_alt_approx(xy) as i32);
+            let tried = Self::new(grotte);
+            let b = tried.bounds();
+            if kept.contains_point(b.min) && kept.contains_point(b.max) {
+                info!("Icebreaker grotte: {}", tried.grotte.summary);
+                return (tried, true);
+            }
+            plot = Some(tried);
+        }
+        error!(?origin, "Icebreaker grotte goes past the area kept for it");
+        (plot.expect("FIT_TRIES is at least 1"), false)
+    }
+}
+
+impl Remplacable<IcebreakerGrotte> {
+    /// Icebreaker I.11: draws in its place a new cave of `seed`, its mouth at
+    /// the same `origin`, within the area kept for it. The current one stays
+    /// if none fits; says whether it was replaced.
+    pub fn regenerate(&self, land: &Land, origin: Vec2<i32>, seed: u64) -> Result<bool, String> {
+        let settings = grotte::Settings::load()?;
+        let (plot, fits) = IcebreakerGrotte::generate_inside(&settings, land, origin, seed);
+        if fits {
+            self.replace(plot);
+        }
+        Ok(fits)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Icebreaker I.11: a cave drawn again in its place is another one, its
+    /// mouth at the same place, within the area kept for it.
+    #[test]
+    fn a_cave_drawn_again_is_new_and_stays_in_its_area() {
+        let settings = grotte::Settings::load().unwrap();
+        let land = Land::empty();
+        let origin = Vec2::broadcast(64 * 32);
+        let kept = IcebreakerGrotte::emprise(&settings, origin);
+        let (first, fits) = IcebreakerGrotte::generate_inside(&settings, &land, origin, 0);
+        assert!(fits);
+        let slot = Remplacable::new(first);
+        let mut caves = vec![slot.get().grotte.summary.clone()];
+        for seed in [100, 200, 300] {
+            assert!(slot.regenerate(&land, origin, seed).unwrap(), "graine {seed}");
+            let now = slot.get();
+            let b = now.bounds();
+            assert!(kept.contains_point(b.min) && kept.contains_point(b.max), "graine {seed} : {b:?} hors de {kept:?}");
+            assert_eq!(now.grotte.mouth.xy(), origin);
+            caves.push(now.grotte.summary.clone());
+        }
+        caves.sort();
+        caves.dedup();
+        assert_eq!(caves.len(), 4, "deux grottes identiques");
     }
 }

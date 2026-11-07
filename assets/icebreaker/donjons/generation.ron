@@ -355,5 +355,9 @@
         entrance_margin: 16,
         edge_margin: 1,
         fit_tries: 20,
+        // Icebreaker I.11 : tronçons réservés autour de l'entrée, de chaque côté ; un donjon refait pour une expédition
+        // (I.12) doit y tenir (un moyen sur deux tient sous 13, un grand sous 16) : refait sinon, comme au bord.
+        // Plus grand : un donjon plus libre, mais plus de tronçons à dessiner et une zone fermée plus large.
+        emprise: 14,
     ),
 )

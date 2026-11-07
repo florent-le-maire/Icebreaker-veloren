@@ -126,8 +126,8 @@ pub fn site_area(kind: SiteKind, world_dims: vek::Aabr<i32>) -> vek::Aabr<i32> {
 /// tunnel.
 pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
     site.plots().find_map(|plot| match plot.kind() {
-        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.entrance()),
-        PlotKind::IcebreakerGrotte(grotte) => Some(grotte.entrance()),
+        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get().entrance()),
+        PlotKind::IcebreakerGrotte(grotte) => Some(grotte.get().entrance()),
         _ => None,
     })
 }
@@ -289,10 +289,30 @@ pub fn village_inhabitants() -> Option<u32> {
 /// creatures and chests.
 pub fn dungeon_mission(site: &Site) -> Option<crate::site::plot::MissionTargets> {
     site.plots().find_map(|plot| match plot.kind() {
-        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.mission_targets()),
-        PlotKind::IcebreakerGrotte(grotte) => Some(grotte.mission_targets()),
+        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get().mission_targets()),
+        PlotKind::IcebreakerGrotte(grotte) => Some(grotte.get().mission_targets()),
         _ => None,
     })
+}
+
+/// Icebreaker I.11: draws a new dungeon (of our generator) or cave of `seed`
+/// in place of the one of `site`, within the area kept for it; the chunks
+/// generated from now on draw it. `Ok(false)`: the site has none, or none fit
+/// (the current one stays).
+pub fn regenerate_slot(world: &crate::World, site: &Site, seed: u64) -> Result<bool, String> {
+    let land = crate::Land::from_sim(world.sim());
+    for plot in site.plots() {
+        let replaced = match plot.kind() {
+            PlotKind::IcebreakerDungeon(dungeon) => dungeon.regenerate(&land, site.origin, seed)?,
+            PlotKind::IcebreakerGrotte(grotte) => grotte.regenerate(&land, site.origin, seed)?,
+            _ => continue,
+        };
+        if !replaced {
+            warn!(origin = ?site.origin, seed, "Icebreaker: no new layout fits, the slot keeps its own");
+        }
+        return Ok(replaced);
+    }
+    Ok(false)
 }
 
 /// Generates the chunks of the dungeon of our generator in `world` and checks
@@ -313,7 +333,7 @@ pub fn check_generated_dungeon(
         .map(|id| &index.sites[id])
         .find(|site| site.kind == Some(SiteKind::IcebreakerDungeon))?;
     let dungeon = site.plots().find_map(|plot| match plot.kind() {
-        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon),
+        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get()),
         _ => None,
     })?;
     let chunk_size = TerrainChunkSize::RECT_SIZE.map(|e| e as i32);
@@ -422,7 +442,7 @@ pub fn check_generated_grotte(
         .map(|id| &index.sites[id])
         .find(|site| site.kind == Some(SiteKind::IcebreakerGrotte))?;
     let plot = site.plots().find_map(|plot| match plot.kind() {
-        PlotKind::IcebreakerGrotte(grotte) => Some(grotte),
+        PlotKind::IcebreakerGrotte(grotte) => Some(grotte.get()),
         _ => None,
     })?;
     let chunk_size = TerrainChunkSize::RECT_SIZE.map(|e| e as i32);

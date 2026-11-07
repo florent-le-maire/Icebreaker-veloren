@@ -27,6 +27,7 @@ mod haniwa;
 // Icebreaker: the dungeon of our generator, and the cave.
 mod icebreaker_dungeon;
 mod icebreaker_grotte;
+mod icebreaker_remplacable;
 mod house;
 mod jungle_ruin;
 mod myrmidon_arena;
@@ -78,6 +79,7 @@ pub use self::{
     haniwa::Haniwa,
     icebreaker_dungeon::{IcebreakerDungeon, MissionTargets},
     icebreaker_grotte::IcebreakerGrotte,
+    icebreaker_remplacable::Remplacable,
     house::House,
     jungle_ruin::JungleRuin,
     myrmidon_arena::MyrmidonArena,
@@ -198,8 +200,8 @@ pub enum PlotKind {
     MyrmidonHouse(MyrmidonHouse),
     Building(Building),
     // Icebreaker: the dungeon of our generator.
-    IcebreakerDungeon(IcebreakerDungeon),
-    IcebreakerGrotte(IcebreakerGrotte),
+    IcebreakerDungeon(Remplacable<IcebreakerDungeon>),
+    IcebreakerGrotte(Remplacable<IcebreakerGrotte>),
 }
 
 /// # Syntax

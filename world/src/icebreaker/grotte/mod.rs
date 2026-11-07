@@ -17,6 +17,9 @@ use vek::*;
 #[derive(Clone, Debug, Deserialize)]
 pub struct Settings {
     pub entree: EntranceSettings,
+    /// Icebreaker I.11: chunks kept around the mouth, on each side, for the
+    /// cave and the ones drawn again in its place.
+    pub emprise: i32,
     pub poche: PocketSettings,
     pub reseau: NetworkSettings,
     pub relief: ReliefSettings,
@@ -166,6 +169,9 @@ impl Settings {
         let mut errors = Vec::new();
         if settings.entree.profondeur < 4 || settings.entree.longueur < 4 || settings.entree.rayon < 1.0 {
             errors.push("entree : profondeur et longueur d'au moins 4 blocs, rayon d'au moins 1".to_string());
+        }
+        if settings.emprise < 1 {
+            errors.push("emprise : au moins 1 tronçon".to_string());
         }
         let n = &settings.reseau;
         let mut ranges = vec![

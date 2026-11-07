@@ -114,6 +114,9 @@ pub struct PlacementSettings {
     pub entrance_margin: i32,
     pub edge_margin: i32,
     pub fit_tries: u64,
+    /// Icebreaker I.11: chunks kept around the entrance, on each side, for
+    /// the dungeon and the ones drawn again in its place.
+    pub emprise: i32,
 }
 
 /// Variety of the rooms (Icebreaker F.2 and F.5): the orientations of each drawn
@@ -217,8 +220,8 @@ impl Settings {
             errors.push("render : il faut 3 ≤ level_height ≤ cell_size".to_string());
         }
         let placement = &settings.placement;
-        if placement.entrance_margin < 0 || placement.edge_margin < 0 || placement.fit_tries < 1 {
-            errors.push("placement : marges positives, fit_tries au moins 1".into());
+        if placement.entrance_margin < 0 || placement.edge_margin < 0 || placement.fit_tries < 1 || placement.emprise < 1 {
+            errors.push("placement : marges positives, fit_tries et emprise au moins 1".into());
         }
         if render.tunnel_cells < 1 {
             errors.push("render : tunnel_cells doit être au moins 1".into());
