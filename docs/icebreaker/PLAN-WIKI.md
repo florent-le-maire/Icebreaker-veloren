@@ -73,10 +73,12 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
   vu en captures Edge sur combat, classes et lieux. b57250ae8d
 - [x] **W.12 Répondre aux questions depuis le site** — `cargo run -p icebreaker-wiki -- serve` sert le site sur
   127.0.0.1:8095 ; sous chaque question, Répondre / Obsolète / Supprimer modifient `QUESTIONS.md` et font un commit de
-  ce seul fichier (sur master seulement) ; essayé avec curl et vu en capture Edge, pas cliqué dans un vrai navigateur.
-- [ ] **W.13 Todos** — page « À faire » : ajouter, cocher, supprimer ; écrit dans `TODO.md`, même commit par saisie.
+  ce seul fichier (sur master seulement) ; essayé avec curl et vu en capture Edge, pas cliqué dans un vrai navigateur. 176b9f0051
+- [x] **W.13 Todos** — `A-FAIRE.md` (Ouvert, Pris en compte) et page « À faire » : ajouter, cocher (→ fait), supprimer,
+  un commit par saisie ; tuiles « réponses à traiter » et « todos ouverts » sur l'accueil ; essayé avec curl et vu en
+  capture Edge, pas cliqué dans un vrai navigateur.
 - [ ] **W.14 Règle pour les agents** — en début de session, traiter les réponses de `QUESTIONS.md` et les todos
-  ouverts de `TODO.md` (`CLAUDE.md`, `README.md`).
+  ouverts de `A-FAIRE.md` (`CLAUDE.md`, `README.md`).
 
-Hors périmètre pour l'instant : accès public, édition dans le navigateur hors questions et todos (W.12, W.13), mise à jour automatique à chaque push,
-historique des valeurs des réglages dans le temps (`IDEES.md`).
+Hors périmètre pour l'instant : accès public, édition dans le navigateur (sauf questions et todos en local, W.12 et
+W.13), mise à jour automatique à chaque push, historique des valeurs des réglages dans le temps (`IDEES.md`).

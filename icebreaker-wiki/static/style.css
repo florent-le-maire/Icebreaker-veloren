@@ -310,6 +310,11 @@ table.reglages td.commentaire { color: var(--texte-2); }
 .saisie .bouton-sobre, .bouton-ligne .bouton-sobre { border-color: var(--bordure-claire); background: transparent; color: var(--texte-2); }
 .saisie .bouton-danger, .bouton-ligne .bouton-danger { border-color: rgba(240, 138, 138, .45); background: transparent; color: var(--danger); }
 .saisie-note { color: var(--alerte); font-size: .9rem; }
+.saisie-todo { margin: 1rem 0 .3rem; }
+.todo-texte { margin-top: .25rem; }
+.bouton-ligne { display: flex; gap: .4rem; margin-top: .45rem; }
+a.tuile { color: inherit; text-decoration: none; }
+a.tuile:hover { border-color: var(--alerte); }
 
 /* Recherche */
 .recherche { margin-left: auto; position: relative; width: min(26rem, 50vw); display: flex; align-items: center; }

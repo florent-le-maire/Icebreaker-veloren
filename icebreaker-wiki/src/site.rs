@@ -16,6 +16,7 @@ const GABARIT_REGLAGES: &str = include_str!("../gabarits/reglages.html");
 const GABARIT_FICHE: &str = include_str!("../gabarits/fiche.html");
 const GABARIT_QUESTIONS: &str = include_str!("../gabarits/questions.html");
 const GABARIT_DECISIONS: &str = include_str!("../gabarits/decisions.html");
+const GABARIT_TODO: &str = include_str!("../gabarits/todo.html");
 const STYLE: &str = include_str!("../static/style.css");
 const SCRIPT: &str = include_str!("../static/wiki.js");
 const LOGO: &str = include_str!("../static/logo.svg");
@@ -50,6 +51,7 @@ fn environnement() -> Result<Environment<'static>> {
     env.add_template("fiche.html", GABARIT_FICHE)?;
     env.add_template("questions.html", GABARIT_QUESTIONS)?;
     env.add_template("decisions.html", GABARIT_DECISIONS)?;
+    env.add_template("todo.html", GABARIT_TODO)?;
     Ok(env)
 }
 

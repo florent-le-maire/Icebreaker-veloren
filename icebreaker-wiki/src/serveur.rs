@@ -196,7 +196,7 @@ fn servir(mut flux: TcpStream, etat: &Etat) -> Result<()> {
     match requete.methode.as_str() {
         "GET" | "HEAD" => servir_fichier(&mut flux, etat, chemin),
         "POST" => {
-            let retour = "/QUESTIONS.html";
+            let retour = if chemin.starts_with("/todo/") { "/A-FAIRE.html" } else { "/QUESTIONS.html" };
             if let Some(refus) = &etat.refus {
                 return page_erreur(&mut flux, "403 Forbidden", refus, retour);
             }
@@ -237,8 +237,15 @@ fn saisir(etat: &Etat, chemin: &str, champs: &HashMap<String, String>) -> Result
     let nom = etat.nom.as_str();
     let (fichier, vers) = if chemin.starts_with("/questions/") {
         ("QUESTIONS.md", format!("/QUESTIONS.html#{}", champ("numero")))
+    } else if chemin.starts_with("/todo/") {
+        ("A-FAIRE.md", "/A-FAIRE.html".to_string())
     } else {
         bail!("adresse inconnue : {chemin}");
+    };
+    let index = || champ("index").parse::<usize>().map_err(|_| anyhow::anyhow!("index de todo invalide"));
+    let resume = |texte: &str| -> String {
+        let court: String = texte.split_whitespace().collect::<Vec<_>>().join(" ").chars().take(60).collect();
+        court.trim_start_matches("[ ] ").to_string()
     };
     let relatif = format!("docs/icebreaker/{fichier}");
     let chemin_fichier = etat.racine.join(&relatif);
@@ -256,6 +263,18 @@ fn saisir(etat: &Etat, chemin: &str, champs: &HashMap<String, String>) -> Result
         "/questions/supprimer" => (
             edition::supprimer_question(&avant, numero)?,
             format!("Icebreaker wiki : {numero} supprimée ({nom})"),
+        ),
+        "/todo/ajouter" => (
+            edition::ajouter_todo(&avant, champ("texte"), nom, &date)?,
+            format!("Icebreaker wiki : todo de {nom}\n\n{}", champ("texte").trim()),
+        ),
+        "/todo/cocher" => (
+            edition::cocher_todo(&avant, index()?, champ("texte"), nom, &date)?,
+            format!("Icebreaker wiki : todo fait ({nom})\n\n{}", resume(champ("texte"))),
+        ),
+        "/todo/supprimer" => (
+            edition::supprimer_todo(&avant, index()?, champ("texte"))?,
+            format!("Icebreaker wiki : todo supprimé ({nom})\n\n{}", resume(champ("texte"))),
         ),
         _ => bail!("adresse inconnue : {chemin}"),
     };

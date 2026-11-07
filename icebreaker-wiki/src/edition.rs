@@ -1,4 +1,5 @@
-//! Icebreaker : ce que le wiki local (`serve`) écrit dans la doc : réponses aux questions de `QUESTIONS.md` (W.12).
+//! Icebreaker : ce que le wiki local (`serve`) écrit dans la doc : réponses aux questions de `QUESTIONS.md` (W.12)
+//! et todos de `A-FAIRE.md` (W.13).
 //!
 //! Fonctions pures sur le texte du fichier ; ses fins de ligne (CRLF ou LF) sont gardées et les lignes ajoutées sont
 //! coupées à la largeur du reste de la doc.
@@ -55,6 +56,14 @@ fn une_ligne(texte: &str, quoi: &str) -> Result<String> {
     Ok(texte)
 }
 
+/// Retire les lignes `[debut, fin)` sans laisser deux lignes vides de suite.
+fn retirer(l: &mut Vec<String>, debut: usize, fin: usize) {
+    l.drain(debut..fin);
+    if debut > 0 && debut < l.len() && l[debut - 1].trim().is_empty() && l[debut].trim().is_empty() {
+        l.remove(debut);
+    }
+}
+
 /// Les lignes `[debut, fin)` de la question `numero` : sa ligne `- **Qn …` et ses continuations en retrait.
 fn bloc_question(lignes: &[String], numero: &str) -> Result<(usize, usize)> {
     if !numero.starts_with('Q') || numero.len() < 2 || !numero[1..].bytes().all(|b| b.is_ascii_digit()) {
@@ -85,7 +94,7 @@ pub fn repondre(texte: &str, numero: &str, reponse: &str, nom: &str, date: &str)
 pub fn supprimer_question(texte: &str, numero: &str) -> Result<String> {
     let (mut l, fin) = lignes(texte);
     let (debut, apres) = bloc_question(&l, numero)?;
-    l.drain(debut..apres);
+    retirer(&mut l, debut, apres);
     Ok(joindre(&l, fin))
 }
 
@@ -99,19 +108,109 @@ pub fn rendre_obsolete(texte: &str, numero: &str, nom: &str, date: &str) -> Resu
         .captures(bloc.trim_start_matches("- "))
         .map(|c| c[2].trim().trim_end_matches(['.', ':']).trim().to_string())
         .unwrap_or_default();
-    l.drain(debut..apres);
-    let Some(tranche) = l.iter().position(|x| x.starts_with("## Tranché")) else {
-        bail!("section « Tranché » introuvable dans QUESTIONS.md");
+    retirer(&mut l, debut, apres);
+    let ligne = couper(&format!("- **{date} ({nom})** : {numero} *{titre}* : obsolète."), "", "  ");
+    ajouter_en_fin_de_section(&mut l, "## Tranché", ligne)?;
+    Ok(joindre(&l, fin))
+}
+
+/// La section `## <titre>…` : (ligne du titre, fin de la section, sans les lignes vides du bas).
+fn section(l: &[String], titre: &str) -> Result<(usize, usize)> {
+    let Some(tete) = l.iter().position(|x| x.starts_with(titre)) else {
+        bail!("section « {} » introuvable", titre.trim_start_matches("## "));
     };
-    let mut ou = l[tranche + 1..]
+    let mut fin = l[tete + 1..]
         .iter()
         .position(|x| x.starts_with("## "))
-        .map_or(l.len(), |i| tranche + 1 + i);
-    while ou > tranche + 1 && l[ou - 1].trim().is_empty() {
-        ou -= 1;
+        .map_or(l.len(), |i| tete + 1 + i);
+    while fin > tete + 1 && l[fin - 1].trim().is_empty() {
+        fin -= 1;
     }
-    let ligne = couper(&format!("- **{date} ({nom})** : {numero} *{titre}* : obsolète."), "", "  ");
-    l.splice(ou..ou, ligne);
+    Ok((tete, fin))
+}
+
+/// Ajoute `nouvelles` à la fin de la section `titre`, avec une ligne vide après le titre et avant la section
+/// suivante.
+fn ajouter_en_fin_de_section(l: &mut Vec<String>, titre: &str, mut nouvelles: Vec<String>) -> Result<()> {
+    let (tete, fin) = section(l, titre)?;
+    if fin == tete + 1 {
+        nouvelles.insert(0, String::new());
+    }
+    if l.get(fin).is_some_and(|x| x.starts_with("## ")) {
+        nouvelles.push(String::new());
+    }
+    l.splice(fin..fin, nouvelles);
+    Ok(())
+}
+
+// Icebreaker : les todos de `A-FAIRE.md` (W.13) : `- [ ] **2026-11-07 (Flo)** : texte` dans « Ouvert », puis
+// `- [x] … → où c'est parti` dans « Pris en compte ».
+
+const OUVERT: &str = "## Ouvert";
+const PRIS: &str = "## Pris en compte";
+
+/// Les todos ouverts : (début, fin) de chaque entrée, continuations comprises.
+fn blocs_ouverts(l: &[String]) -> Result<Vec<(usize, usize)>> {
+    let (tete, fin) = section(l, OUVERT)?;
+    let mut blocs = Vec::new();
+    let mut i = tete + 1;
+    while i < fin {
+        if l[i].starts_with("- ") {
+            let mut j = i + 1;
+            while j < fin && l[j].starts_with("  ") {
+                j += 1;
+            }
+            blocs.push((i, j));
+            i = j;
+        } else {
+            i += 1;
+        }
+    }
+    Ok(blocs)
+}
+
+/// Le texte d'une entrée sur une ligne, sans le `- ` (ce que la page envoie pour vérifier qu'on touche la bonne).
+pub fn texte_d_entree(lignes: &[String]) -> String {
+    let joint: Vec<&str> = lignes.iter().map(|x| x.trim()).collect();
+    joint.join(" ").trim_start_matches("- ").to_string()
+}
+
+/// Le bloc du todo ouvert n° `index`, s'il a toujours le texte `attendu`.
+fn todo_verifie(l: &[String], index: usize, attendu: &str) -> Result<(usize, usize)> {
+    let blocs = blocs_ouverts(l)?;
+    let attendu = attendu.split_whitespace().collect::<Vec<_>>().join(" ");
+    match blocs.get(index) {
+        Some(&(debut, fin)) if texte_d_entree(&l[debut..fin]) == attendu => Ok((debut, fin)),
+        _ => bail!("A-FAIRE.md a changé depuis l'affichage de la page : recharger et recommencer"),
+    }
+}
+
+/// Ajoute un todo à la fin de « Ouvert ».
+pub fn ajouter_todo(texte: &str, contenu: &str, nom: &str, date: &str) -> Result<String> {
+    let contenu = une_ligne(contenu, "todo")?;
+    let (mut l, fin) = lignes(texte);
+    let nouvelles = couper(&format!("- [ ] **{date} ({nom})** : {contenu}"), "", "  ");
+    ajouter_en_fin_de_section(&mut l, OUVERT, nouvelles)?;
+    Ok(joindre(&l, fin))
+}
+
+/// Coche le todo ouvert n° `index` : il passe dans « Pris en compte » avec « → fait (nom, date) ».
+pub fn cocher_todo(texte: &str, index: usize, attendu: &str, nom: &str, date: &str) -> Result<String> {
+    let (mut l, fin) = lignes(texte);
+    let (debut, apres) = todo_verifie(&l, index, attendu)?;
+    let entree = texte_d_entree(&l[debut..apres]);
+    retirer(&mut l, debut, apres);
+    let entree = entree.replacen("[ ]", "[x]", 1);
+    let nouvelles = couper(&format!("- {entree} → fait ({nom}, {date})"), "", "  ");
+    ajouter_en_fin_de_section(&mut l, PRIS, nouvelles)?;
+    Ok(joindre(&l, fin))
+}
+
+/// Retire le todo ouvert n° `index`.
+pub fn supprimer_todo(texte: &str, index: usize, attendu: &str) -> Result<String> {
+    let (mut l, fin) = lignes(texte);
+    let (debut, apres) = todo_verifie(&l, index, attendu)?;
+    retirer(&mut l, debut, apres);
     Ok(joindre(&l, fin))
 }
 
@@ -200,6 +299,43 @@ mod tests {
         assert_eq!(tranchees_apres.len(), tranchees.len() + 1);
         let t = repondre(&texte, premiere, "oui", "Flo", "2026-11-07").unwrap();
         assert_eq!(lire_questions(&t).0.len(), avant.len());
+    }
+
+    const TODO: &str = "# À faire\n\nIntro.\n\n## Ouvert\n\n## Pris en compte\n";
+
+    #[test]
+    fn todos() {
+        let t = ajouter_todo(TODO, "Revoir\nla grotte", "Flo", "2026-11-07").unwrap();
+        assert_eq!(t, "# À faire\n\nIntro.\n\n## Ouvert\n\n- [ ] **2026-11-07 (Flo)** : Revoir la grotte\n\n## Pris en compte\n");
+        let t = ajouter_todo(&t, "Captures du donjon", "Flo", "2026-11-08").unwrap();
+        let (ouverts, pris) = crate::todo::lire(&t);
+        assert_eq!(ouverts.len(), 2);
+        assert_eq!(ouverts[1].texte, "[ ] **2026-11-08 (Flo)** : Captures du donjon");
+        assert!(pris.is_empty());
+        // Mauvais texte attendu : refusé, rien ne bouge.
+        assert!(cocher_todo(&t, 0, "autre chose", "Flo", "2026-11-09").is_err());
+        assert!(supprimer_todo(&t, 5, "x").is_err());
+        let c = cocher_todo(&t, 0, &ouverts[0].texte, "Flo", "2026-11-09").unwrap();
+        assert!(c.ends_with(
+            "## Pris en compte\n\n- [x] **2026-11-07 (Flo)** : Revoir la grotte → fait (Flo, 2026-11-09)\n"
+        ));
+        let (ouverts, pris) = crate::todo::lire(&c);
+        assert_eq!((ouverts.len(), pris.len()), (1, 1));
+        let s = supprimer_todo(&c, 0, &ouverts[0].texte).unwrap();
+        let (ouverts, pris) = crate::todo::lire(&s);
+        assert_eq!((ouverts.len(), pris.len()), (0, 1));
+        assert!(s.contains("## Ouvert\n\n## Pris en compte"));
+        assert!(ajouter_todo(TODO, " ", "Flo", "2026-11-07").is_err());
+    }
+
+    #[test]
+    fn le_vrai_todo() {
+        let texte = std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../docs/icebreaker/A-FAIRE.md"),
+        )
+        .unwrap();
+        let t = ajouter_todo(&texte, "essai", "Flo", "2026-11-07").unwrap();
+        assert_eq!(crate::todo::lire(&t).0.len(), crate::todo::lire(&texte).0.len() + 1);
     }
 
     #[test]

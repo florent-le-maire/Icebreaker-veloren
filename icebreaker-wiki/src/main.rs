@@ -15,6 +15,7 @@ mod schemas;
 mod serveur;
 mod site;
 mod taches;
+mod todo;
 
 use std::path::{Path, PathBuf};
 
@@ -99,12 +100,13 @@ impl Rubrique {
 }
 
 /// Les fichiers repères, dans l'ordre de la barre latérale, avec leur nom court.
-const REPERES: [(&str, &str); 8] = [
+const REPERES: [(&str, &str); 9] = [
     ("", "Tableau de bord"),
     ("README.md", "Lire les docs"),
     ("PLAN.md", "Plan"),
     ("HISTORIQUE.md", "Historique"),
     ("QUESTIONS.md", "Questions"),
+    ("A-FAIRE.md", "À faire"),
     ("IDEES.md", "Idées"),
     ("VISION.md", "Vision"),
     ("GAME_DESIGN.md", "Index des règles"),
@@ -175,8 +177,8 @@ pub fn images_de_page(source: &str, url: &str, images: &[String]) -> Vec<(String
 pub fn pages_markdown(fichiers: &[(String, String)], docs: &Path) -> Vec<Page> {
     let mut pages = Vec::new();
     for (source, texte) in fichiers {
-        if source.starts_with("wiki/") || source == "QUESTIONS.md" {
-            continue; // les fiches mécaniques et les questions ont leur propre gabarit
+        if source.starts_with("wiki/") || source == "QUESTIONS.md" || source == "A-FAIRE.md" {
+            continue; // les fiches mécaniques, les questions et les todos ont leur propre gabarit
         }
         let (_entete, corps) = markdown::separer_entete(texte);
         let rendu = markdown::rendre_images(corps, source, Some(&docs.join(dossier_de(source))));
@@ -231,6 +233,9 @@ pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
     if let Some((_, texte)) = fichiers.iter().find(|(f, _)| f == "QUESTIONS.md") {
         pages.push(decisions::page_questions(texte));
     }
+    if let Some((_, texte)) = fichiers.iter().find(|(f, _)| f == "A-FAIRE.md") {
+        pages.push(todo::page(texte));
+    }
     pages.push(decisions::page_index(&fichiers));
     for (source, texte) in fichiers.iter().filter(|(f, _)| f.starts_with("wiki/")) {
         pages.push(fiches::page(
@@ -258,8 +263,18 @@ pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
             })
         })
         .collect();
+    // Icebreaker : ce qui attend l'agent (W.13) : réponses aux questions et todos ouverts.
+    let compter = |gabarit: &str, cle: &str| {
+        pages.iter().find(|p| p.gabarit == gabarit).map_or(0, |p| match &p.extra[cle] {
+            serde_json::Value::Array(a) => a.len() as u64,
+            v => v.as_u64().unwrap_or(0),
+        })
+    };
+    let (nb_reponses, nb_todos) = (compter("questions.html", "nb_repondues"), compter("todo.html", "ouverts"));
     if let Some(accueil) = pages.iter_mut().find(|p| p.url == "index.html") {
         accueil.extra["mecaniques"] = serde_json::Value::Array(mecaniques);
+        accueil.extra["nb_reponses"] = nb_reponses.into();
+        accueil.extra["nb_todos"] = nb_todos.into();
     }
     Ok(pages)
 }
@@ -320,8 +335,9 @@ mod tests {
             .count();
         let markdown: Vec<&Page> = pages.iter().filter(|p| p.gabarit == "page.html").collect();
         let fiches = pages.iter().filter(|p| p.gabarit == "fiche.html").count();
-        assert_eq!(markdown.len() + fiches + 1, nb_md); // + QUESTIONS.md, rendue par son gabarit
+        assert_eq!(markdown.len() + fiches + 2, nb_md); // + QUESTIONS.md et A-FAIRE.md, rendues par leur gabarit
         assert!(pages.iter().any(|p| p.url == "QUESTIONS.html" && p.gabarit == "questions.html"));
+        assert!(pages.iter().any(|p| p.url == "A-FAIRE.html" && p.gabarit == "todo.html"));
         assert!(pages.iter().any(|p| p.url == "decisions/index.html"));
         assert!(pages.iter().any(|p| p.url == "fiches/mort.html" && p.rubrique == Rubrique::Mecaniques));
         assert!(pages.iter().any(|p| p.url == "readme.html" && p.source == "README.md"));

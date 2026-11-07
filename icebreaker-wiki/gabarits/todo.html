@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block contenu %}
+{% set t = extra %}
+<article class="article article-large">
+<header class="entete-page">
+  <div class="entete-texte">
+    <p class="fil">Repères</p>
+    <h1>À faire</h1>
+    <p class="resume">Ce que l'équipe note pour l'agent : il en fait une tâche, une question ou une idée au début de la session suivante.</p>
+  </div>
+</header>
+<div class="tuiles">
+  <div class="tuile tuile-attention"><div class="tuile-chiffre tuile-alerte">{{ t.ouverts | length }}</div><div class="tuile-nom">todos ouverts</div></div>
+  <div class="tuile"><div class="tuile-chiffre">{{ t.pris | length }}</div><div class="tuile-nom">pris en compte</div></div>
+</div>
+<div class="intention">{{ t.intro_html | safe }}</div>
+
+{% if edition %}
+<form class="saisie saisie-todo" method="post" action="/todo/ajouter" accept-charset="utf-8">
+  <textarea name="texte" rows="2" placeholder="Noter quelque chose à faire…" required></textarea>
+  <div class="saisie-boutons"><button type="submit">Ajouter</button></div>
+</form>
+<p class="saisie-note">Saisie active : chaque envoi modifie <code>docs/icebreaker/A-FAIRE.md</code> et fait un commit.</p>
+{% endif %}
+
+<h2>Ouvert</h2>
+{% if t.ouverts %}
+<ol class="questions todos">
+{% for x in t.ouverts %}
+  <li class="question todo">
+    <div class="question-tete">{% if x.date %}<span class="date">{{ x.date }}</span>{% endif %} {% if x.nom %}<span class="badge badge-sobre">{{ x.nom }}</span>{% endif %}</div>
+    <div class="todo-texte">{{ x.texte_html | safe }}</div>
+    {% if edition %}<form class="bouton-ligne" method="post" accept-charset="utf-8">
+      <input type="hidden" name="index" value="{{ x.index }}">
+      <input type="hidden" name="texte" value="{{ x.texte }}">
+      <button type="submit" formaction="/todo/cocher">Fait</button>
+      <button type="submit" class="bouton-danger" formaction="/todo/supprimer" onclick="return confirm('Supprimer ce todo ?')">Supprimer</button>
+    </form>{% endif %}
+  </li>
+{% endfor %}
+</ol>
+{% else %}
+<p class="etage-sous">Rien en attente.</p>
+{% endif %}
+
+{% if t.pris %}
+<h2 class="etage">Pris en compte</h2>
+<p class="etage-sous">Les plus récents d'abord, avec l'endroit où ils sont partis.</p>
+<ol class="tranchees">
+{% for x in t.pris %}
+  <li class="tranchee">{% if x.date %}<span class="date">{{ x.date }}</span>{% endif %} {% if x.nom %}<span class="badge badge-sobre">{{ x.nom }}</span>{% endif %}
+    <div class="question-texte">{{ x.texte_html | safe }}</div></li>
+{% endfor %}
+</ol>
+{% endif %}
+<footer class="source">Source : <code>docs/icebreaker/A-FAIRE.md</code></footer>
+</article>
+{% endblock %}
