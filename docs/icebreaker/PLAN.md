@@ -71,9 +71,9 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
 
 ## Jalon L — Combat, suite (Flo, 2026-11-07)
 
-- [ ] **L.5 Dégâts selon le type d'attaque** — contre une créature : épée 3–4 coups, arme à distance 5–6, lance-flammes
-  moins par touche ; un coup retire au plus 40 % des PV max, plafond relevé par les bonus de dégâts. — *en cours :
-  Veloren-combat, 2026-11-07*
+- [x] **L.5 Dégâts selon le type d'attaque** — contre une créature : épée 3–4 coups, arme à distance 5–6, lance-flammes
+  moins par touche ; un coup retire au plus 40 % des PV max, plafond relevé par les bonus de dégâts (`combat.ron`).
+  Testé (5 tests ciblés, donjon démarre) ; nombre de coups pas vu en jeu. — d295d68c42
 
 ## Jalon 3 — Pillage sur la route
 
