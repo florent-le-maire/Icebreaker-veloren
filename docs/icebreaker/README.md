@@ -7,7 +7,8 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 
 1. `README.md` (ce fichier) : fichiers, jalons, conventions.
 2. `PLAN.md` : état du projet, tâches restantes, ce qui est à vérifier en jeu.
-3. `QUESTIONS.md` : questions ouvertes (avec la proposition en cours) et petites décisions tranchées.
+3. `QUESTIONS.md` : questions ouvertes (avec la proposition en cours) et petites décisions tranchées. Avec
+   `A-FAIRE.md`, c'est la boîte de l'équipe : réponses et todos saisis sur le wiki local, à traiter en premier.
 4. Le `PLAN-*.md` de la piste sur laquelle on travaille.
 5. Le fichier de `design/` du domaine utile seulement (voir la colonne « Pour Veloren » de `GAME_DESIGN.md`).
 
@@ -23,6 +24,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | `PLAN-GROTTE.md` | La grotte façon Deep Rock Galactic (jalon K, fait en première version) |
 | `PLAN-MOD.md` | Proposition : passer d'une copie modifiée à un mod (jalon M) |
 | `PLAN-WIKI.md` | Le wiki de l'équipe : site généré depuis ces docs et `assets/icebreaker/` (jalon W) |
+| `A-FAIRE.md` | Todos de l'équipe (wiki local) : « Ouvert » à traiter en début de session, puis « Pris en compte » |
 | `IDEES.md` | Boîte à idées non décidées, avec leur effort |
 | `VISION.md` | Vision du jeu (copie du dépôt Godot ; ses « grandes phases » sont celles du projet Godot) |
 | `GAME_DESIGN.md` | Index des règles de `design/`, avec ce qui vaut pour Veloren |
@@ -50,7 +52,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | M | Mod Veloren | `PLAN-MOD.md` | M.1 fait ; la suite après la démo | `Veloren-mod` |
 | T | À terre, mort et sac du mort | `PLAN.md` | T.1 à T.6 faits, à voir en jeu | `Veloren-mort` |
 | J | Balise lumineuse | `HISTORIQUE.md` | fait, vu en jeu | — (supprimé) |
-| W | Wiki de l'équipe | `PLAN-WIKI.md` | W.1 à W.6 et W.8 à W.11 faits ; W.7 (VPS) à lancer | `Veloren-wiki` |
+| W | Wiki de l'équipe | `PLAN-WIKI.md` | W.1 à W.6 et W.8 à W.14 faits ; W.7 (VPS) à lancer | `Veloren-wiki` |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 

@@ -8,6 +8,10 @@ Le projet principal, sa vision et sa méthode sont dans le dépôt `../Icebreake
 ## Règles
 
 - Avancer tâche par tâche selon `PLAN.md` ; présenter un nouveau découpage et attendre l'accord avant de coder.
+- Début de session : traiter la boîte de l'équipe, remplie depuis le wiki local. Une question de `QUESTIONS.md` qui porte
+  une `*Réponse de … (date)*` passe dans « Tranché » (date, fichier où la règle est écrite) après report dans le plan
+  ou le design ; une entrée « Ouvert » de `A-FAIRE.md` devient tâche, question ou idée (avec l'accord de l'équipe),
+  puis passe dans « Pris en compte » avec `→ <où>`.
 - Un commit par tâche, message en français, détail dans le corps ; cocher la tâche avec le hash. Ce qui n'est pas
   vérifié en jeu s'ajoute aussi à « À vérifier en jeu » de `PLAN.md` ; un jalon fini part dans `HISTORIQUE.md`.
 - Nos changements restent **regroupés et repérables** (commentaire « Icebreaker : … ») pour pouvoir suivre les
@@ -75,6 +79,8 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   `site/index.html`) depuis `docs/icebreaker/` et `assets/icebreaker/` ; la vulgarisation s'écrit dans
   `docs/icebreaker/wiki/<domaine>.md` (en-tête TOML : design, réglages, tâches, systèmes, chiffres, icone, schema) ;
   pas d'émoji ; les captures d'écran vont dans `docs/icebreaker/wiki/images/` (`![légende](images/x.png)`). Sur le VPS :
-  `MOT_DE_PASSE=… icebreaker-serveur/deployer-wiki.sh root@<ip>` (Caddy, mot de passe).
+  `MOT_DE_PASSE=… icebreaker-serveur/deployer-wiki.sh root@<ip>` (Caddy, mot de passe). En local avec saisie :
+  `cargo run -p icebreaker-wiki -- serve` depuis `Veloren-test` (http://localhost:8095, `--nom Sayanel`) : répondre aux
+  questions et noter des todos, chaque saisie fait un commit sur master.
 - Lancer depuis la racine du dépôt (le jeu y cherche `assets/`). Un serveur qui tourne verrouille son `.exe` :
   le renommer avant de recompiler plutôt que d'arrêter un serveur qu'on n'a pas lancé.

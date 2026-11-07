@@ -76,7 +76,7 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
   ce seul fichier (sur master seulement) ; essayé avec curl et vu en capture Edge, pas cliqué dans un vrai navigateur. 176b9f0051
 - [x] **W.13 Todos** — `A-FAIRE.md` (Ouvert, Pris en compte) et page « À faire » : ajouter, cocher (→ fait), supprimer,
   un commit par saisie ; tuiles « réponses à traiter » et « todos ouverts » sur l'accueil ; essayé avec curl et vu en
-  capture Edge, pas cliqué dans un vrai navigateur.
+  capture Edge, pas cliqué dans un vrai navigateur. 7078d916c2
 - [ ] **W.14 Règle pour les agents** — en début de session, traiter les réponses de `QUESTIONS.md` et les todos
   ouverts de `A-FAIRE.md` (`CLAUDE.md`, `README.md`).
 
