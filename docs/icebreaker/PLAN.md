@@ -239,8 +239,7 @@ tâche pour ce qui casse.
 - G.7 : descendre à pied jusqu'au chef et le tuer ; G.8 ouvrir une porte à clé à la main ; G.9 pose des dormeurs
   (à moitié dans le sol ?), approche accroupie.
 - B.5 (et grotte) : ouvrir un coffre près de l'entrée puis un du fond : or et prise utile, plus riche au fond
-  (`butin.ron`) ; rien d'inutile. B.14 : ce que lâchent les créatures, le chef, le boss. B.15 : fouiller une
-  caisse en bois du décor (entrée, salle au trésor) : petite prise, plus de recette ni de chapeau de paille.
+  (`butin.ron`) ; rien d'inutile. B.14 : ce que lâchent les créatures, le chef, le boss.
 
 **Grotte**
 - K.3 : les trois ambiances se reconnaissent-elles, la roche luisante suffit-elle sans lanterne (`QUESTIONS.md`, Q22) ;
