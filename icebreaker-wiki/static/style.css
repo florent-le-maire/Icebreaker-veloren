@@ -434,3 +434,19 @@ p:empty { display: none; }
 .creature-note { margin: 0 0 .35rem; font-size: .9rem; color: var(--texte-2); line-height: 1.45; }
 .creature-entite, .creature-capture { margin: .2rem 0 0; font-size: .75rem; color: var(--texte-2); overflow-wrap: anywhere; }
 @media (max-width: 600px) { .creatures { grid-template-columns: 1fr; } .creature-image { flex-basis: 5rem; width: 5rem; height: 5rem; } }
+
+/* Compétences (W.17) : un tableau par jeu de compétences (arme, créature, objet) */
+.sommaire-competences { display: flex; flex-wrap: wrap; gap: .35rem .9rem; margin: 1rem 0 1.5rem; font-size: .9rem; }
+.jeu-competences h2 a { color: inherit; text-decoration: none; }
+.jeu-badges code { margin-right: .5rem; }
+.jeu-porteurs { color: var(--texte-2); font-size: .92rem; margin: .3rem 0; }
+table.competences { font-size: .88rem; }
+table.competences td { vertical-align: top; }
+table.competences tr.groupe td { background: var(--fond-3); color: var(--accent); font-weight: 600; }
+.competence-nom { min-width: 15rem; }
+.competence-nom .etiquette { margin: 0 0 0 .4rem; }
+.competence-desc { display: block; color: var(--texte-2); font-size: .84rem; margin-top: .2rem; }
+.competence-id { display: block; font-size: .72rem; margin-top: .25rem; color: var(--texte-2); background: none; padding: 0; word-break: break-all; }
+.competence-chiffres { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.liste-codes code { display: inline-block; margin: 0 .3rem .3rem 0; font-size: .78rem; }
+@media (max-width: 600px) { .competence-nom { min-width: 11rem; } .competence-chiffres { white-space: normal; } }

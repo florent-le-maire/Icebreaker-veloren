@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block contenu %}
+{% set c = extra %}
+<article class="article article-large">
+<header class="entete-page">
+  <div class="entete-icone"><img src="{{ racine | safe }}assets/{{ c.icone | safe }}" alt=""></div>
+  <div class="entete-texte">
+    <p class="fil">Compétences</p>
+    <h1>{{ c.titre }}</h1>
+    <p class="resume">{{ c.resume }} <span class="chiffre">{{ c.nombre }}</span></p>
+  </div>
+</header>
+{% if c.vue %}
+<h2>Les pages</h2>
+<div class="cadre-table"><table class="competences-pages">
+  <thead><tr><th>Page</th><th>Jeux</th><th>Compétences</th></tr></thead>
+  <tbody>
+  {% for p in c.pages %}
+  <tr><td><img class="icone-table" src="{{ racine | safe }}assets/{{ p.icone | safe }}" alt=""><a href="{{ racine | safe }}{{ p.url | safe }}">{{ p.titre }}</a></td><td>{{ p.jeux }}</td><td>{{ p.nombre }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<p>Une ligne de tableau = une compétence à un emplacement dans un contexte : une même compétence peut revenir sur
+plusieurs lignes (plusieurs porteurs), d'où {{ c.nombre }} lignes pour {{ c.references }} fichiers de compétence
+différents.</p>
+<h2>Comment lire un tableau</h2>
+<ul>
+  <li><strong>Touche</strong> : clic gauche (attaque principale), clic droit (secondaire), garde (blocage), ou
+  « Compétence n » : la n-ième compétence de l'arme. Le joueur choisit lesquelles placer sur les touches 1 à 5 ; une
+  classe d'Icebreaker les place d'office (<code>classes.ron</code>, « touches »). Pour une créature, c'est l'IA qui
+  déclenche ses attaques selon sa tactique.</li>
+  <li><strong>Condition</strong> : la même touche donne une autre compétence selon la posture (épée, arc), le combo
+  accumulé, une flèche enchantée active, ou deux armes pareilles en main ; la ligne « sinon » vaut le reste du
+  temps.</li>
+  <li><strong>À débloquer</strong> : le nœud de l'arbre de compétences à acheter, et ses prérequis. Vide : disponible
+  tout de suite.</li>
+  <li><strong>Chiffres</strong> : dégâts du premier coup et coût d'énergie, tels qu'écrits dans le fichier (avant les
+  multiplicateurs de l'arme et d'Icebreaker).</li>
+</ul>
+<h2>Les types de compétence</h2>
+<div class="cadre-table"><table class="competences-pages">
+  <thead><tr><th>Type</th><th>Nom dans Veloren</th><th>Lignes</th></tr></thead>
+  <tbody>
+  {% for g in c.genres %}
+  <tr><td>{{ g.genre }}</td><td><code>{{ g.variante or "?" }}</code></td><td>{{ g.nombre }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<p>La roulade n'est dans aucun fichier : Veloren la donne à tout humanoïde, dans le code
+(<code>CharacterAbility::default_roll</code>).</p>
+{% if c.sans_francais %}
+<h2>Sans nom français <span class="chiffre">{{ c.sans_francais | length }}</span></h2>
+<p>Compétences d'arme de joueur sans traduction dans <code>assets/voxygen/i18n/fr/hud/ability.ftl</code> : le wiki
+montre le nom anglais (ou le nom de fichier).</p>
+<p class="liste-codes">{% for i in c.sans_francais %}<code>{{ i }}</code> {% endfor %}</p>
+{% endif %}
+{% if c.inutilises %}
+<h2>Fichiers que rien n'utilise <span class="chiffre">{{ c.inutilises | length }}</span></h2>
+<p>Ils existent dans <code>assets/common/abilities/</code> mais aucun jeu du manifeste ne les cite.</p>
+<p class="liste-codes">{% for i in c.inutilises %}<code>{{ i }}</code> {% endfor %}</p>
+{% endif %}
+{% else %}
+{% for p in c.postures %}
+<h2>Postures : {{ p.arme }}</h2>
+<ul class="postures">
+  {% for x in p.postures %}<li><strong>{{ x.nom }}</strong>{% if x.desc %} : {{ x.desc }}{% endif %}</li>{% endfor %}
+</ul>
+{% endfor %}
+{% if c.sommaire %}
+<nav class="sommaire-competences">{% for j in c.jeux %}<a href="#{{ j.ancre }}">{{ j.titre }}</a>{% endfor %}</nav>
+{% endif %}
+{% for j in c.jeux %}
+<section class="jeu-competences" id="{{ j.ancre }}">
+<h2><a href="#{{ j.ancre }}">{{ j.titre }}</a> <span class="chiffre">{{ j.nombre }}</span></h2>
+<p class="jeu-badges"><code>{{ j.spec }}</code>
+{% for k in j.classes %}<span class="etiquette">Icebreaker : {{ k }}</span>{% endfor %}
+</p>
+{% if j.objets %}<p class="jeu-porteurs"><strong>Objet :</strong> {{ j.objets | join(", ") }}</p>{% endif %}
+{% if j.porteurs %}<p class="jeu-porteurs"><strong>Porté par :</strong> {{ j.porteurs | join(", ") }}{% if j.autres_porteurs %} et {{ j.autres_porteurs }} autres{% endif %}</p>{% endif %}
+<div class="cadre-table"><table class="competences">
+  <thead><tr><th>Compétence</th><th>Touche</th><th>Condition</th>{% if c.joueur %}<th>À débloquer</th>{% endif %}<th>Type</th><th>Chiffres</th></tr></thead>
+  <tbody>
+  {% for g in j.groupes %}
+  {% if g.titre %}<tr class="groupe"><td colspan="{% if c.joueur %}6{% else %}5{% endif %}">{{ g.titre }}</td></tr>{% endif %}
+  {% for l in g.lignes %}
+  <tr>
+    <td class="competence-nom"><strong>{{ l.nom }}</strong>{% if l.traduction == "En" %} <span class="etiquette etiquette-chaud" title="pas de nom français">en</span>{% endif %}
+      {% for k in l.icebreaker %}<span class="etiquette">{{ k }}</span>{% endfor %}
+      {% if l.description %}<span class="competence-desc">{{ l.description }}</span>{% endif %}
+      {% if l.effet %}<span class="competence-desc">{{ l.effet }}</span>{% endif %}
+      <code class="competence-id">{{ l.id }}</code></td>
+    <td>{{ l.touche }}</td>
+    <td>{{ l.condition }}</td>
+    {% if c.joueur %}<td>{% if l.deblocage %}{{ l.deblocage }}{% if l.prerequis %}<span class="competence-desc">après : {{ l.prerequis }}</span>{% endif %}{% else %}<span class="competence-desc">de base</span>{% endif %}</td>{% endif %}
+    <td>{{ l.genre }}</td>
+    <td class="competence-chiffres">{{ l.chiffres }}</td>
+  </tr>
+  {% endfor %}
+  {% endfor %}
+  </tbody>
+</table></div>
+</section>
+{% endfor %}
+{% endif %}
+<footer class="source">Lu dans <code>assets/common/abilities/ability_set_manifest.ron</code> et les fichiers de compétence à côté, <code>assets/voxygen/i18n/fr/hud/ability.ftl</code> (repli : <code>en</code>), <code>assets/common/skill_trees/skill_prerequisites.ron</code>, les objets, équipements et entités de <code>assets/common/</code>, <code>default_main_tool</code> (<code>common/src/comp/inventory/loadout_builder.rs</code>) et <code>assets/icebreaker/classes.ron</code>.</footer>
+</article>
+{% endblock %}

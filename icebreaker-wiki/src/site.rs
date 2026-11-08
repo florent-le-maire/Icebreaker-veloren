@@ -19,6 +19,7 @@ const GABARIT_DECISIONS: &str = include_str!("../gabarits/decisions.html");
 const GABARIT_TODO: &str = include_str!("../gabarits/todo.html");
 const GABARIT_A_VOIR: &str = include_str!("../gabarits/a-voir.html");
 const GABARIT_CREATURES: &str = include_str!("../gabarits/creatures.html"); // Icebreaker : W.15
+const GABARIT_COMPETENCES: &str = include_str!("../gabarits/competences.html"); // Icebreaker : W.17
 const STYLE: &str = include_str!("../static/style.css");
 const SCRIPT: &str = include_str!("../static/wiki.js");
 const LOGO: &str = include_str!("../static/logo.svg");
@@ -56,6 +57,7 @@ fn environnement() -> Result<Environment<'static>> {
     env.add_template("todo.html", GABARIT_TODO)?;
     env.add_template("a-voir.html", GABARIT_A_VOIR)?;
     env.add_template("creatures.html", GABARIT_CREATURES)?;
+    env.add_template("competences.html", GABARIT_COMPETENCES)?;
     Ok(env)
 }
 
@@ -89,7 +91,7 @@ pub fn titre_court(page: &Page) -> String {
     }
     let titre = page.titre.trim_start_matches("Game design — ");
     let titre = match page.rubrique {
-        Rubrique::Decisions | Rubrique::Avancement | Rubrique::Reglages | Rubrique::Mecaniques | Rubrique::Creatures => titre,
+        Rubrique::Decisions | Rubrique::Avancement | Rubrique::Reglages | Rubrique::Mecaniques | Rubrique::Creatures | Rubrique::Competences => titre,
         _ => titre.split(" — ").next().unwrap_or(titre),
     };
     let titre = match titre.find(" (") {

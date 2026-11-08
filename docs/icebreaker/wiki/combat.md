@@ -68,7 +68,8 @@ le verrouillage saute.
 
 Chaque classe a ses attaques de base et **trois compétences** sur les touches 1, 2 et 3. Le guerrier a trois
 postures (riposte, balayage lourd, tranche-tourbillon) ; le mage et l'archer, les premières compétences de leur
-arme dans l'ordre de Veloren.
+arme dans l'ordre de Veloren. Le détail de chaque compétence (arme, touche, posture, déblocage) est dans la rubrique
+[Compétences](../competences/index.html).
 
 ## Pourquoi
 

@@ -5,6 +5,7 @@
 
 mod avancement;
 mod commits;
+mod competences; // Icebreaker : W.17
 mod creatures; // Icebreaker : W.15
 mod decisions;
 mod edition;
@@ -53,6 +54,7 @@ pub enum Rubrique {
     Reperes,
     Mecaniques,
     Creatures,
+    Competences,
     Avancement,
     Plans,
     Regles,
@@ -66,6 +68,7 @@ impl Rubrique {
             Rubrique::Reperes => "Repères",
             Rubrique::Mecaniques => "Mécaniques",
             Rubrique::Creatures => "Créatures",
+            Rubrique::Competences => "Compétences",
             Rubrique::Avancement => "Avancement",
             Rubrique::Plans => "Plans",
             Rubrique::Regles => "Règles du jeu",
@@ -74,11 +77,12 @@ impl Rubrique {
         }
     }
 
-    pub fn toutes() -> [Rubrique; 8] {
+    pub fn toutes() -> [Rubrique; 9] {
         [
             Rubrique::Reperes,
             Rubrique::Mecaniques,
             Rubrique::Creatures,
+            Rubrique::Competences,
             Rubrique::Avancement,
             Rubrique::Plans,
             Rubrique::Regles,
@@ -236,6 +240,7 @@ pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
     let fichiers_ron = reglages::lire_dossier(&racine.join("assets").join("icebreaker"))?;
     pages.extend(reglages::pages(&fichiers_ron));
     pages.extend(creatures::pages_du_depot(racine, &fichiers_ron)?);
+    pages.extend(competences::pages_du_depot(racine)?); // Icebreaker : W.17
     if let Some((_, texte)) = fichiers.iter().find(|(f, _)| f == "QUESTIONS.md") {
         pages.push(decisions::page_questions(texte));
     }
