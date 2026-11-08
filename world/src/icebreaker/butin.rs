@@ -16,6 +16,8 @@ pub struct Butin {
     /// What the chief and the boss drop, whatever their tier.
     pub chef: String,
     pub boss: String,
+    /// Icebreaker B.15: what a crate of the decor holds, whatever its tier.
+    pub caisse: String,
 }
 
 impl Butin {
@@ -57,7 +59,7 @@ impl Butin {
 
     /// Every table named here.
     pub fn tables(&self) -> impl Iterator<Item = &String> {
-        self.coffres.iter().chain(&self.creatures).chain([&self.chef, &self.boss])
+        self.coffres.iter().chain(&self.creatures).chain([&self.chef, &self.boss, &self.caisse])
     }
 }
 
@@ -93,7 +95,7 @@ mod tests {
             }
             Lottery::<LootSpec<String>>::load_expect(table);
         }
-        for table in butin.coffres.iter().chain([&butin.chef, &butin.boss]) {
+        for table in butin.coffres.iter().chain([&butin.chef, &butin.boss, &butin.caisse]) {
             let lottery = Lottery::<LootSpec<String>>::load_expect(table).read();
             for _ in 0..50 {
                 assert!(!lottery.choose().to_items().unwrap_or_default().is_empty(), "{table} : vide");

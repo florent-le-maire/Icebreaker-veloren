@@ -190,6 +190,9 @@ Chaque tâche = quelques heures, un critère de fin, le jeu reste lançable. Les
 - [x] **B.14 Butin des créatures par profondeur** (Flo, 2026-11-07) — créatures du donjon généré et de la grotte :
   table de leur palier (souvent rien, sinon or, potion, matériau), chef et boss la leur (or + coffres du fond).
   Testé (tests, exemples : table de chaque créature) ; rien vu tomber en jeu. dedbb376f3
+- [x] **B.15 Butin des caisses du décor** (Flo, 2026-11-08) — les caisses en bois du décor du donjon généré
+  prennent la table `caisse` de `butin.ron` (or, nourriture, bois, pierre, potion) au lieu de celle de Veloren.
+  Testé (tests, exemple graine 1234) ; pas fouillé en jeu. HASH
 - [ ] **B.6 Reliques** — 4 objets nouveaux, invendables, dans les tables palier 3 et chef.
   *Fin* : un chef en laisse une sur deux (test).
 - [ ] **B.7 Consommables** — ration → feu de camp (soigne, avance la patrouille), parchemin de retour, potions par

@@ -44,6 +44,7 @@ Le lieu « Genere » est **notre** donjon, pas un de ceux de Veloren. Il naît e
    décor par rôle, un éclairage qui dépend des habitants. Plus un coffre est loin de l'entrée, plus il est riche
    (trois paliers, `butin.ron`) : de l'or, et une prise utile en bas (potion, bombe, nourriture) ou au village
    (matériaux, arme ou armure). Les créatures aussi lâchent le butin de leur palier ; le chef et le boss, gros.
+   Les caisses en bois du décor donnent une petite prise (or, nourriture, bois, pierre, potion).
 
 En bas, les **portes à clé** sont des murs de blocs avec leur serrure : il faut trouver la clé dans une branche.
 Beaucoup de créatures **dorment** : elles ronflent sur le dos et se réveillent si on les frappe, si un combat fait

@@ -2,7 +2,8 @@
 // Palier d'un coffre ou d'une créature : sa profondeur rapportée à la plus grande du lieu, coupée en autant de parts que de tables
 // (3 : premier, deuxième, dernier tiers). Donjon généré : salles de passage depuis l'entrée (un couloir prend la salle
 // la plus proche) ; grotte : niveau de la poche (un cul-de-sac prend celui de sa poche). Les coffres à clé du donjon
-// (generation.ron, keys) gardent leur table. Tables Veloren dans assets/common/loot_tables/icebreaker/butin/.
+// (generation.ron, keys) gardent leur table ; les caisses du décor prennent `caisse` (B.15).
+// Tables Veloren dans assets/common/loot_tables/icebreaker/butin/.
 (
     // Coffres (B.5), puis ce que lâchent les créatures (B.14) : une table par palier, et celles du chef et du boss.
     coffres: [
@@ -17,4 +18,6 @@
     ],
     chef: "common.loot_tables.icebreaker.butin.chef",
     boss: "common.loot_tables.icebreaker.butin.boss",
+    // Caisses du décor du donjon généré (B.15, generation.ron, decor), quel que soit leur palier.
+    caisse: "common.loot_tables.icebreaker.butin.caisse",
 )

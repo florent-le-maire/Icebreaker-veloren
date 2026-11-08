@@ -1,0 +1,9 @@
+// Icebreaker B.15 : caisse du décor du donjon généré (entrée, salles au trésor), assets/icebreaker/butin.ron.
+// Une petite prise, moins qu'un coffre : un peu d'or, de quoi manger, des matériaux pour le village. À régler en jouant.
+[
+    (3.0, MultiDrop(Item("common.items.utility.coins"), 3, 10)),
+    (2.0, LootTable("common.loot_tables.food.prepared")),
+    (2.0, MultiDrop(Item("common.items.log.wood"), 2, 4)),
+    (2.0, MultiDrop(Item("common.items.mineral.stone.granite"), 2, 4)),
+    (1.0, Item("common.items.consumable.potion_minor")),
+]

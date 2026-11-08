@@ -12,6 +12,7 @@ use crate::{
 use common::{
     comp::item::ItemDefinitionIdOwned,
     generation::EntityInfo,
+    lottery::LootSpec,
     terrain::{Block, BlockKind, SpriteCfg, SpriteKind, TerrainChunkSize, UnlockKind},
 };
 use rand::prelude::*;
@@ -165,6 +166,24 @@ impl IcebreakerDungeon {
     /// The block in the middle of a cell, just above its floor (where its
     /// creature or chest stands).
     fn spot(&self, cell: plan::Cell) -> Vec3<i32> { self.spawn_pos(cell).map(|e| e.floor() as i32) }
+
+    /// Icebreaker B.15: the loot table of a decor sprite, ours (`butin.ron`,
+    /// caisse) instead of Veloren's when it has one (a crate), none otherwise.
+    fn decor_loot(&self, kind: SpriteKind) -> Option<String> {
+        matches!(kind.default_loot_spec(), Some(Some(LootSpec::LootTable(_))))
+            .then(|| self.dungeon.butin.caisse.clone())
+    }
+
+    /// A decor sprite (F.6), with our loot table if it holds one (B.15).
+    fn decor_sprite(&self, painter: &Painter, pos: Vec3<i32>, kind: SpriteKind, ori: u8) {
+        match self.decor_loot(kind) {
+            Some(loot_table) => painter.rotated_sprite_with_cfg(pos, kind, ori, SpriteCfg {
+                loot_table: Some(loot_table),
+                ..SpriteCfg::default()
+            }),
+            None => painter.rotated_sprite(pos, kind, ori),
+        }
+    }
 
     /// The direction of the passage through a door cell.
     fn door_dir(&self, cell: plan::Cell) -> (i32, i32) {
@@ -505,11 +524,12 @@ impl Structure for IcebreakerDungeon {
                 dungeon::DecorPlacement::Wall((dx, dy)) => {
                     let wall = Vec2::new(*dx, *dy);
                     let pos = (min.xy() + wall.map(along)).with_z(min.z + 1);
-                    painter.rotated_sprite(pos, kind, common::util::Dir2::from_vec2(-wall).sprite_ori());
+                    let ori = common::util::Dir2::from_vec2(-wall).sprite_ori();
+                    self.decor_sprite(painter, pos, kind, ori);
                 },
                 dungeon::DecorPlacement::Center { around } => {
                     let spot = self.spot(decor.cell);
-                    painter.sprite(spot, kind);
+                    self.decor_sprite(painter, spot, kind, 0);
                     if let Some(chair) = around.as_deref().and_then(dungeon::settings::sprite_kind) {
                         for (dx, dy) in plan::DIRECTIONS {
                             let facing = common::util::Dir2::from_vec2(Vec2::new(-dx, -dy)).sprite_ori();
@@ -523,7 +543,7 @@ impl Structure for IcebreakerDungeon {
                         for y in 1..c - 1 {
                             let pos = (min.xy() + Vec2::new(x, y)).with_z(min.z + 1);
                             if (x != c / 2 || y != c / 2) && noise.chance(pos, *chance) {
-                                painter.sprite(pos, kind);
+                                self.decor_sprite(painter, pos, kind, 0);
                             }
                         }
                     }
@@ -734,6 +754,22 @@ mod tests {
             IcebreakerDungeon::generate_inside(&Land::empty(), Vec2::broadcast(8), &mut rng, Vec2::new(40, 40), mission)
                 .unwrap();
         assert!(!fits);
+    }
+
+    /// Icebreaker B.15: a crate of the decor holds our table, not Veloren's;
+    /// the decor without loot stays without.
+    #[test]
+    fn decor_crates_hold_our_loot() {
+        let mut rng = ChaCha8Rng::seed_from_u64(0);
+        let mission = |seed| Ok(dungeon::Mission { seed, ..dungeon::Mission::default() });
+        let (plot, _) =
+            IcebreakerDungeon::generate_inside(&Land::empty(), Vec2::broadcast(8), &mut rng, Vec2::new(40, 40), mission)
+                .unwrap();
+        let caisse = Some("common.loot_tables.icebreaker.butin.caisse");
+        assert_eq!(plot.decor_loot(SpriteKind::Crate).as_deref(), caisse);
+        for kind in [SpriteKind::CrateBlock, SpriteKind::Barrel, SpriteKind::SackLeatherM] {
+            assert_eq!(plot.decor_loot(kind), None, "{kind:?}");
+        }
     }
 
     #[test]
