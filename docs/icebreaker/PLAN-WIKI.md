@@ -85,6 +85,9 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
 - [x] **W.16 Dire ce qui est vu en jeu** — page « À voir en jeu » (Repères ; tuile et badges y mènent) : « Vu, ça marche »
   ajoute « Vu en jeu (Flo, date) » à la tâche, qui sort du compte ; « Ça casse » ajoute un todo `[en jeu]` dans
   `A-FAIRE.md` ; essayé avec curl (44 → 43) et vu en capture Edge, pas cliqué dans un vrai navigateur. 33de4351a8
+- [x] **W.17 Compétences** — rubrique de dix pages (vue d'ensemble, six armes à arbre, autres armes, créatures et PNJ,
+  instruments et objets) lue dans le manifeste des compétences de Veloren : 606 compétences, touche, condition, déblocage,
+  type, chiffres, porteurs, classe d'Icebreaker ; vu en capture Edge seulement. 0572361690
 
 Hors périmètre pour l'instant : accès public, édition dans le navigateur (sauf questions et todos en local, W.12 et
 W.13), mise à jour automatique à chaque push, historique des valeurs des réglages dans le temps (`IDEES.md`).
