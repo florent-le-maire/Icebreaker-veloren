@@ -5,6 +5,7 @@ pub mod entity_sync;
 pub mod icebreaker_balise;
 pub mod icebreaker_charrette;
 pub mod icebreaker_clock;
+pub mod icebreaker_entrainement;
 pub mod icebreaker_expedition;
 pub mod icebreaker_mort;
 pub mod icebreaker_sleep;
@@ -50,6 +51,7 @@ pub fn add_server_systems(dispatch_builder: &mut DispatcherBuilder) {
     dispatch::<icebreaker_expedition::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_slots::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_village::Sys>(dispatch_builder, &[]);
+    dispatch::<icebreaker_entrainement::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_mort::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_balise::Sys>(dispatch_builder, &[]);
     // Icebreaker: after the movements, so that sleepers keep lying.

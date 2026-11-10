@@ -696,3 +696,53 @@ pub fn is_town(kind: SiteKind) -> bool {
             | SiteKind::CoastalTown
     )
 }
+
+/// Icebreaker: the corner nearest to `near` (within `radius`) of an area of
+/// `size` blocks, with `margin` more blocks around, whose ground is all at the
+/// same height (X.15), and that height. `ground` gives the height where one
+/// can stand on the land, none elsewhere (roof, tree, water).
+pub fn find_flat_origin(
+    near: vek::Vec2<i32>,
+    size: vek::Vec2<i32>,
+    margin: i32,
+    radius: i32,
+    ground: &mut impl FnMut(vek::Vec2<i32>) -> Option<i32>,
+) -> Option<(vek::Vec2<i32>, i32)> {
+    let mut heights = HashMap::new();
+    let mut offsets = (-radius..=radius)
+        .flat_map(|y| (-radius..=radius).map(move |x| vek::Vec2::new(x, y)))
+        .filter(|d| d.x * d.x + d.y * d.y <= radius * radius)
+        .collect::<Vec<_>>();
+    offsets.sort_by_key(|d| d.x * d.x + d.y * d.y);
+    offsets.into_iter().map(|d| near + d).find_map(|corner| {
+        let mut level = None;
+        for y in -margin..size.y + margin {
+            for x in -margin..size.x + margin {
+                let wpos = corner + vek::Vec2::new(x, y);
+                let height = *heights.entry(wpos).or_insert_with(|| ground(wpos));
+                match (height, level) {
+                    (None, _) => return None,
+                    (Some(h), Some(l)) if h != l => return None,
+                    (Some(h), _) => level = Some(h),
+                }
+            }
+        }
+        Some((corner, level?))
+    })
+}
+
+#[cfg(test)]
+mod flat_tests {
+    use super::find_flat_origin;
+    use vek::Vec2;
+
+    #[test]
+    fn la_zone_plate_la_plus_proche() {
+        // Flat (10) for x >= 5, a slope before; nothing to stand on at y = 3.
+        let mut ground = |p: Vec2<i32>| (p.y != 3).then(|| if p.x >= 5 { 10 } else { p.x });
+        let found = find_flat_origin(Vec2::new(0, 0), Vec2::new(4, 1), 1, 10, &mut ground);
+        assert_eq!(found, Some((Vec2::new(6, 0), 10)));
+        // Too far for the radius.
+        assert_eq!(find_flat_origin(Vec2::new(0, 0), Vec2::new(4, 1), 1, 3, &mut ground), None);
+    }
+}

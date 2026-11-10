@@ -1,0 +1,19 @@
+// Icebreaker : zone d'entraînement du village (X.14, X.15, `server/src/icebreaker_entrainement.rs`).
+// Une rangée de mannequins (ceux de Veloren, 6000 PV) pour essayer compétences et dégâts. Un mannequin n'est pas un
+// joueur : il prend les dégâts « contre une créature » de `combat.ron`, comme un monstre sans armure.
+(
+    // Où chercher un sol plat pour la rangée, depuis la place du village (en blocs, x vers l'est, y vers le nord).
+    decalage: (14.0, 14.0),
+    // Jusqu'à quelle distance de ce point chercher (en blocs) ; sans sol plat, la rangée reste à ce point.
+    recherche: 30,
+    // Sol plat gardé tout autour de la rangée (en blocs), pour se placer autour des mannequins.
+    marge: 2,
+    // Mannequins qui ne bougent pas sous les coups, puis mannequins qui gardent le recul de Veloren, alignés vers l'est.
+    immobiles: 2,
+    mobiles: 2,
+    // Écart entre deux mannequins (en blocs).
+    ecart: 4,
+    // Secondes sans coup qui finissent une série : chaque attaquant reçoit son bilan (dégâts, coups, dégâts par
+    // seconde) et le mannequin reprend tous ses PV.
+    fin_de_serie: 4.0,
+)

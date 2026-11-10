@@ -21,6 +21,7 @@ pub mod icebreaker_balise;
 pub mod icebreaker_buildings;
 pub mod icebreaker_charrette;
 pub mod icebreaker_classes;
+pub mod icebreaker_entrainement;
 pub mod icebreaker_expedition;
 pub mod icebreaker_mission;
 pub mod icebreaker_mort;
@@ -694,6 +695,27 @@ impl Server {
         state
             .ecs_mut()
             .insert(icebreaker_charrette::IcebreakerCharrette::new(recruit_posts));
+        // Icebreaker : zone d'entraînement du village (X.14), sur le sol plat le plus proche
+        // du point de `entrainement.ron` (X.15).
+        #[cfg(feature = "worldgen")]
+        let dummy_posts = if instance_site.is_some() && world::icebreaker::is_village() {
+            let config = icebreaker_entrainement::config();
+            let near = (spawn_point.0.xy() + Vec2::from(config.decalage)).as_::<i32>();
+            let first = world
+                .find_flat_spot(index.as_index_ref(), near, config.emprise(), config.marge, config.recherche)
+                .unwrap_or_else(|| {
+                    warn!(?near, "Icebreaker: no flat ground for the training dummies");
+                    world.find_accessible_pos(index.as_index_ref(), near, false)
+                });
+            icebreaker_entrainement::postes(first, &config)
+        } else {
+            Vec::new()
+        };
+        #[cfg(not(feature = "worldgen"))]
+        let dummy_posts = Vec::new();
+        state
+            .ecs_mut()
+            .insert(icebreaker_entrainement::IcebreakerEntrainement::new(dummy_posts));
 
         // Icebreaker : à terre et mort (jalon T).
         state.ecs_mut().insert(sys::icebreaker_mort::IcebreakerATerre::default());

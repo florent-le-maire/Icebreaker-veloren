@@ -360,6 +360,34 @@ impl World {
         wpos.with_z(z).map(|e| e as f32) + 0.5
     }
 
+    /// Icebreaker: the flat ground (X.15) nearest to `near`, within `radius`,
+    /// for an area of `size` blocks with `margin` blocks of flat ground
+    /// around: its first corner, on the ground (not a roof nor a tree).
+    pub fn find_flat_spot(
+        &self,
+        index: IndexRef,
+        near: Vec2<i32>,
+        size: Vec2<i32>,
+        margin: i32,
+        radius: i32,
+    ) -> Option<Vec3<f32>> {
+        let mut chunks = std::collections::HashMap::new();
+        let mut ground = |wpos: Vec2<i32>| {
+            let key = TerrainGrid::chunk_key(wpos);
+            let tc = chunks.entry(key).or_insert_with(|| {
+                self.generate_chunk(index, key, None, || false, None)
+                    .ok()
+                    .map(|(tc, _)| tc)
+            });
+            let z = tc.as_ref()?.find_accessible_pos(wpos, false).z as i32;
+            // Higher than the land: a roof, a tree, a wall.
+            let alt = self.sim.get_alt_approx(wpos)?;
+            ((z as f32 - alt).abs() <= 3.0).then_some(z)
+        };
+        let (corner, z) = icebreaker::find_flat_origin(near, size, margin, radius, &mut ground)?;
+        Some(corner.with_z(z).map(|e| e as f32) + Vec3::new(0.5, 0.5, 0.0))
+    }
+
     #[expect(clippy::result_unit_err)]
     pub fn generate_chunk(
         &self,
