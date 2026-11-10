@@ -21,6 +21,7 @@ pub mod icebreaker_balise;
 pub mod icebreaker_buildings;
 pub mod icebreaker_charrette;
 pub mod icebreaker_classes;
+pub mod icebreaker_entrainement;
 pub mod icebreaker_expedition;
 pub mod icebreaker_mission;
 pub mod icebreaker_mort;
@@ -694,6 +695,22 @@ impl Server {
         state
             .ecs_mut()
             .insert(icebreaker_charrette::IcebreakerCharrette::new(recruit_posts));
+        // Icebreaker : zone d'entraînement du village (X.14), à `entrainement.ron` de la place.
+        #[cfg(feature = "worldgen")]
+        let dummy_posts = if instance_site.is_some() && world::icebreaker::is_village() {
+            let config = icebreaker_entrainement::config();
+            icebreaker_entrainement::postes(spawn_point.0.xy(), &config)
+                .into_iter()
+                .map(|wpos| world.find_accessible_pos(index.as_index_ref(), wpos.as_(), false))
+                .collect()
+        } else {
+            Vec::new()
+        };
+        #[cfg(not(feature = "worldgen"))]
+        let dummy_posts = Vec::new();
+        state
+            .ecs_mut()
+            .insert(icebreaker_entrainement::IcebreakerEntrainement::new(dummy_posts));
 
         // Icebreaker : à terre et mort (jalon T).
         state.ecs_mut().insert(sys::icebreaker_mort::IcebreakerATerre::default());

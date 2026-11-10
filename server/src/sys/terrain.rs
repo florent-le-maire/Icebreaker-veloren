@@ -98,6 +98,7 @@ pub struct Data<'a> {
     icebreaker_treasury: Read<'a, crate::icebreaker_treasury::IcebreakerTreasury>,
     icebreaker_services: Read<'a, crate::icebreaker_services::IcebreakerServices>,
     icebreaker_expedition: Read<'a, crate::icebreaker_expedition::IcebreakerExpedition>,
+    icebreaker_entrainement: Read<'a, crate::icebreaker_entrainement::IcebreakerEntrainement>,
 }
 
 /// This system will handle loading generated chunks and unloading
@@ -216,7 +217,12 @@ impl<'a> System<'a> for Sys {
                         .then(|| data.icebreaker_expedition.leader())
                         .flatten(),
                 ];
-                for (npc, pos) in village_npcs.into_iter().flatten() {
+                // Icebreaker: and the training dummies (X.14).
+                for (npc, pos) in village_npcs
+                    .into_iter()
+                    .flatten()
+                    .chain(data.icebreaker_entrainement.mannequins(key))
+                {
                     emitters.emit(CreateNpcEvent {
                         pos,
                         ori: comp::Ori::default(),

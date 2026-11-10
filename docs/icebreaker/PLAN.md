@@ -68,6 +68,9 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
 - [x] **X.13 Le tir ne dérive pas avec le tireur** — flèches, sorts et objets lancés ne reprennent plus la vitesse du
   tireur (`combat.ron` → `part_vitesse_tireur: 0.0`) : on touche en se déplaçant de côté, une cible qui change de
   direction esquive ; vaut aussi pour les archers ennemis. Testé (test ciblé, donjon démarre), vu en jeu. — f2b57a7e8d
+- [ ] **X.14 Zone d'entraînement** — une rangée de mannequins près de la place pour essayer compétences et dégâts ;
+  ils ne meurent pas (PV pleins après une série) et donnent à chaque attaquant son bilan (dégâts, coups, dégâts/s) ;
+  `entrainement.ron`. — *en cours : Veloren-entrainement, 2026-11-10*
 
 ## Jalon L — Combat, suite (Flo, 2026-11-07)
 
