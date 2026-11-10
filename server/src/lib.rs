@@ -695,14 +695,19 @@ impl Server {
         state
             .ecs_mut()
             .insert(icebreaker_charrette::IcebreakerCharrette::new(recruit_posts));
-        // Icebreaker : zone d'entraînement du village (X.14), à `entrainement.ron` de la place.
+        // Icebreaker : zone d'entraînement du village (X.14), sur le sol plat le plus proche
+        // du point de `entrainement.ron` (X.15).
         #[cfg(feature = "worldgen")]
         let dummy_posts = if instance_site.is_some() && world::icebreaker::is_village() {
             let config = icebreaker_entrainement::config();
-            icebreaker_entrainement::postes(spawn_point.0.xy(), &config)
-                .into_iter()
-                .map(|wpos| world.find_accessible_pos(index.as_index_ref(), wpos.as_(), false))
-                .collect()
+            let near = (spawn_point.0.xy() + Vec2::from(config.decalage)).as_::<i32>();
+            let first = world
+                .find_flat_spot(index.as_index_ref(), near, config.emprise(), config.marge, config.recherche)
+                .unwrap_or_else(|| {
+                    warn!(?near, "Icebreaker: no flat ground for the training dummies");
+                    world.find_accessible_pos(index.as_index_ref(), near, false)
+                });
+            icebreaker_entrainement::postes(first, &config)
         } else {
             Vec::new()
         };
