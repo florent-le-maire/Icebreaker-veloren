@@ -71,6 +71,9 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
 - [x] **X.14 Zone d'entraînement** — 3 mannequins près de la place (`entrainement.ron`) ; ils ne meurent pas et
   donnent à chaque attaquant son bilan (dégâts, coups, dégâts/s) après une série. Testé (3 tests, client texte : posés
   au sol) ; coups, bilan et remise des PV pas vus dans le vrai client. — 2fadb68
+- [x] **X.15 Mannequins sur sol plat** — rangée posée sur le sol plat le plus proche (`recherche`, `marge`) ; 2
+  immobiles (le recul est annulé) et 2 avec le recul de Veloren. Testé (4 tests, client texte : tous au même niveau) ;
+  recul annulé pas vu dans le vrai client. — b3e8769
 
 ## Jalon L — Combat, suite (Flo, 2026-11-07)
 
