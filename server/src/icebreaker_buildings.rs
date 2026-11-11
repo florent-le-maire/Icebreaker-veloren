@@ -137,12 +137,16 @@ impl IcebreakerBuildings {
     }
 }
 
-/// The place at `wpos`, if any.
+/// The place at `wpos`, if any. Icebreaker : bounds may overlap (a town without houses puts
+/// every building on the square, a few blocks apart): the place whose centre is nearest wins,
+/// so a click on a case of the plan, sent as the centre of its bounds, opens that building.
 fn place_at(places: &[(Place, Aabr<i32>, i32)], wpos: Vec2<f32>) -> Option<Place> {
-    let wpos = wpos.map(|e| e.floor() as i32);
+    let inside = wpos.map(|e| e.floor() as i32);
+    let far = |bounds: &Aabr<i32>| bounds.center().as_::<f32>().distance_squared(wpos);
     places
         .iter()
-        .find(|(_, bounds, _)| bounds.contains_point(wpos))
+        .filter(|(_, bounds, _)| bounds.contains_point(inside))
+        .min_by(|(_, a, _), (_, b, _)| far(a).total_cmp(&far(b)))
         .map(|(place, ..)| *place)
 }
 
@@ -337,6 +341,26 @@ mod tests {
         assert_eq!(at(45.0, 1.0), Some(Place::Building(Building::Infirmary)));
         assert_eq!(at(65.0, 1.0), Some(Place::Plot(7)));
         assert_eq!(at(15.0, 5.0), None);
+    }
+
+    // A town without houses: every building is on the square, at its offset, and their bounds
+    // overlap. The centre of a building's bounds must open that building, not a neighbour.
+    #[test]
+    fn a_click_on_overlapping_bounds_finds_the_nearest_centre() {
+        let around = |x: i32, y: i32| Aabr {
+            min: Vec2::new(x - 6, y - 6),
+            max: Vec2::new(x + 6, y + 6),
+        };
+        let offsets = [(5, 0), (-5, 0), (0, 5), (0, -5), (0, 10), (0, -10), (10, 0)];
+        let buildings = IcebreakerBuildings::new(offsets.map(|(x, y)| Some((around(x, y), 0))));
+        let places = buildings.places([]);
+        for (building, (x, y)) in Building::ALL.iter().zip(offsets) {
+            assert_eq!(
+                place_at(&places, Vec2::new(x as f32, y as f32)),
+                Some(Place::Building(*building)),
+                "{building:?}"
+            );
+        }
     }
 
     // Icebreaker A.11: the weapons hall comes last, so the houses of the other buildings keep
