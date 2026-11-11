@@ -21,9 +21,10 @@ Le jeu doit rester lançable après chaque tâche.
   dormeurs, décor), une grotte façon Deep Rock Galactic (poches, filons, chef au fond), combat létal et verrouillage
   de cible, à terre et relève, sac du mort (jalon T). Détail et hashes : `HISTORIQUE.md`, `PLAN-GROTTE.md`.
 - **Presque rien n'a été vu dans le vrai client** : la plupart des tâches ont été vérifiées par des tests et le client
-  texte ; seul le jalon X (interface du village) a été joué par Flo. Liste : « À vérifier en jeu » plus bas.
+  texte ; seuls les jalons X (interface du village) et N (interface refaite) ont été joués par Flo. Liste : « À
+  vérifier en jeu » plus bas.
 - **Interface refaite (jalon N, 2026-11-11)** : menu, fenêtre du village, bandeaux, HUD de donjon, bilan de retour
-  (`PLAN-INTERFACE.md`). Vue en capture dans le vrai client par un essai sans les mains, pas encore jouée à la souris.
+  (`PLAN-INTERFACE.md`, tâches dans `HISTORIQUE.md`). Jouée par Flo le 2026-11-11 : « tout est bon pour moi ».
   Le protocole a changé : le serveur du VPS est à redéployer avant d'y rejouer avec ce client.
 - **Ce qui manque à la démo D.1** : le pillage sur la route (P.1 à P.4, pas commencé) ; serveur sur le VPS et zip du
   client faits (S.2, S.3). Le contenu de la démo est à confirmer ou à réduire : `QUESTIONS.md`, Q1.
@@ -227,18 +228,6 @@ tâche pour ce qui casse.
 - V.5 : bilan au retour avec du vrai butin.
 - C.1 à C.3 : maison bâtie contre terrain vide, bouton « Bâtir (300 or) », maison dessinée après relance
   (`heures_chantier` à baisser pour l'essai).
-- N.4 / N.5 fenêtre du village (vue en capture seulement, par l'essai sans les mains) : à la souris, clic sur une
-  case du plan, onglets, cadenas, boutons, croix, Échap ; liste du registre qui défile au-delà de cinq personnages ;
-  un versement d'or (réponse dans le panneau, boutons qui se grisent) ; couleurs de la balise (F9) ; bandeau
-  d'expédition à plusieurs et son décompte ; messages à droite ; une autre taille d'écran ou d'interface.
-- N.6 menu (vu en capture) : clic sur une partie, création, refus d'un nom sous le champ, molette dans la liste, les
-  étapes d'un vrai lancement local et l'attente à l'écran des personnages.
-- N.7 donjon : rappel des touches au verrouillage et « Cible perdue », barre de vie gardée sur la cible, secondes de
-  recharge sur l'emplacement de la balise, jauge de fouille du sac, barre rouge au-dessus d'un allié à terre, touche
-  d'abandon ; à terre, mort et allié regardé sont vus en capture, pas à la souris.
-- N.8 bilan de retour (vu en capture) : fermeture par la croix, le bouton et Échap ; un retour avec du vrai butin et
-  une mission accomplie ; plus de seize sortes d'objets (les suivantes ne sont pas montrées) ; à plusieurs.
-- N.9 : le verrouillage se comporte comme avant (cible morte ou trop loin, molette).
 - X.1 fermeture de la vue U au départ et à la mort ; X.11 plan : cases à leur place, clic, point du joueur, Échap, fantôme en vol ; X.3 et X.9
   panneau, icônes, Échap, fermeture pour de bon ; X.4 couleurs et icônes des bâtiments ; X.5 E et T sur les PNJ dans
   leur maison ; X.8 recrues devant la charrette (posées 8 blocs trop haut sur le village d'essai ? `QUESTIONS.md`, Q30).
@@ -269,11 +258,9 @@ tâche pour ce qui casse.
   trop bas.
 
 **Mort (jalon T)**
-- T.2 : barre « Mort dans N s » au-dessus du corps d'un allié (position, lisibilité) ; le bloc du joueur à terre a
-  été refait et vu en capture (N.7).
+- T.2 : barre « Mort dans N s » au-dessus du corps d'un allié (position, lisibilité), à deux joueurs.
 - T.3 : modèle du sac au sol, libellé « Fouiller le sac », fouille interrompue si on bouge.
-- T.4 : clic à la souris pour regarder un allié puis le suivant (corrigé en N.7 et vu par l'essai sans les mains
-  avec un seul allié), touche de réapparition pour rentrer en fantôme.
+- T.4 : à trois joueurs ou plus, le clic passe d'un allié regardé au suivant (corrigé en N.7, vu avec un seul allié).
 
 **Divers**
 - M.1 : téléchargement du plugin par le vrai client.

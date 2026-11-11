@@ -347,3 +347,33 @@ charge, rendue 10 s après la pose ou tout de suite en ramassant une balise (E).
   client texte ; affichage en jeu pas vu. 7a16e3223b
 - [x] **J.5 Utiliser la balise, voir sa recharge** — l’utiliser (sac, barre de raccourcis) la pose ; la barre la
   grise et affiche les secondes qui restent (message `IcebreakerBaliseRecharge`). Message vu au client texte. d4d6273e8f
+
+## Jalon N — Interface Icebreaker (Flo, 2026-11-10) — vu en jeu le 2026-11-11
+
+Toute l'interface qu'Icebreaker a ajoutée à Veloren, refaite d'après des maquettes : menu, fenêtre du village,
+bandeaux et messages, HUD de donjon, bilan de retour. Un panneau typé piloté par le serveur et envoyé au changement
+(décision `0019`) : un clic répond tout de suite. Charte, règles, types et recette de l'essai sans les mains :
+`PLAN-INTERFACE.md`. Flo a joué l'ensemble le 2026-11-11 : « tout est bon pour moi ». N.6 à N.9 ont été réalisés
+par des agents sur un modèle plus léger (demande de Flo), relus et essayés dans le vrai client par l'agent qui pilote.
+
+- [x] **N.1 Maquettes** — 14 planches sur le canvas de Flo, charte, règles, décision `0019` proposée. Aucun code du
+  jeu touché. `91d04b1f1b`
+- [x] **N.2 Lecture par l'équipe** — Flo, 2026-11-11 : « la maquette me va bien, tu peux implémenter ça en jeu ».
+  `0019` choisie, Q40 tranchée. Sayanel n'a pas encore vu le canvas (à partager).
+- [x] **N.3 Protocole : panneau typé, envoyé au changement** — le client dit ce qu'il a d'ouvert, le serveur envoie
+  les bâtiments et le panneau quand ils changent (au tic suivant après une commande du joueur, sinon dans la
+  demi-seconde). `f308093b2e`
+- [x] **N.4 Fenêtre du village** et **N.5 Bandeaux et messages** — `voxygen/src/hud/icebreaker.rs` : plan rangé
+  sur une grille à gauche, panneau typé à droite, tailles fixes, bandeaux du fantôme et de l'expédition, messages à
+  droite. `3d52bdebab`
+- [x] **N.6 Menu** — bloc Icebreaker avec une ligne d'explication par lieu, liste des parties qui défile, refus du
+  nom sous le champ, étapes du lancement. `9d266451d2`
+- [x] **N.7 Donjon** — rappel des touches au verrouillage et « Cible perdue », quantité et recharge de la balise
+  ensemble, jauge de fouille, bloc « à terre », allié à terre en rouge, écran de mort, bandeau de l'allié regardé.
+  Corrige T.4 : le clic « regarder un allié » ne trouvait jamais personne. `0fd4457c0a`, `7a549b2385`
+- [x] **N.8 Bilan de retour** — fenêtre « Retour d'expédition » pour celui qui rentre (`/rentrer` en campagne) et
+  pour chaque joueur d'une expédition qui a péri : mission, créatures, coffres, or, objets ; le chat garde une ligne.
+  Chacun ne voit que ce qu'il rapporte lui-même (`QUESTIONS.md`, Q41). `5595483051`
+- [x] **N.9 Coûts par image restants** — la cible verrouillée lue seule (plus de parcours de toutes les entités),
+  temps à terre sans ménage ni lecture de `mort.ron` à chaque appel, allié à regarder cherché deux fois par seconde.
+  `207aeab532`
