@@ -71,6 +71,11 @@ en-tête (icône, titre, une ligne), onglets, chiffres (valeur, légende), jauge
 (titre, sous-titre, pastille d'état, cadenas, un bouton), actions (libellé, principale ou non, permise ou non),
 message (texte, sorte : info, réussite, refus). Le client range chaque bloc toujours au même endroit.
 
+Une ligne de personnage (recrue, fiche du registre) porte l'**icône de sa classe** (Flo, 2026-11-11) : un champ
+`icone` par classe dans `assets/icebreaker/classes.ron`, choisi parmi les icônes d'armes déjà dans le jeu
+(`assets/voxygen/element/weapons/` : épées croisées pour le guerrier, bâton pour le mage, arc pour l'archer ; hache,
+marteau, sceptre, dagues, épée et bouclier pour les classes à venir). Une classe sans icône garde l'icône générique.
+
 ## Tâches (worktree `Veloren-interface`, branche `icebreaker-interface`)
 
 - [x] **N.1 Maquettes** — 14 planches sur le canvas ci-dessus, charte, règles, décision `0019` proposée. Le rendu
