@@ -2726,36 +2726,44 @@ fn icebreaker_lock_shot_start(client: &Client, player: specs::Entity) -> Option<
 
 /// Icebreaker: lock on an enemy (Dark Souls, `icebreaker_lock`).
 impl SessionState {
+    /// The middle of the body of `entity` if it is a living enemy.
+    /// Icebreaker (N.9) : lit les composants d'une seule entité, sans joindre tout le monde.
+    fn icebreaker_lock_body_middle(client: &Client, entity: specs::Entity) -> Option<Vec3<f32>> {
+        let ecs = client.state().ecs();
+        let enemy = matches!(
+            ecs.read_storage::<comp::Alignment>().get(entity),
+            Some(comp::Alignment::Enemy)
+        );
+        let alive = ecs
+            .read_storage::<comp::Health>()
+            .get(entity)
+            .is_some_and(|health| !health.is_dead);
+        if !enemy || !alive {
+            return None;
+        }
+        let body = *ecs.read_storage::<comp::Body>().get(entity)?;
+        let pos = ecs.read_storage::<Pos>().get(entity)?.0;
+        let pos = ecs
+            .read_storage::<crate::ecs::comp::Interpolated>()
+            .get(entity)
+            .map_or(pos, |i| i.pos);
+        let scale = ecs.read_storage::<comp::Scale>().get(entity).map_or(1.0, |s| s.0);
+        Some(pos + Vec3::unit_z() * body.height() * scale * 0.5)
+    }
+
     /// The living enemies around, with the middle of their body.
     fn icebreaker_lock_candidates(&self) -> Vec<(specs::Entity, Vec3<f32>)> {
-        use specs::{Join, LendJoin};
+        use specs::Join;
         let client = self.client.borrow();
         let ecs = client.state().ecs();
-        let (positions, interpolated, alignments, healths, bodies, scales) = (
-            ecs.read_storage::<Pos>(),
-            ecs.read_storage::<crate::ecs::comp::Interpolated>(),
-            ecs.read_storage::<comp::Alignment>(),
-            ecs.read_storage::<comp::Health>(),
-            ecs.read_storage::<comp::Body>(),
-            ecs.read_storage::<comp::Scale>(),
-        );
-        (
-            &ecs.entities(),
-            &positions,
-            interpolated.maybe(),
-            &alignments,
-            &healths,
-            &bodies,
-            scales.maybe(),
-        )
+        // Icebreaker (N.9) : on ne joint que les ennemis ; le détail est dans
+        // `icebreaker_lock_body_middle`, le même que pour la cible verrouillée.
+        let alignments = ecs.read_storage::<comp::Alignment>();
+        (&ecs.entities(), &alignments)
             .join()
-            .filter(|(_, _, _, alignment, health, ..)| {
-                matches!(alignment, comp::Alignment::Enemy) && !health.is_dead
-            })
-            .map(|(entity, pos, interpolated, _, _, body, scale)| {
-                let pos = interpolated.map_or(pos.0, |i| i.pos);
-                let height = body.height() * scale.map_or(1.0, |s| s.0);
-                (entity, pos + Vec3::unit_z() * height * 0.5)
+            .filter(|(_, alignment)| matches!(alignment, comp::Alignment::Enemy))
+            .filter_map(|(entity, _)| {
+                Self::icebreaker_lock_body_middle(&client, entity).map(|pos| (entity, pos))
             })
             .collect()
     }
@@ -2841,11 +2849,7 @@ impl SessionState {
         };
         let origin = self.scene.camera().get_focus_pos();
         let settings = &self.icebreaker_lock_settings;
-        let target_pos = self
-            .icebreaker_lock_candidates()
-            .into_iter()
-            .find(|(e, _)| *e == target)
-            .map(|(_, pos)| pos)
+        let target_pos = Self::icebreaker_lock_body_middle(&self.client.borrow(), target)
             .filter(|pos| pos.distance(origin) <= settings.rayon_perte);
         match target_pos {
             Some(pos) if self.icebreaker_top_view.is_none() => {

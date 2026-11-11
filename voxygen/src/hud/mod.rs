@@ -1365,6 +1365,9 @@ pub struct Hud {
     force_ungrab: bool,
     /// Icebreaker : l'interface ajoutée (jalon N) : fenêtre du village, bandeaux, panneau libre.
     icebreaker: icebreaker::Interface,
+    /// Icebreaker : l'allié que l'écran de mort propose, cherché au plus deux fois par seconde (N.9) :
+    /// l'instant de la dernière recherche et son résultat.
+    icebreaker_allie: Option<(f64, Option<String>)>,
     force_chat_input: Option<String>,
     force_chat_cursor: Option<Index>,
     tab_complete: Option<String>,
@@ -1472,6 +1475,7 @@ impl Hud {
             to_focus: None,
             force_ungrab: false,
             icebreaker,
+            icebreaker_allie: None,
             force_chat_input: None,
             force_chat_cursor: None,
             tab_complete: None,
@@ -1573,8 +1577,6 @@ impl Hud {
             let is_riders = ecs.read_storage::<Is<Rider>>();
             let stances = ecs.read_storage::<comp::Stance>();
             let char_activities = ecs.read_storage::<comp::CharacterActivity>();
-            // Icebreaker : pour le temps qui reste à terre (T.2).
-            let icebreaker_etats = ecs.read_storage::<comp::CharacterState>();
             let time = ecs.read_resource::<Time>();
             let id_maps = ecs.read_resource::<common::uid::IdMaps>();
             let terrain = ecs.read_resource::<common::terrain::TerrainGrid>();
@@ -2593,7 +2595,7 @@ impl Hud {
                             // Icebreaker : temps qui reste à terre (T.2).
                             icebreaker_a_terre: crate::icebreaker_mort::reste(
                                 *uid,
-                                comp::is_downed(health, icebreaker_etats.get(entity)),
+                                comp::is_downed(health, char_states.get(entity)),
                                 time.0,
                             ),
                             icebreaker_verrouille,
@@ -4281,7 +4283,18 @@ impl Hud {
                 info.viewpoint_entity != propre,
                 a_terre,
                 || nom_de(propre),
-                || crate::icebreaker_mort::allie_suivant(client, None).map(nom_de),
+                // Icebreaker : la recherche de l'allié se refait au plus deux fois par seconde (N.9).
+                || {
+                    let maintenant = client.state().get_time();
+                    match &self.icebreaker_allie {
+                        Some((quand, nom)) if maintenant - *quand < 0.5 => nom.clone(),
+                        _ => {
+                            let nom = crate::icebreaker_mort::allie_suivant(client, None).map(nom_de);
+                            self.icebreaker_allie = Some((maintenant, nom.clone()));
+                            nom
+                        },
+                    }
+                },
                 || {
                     let vie = ecs
                         .read_storage::<comp::Health>()
@@ -4291,6 +4304,9 @@ impl Hud {
                 },
             )
         };
+        if !client.is_dead() {
+            self.icebreaker_allie = None;
+        }
         self.events.extend(self.icebreaker.dessiner(
             ui_widgets,
             &self.imgs,
