@@ -58,16 +58,47 @@ pub fn cases(
     })
 }
 
-/// Les cases du personnage vu ; `None` : il n'a pas nos compétences.
-static INSTANTANE: Mutex<Option<[Option<Case>; TOUCHES]>> = Mutex::new(None);
+/// Ce que montre la case ronde du passif actif (toujours actif, sans touche).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CasePassif {
+    pub nom: &'static str,
+    pub description: &'static str,
+}
 
-/// Le HUD range ce que montrent les cases à cette image.
-pub fn rafraichir(cases: Option<[Option<Case>; TOUCHES]>) {
-    *INSTANTANE.lock().unwrap_or_else(|e| e.into_inner()) = cases;
+/// Le passif actif du personnage ; `None` : il n'en a pas, ou son id est inconnu de la classe.
+pub fn passif(competences: &IcebreakerCompetences) -> Option<CasePassif> {
+    let id = competences.acquis.passif.as_deref()?;
+    let (_, passif) = registre()
+        .passifs_de(&competences.classe)?
+        .passifs
+        .iter()
+        .find(|(autre, _)| autre == id)?;
+    Some(CasePassif {
+        nom: passif.nom.as_str(),
+        description: passif.description.as_str(),
+    })
+}
+
+/// Les cases et le passif du personnage vu ; `None` : il n'a pas nos compétences.
+type Instantane = ([Option<Case>; TOUCHES], Option<CasePassif>);
+static INSTANTANE: Mutex<Option<Instantane>> = Mutex::new(None);
+
+/// Le HUD range ce que montrent les cases et la case ronde à cette image.
+pub fn rafraichir(vu: Option<([Option<Case>; TOUCHES], Option<CasePassif>)>) {
+    *INSTANTANE.lock().unwrap_or_else(|e| e.into_inner()) = vu;
 }
 
 /// Le personnage vu a nos compétences : la barre n'est plus celle de Veloren.
 pub fn actif() -> bool { INSTANTANE.lock().unwrap_or_else(|e| e.into_inner()).is_some() }
+
+/// Le passif actif du personnage vu.
+pub fn passif_actif() -> Option<CasePassif> {
+    INSTANTANE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .and_then(|(_, passif)| *passif)
+}
 
 /// La case de la touche `touche` (comptée depuis zéro).
 pub fn case(touche: usize) -> Option<Case> {
@@ -75,7 +106,7 @@ pub fn case(touche: usize) -> Option<Case> {
         .lock()
         .unwrap_or_else(|e| e.into_inner())
         .as_ref()
-        .and_then(|cases| cases.get(touche).cloned().flatten())
+        .and_then(|(cases, _)| cases.get(touche).cloned().flatten())
 }
 
 #[cfg(test)]
@@ -144,12 +175,33 @@ mod tests {
     #[test]
     fn l_instantane_se_lit_et_se_vide() {
         let inventaire = en_mains("grande_epee");
-        rafraichir(Some(cases(&guerrier(), Some(&inventaire), 0.0)));
+        let competences = guerrier();
+        rafraichir(Some((
+            cases(&competences, Some(&inventaire), 0.0),
+            passif(&competences),
+        )));
         assert!(actif());
+        assert!(passif_actif().is_some());
         assert!(case(0).is_some() && case(TOUCHE_ULTIME).is_some());
         assert!(case(TOUCHES).is_none());
         rafraichir(None);
         assert!(!actif());
         assert!(case(0).is_none());
+        assert!(passif_actif().is_none());
+    }
+
+    #[test]
+    fn le_passif_actif_a_un_nom_et_une_description() {
+        let passif = passif(&guerrier()).expect("un guerrier par défaut a un passif");
+        assert!(!passif.nom.is_empty() && !passif.description.is_empty());
+    }
+
+    #[test]
+    fn sans_passif_actif_ou_avec_un_inconnu_pas_de_case_ronde() {
+        let mut competences = guerrier();
+        competences.acquis.passif = Some("n_existe_pas".to_string());
+        assert_eq!(passif(&competences), None);
+        competences.acquis.passif = None;
+        assert_eq!(passif(&competences), None);
     }
 }

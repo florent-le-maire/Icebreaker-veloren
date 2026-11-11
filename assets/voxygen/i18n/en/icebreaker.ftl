@@ -61,6 +61,7 @@ icebreaker-fouille-sac = Searching the bag
 icebreaker-balise-recharge = { $secondes } s
 icebreaker-competence-reste = { $secondes } s
 icebreaker-competence-titre = { $nom } · level { $niveau }
+icebreaker-competence-titre-passif = { $nom } · passive
 icebreaker-competence-titre-ultime = { $nom } · ultimate
 icebreaker-competence-recharge = Cooldown: { $secondes } s
 icebreaker-a-terre = Downed

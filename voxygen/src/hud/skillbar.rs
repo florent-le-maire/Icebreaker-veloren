@@ -60,6 +60,10 @@ widget_ids! {
         icebreaker_cases_reste[],
         icebreaker_cases_ombre[],
         icebreaker_cases_bord[],
+        // Icebreaker : la case ronde du passif actif, à gauche de la barre (A.6)
+        icebreaker_passif_bord,
+        icebreaker_passif_fond,
+        icebreaker_passif_icone,
         // Skillbar
         frame,
         bg_health,
@@ -165,6 +169,22 @@ struct SlotEntry {
     shortcut_position_bg: PositionSpecifier,
     shortcut_widget_ids: (widget::Id, widget::Id),
 }
+
+// Icebreaker : la case ronde du passif actif (A.6). Ronde car il est toujours actif et n'a pas de
+// touche.
+/// Diamètre de la case ronde.
+const PASSIF_DIAMETRE: f64 = 40.0;
+/// Épaisseur du contour acier.
+const PASSIF_BORD: f64 = 2.0;
+/// Écart entre la case ronde et le bouton du journal, qui occupe la gauche de la première case.
+const PASSIF_ECART: f64 = 6.0;
+/// Place prise par le bouton du journal à gauche de la première case (voir `exp_img_frame_bg`).
+const PASSIF_PLACE_JOURNAL: f64 = 37.0;
+/// Côté de l'icône au centre.
+const PASSIF_ICONE: f64 = 24.0;
+const PASSIF_COULEUR_FOND: Color = Color::Rgba(0.078, 0.094, 0.102, 1.0); // #14181A
+const PASSIF_COULEUR_BORD: Color = Color::Rgba(0.357, 0.400, 0.416, 1.0); // #5B666A
+const PASSIF_COULEUR_ICONE: Color = Color::Rgba(0.608, 0.847, 0.290, 1.0); // #9BD84A
 
 fn slot_entries(state: &State, slot_offset: f64) -> [SlotEntry; 10] {
     use PositionSpecifier::*;
@@ -1354,6 +1374,37 @@ impl<'a> Skillbar<'a> {
                     .color(BLACK)
                     .set(id_bg, ui);
             }
+        }
+        // Icebreaker : la case ronde du passif actif, à gauche de la barre, hors de son cadre et
+        // du bouton du journal ; son infobulle donne le nom et la description.
+        if let Some(passif) = crate::icebreaker_competences::passif_actif() {
+            let titre = self.localized_strings.get_msg_ctx(
+                "icebreaker-competence-titre-passif",
+                &i18n::fluent_args! { "nom" => passif.nom },
+            );
+            widget::Circle::fill_with(PASSIF_DIAMETRE / 2.0, PASSIF_COULEUR_BORD)
+                .mid_left_with_margin_on(
+                    state.ids.slot1,
+                    -(PASSIF_PLACE_JOURNAL + PASSIF_ECART + PASSIF_DIAMETRE),
+                )
+                .with_tooltip(
+                    self.tooltip_manager,
+                    &titre,
+                    passif.description,
+                    &tooltip,
+                    TEXT_COLOR,
+                )
+                .set(state.ids.icebreaker_passif_bord, ui);
+            widget::Circle::fill_with(PASSIF_DIAMETRE / 2.0 - PASSIF_BORD, PASSIF_COULEUR_FOND)
+                .middle_of(state.ids.icebreaker_passif_bord)
+                .graphics_for(state.ids.icebreaker_passif_bord)
+                .set(state.ids.icebreaker_passif_fond, ui);
+            Image::new(self.imgs.buff_dmg_red_0)
+                .w_h(PASSIF_ICONE, PASSIF_ICONE)
+                .color(Some(PASSIF_COULEUR_ICONE))
+                .middle_of(state.ids.icebreaker_passif_bord)
+                .graphics_for(state.ids.icebreaker_passif_bord)
+                .set(state.ids.icebreaker_passif_icone, ui);
         }
         // M1 is primary slot on mouse, M2 is primary slot on controller
         let (primary_id, primary_bg, secondary_id, secondary_bg) =

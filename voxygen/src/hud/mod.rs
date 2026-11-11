@@ -4780,14 +4780,18 @@ impl Hud {
             let competences = ecs.read_storage::<common::icebreaker_competences::IcebreakerCompetences>();
             crate::icebreaker_competences::rafraichir(
                 competences.get(info.viewpoint_entity).map(|competences| {
-                    crate::icebreaker_competences::cases(
-                        competences,
-                        client.inventories().get(info.viewpoint_entity),
-                        // L'heure du serveur : les recharges sont notées dans son horloge.
-                        ecs.read_resource::<common::resources::Time>().0
-                            + ecs
-                                .read_resource::<common::icebreaker_competences::IcebreakerDecalageHorloge>()
-                                .0,
+                    (
+                        crate::icebreaker_competences::cases(
+                            competences,
+                            client.inventories().get(info.viewpoint_entity),
+                            // L'heure du serveur : les recharges sont notées dans son horloge.
+                            ecs.read_resource::<common::resources::Time>().0
+                                + ecs
+                                    .read_resource::<common::icebreaker_competences::IcebreakerDecalageHorloge>()
+                                    .0,
+                        ),
+                        // Le passif actif, pour la case ronde à gauche de la barre.
+                        crate::icebreaker_competences::passif(competences),
                     )
                 }),
             );

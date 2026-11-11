@@ -61,6 +61,7 @@ icebreaker-fouille-sac = Fouille du sac
 icebreaker-balise-recharge = { $secondes } s
 icebreaker-competence-reste = { $secondes } s
 icebreaker-competence-titre = { $nom } · niveau { $niveau }
+icebreaker-competence-titre-passif = { $nom } · passif
 icebreaker-competence-titre-ultime = { $nom } · ultime
 icebreaker-competence-recharge = Recharge : { $secondes } s
 icebreaker-a-terre = À terre
