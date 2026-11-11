@@ -13,9 +13,9 @@
 use crate::{
     assets::{self, AssetExt, Ron},
     comp::{
-        Inventory,
+        Inventory, StatsModifier,
         ability::{Ability, AbilityInput, CharacterAbility, SpecifiedAbility},
-        buff::BuffEffect,
+        buff::{BuffEffect, ModifierKind},
         inventory::{
             item::{
                 ItemKind,
@@ -686,6 +686,73 @@ impl Acquis {
     }
 }
 
+/// Composant d'un personnage du registre en jeu : ses effets permanents, l'inné de sa classe puis
+/// son passif actif. Envoyé à tous les joueurs : le client recalcule lui aussi les PV max de ceux
+/// qu'il voit. Appliqué à chaque tic par le système des effets (`common/systems/src/buff.rs`),
+/// comme un effet qui ne finit pas et que rien ne dissipe.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct IcebreakerPassif {
+    pub effets: Vec<BuffEffect>,
+}
+
+impl Component for IcebreakerPassif {
+    type Storage = DerefFlaggedStorage<Self, specs::VecStorage<Self>>;
+}
+
+impl IcebreakerPassif {
+    /// Les effets permanents du personnage : l'inné de sa classe, et son passif actif s'il le
+    /// connaît.
+    pub fn de(competences: &IcebreakerCompetences) -> Self {
+        let Some(passifs) = registre().passifs_de(&competences.classe) else {
+            return Self::default();
+        };
+        let acquis = &competences.acquis;
+        let actif = acquis
+            .passif
+            .as_deref()
+            .filter(|id| acquis.passifs.iter().any(|connu| connu == id))
+            .and_then(|id| passifs.passifs.iter().find(|(passif, _)| passif == id));
+        Self {
+            effets: passifs
+                .inne
+                .iter()
+                .chain(actif.iter().flat_map(|(_, passif)| &passif.effets))
+                .cloned()
+                .collect(),
+        }
+    }
+
+    /// Ce que ces effets font aux PV max, pour entrer en jeu avec tous ses PV.
+    pub fn pv_max(&self) -> StatsModifier {
+        let mut pv = StatsModifier::default();
+        for effet in &self.effets {
+            if let BuffEffect::MaxHealthModifier { value, kind } = effet {
+                match kind {
+                    ModifierKind::Additive => pv.add_mod += value,
+                    ModifierKind::Multiplicative => pv.mult_mod *= value,
+                }
+            }
+        }
+        pv
+    }
+}
+
+/// Un effet qu'un passif ou un inné peut porter : un réglage permanent des stats. Les effets qui
+/// agissent dans le temps (dégâts, soin, endurance, combo), changent de corps ou désignent une
+/// cible n'ont pas de sens sans durée ni lanceur.
+pub fn effet_permanent(effet: &BuffEffect) -> bool {
+    !matches!(
+        effet,
+        BuffEffect::HealthChangeOverTime { .. }
+            | BuffEffect::EnergyChangeOverTime { .. }
+            | BuffEffect::ComboChangeOverTime { .. }
+            | BuffEffect::MaxHealthChangeOverTime { .. }
+            | BuffEffect::BodyChange(_)
+            | BuffEffect::MarkEntity(_)
+            | BuffEffect::DisableAuxiliaryAbilities
+    )
+}
+
 /// Id de la capacité de Veloren dont l'interface reprend l'icône pour la compétence `numero`.
 pub fn icone_de(numero: u16) -> Option<&'static str> {
     registre()
@@ -824,6 +891,17 @@ mod tests {
         }
         assert!(registre.ultimes_de("guerrier").len() >= 3);
         assert!(registre.passifs_de("guerrier").is_some_and(|p| p.passifs.len() >= 3));
+        // Un inné ou un passif ne porte que des réglages permanents des stats.
+        for classe in ["guerrier"] {
+            let passifs = registre.passifs_de(classe).expect("passifs");
+            let effets = passifs
+                .inne
+                .iter()
+                .chain(passifs.passifs.iter().flat_map(|(_, passif)| &passif.effets));
+            for effet in effets {
+                assert!(effet_permanent(effet), "{classe} : {effet:?}");
+            }
+        }
 
         // Les ids sont uniques : le numéro d'une compétence en dépend.
         let ids: std::collections::BTreeSet<_> =
@@ -1085,6 +1163,37 @@ mod tests {
         assert_eq!(guerrier.reste_recharge(4, 16.0), None);
         assert_eq!(guerrier.reste_recharge(4, 20.0), None);
         assert_eq!(guerrier.reste_recharge(5, 10.0), None);
+    }
+
+    #[test]
+    fn le_passif_s_ajoute_a_l_inne_de_la_classe() {
+        let passifs = registre().passifs_de("guerrier").expect("passifs du guerrier");
+        let mut guerrier =
+            IcebreakerCompetences::nouveau("guerrier", Acquis::par_defaut("guerrier")).unwrap();
+        // Le lot par défaut : l'inné, puis le premier passif.
+        let (actif, premier) = &passifs.passifs[0];
+        assert_eq!(guerrier.acquis.passif.as_deref(), Some(actif.as_str()));
+        let effets = IcebreakerPassif::de(&guerrier);
+        assert_eq!(effets.effets.len(), passifs.inne.len() + premier.effets.len());
+        assert_eq!(effets.effets[..passifs.inne.len()], passifs.inne[..]);
+        // Les PV max : ce que disent les données (inné × 1,25, robuste × 1,15).
+        let pv = effets.pv_max();
+        assert!((pv.mult_mod - 1.25 * 1.15).abs() < 1e-4 && pv.add_mod == 0.0, "{pv:?}");
+
+        // Un passif qu'il ne connaît pas, ou aucun : l'inné seul.
+        guerrier.acquis.passif = Some(passifs.passifs[1].0.clone());
+        assert_eq!(IcebreakerPassif::de(&guerrier).effets, passifs.inne);
+        guerrier.acquis.passif = None;
+        assert_eq!(IcebreakerPassif::de(&guerrier).effets, passifs.inne);
+        // Une classe sans données : rien.
+        guerrier.classe = "classe inconnue".into();
+        assert!(IcebreakerPassif::de(&guerrier).effets.is_empty());
+        // Les effets dans le temps ne sont pas des passifs.
+        assert!(effet_permanent(&BuffEffect::AttackDamage(1.1)));
+        assert!(!effet_permanent(&BuffEffect::ComboChangeOverTime {
+            rate: 1.0,
+            tick_dur: crate::resources::Secs(1.0),
+        }));
     }
 
     #[test]

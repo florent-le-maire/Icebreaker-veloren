@@ -55,6 +55,8 @@ macro_rules! synced_components {
             object: Object,
             frontend_marker: FrontendMarker,
             arcing: Arcing,
+            // Icebreaker : inné de classe et passif du personnage du registre (jalon A).
+            icebreaker_passif: IcebreakerPassif,
             // TODO: change this to `SyncFrom::ClientEntity` and sync the bare minimum
             // from other entities (e.g. just keys needed to show appearance
             // based on their loadout). Also, it looks like this actually has
@@ -88,7 +90,7 @@ macro_rules! reexport_comps {
             pub use body::parts::Heads;
             pub use common::{interaction::Interactors, mounting::VolumeRiders};
             // Icebreaker : compétences du personnage du registre (jalon A).
-            pub use common::icebreaker_competences::IcebreakerCompetences;
+            pub use common::icebreaker_competences::{IcebreakerCompetences, IcebreakerPassif};
             use common::link::Is;
             use common::{
                 mounting::{Mount, Rider, VolumeRider},
@@ -318,6 +320,12 @@ impl NetSync for IsInteractor {
 
 impl NetSync for Interactors {
     const SYNC_FROM: SyncFrom = SyncFrom::ClientSpectatorEntity;
+}
+
+// Icebreaker : l'inné et le passif changent les PV max, que chaque client recalcule pour ceux
+// qu'il voit (jalon A).
+impl NetSync for IcebreakerPassif {
+    const SYNC_FROM: SyncFrom = SyncFrom::AnyEntity;
 }
 
 // Icebreaker : ce que le personnage a acquis et ses recharges, pour celui qui le joue (jalon A).

@@ -70,6 +70,8 @@ pub struct ReadData<'a> {
     alignments: ReadStorage<'a, Alignment>,
     players: ReadStorage<'a, Player>,
     masses: ReadStorage<'a, Mass>,
+    // Icebreaker : inné de classe et passif des personnages du registre (jalon A).
+    icebreaker_passifs: ReadStorage<'a, common::icebreaker_competences::IcebreakerPassif>,
 }
 
 #[derive(Default)]
@@ -454,6 +456,36 @@ impl<'a> System<'a> for Sys {
             stat.reset_temp_modifiers();
 
             let mut body_override = None;
+
+            // Icebreaker : l'inné de la classe et le passif du personnage (jalon A) s'appliquent
+            // à chaque tic, avant les effets passagers : ce sont des réglages permanents des
+            // stats, que rien ne dissipe. Le genre d'effet passé ici ne sert qu'aux effets dans
+            // le temps, qu'un passif ne porte pas (`icebreaker_competences::effet_permanent`).
+            if let Some(passif) = read_data.icebreaker_passifs.get(entity) {
+                for effect in passif.effets.iter().filter(|effect| {
+                    common::icebreaker_competences::effet_permanent(effect)
+                }) {
+                    execute_effect(
+                        effect,
+                        BuffKind::Regeneration,
+                        *read_data.time,
+                        *read_data.time,
+                        &read_data,
+                        &mut stat,
+                        body,
+                        &mut body_override,
+                        health,
+                        energy,
+                        entity,
+                        None,
+                        &mut emitters,
+                        dt,
+                        *read_data.time,
+                        false,
+                        buff_comp,
+                    );
+                }
+            }
 
             // Iterator over the lists of buffs by kind
             let mut buff_kinds = buff_comp

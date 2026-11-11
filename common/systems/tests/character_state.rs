@@ -337,5 +337,61 @@ mod tests {
             assert_eq!(lancee(&state, entity), Some(Ability::Icebreaker(balayage)));
             assert!(reste(&state).is_some());
         }
+
+        // A.13 : l'inné de la classe et le passif.
+        #[test]
+        fn icebreaker_l_inne_et_le_passif_montent_les_pv_max() {
+            use common::{
+                comp::{Body, Buffs, Health},
+                icebreaker_competences::IcebreakerPassif,
+            };
+            // Tous les systèmes communs : celui des effets pose les modificateurs, celui des stats
+            // en tire les PV max.
+            let pools = State::pools(GameMode::Server);
+            let mut state = State::new(
+                GameMode::Server,
+                pools,
+                DEFAULT_WORLD_CHUNKS_LG,
+                Arc::new(TerrainChunk::water(0)),
+                veloren_common_systems::add_local_systems,
+                #[cfg(feature = "plugins")]
+                common_state::plugin::PluginMgr::default(),
+            );
+            state.ecs_mut().insert(MaterialStatManifest::load().cloned());
+            state.ecs_mut().insert(AbilityMap::load().cloned());
+
+            let body = Body::Humanoid(common::comp::humanoid::Body::random_with(
+                &mut rng(),
+                &common::comp::humanoid::Species::Human,
+            ));
+            let competences =
+                IcebreakerCompetences::nouveau("guerrier", Acquis::par_defaut("guerrier"))
+                    .expect("le guerrier est décrit par nos données");
+            let passif = IcebreakerPassif::de(&competences);
+            let mut personnage = |passif: Option<IcebreakerPassif>| {
+                let builder = state
+                    .ecs_mut()
+                    .create_entity()
+                    .with(body)
+                    .with(Stats::empty(body))
+                    .with(Health::new(body))
+                    .with(Energy::new(body))
+                    .with(Buffs::default());
+                match passif {
+                    Some(passif) => builder.with(passif).build(),
+                    None => builder.build(),
+                }
+            };
+            let guerrier = personnage(Some(passif.clone()));
+            let temoin = personnage(None);
+            tick(&mut state, Duration::from_secs_f32(0.033));
+
+            let healths = state.ecs().read_storage::<Health>();
+            let pv_max = |entity| healths.get(entity).expect("Health").maximum();
+            let base = pv_max(temoin);
+            let attendu = passif.pv_max().compute_maximum(base);
+            assert!(attendu > base * 1.3, "{attendu} pour {base}");
+            assert!((pv_max(guerrier) - attendu).abs() < 0.5, "{} pour {attendu}", pv_max(guerrier));
+        }
     }
 }

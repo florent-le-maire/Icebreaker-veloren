@@ -752,6 +752,17 @@ impl StateExt for State {
             // jeux d'armes, compétences, ultime, passif (jalon A).
             let competences = crate::icebreaker_registre::competences_de(self.ecs(), entity);
             if let Some(competences) = competences {
+                // L'inné de la classe et le passif actif ; il entre avec tous ses PV, ceux que
+                // ces effets ajoutent compris.
+                let passif =
+                    common::icebreaker_competences::IcebreakerPassif::de(&competences);
+                let mut health = comp::Health::new(body);
+                if let Some(maximum) = health.needs_maximum_update(passif.pv_max()) {
+                    health.update_internal_integer_maximum(maximum);
+                    health.set_fraction(1.0);
+                    self.write_component_ignore_entity_dead(entity, health);
+                }
+                self.write_component_ignore_entity_dead(entity, passif);
                 self.write_component_ignore_entity_dead(entity, competences);
             }
             // Icebreaker : dans un donjon lancé seul, une balise lumineuse (jalon J), avant
