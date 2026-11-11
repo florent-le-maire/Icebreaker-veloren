@@ -32,8 +32,12 @@ Le jeu doit rester lançable après chaque tâche.
   (`PLAN-DONJON.md`, E.1 à E.16), mod (`PLAN-MOD.md`), piliers, menace et âmes (`design/`), idées (`IDEES.md`).
 - **Prochaine étape proposée** : une session de test dans le vrai client sur la liste « À vérifier en jeu », puis le
   bloc 1 des boucles (B.1 à B.4) (à plusieurs sur le VPS, `QUESTIONS.md`, Q7).
-- **En cours (2026-11-11)** : jalon A, armes, classes et compétences (`PLAN-CLASSES.md`, `decisions/0020`), plan
-  validé par Flo ; worktree `Veloren-classes`.
+- **Jalon A (2026-11-11)** : armes, classes et compétences (`PLAN-CLASSES.md`, `decisions/0020`) codé pour les trois
+  classes : jeux d'armes, 2 compétences d'arme + ultime + passif, recharges, niveaux 1 à 5, lot tiré à la charrette,
+  maîtrise en expédition, salle d'armes (7e bâtiment). Vérifié en test, au client texte (de bout en bout en
+  campagne) et par captures du vrai client (barre, passif, salle d'armes) ; personne n'y a encore joué à la main
+  (liste « À vérifier en jeu »). Restent : l'avis de Flo sur les maquettes (A.2, Q47) et sur Q43 à Q49. Le
+  protocole a changé : client et serveur à recompiler ensemble, VPS à redéployer.
 
 ## Architecture visée
 
@@ -241,15 +245,15 @@ tâche pour ce qui casse.
   leur maison ; X.8 recrues devant la charrette (posées 8 blocs trop haut sur le village d'essai ? `QUESTIONS.md`, Q30).
 - X.10 : panneau « Campagne » (continuer, nouvelle partie), passage de l'ancienne campagne en « Partie 1 ».
 - R.6 à R.8 : barre de compétences du vrai client ; mage en jeu ; tourbillon, fendeur et les trois postures du
-  guerrier ; les recrues créées avant R.6 n'ont pas de compétences. *Guerrier : remplacé par le jalon A.*
+  guerrier ; les recrues créées avant R.6 n'ont pas de compétences. *Remplacé par le jalon A pour les trois classes.*
 
 **Armes, classes et compétences (jalon A, `PLAN-CLASSES.md`)**
 - A.4 : guerrier dans le vrai client : touches 1, 2 (arme en mains) et 3 (ultime), gestes et animations ; clic gauche
   et clic droit inchangés (plus de postures) ; l'ultime (fureur) avec une épée en mains (`QUESTIONS.md`, Q45).
 - A.5 : une touche tenue ne relance pas ; la recharge se voit dans la barre (A.6).
-- A.6 : la barre d'un guerrier : icônes sur 1, 2 et 3, bord doré de l'ultime, cases 1 et 2 grisées avec les
-  secondes après un lancer, infobulle au survol, case grisée faute d'endurance ; la barre d'un mage ou d'un archer
-  inchangée.
+- A.6 : la barre : infobulles au survol (compétences, passif), case grisée faute d'endurance ; la case ronde du
+  passif se lit-elle, à gauche du bouton du journal ? (icônes, bord doré de l'ultime, secondes de recharge et case
+  du passif vus en capture, guerrière et mage) ; la barre d'un archer.
 - A.7 : prendre en mains une arme non apprise (marteau pour un guerrier à l'épée) : cases 1 et 2 vides et un message,
   une seule fois ; l'arbre de compétences de Veloren refuse un point.
 - A.8 : deux recrues guerrières à la charrette : lots et armes différents, visibles dans le panneau et sur les recrues
@@ -259,6 +263,13 @@ tâche pour ce qui casse.
 - A.10, A.15 : chaque compétence aux niveaux 3 et 5 (geste, effet), équilibre des seize compétences du guerrier.
 - A.14 : fureur, séisme et rempart avec chacun des quatre jeux d'armes : le geste est-il lisible (`QUESTIONS.md`, Q45) ?
 - A.13 : PV max d'un guerrier (inné et passif) vus par un coéquipier ; le passif ne tombe ni à terre ni à la mort.
+- A.11, A.12 : la salle d'armes à la souris (le panneau et ses quatre onglets sont vus en capture) : chaque bouton
+  cliqué (Débloquer, Monter, Apprendre, Activer, « Touche 1 : changer »), la liste qui défile à la molette, un
+  personnage qui a un point à dépenser ; apprendre un jeu d'armes avec le sac plein ; la barre suit tout de suite
+  ce qu'on a changé ; l'onglet « Compétences » dépasse un peu de son bouton.
+- A.16 : mage au bâton et au sceptre : effets sur de vraies cibles (brûlure, soin d'un allié, protection, hâte),
+  gestes des copies du sceptre, trois ultimes ; l'inné (−10 % de PV) le rend-il trop fragile ?
+- A.17 : archer : saignement, ralentissement, bond arrière, trois ultimes ; équilibre.
 
 **Combat (donjon Gnarling)**
 - L.1 : nombre de coups pour tuer et mourir (cible : 3 et 3 à 4), autres armes, boss.

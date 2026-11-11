@@ -11,6 +11,7 @@ systemes = [
   "server/src/icebreaker_registre.rs",
   "server/src/icebreaker_charrette.rs",
   "server/src/sys/icebreaker_armes.rs",
+  "server/src/icebreaker_salle.rs",
   "voxygen/src/icebreaker_competences.rs",
 ]
 
@@ -55,7 +56,7 @@ nom = "Compétences d'arme tirées avec une recrue"
 ## La règle
 
 **Le jeu d'armes.** C'est ce qu'on tient en mains : épée et bouclier, grande épée, marteau à deux mains, hache à deux
-mains pour le guerrier (le bâton, le sceptre et l'arc suivent pour le mage et l'archer). Il donne les attaques de
+mains pour le guerrier, bâton ou sceptre pour le mage, arc pour l'archer. Il donne les attaques de
 base, celles de Veloren (clic gauche, clic droit, garde), et un lot de **compétences d'arme** à choisir. On en place
 **deux**, sur les touches 1 et 2. En expédition on change de jeu d'armes en changeant d'arme dans l'inventaire : les
 compétences suivent ce qu'on tient. Un jeu d'armes qu'on n'a pas appris, ou qui n'est pas celui de sa classe, ne
@@ -67,7 +68,7 @@ classe, par exemple des PV en plus et plus de tenue pour le guerrier. Ultimes et
 apprend d'autres.
 
 **La recharge.** Toute compétence en a une, visible dans la barre : la case se grise et affiche les secondes qui
-restent.
+restent. Le passif actif est dans une case ronde, à gauche de la barre.
 
 ![La barre d'une guerrière à la hache : la compétence de la touche 1 en recharge (4 s), puis son ultime, bord doré (58 s)](images/classes-barre.png)
 
@@ -85,7 +86,10 @@ résume.
 **La salle d'armes.** C'est le seul endroit où l'on dépense, au village. Des points d'arme servent à **débloquer** une
 compétence du jeu d'armes ou à la **monter** d'un niveau ; de l'**or** de la bourse sert à **apprendre** un jeu d'armes
 (ses armes sont alors remises), un ultime ou un passif. C'est là aussi qu'on place ses deux compétences, son ultime
-et son passif. Les chiffres sont dans l'encart ci-dessus.
+et son passif. Chaque ligne dit ce que fait la compétence, ce qu'apporte son niveau suivant et ce qu'il coûte ; un
+cadre doré marque les deux compétences placées. Les chiffres sont dans l'encart ci-dessus.
+
+![La salle d'armes d'une mage au sceptre : ses deux compétences placées, une troisième à débloquer](images/classes-salle.png)
 
 **Les recrues.** Chaque recrue de la charrette tire un petit lot au hasard : un jeu d'armes qu'elle maîtrise, deux
 compétences, un ultime, un passif, et les armes qui vont avec, qu'elle porte devant la charrette. Deux guerriers
@@ -99,11 +103,13 @@ ne change pas.
 
 ## Où en est-on
 
-Le guerrier est complet dans les données : quatre jeux d'armes de quatre compétences avec leurs niveaux, trois
-ultimes, un inné et quatre passifs. Le mage et l'archer arrivent dans les mêmes dossiers : en attendant, ils gardent
-les compétences de Veloren. La barre, le tirage des recrues, la maîtrise et les niveaux sont en place ; **la salle
-d'armes** (le bâtiment, puis l'action de débloquer, monter, apprendre et placer) est en cours : tant qu'elle manque,
-on ne peut pas encore dépenser ses points. Ce qui n'a pas été vu dans le vrai client est dans « À voir en jeu ».
+Les trois classes sont dans les données : le guerrier (quatre jeux d'armes), le mage (bâton, et sceptre de soutien)
+et l'archer (arc), chacun avec quatre compétences par jeu d'armes et leurs niveaux, trois ultimes, un inné et quatre
+passifs. La barre, le tirage des recrues, la maîtrise, les niveaux et **la salle d'armes** (septième bâtiment du
+village : débloquer, monter, apprendre, placer) sont en place. Tout a été essayé en test et au client texte, de la
+charrette au retour d'expédition ; dans le vrai client, la barre et la salle d'armes ont été vues en capture, mais
+personne n'y a encore joué à la main : le reste est dans « À voir en jeu ». Le mage et l'archer n'ont pas encore
+frappé de vraies cibles : leurs chiffres sont un premier jet.
 
 Questions ouvertes pour l'équipe : les chiffres de départ, tous à régler en jouant (Q43) ; trois choix de l'agent à
 confirmer, dont un jeu d'armes non appris qui ne donne que les attaques de base (Q44) ; un ultime lancé avec une arme

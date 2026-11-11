@@ -108,7 +108,8 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q43 Chiffres de départ** : points d'arme par expédition (proposé : 1 à 2), prix d'un jeu d'armes, d'un ultime,
   d'un passif, recharges (compétence 6 à 15 s, ultime 60 à 120 s). Tout est en données (`salle_armes.ron`,
   `jeux_armes/`) ; à régler après les premières parties. Repère (essai du 2026-11-11) : un gnarling tué seul donne 17
-  de maîtrise ; le premier point d'arme en demande 100, le suivant 150. *Qui* : Flo.
+  de maîtrise ; le premier point d'arme en demande 100, le suivant 150. Le mage et l'archer n'ont pas été essayés
+  contre de vraies cibles : leurs chiffres (dont l'inné du mage, −10 % de PV) sont un premier jet. *Qui* : Flo.
 - **Q44 Choix de l'agent à confirmer** : (1) un jeu d'armes non appris ne donne que les attaques de base, sans
   blocage à l'équipement ; (2) la maîtrise se compte par jeu d'armes (grande épée et épée + bouclier séparées) et vient
   de l'expérience des ennemis tués ; (3) chaque classe a un inné non choisi (guerrier : PV et tenue ; mage : énergie ;
@@ -124,9 +125,17 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   arrivée. Voisin de Q42 (mourir au village). *Proposé* : pas de dégâts au village hors des mannequins (zone sûre),
   ou des recrues qui n'attaquent jamais. *Qui* : Flo.
 - **Q47 Maquettes du jalon A** (A.2) : la barre de compétences et les panneaux de la charrette et de la salle d'armes
-  (rangée 4 du canvas) conviennent-ils ? À trancher avant les tâches d'interface (A.6, A.8, A.11, A.12). Points à
-  regarder : le passif en case ronde ; la salle d'armes en quatre onglets (Compétences, Armes, Ultimes, Passifs) où
-  l'on choisit une ligne puis un bouton du bas ; le lot d'une recrue sur une seconde ligne. *Qui* : Flo.
+  (rangée 4 du canvas) conviennent-ils ? L'interface a été codée d'après elles sans attendre (A.6, A.8, A.11,
+  A.12) : un avis contraire se corrige dans le code. Points à regarder : le passif en case ronde, posé à gauche de la
+  barre (les cases 4 et 5 restent à Veloren), avec la même icône pour tous les passifs ;
+  la salle d'armes en quatre onglets (Compétences, Armes, Ultimes, Passifs), un bouton d'un mot par ligne, le
+  prix et la description dans un sous-titre sur plusieurs rangs (la liste défile dès trois compétences), deux
+  boutons « Touche 1 : changer » et « Touche 2 : changer » en bas (maquette redessinée d'après le vrai client) ;
+  le lot d'une recrue sur une seconde ligne. *Qui* : Flo.
+- **Q49 Un village sans maison.** Une partie neuve tire la graine de son village au hasard ; celle de l'essai du
+  2026-11-11 (459192) a donné une ville sans maison de Veloren : les sept bâtiments sont posés sur la place, à
+  quelques blocs les uns des autres, et il n'y a aucun terrain à bâtir (jalon C). *Proposé* : à la création d'une
+  partie, retirer une graine tant que la ville n'a pas assez de maisons. *Qui* : Flo.
 
 ## Tranché
 

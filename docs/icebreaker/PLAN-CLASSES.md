@@ -80,7 +80,9 @@ Une **couche Icebreaker à part**, branchée par un seul crochet dans le lanceme
 
 ## Contenu de départ
 
-À régler en jouant ; le test de A.1 vérifie que chaque fichier de capacité se charge.
+À régler en jouant ; le test de A.1 vérifie que chaque fichier de capacité se charge. Ce tableau est le point de
+départ du plan ; le contenu en place se lit dans `assets/icebreaker/jeux_armes/`, `ultimes/`, `passifs/` et sur la
+page « Classes » du wiki.
 
 | Classe | Jeu d'armes | Compétences d'arme (`common.abilities.…`) |
 |---|---|---|
@@ -111,7 +113,9 @@ Un commit par tâche, fusion dans `master` à chaque tâche ; le jeu reste lanç
   « 4 · Armes, classes et compétences » du canvas du jalon N (<https://claude.ai/artifact/KXR2tEFGXNNdTk8QJMUcdW>) :
   la barre (1 et 2 pour l'arme, 3 pour l'ultime, passif en case ronde, recharge comme la balise) et dix panneaux
   (lot des recrues à la charrette, salle d'armes en quatre onglets, maîtrise au retour), tous dans le gabarit de
-  panneau existant. *Fin* : Flo valide.
+  panneau existant. Les panneaux de la salle d'armes et la place du passif ont été redessinés comme ils sont codés
+  et vus dans le vrai client (un bouton d'un mot par ligne, sous-titres sur plusieurs rangs, deux boutons de
+  touche en bas ; capture dans la fiche « Classes » du wiki). *Fin* : Flo valide.
 - [x] **A.3 Fiche et composant** — la fiche et la recrue portent `acquis` ; composant `IcebreakerCompetences` créé à
   l'entrée en jeu d'après la fiche, envoyé au seul joueur, réécrit dans la fiche à `/rentrer` et à la sauvegarde ;
   `!competences` au client texte. Testé (59 tests du serveur, village et client texte : guerrière avec son lot,
@@ -125,9 +129,12 @@ Un commit par tâche, fusion dans `master` à chaque tâche ; le jeu reste lanç
   l'affichage vient avec A.6. — 0d714e99f8
 - [x] **A.6 Barre de compétences** *(agent, worktree `Veloren-classes-barre`)* — cases 1 et 2 pour l'arme en mains,
   case 3 pour l'ultime (bord doré), grisées en recharge avec les secondes au centre ou faute d'endurance, infobulle
-  (nom, niveau, description, recharge) ; pas `touche n` de `ICEBREAKER_AUTO_PLAN`. Testé (4 tests du client ;
-  captures au vrai client : icônes sur 1, 2, 3, décompte de l'ultime) ; pas vu : la recharge des cases 1 et 2 (la
-  touche de l'essai est relâchée trop tôt pour lancer), l'infobulle, le passif en case ronde (à faire). — 51cd4566d8
+  (nom, niveau, description, recharge) ; pas `touche n` de `ICEBREAKER_AUTO_PLAN`. Les recharges se lisent à l'heure
+  du serveur (ressource `IcebreakerDecalageHorloge` : l'horloge d'un client peut avancer de quelques secondes).
+  Le passif actif est dans une case ronde à gauche de la barre, avant le bouton du journal (une seule icône verte
+  pour tous les passifs, nom et description en infobulle). Testé (7 tests du client, 6 du banc ; captures au vrai
+  client : icônes sur 1, 2, 3, cases grisées « 4 s », « 8 s », ultime « 58 s », case ronde du passif d'une mage) ;
+  pas vu : les infobulles, le grisé faute d'endurance. — 51cd4566d8, 37ee7c5f43, 5444039f7e
 - [x] **A.7 Jeux d'armes** *(agent, worktree `Veloren-classes-charrette`)* — une recrue d'une classe décrite porte les
   armes de son jeu d'armes et n'a plus de compétences de Veloren ; `UnlockSkill` refusé ; message une fois quand
   l'arme en mains n'est pas apprise ou pas de la classe (système `sys/icebreaker_armes.rs`). Testé (tests du
@@ -139,19 +146,32 @@ Un commit par tâche, fusion dans `master` à chaque tâche ; le jeu reste lanç
   chaud », marteau en mains) ; pas vu dans le vrai client. — 343fe52eac
 - [x] **A.9 Maîtrise d'arme** — l'expérience des ennemis tués en expédition monte la maîtrise du jeu d'armes en
   mains ; un point gagné s'annonce ; lignes de maîtrise au bilan de retour ; fiche réécrite. Testé (campagne et
-  client texte : un gnarling tué = 17 de maîtrise, bilan « Grande épée, +17 de maîtrise ») ; pas vu : l'annonce
-  d'un point, le bilan dans le vrai client. — f602bdf929
+  client texte : un gnarling tué = 17 de maîtrise, bilan « Grande épée, +17 de maîtrise » ; avec un taux monté
+  pour l'essai : « Arc : un point d'arme gagné. À dépenser à la salle d'armes. ») ; pas vu : l'annonce et le bilan
+  dans le vrai client. — f602bdf929
 - [x] **A.10 Niveaux et paliers** — niveaux 2 à 5 des seize compétences du guerrier (32 variantes sous
   `assets/icebreaker/abilities/guerrier/`, écrites par quatre agents) ; le niveau est appliqué au lancer (A.4).
   Testé (chaque capacité se charge à chaque niveau ; banc : le tourbillon frappe plus fort au niveau 2 et fait un
   tour de plus au niveau 3) ; pas vu en jeu : il faut la salle d'armes (A.12) pour monter une compétence.
   — 928bc52b1d, e4704e92c0
-- [ ] **A.11 Salle d'armes : le bâtiment** — *en cours : Veloren-classes-charrette (agent), 2026-11-11* — 7e
-  bâtiment, panneau en lecture (compétences, niveaux, maîtrise, points).
-- [ ] **A.12 Salle d'armes : agir** — *à la suite de A.11, même agent* — débloquer, monter (points) ; apprendre un
-  jeu d'armes, un ultime, un passif (or) ; placer : un bouton par touche, en bas du panneau, qui fait défiler les
-  compétences connues (le panneau n'a qu'un bouton par ligne ; la maquette sera mise à jour).
-  *Fin* : chaque bouton agit ou dit pourquoi non. Test du constructeur de panneau, client texte.
+- [x] **A.11 Salle d'armes : le bâtiment** *(agent, worktree `Veloren-classes-charrette`)* — 7e bâtiment
+  (`Building::SalleArmes`, réglage `salle_offset`, enseigne et case du plan), panneau en quatre onglets
+  (Compétences, Armes, Ultimes, Passifs), points d'arme, or, jauge de maîtrise ; refus pour un fantôme. Testé
+  (74 tests du serveur ; village et client texte : « Salle d'armes » au plan) ; vu dans le vrai client (case du
+  plan, panneau). L'essai a montré qu'un clic du plan ouvrait le bâtiment voisin dans une ville sans maison
+  (emprises qui se chevauchent sur la place) : corrigé. — 2a49c6e13d, 1202cae497
+- [x] **A.12 Salle d'armes : agir** *(même agent)* — commande `/salle` (`server/src/icebreaker_salle.rs`) : débloquer
+  et monter (points d'arme), apprendre un jeu d'armes, un ultime, un passif (or ; les armes vont dans le sac),
+  activer un ultime ou un passif, placer (« Touche 1 : changer », « Touche 2 : changer », en bas, qui font défiler
+  les compétences connues). Un bouton d'un mot par ligne, grisé si impossible ; le sous-titre dit le prix, ce que
+  fait la compétence et ce qu'apporte le niveau suivant, et passe à la ligne (gabarit commun des panneaux) ; cadre
+  doré pour une compétence placée ; points et or dans l'en-tête ; la maquette est mise à jour. Testé (82 tests du
+  serveur, 48 du client ; village et client texte : déblocage, montées 2 et 3, refus faute de points ou d'or,
+  placement, passif changé, hache apprise ; campagne, de bout en bout avec une archère : refus sans point, « La
+  salle d'armes est au village » en expédition, point gagné, « 1 point à dépenser » au bilan, montée au niveau 2
+  au retour ; vrai client sans les mains : les quatre onglets, boutons grisés puis dorés avec de l'or, refus écrit
+  en bas du panneau) ; pas vu : un bouton cliqué à la souris, la liste à la molette, le sac plein.
+  — f815cd0410, 67aeebe592
 - [x] **A.13 Passifs et inné** — composant `IcebreakerPassif` (inné de la classe, puis passif actif), envoyé à tous,
   appliqué à chaque tic par le système des effets ; le personnage entre avec tous ses PV. Testé (9 + 4 tests ;
   village et client texte : guerrière à 143,75 / 143,75 PV) ; pas vu : les PV d'un coéquipier à deux clients, le
@@ -165,11 +185,23 @@ Un commit par tâche, fusion dans `master` à chaque tâche ; le jeu reste lanç
 - [x] **A.15 Paliers des trois autres jeux du guerrier** — contenu seul, écrit avec celui de A.10. Testé au
   chargement ; équilibre et rendu à voir en jeu (vol de vie en mêlée, second coup des balayages, ralentissements).
   — 928bc52b1d
-- [ ] **A.16 Mage** — *en cours : Veloren-classes-barre (agent), 2026-11-11* — bâton, sceptre (copies à écrire),
-  ultimes, passifs, paliers.
-- [ ] **A.17 Archer** — *à la suite de A.16, même agent* — arc, ultimes, passifs, paliers.
-- [ ] **A.18 Wiki et nettoyage** — `icebreaker-wiki/src/competences.rs`, fiche `wiki/`, retrait de `touches` et
-  `competences`, tests de `icebreaker_classes.rs`, jalon dans `HISTORIQUE.md`.
+- [x] **A.16 Mage** *(agent, worktree `Veloren-classes-barre`)* — données seules : bâton (Onde de feu, Napalm,
+  Anneau de feu, Manteau de flammes), sceptre de soutien (Aura de soin, Protection, Rayon de vie, Cadence), ultimes
+  Pyroclasme, Fournaise, Bénédiction, inné (+30 % d'endurance, −10 % de PV) et quatre passifs, niveaux 2 à 5.
+  Testé (chargement ; village et client texte : chaque compétence et chaque ultime part, niveaux 1 et 5) ; pas vu :
+  les effets sur de vraies cibles (brûlure, soin, hâte), les gestes du bâton avec les copies du sceptre, l'équilibre.
+  — 873b538873
+- [x] **A.17 Archer** *(même agent)* — données seules : arc (Trait lourd, Vent perçant, Pieu d'épines, Bond
+  arrière), ultimes Volée mortelle, Pluie de flèches, Œil d'aigle, inné (+10 % de vitesse, +15 % d'endurance) et
+  quatre passifs, niveaux 2 à 5. Testé (chargement ; village et client texte : tout part) ; pas vu : les effets sur
+  de vraies cibles (saignement, ralentissement), les gestes dans le vrai client, l'équilibre. — 83b3dbaf2d
+- [x] **A.18 Wiki et nettoyage** *(deux agents, worktrees `Veloren-classes-wiki` et `Veloren-classes-charrette`)* —
+  wiki : fiche « Classes, armes et compétences », page Classes et jeux d'armes lue dans nos données, salle d'armes
+  au schéma du village ; nettoyage : `competences` et `touches` retirés de `classes.ron`, dossier
+  `classes/competences/` et `starting_skill_set` / `starting_abilities` supprimés (une classe = un nom, une icône,
+  un équipement de base). Testé (60 tests du wiki, 80 du serveur ; village et client texte : les trois classes
+  s'engagent avec leur lot et lancent une compétence). Le jalon reste ici tant que A.2 attend ; il ira dans
+  `HISTORIQUE.md` ensuite. — fe906d7a6d, 9e9c6905b1
 
 Reportable : blocage dur des armes, bascule entre deux jeux d'armes (Q46), masquer le journal de Veloren dans le
 client, recharges gardées à la reconnexion.
@@ -187,12 +219,14 @@ chaîne où chaque tâche modifie les mêmes fichiers que la précédente.
 
 Si une tâche confiée revient deux fois fausse, la session principale la reprend.
 
-En pratique (2026-11-11) : deux worktrees de plus, chacun avec son `target/`, pour que les agents compilent sans
-bloquer la session principale : `Veloren-classes-barre` (client compilé : A.6, puis A.16 et A.17) et
-`Veloren-classes-charrette` (A.7, A.8, puis A.11 et A.12). Chaque agent committe sur sa branche ; la session
-principale relit, rebase sur `icebreaker-classes`, relance les tests et fusionne.
+En pratique (2026-11-11) : trois worktrees de plus, chacun avec son `target/`, pour que les agents compilent sans
+bloquer la session principale : `Veloren-classes-barre` (client compilé : A.6, puis A.16 et A.17),
+`Veloren-classes-charrette` (A.7, A.8, A.11, A.12, puis le nettoyage de A.18) et `Veloren-classes-wiki` (wiki de
+A.18). Chaque agent committe sur sa branche ; la session principale relit, rebase sur `icebreaker-classes`, relance
+les tests et fusionne.
 
 ## À vérifier en jeu (reporté dans `PLAN.md` au fil des tâches)
 
 Animation des ultimes avec une arme étrangère au geste (Q45) ; bouclier en main gauche (clic droit, garde) ;
-lisibilité de la barre ; deux recrues de même classe côte à côte devant la charrette.
+lisibilité de la barre ; deux recrues de même classe côte à côte devant la charrette ; la salle d'armes à la souris
+(clics, molette) ; les effets du mage et de l'archer sur de vraies cibles.
