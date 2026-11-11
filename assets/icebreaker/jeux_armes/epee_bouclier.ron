@@ -1,0 +1,37 @@
+// Icebreaker : jeu d'armes « épée et bouclier » du guerrier (jalon A). Format : voir `grande_epee.ron`.
+// Le clic droit et la garde sont ceux du bouclier (Veloren).
+#![enable(implicit_some)]
+(
+    nom: "Épée et bouclier",
+    classe: "guerrier",
+    icone: "epees",
+    main_droite: (arme: Sword, mains: One),
+    main_gauche: Shield,
+    armes: ("common.items.weapons.sword_1h.starter", "common.items.weapons.shield.starter_shield"),
+    competences: [
+        ("riposte", (
+            nom: "Riposte",
+            description: "Pare le coup qui arrive, puis frappe en retour.",
+            capacite: "common.abilities.sword.defensive_riposte",
+            recharge: 8.0,
+        )),
+        ("coup_de_pommeau", (
+            nom: "Coup de pommeau",
+            description: "Un coup court qui fait vaciller, surtout un ennemi en garde.",
+            capacite: "common.abilities.sword.heavy_pommel_strike",
+            recharge: 7.0,
+        )),
+        ("estoc", (
+            nom: "Estoc",
+            description: "Une fente en avant qui touche de loin.",
+            capacite: "common.abilities.sword.basic_skewer",
+            recharge: 6.0,
+        )),
+        ("degagement", (
+            nom: "Dégagement",
+            description: "Un bond en arrière pour reprendre ses distances.",
+            capacite: "common.abilities.sword.defensive_disengage",
+            recharge: 9.0,
+        )),
+    ],
+)

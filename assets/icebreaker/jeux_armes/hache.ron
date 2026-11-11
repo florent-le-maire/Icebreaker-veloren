@@ -1,0 +1,35 @@
+// Icebreaker : jeu d'armes « hache à deux mains » du guerrier (jalon A). Format : voir `grande_epee.ron`.
+#![enable(implicit_some)]
+(
+    nom: "Hache à deux mains",
+    classe: "guerrier",
+    icone: "hache",
+    main_droite: (arme: Axe, mains: Two),
+    armes: ("common.items.weapons.axe.starter_axe", None),
+    competences: [
+        ("coup_brutal", (
+            nom: "Coup brutal",
+            description: "Un grand cercle de hache autour de soi.",
+            capacite: "common.abilities.axe.brutal_swing",
+            recharge: 6.0,
+        )),
+        ("ratissage", (
+            nom: "Ratissage",
+            description: "Une entaille qui fait saigner.",
+            capacite: "common.abilities.axe.rake",
+            recharge: 8.0,
+        )),
+        ("fracasse_crane", (
+            nom: "Fracasse-crâne",
+            description: "Un coup du plat de la hache qui fait vaciller presque à coup sûr.",
+            capacite: "common.abilities.axe.skull_bash",
+            recharge: 10.0,
+        )),
+        ("ravage", (
+            nom: "Ravage",
+            description: "Trois coups rapides enchaînés sur la même cible.",
+            capacite: "common.abilities.axe.fierce_raze",
+            recharge: 9.0,
+        )),
+    ],
+)

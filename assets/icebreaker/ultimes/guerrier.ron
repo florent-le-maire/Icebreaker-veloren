@@ -1,0 +1,26 @@
+// Icebreaker : ultimes du guerrier (jalon A, `docs/icebreaker/PLAN-CLASSES.md`). Un ultime appartient à la classe :
+// il reste quel que soit le jeu d'armes en mains, n'a pas de niveau et se recharge longtemps (secondes).
+// Format d'une compétence : voir `jeux_armes/grande_epee.ron`.
+#![enable(implicit_some)]
+(
+    ultimes: [
+        ("fureur", (
+            nom: "Fureur",
+            description: "Quinze secondes de fureur : chaque coup porté en appelle un autre.",
+            capacite: "common.abilities.axe.furor",
+            recharge: 90.0,
+        )),
+        ("seisme", (
+            nom: "Séisme",
+            description: "Une onde de choc au sol qui blesse et soulève tout ce qui est devant.",
+            capacite: "common.abilities.hammer.tremor",
+            recharge: 60.0,
+        )),
+        ("rempart", (
+            nom: "Rempart",
+            description: "Dresse un cercle de pierres : le groupe qui s'y tient encaisse bien mieux, vingt secondes.",
+            capacite: "common.abilities.hammer.rampart",
+            recharge: 120.0,
+        )),
+    ],
+)

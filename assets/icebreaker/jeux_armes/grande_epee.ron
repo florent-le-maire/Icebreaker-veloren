@@ -1,0 +1,41 @@
+// Icebreaker : jeu d'armes « grande épée » du guerrier (jalon A, `docs/icebreaker/PLAN-CLASSES.md`).
+// Un jeu d'armes = ce qu'on tient en mains. `capacite` est l'id d'un fichier de capacité (ceux de Veloren :
+// `assets/common/abilities/`, les nôtres : `assets/icebreaker/abilities/`) ; `recharge` est en secondes.
+// `niveaux` décrit les niveaux 2 et suivants : (puissance, portee, recharge) en multiplicateurs écrits en
+// entier, `capacite` quand la compétence se transforme, `texte` pour la salle d'armes.
+#![enable(implicit_some)]
+(
+    nom: "Grande épée",
+    classe: "guerrier",
+    icone: "epee",
+    // Le jeu d'armes d'un guerrier créé avant le jalon A.
+    defaut: true,
+    main_droite: (arme: Sword, mains: Two),
+    armes: ("common.items.weapons.sword.starter", None),
+    competences: [
+        ("balayage_lourd", (
+            nom: "Balayage lourd",
+            description: "Un large coup qui fauche devant soi et punit les ennemis déséquilibrés.",
+            capacite: "common.abilities.sword.heavy_sweep",
+            recharge: 6.0,
+        )),
+        ("tourbillon", (
+            nom: "Tourbillon",
+            description: "Deux tours d'épée qui touchent tout autour.",
+            capacite: "common.abilities.sword.cleaving_whirlwind_slice",
+            recharge: 10.0,
+        )),
+        ("fendeur_de_terre", (
+            nom: "Fendeur de terre",
+            description: "Un saut, puis une frappe au sol qui repousse autour du point de chute.",
+            capacite: "common.abilities.sword.cleaving_earth_splitter",
+            recharge: 12.0,
+        )),
+        ("frappe_cruelle", (
+            nom: "Frappe cruelle",
+            description: "Un coup sec et rapide sur une seule cible.",
+            capacite: "common.abilities.sword.basic_fell_strike",
+            recharge: 5.0,
+        )),
+    ],
+)

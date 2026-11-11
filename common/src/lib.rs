@@ -22,6 +22,8 @@ pub mod icebreaker_mort;
 pub mod icebreaker_balise;
 // Icebreaker : panneau typé de l'interface (jalon N).
 pub mod icebreaker_panneau;
+// Icebreaker : jeux d'armes, compétences, ultimes et passifs (jalon A).
+pub mod icebreaker_competences;
 pub mod comp;
 pub mod consts;
 pub mod resources;

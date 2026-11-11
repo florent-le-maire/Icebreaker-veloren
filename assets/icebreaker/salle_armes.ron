@@ -1,0 +1,20 @@
+// Icebreaker : la progression des personnages et la salle d'armes (jalon A, `docs/icebreaker/PLAN-CLASSES.md`).
+// Jouer un jeu d'armes en expédition donne de la maîtrise pour ce jeu d'armes ; la maîtrise donne des points
+// d'arme, dépensés à la salle d'armes du village. Valeurs de départ, à régler en jouant (`QUESTIONS.md`, Q43).
+(
+    // Maîtrise qu'il faut pour le premier point d'arme d'un jeu d'armes.
+    premier_point: 100,
+    // Chaque point suivant demande ce supplément de maîtrise par rapport au précédent (100, 150, 200…).
+    pas_point: 50,
+    // Maîtrise gagnée par point d'expérience de Veloren reçu en expédition (ennemis tués).
+    maitrise_par_experience: 1.0,
+    // Points d'arme pour débloquer une compétence de ce jeu d'armes.
+    cout_debloquer: 1,
+    // Points d'arme pour passer une compétence au niveau 2, 3, 4, 5.
+    cout_niveaux: [1, 1, 2, 2],
+    // Or (bourse du joueur) pour apprendre un jeu d'armes ; ses armes sont remises.
+    prix_jeu_armes: 150,
+    // Or pour apprendre un ultime, un passif.
+    prix_ultime: 200,
+    prix_passif: 120,
+)

@@ -1,0 +1,35 @@
+// Icebreaker : passifs du guerrier (jalon A, `docs/icebreaker/PLAN-CLASSES.md`). Un passif est une liste d'effets
+// permanents de Veloren (`BuffEffect`, `common/src/comp/buff.rs`) ; un seul est actif à la fois. `inne` est
+// toujours actif et ne se choisit pas : c'est ce qui fait le guerrier.
+// Effets utiles : MaxHealthModifier(value, kind: Multiplicative | Additive), MaxEnergyModifier(...),
+// DamageReduction(part), PoiseReduction(part), AttackDamage(x), MovementSpeed(x), AttackSpeed(x),
+// EnergyReward(x), EnergyEfficiency(x), PrecisionPowerMult(x), CrowdControlResistance(part).
+(
+    // Tenir la ligne : plus de PV, vacille moins.
+    inne: [
+        MaxHealthModifier(value: 1.25, kind: Multiplicative),
+        PoiseReduction(0.2),
+    ],
+    passifs: [
+        ("robuste", (
+            nom: "Robuste",
+            description: "15 % de PV max en plus.",
+            effets: [MaxHealthModifier(value: 1.15, kind: Multiplicative)],
+        )),
+        ("peau_dure", (
+            nom: "Peau dure",
+            description: "10 % de dégâts reçus en moins.",
+            effets: [DamageReduction(0.1)],
+        )),
+        ("sang_chaud", (
+            nom: "Sang chaud",
+            description: "10 % de dégâts en plus.",
+            effets: [AttackDamage(1.1)],
+        )),
+        ("infatigable", (
+            nom: "Infatigable",
+            description: "Les compétences coûtent un quart d'endurance en moins.",
+            effets: [EnergyEfficiency(1.25)],
+        )),
+    ],
+)
