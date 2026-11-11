@@ -5568,6 +5568,15 @@ impl Hud {
         self.icebreaker.panneau(panneau, i18n);
     }
 
+    /// Icebreaker : le bilan de retour d'expédition (N.8), dans une fenêtre centrée.
+    pub fn icebreaker_bilan(
+        &mut self,
+        panneau: common::icebreaker_panneau::Panneau,
+        i18n: &Localization,
+    ) {
+        self.icebreaker.bilan(panneau, i18n);
+    }
+
     /// Icebreaker : l'expédition en préparation au village, ou aucune.
     pub fn icebreaker_expedition(
         &mut self,

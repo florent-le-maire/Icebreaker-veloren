@@ -225,6 +225,8 @@ pub enum ServerGeneral {
     /// Icebreaker : le panneau typé d'un bâtiment du village, ou de la balise
     /// (jalon N) ; envoyé à l'ouverture, puis chaque fois qu'il change.
     IcebreakerPanel(common::icebreaker_panneau::Panneau),
+    /// Icebreaker : le bilan de retour d'expédition (N.8), montré dans une fenêtre.
+    IcebreakerBilan(common::icebreaker_panneau::Panneau),
     /// Icebreaker: go to the place of the campaign listening on this port, on the
     /// same host (the client leaves this server and connects there).
     IcebreakerTravel(u16),
@@ -398,6 +400,7 @@ impl ServerMsg {
                         | ServerGeneral::FinishedTrade(_)
                         | ServerGeneral::SiteEconomy(_)
                         | ServerGeneral::IcebreakerPanel(..)
+                        | ServerGeneral::IcebreakerBilan(..)
                         | ServerGeneral::IcebreakerTravel(_)
                         | ServerGeneral::IcebreakerJouer(_)
                         | ServerGeneral::IcebreakerExpedition(_)

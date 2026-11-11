@@ -114,6 +114,15 @@ pub fn destinations() -> Vec<(usize, Lieu)> {
         .collect()
 }
 
+/// Icebreaker N.8 : le nom affiché du lieu dont le site est `site` (« Genere » : « Donjon
+/// généré »), ou le site lui-même s'il n'est pas dans `lieux.ron`.
+pub fn nom_du_site(site: &str) -> String {
+    lieux()
+        .into_iter()
+        .find(|lieu| lieu.site() == Some(site))
+        .map_or_else(|| site.to_string(), |lieu| lieu.nom)
+}
+
 /// The answers to the expedition leader, besides a destination (its index).
 pub const JOIN: u16 = 1000;
 pub const READY: u16 = 1001;
@@ -683,6 +692,14 @@ mod tests {
                     && !place.is_home())
         );
         assert!(village().is_some_and(|village| village.actif));
+    }
+
+    #[test]
+    fn le_bilan_nomme_le_lieu_comme_le_depart() {
+        assert_eq!(nom_du_site("Genere"), "Donjon généré");
+        assert_eq!(nom_du_site("Grotte"), "Grotte");
+        // Un site qui n'est pas dans `lieux.ron` garde son nom.
+        assert_eq!(nom_du_site("Ailleurs"), "Ailleurs");
     }
 
     #[test]

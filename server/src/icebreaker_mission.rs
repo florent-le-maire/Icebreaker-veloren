@@ -27,6 +27,11 @@ impl IcebreakerMission {
     }
 
     pub fn len(&self) -> usize { self.0.len() }
+
+    /// Icebreaker : la mission du donjon de `site`, s'il en a une.
+    pub fn of(&self, site: Id<Site>) -> Option<&Mission> {
+        self.0.iter().find(|(s, _)| *s == site).map(|(_, m)| m)
+    }
 }
 
 /// Sets the mission and the sleepers of the dungeon of `site` from its plan
@@ -45,6 +50,17 @@ pub fn set_dungeon(missions: &mut IcebreakerMission, sleep: &mut IcebreakerSleep
     }
     sleep.set(id, targets.iter().flat_map(|t| t.sleepers.iter().copied()).collect());
     missions.set(id, targets.map(|t| Mission::new(t.leader, t.creatures, t.chests)));
+}
+
+/// Icebreaker : ce qui a été fait dans un donjon (le bilan de retour).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Decompte {
+    /// Le chef est tombé.
+    pub accomplie: bool,
+    pub tuees: usize,
+    pub creatures: usize,
+    pub ouverts: usize,
+    pub coffres: usize,
 }
 
 /// What the mission of one dungeon counts, as spawn positions of dungeon slots
@@ -71,6 +87,28 @@ impl Mission {
         slot.nth == 0 && self.leader.as_ref().is_some_and(|(wpos, _)| *wpos == slot.wpos)
     }
 
+    /// Icebreaker : ce que la mission compte, au moment où on la regarde.
+    pub fn decompte(
+        &self,
+        is_killed: impl Fn(&DungeonSlot) -> bool,
+        is_collected: impl Fn(Vec3<i32>) -> bool,
+    ) -> Decompte {
+        Decompte {
+            accomplie: self
+                .leader
+                .as_ref()
+                .is_some_and(|(wpos, _)| is_killed(&DungeonSlot { wpos: *wpos, nth: 0 })),
+            tuees: self
+                .creatures
+                .iter()
+                .filter(|wpos| is_killed(&DungeonSlot { wpos: **wpos, nth: 0 }))
+                .count(),
+            creatures: self.creatures.len(),
+            ouverts: self.chests.iter().filter(|wpos| is_collected(**wpos)).count(),
+            coffres: self.chests.len(),
+        }
+    }
+
     /// The message telling everyone the mission is accomplished, with the
     /// creatures killed and the chests opened so far.
     pub fn accomplished_message(
@@ -82,17 +120,16 @@ impl Mission {
             Some("boss") => "le boss",
             _ => "le chef",
         };
-        let killed = self
-            .creatures
-            .iter()
-            .filter(|wpos| is_killed(&DungeonSlot { wpos: **wpos, nth: 0 }))
-            .count();
-        let opened = self.chests.iter().filter(|wpos| is_collected(**wpos)).count();
+        let Decompte {
+            tuees: killed,
+            creatures,
+            ouverts: opened,
+            coffres,
+            ..
+        } = self.decompte(is_killed, is_collected);
         Content::Plain(format!(
             "Mission accomplie : {leader} du donjon est tombé ! Bilan : {killed} créature(s) tuée(s) \
-             sur {}, {opened} coffre(s) ouvert(s) sur {}.",
-            self.creatures.len(),
-            self.chests.len()
+             sur {creatures}, {opened} coffre(s) ouvert(s) sur {coffres}.",
         ))
     }
 }
@@ -113,6 +150,18 @@ mod tests {
         assert!(!mission.is_leader(&DungeonSlot { wpos: spot(2), nth: 0 }));
         assert!(!mission.is_leader(&DungeonSlot { wpos: spot(1), nth: 1 }));
         assert!(!Mission::default().is_leader(&DungeonSlot { wpos: spot(1), nth: 0 }));
+
+        let decompte = mission.decompte(|slot| slot.wpos.x <= 2, |wpos| wpos.x == 5);
+        assert_eq!(decompte, Decompte {
+            accomplie: true,
+            tuees: 2,
+            creatures: 3,
+            ouverts: 1,
+            coffres: 2,
+        });
+        // Le chef est vivant : la mission n'est pas accomplie.
+        assert!(!mission.decompte(|slot| slot.wpos.x == 2, |_| false).accomplie);
+        assert!(!Mission::default().decompte(|_| true, |_| true).accomplie);
 
         let message = mission.accomplished_message(|slot| slot.wpos.x <= 2, |wpos| wpos.x == 5);
         assert_eq!(

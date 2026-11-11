@@ -29,6 +29,23 @@ pub fn jouer(id: Option<CharacterId>) { *JOUER.lock().unwrap_or_else(|e| e.into_
 /// The character of the registry to play, if any.
 pub fn take_jouer() -> Option<CharacterId> { JOUER.lock().unwrap_or_else(|e| e.into_inner()).take() }
 
+/// Icebreaker N.8 : le bilan de retour que le joueur n'a pas encore fermé. Quand l'expédition a
+/// péri, il arrive juste avant le retour en fantôme, qui repasse par l'écran des personnages et
+/// refait le HUD : il attend ici le HUD suivant.
+static BILAN: Mutex<Option<common::icebreaker_panneau::Panneau>> = Mutex::new(None);
+
+pub fn garder_bilan(panneau: common::icebreaker_panneau::Panneau) {
+    *BILAN.lock().unwrap_or_else(|e| e.into_inner()) = Some(panneau);
+}
+
+/// Le bilan pas encore fermé, s'il y en a un.
+pub fn bilan_garde() -> Option<common::icebreaker_panneau::Panneau> {
+    BILAN.lock().unwrap_or_else(|e| e.into_inner()).clone()
+}
+
+/// Le joueur a fermé le bilan.
+pub fn bilan_vu() { *BILAN.lock().unwrap_or_else(|e| e.into_inner()) = None; }
+
 fn travel() -> std::sync::MutexGuard<'static, Option<Travel>> {
     TRAVEL.lock().unwrap_or_else(|e| e.into_inner())
 }
@@ -89,6 +106,8 @@ static LANCEMENT: Mutex<Option<Lancement>> = Mutex::new(None);
 
 /// Note ce que le menu vient de lancer.
 pub fn noter_lancement(lancement: Lancement) {
+    // Un bilan de retour resté ouvert dans une partie d'avant ne revient pas dans celle-ci (N.8).
+    bilan_vu();
     *LANCEMENT.lock().unwrap_or_else(|e| e.into_inner()) = Some(lancement);
 }
 

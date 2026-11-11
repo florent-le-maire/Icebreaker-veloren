@@ -126,6 +126,7 @@ const PAS_Y: f64 = CASE_H + 4.0;
 // Le panneau : chaque bloc a sa hauteur.
 const MARGE: f64 = 16.0;
 const LARGEUR: f64 = PAN_W - 2.0 * MARGE;
+const EN_TETE_SANS_TITRE_H: f64 = 44.0;
 const EN_TETE_H: f64 = 76.0;
 const ONGLET_H: f64 = 36.0;
 const CHIFFRE_H: f64 = 76.0;
@@ -146,6 +147,20 @@ const ANNONCE_H: f64 = 70.0;
 /// Du haut de l'écran à la première annonce : sous la mini-carte.
 const ANNONCES_HAUT: f64 = 310.0;
 const ANNONCES_MAX: usize = 4;
+
+// Icebreaker : le bilan de retour d'expédition (N.8), une fenêtre centrée (maquette 760 de large
+// en 1280 x 720, multipliée par 1,45) : bandeau, corps (le panneau typé), bouton « Fermer » en bas.
+// La hauteur est celle qu'il faut pour les chiffres, deux rangs d'objets et le message.
+const BIL_W: f64 = 1100.0;
+const BIL_H: f64 = 480.0;
+/// La place du bouton « Fermer », sous le corps.
+const BIL_BAS: f64 = 76.0;
+const BIL_CORPS_H: f64 = BIL_H - 4.0 - BANDEAU_H - 2.0 - BIL_BAS;
+const BIL_BOUTON_W: f64 = 220.0;
+/// Les textes du bilan sont coupés à ces longueurs (ils ne débordent jamais).
+const BIL_DESCRIPTION_MAX: usize = 90;
+const BIL_VALEUR_MAX: usize = 12;
+const BIL_LEGENDE_MAX: usize = 32;
 
 /// Combien de temps la réponse du serveur à une action reste dans la ligne de message.
 const DUREE_REPONSE: Duration = Duration::from_secs(6);
@@ -205,6 +220,13 @@ widget_ids! {
         libre_cases[],
         libre_couleurs[],
         libre_message,
+        bilan_fond,
+        bilan_bandeau,
+        bilan_trait,
+        bilan_titre,
+        bilan_aide,
+        bilan_croix,
+        bilan_bouton,
         fantome_fond,
         fantome_pastille,
         fantome_mot,
@@ -575,9 +597,33 @@ pub struct Places {
     pub message: f64,
 }
 
+/// La taille de ce qui entoure un panneau typé : la largeur utile, la hauteur du corps, et si le
+/// titre est dessiné dans le corps (le bilan l'a dans son bandeau).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Gabarit {
+    pub largeur: f64,
+    pub corps_h: f64,
+    pub titre: bool,
+}
+
+/// Le panneau à droite de la fenêtre du village.
+pub const VILLAGE: Gabarit = Gabarit {
+    largeur: LARGEUR,
+    corps_h: CORPS_H,
+    titre: true,
+};
+
+/// Le corps de la fenêtre du bilan de retour.
+pub const BILAN: Gabarit = Gabarit {
+    largeur: BIL_W - 4.0 - 2.0 * MARGE,
+    corps_h: BIL_CORPS_H,
+    titre: false,
+};
+
 /// La mise en page d'un panneau : chaque bloc présent a sa hauteur fixe, du
 /// haut vers le bas ; les actions et le message sont collés en bas ; la liste
 /// prend ce qui reste, et défile.
+#[cfg(test)]
 pub fn places(
     onglets: bool,
     chiffres: bool,
@@ -586,7 +632,20 @@ pub fn places(
     liste: bool,
     rangs_actions: usize,
 ) -> Places {
-    let mut y = EN_TETE_H;
+    places_dans(onglets, chiffres, jauge, rangs_objets, liste, rangs_actions, VILLAGE)
+}
+
+/// `places` dans un `Gabarit` donné.
+pub fn places_dans(
+    onglets: bool,
+    chiffres: bool,
+    jauge: bool,
+    rangs_objets: usize,
+    liste: bool,
+    rangs_actions: usize,
+    gabarit: Gabarit,
+) -> Places {
+    let mut y = if gabarit.titre { EN_TETE_H } else { EN_TETE_SANS_TITRE_H };
     let mut bloc = |present: bool, hauteur: f64| {
         present.then(|| {
             let haut = y;
@@ -601,7 +660,7 @@ pub fn places(
         rangs_objets > 0,
         rangs_objets as f64 * (OBJET + 8.0) - 8.0,
     );
-    let message = CORPS_H - MARGE - MESSAGE_H;
+    let message = gabarit.corps_h - MARGE - MESSAGE_H;
     let actions = (rangs_actions > 0)
         .then(|| message - ESPACE - rangs_actions as f64 * (ACTION_H + 8.0) + 8.0);
     let bas = actions.unwrap_or(message) - ESPACE;
@@ -720,6 +779,30 @@ impl Pret {
     }
 }
 
+/// Icebreaker : le bilan de retour d'expédition (N.8), prêt à être dessiné : le titre du
+/// bandeau, le rappel de la touche, le panneau (sans son titre) et le bouton de fermeture.
+struct Bilan {
+    titre: String,
+    aide: String,
+    pret: Pret,
+    fermer: Bouton,
+}
+
+/// Les textes du bilan tiennent dans leur place : le titre part dans le bandeau (rendu), le reste est
+/// coupé. Fait une fois, à la réception.
+fn ajuster_bilan(pret: &mut Pret) -> String {
+    let titre = couper(&std::mem::take(&mut pret.titre), 60);
+    pret.description = couper(&pret.description, BIL_DESCRIPTION_MAX);
+    for (valeur, legende, _) in &mut pret.chiffres {
+        *valeur = couper(valeur, BIL_VALEUR_MAX);
+        *legende = couper(legende, BIL_LEGENDE_MAX);
+    }
+    if let Some((texte, _)) = &mut pret.message {
+        *texte = couper(texte, 160);
+    }
+    titre
+}
+
 /// Une case du plan : un bâtiment, textes prêts, rangé.
 struct Case {
     nom: String,
@@ -780,6 +863,8 @@ pub struct Interface {
     /// Le bâtiment cliqué, par son emprise : son panneau est attendu ou montré.
     choisi: Option<Aabr<i32>>,
     panneau: Option<Pret>,
+    /// Le bilan de retour d'expédition, tant que le joueur ne l'a pas fermé (N.8).
+    bilan: Option<Bilan>,
     onglet: usize,
     /// Le bouton cliqué (sa commande), en attendant la suite.
     attente: Option<(Vec<String>, Instant)>,
@@ -815,6 +900,7 @@ impl Interface {
             joueur: None,
             choisi: None,
             panneau: None,
+            bilan: None,
             onglet: 0,
             attente: None,
             reponse_recue: None,
@@ -876,7 +962,26 @@ impl Interface {
 
     /// Le curseur est libre : le plan est ouvert, ou un panneau libre (balise).
     pub fn curseur_libre(&self) -> bool {
-        self.ouvert || self.panneau.as_ref().is_some_and(|p| p.libre)
+        self.ouvert || self.bilan.is_some() || self.panneau.as_ref().is_some_and(|p| p.libre)
+    }
+
+    /// Le bilan de retour d'expédition, envoyé par le serveur : ses textes sont préparés ici, une
+    /// fois. Il se montre devant tout, jusqu'à ce que le joueur le ferme.
+    pub fn bilan(&mut self, panneau: Panneau, i18n: &Localization) {
+        let mut pret = Pret::de(panneau, i18n);
+        let titre = ajuster_bilan(&mut pret);
+        self.bilan = Some(Bilan {
+            titre,
+            aide: i18n.get_msg("icebreaker-bilan-aide").into_owned(),
+            pret,
+            fermer: Bouton {
+                libelle: i18n.get_msg("icebreaker-bilan-fermer").into_owned(),
+                commande: Vec::new(),
+                principale: true,
+                permise: true,
+                couleur: None,
+            },
+        });
     }
 
     /// Les bâtiments envoyés par le serveur : leurs textes et leurs cases sont
@@ -971,8 +1076,12 @@ impl Interface {
         }
     }
 
-    /// Échap ferme d'abord le panneau, puis le plan.
+    /// Échap ferme d'abord le bilan de retour, puis le panneau, puis le plan.
     pub fn echap(&mut self) -> Echap {
+        if self.bilan.take().is_some() {
+            crate::icebreaker::bilan_vu();
+            return Echap::Ferme(None);
+        }
         match &self.panneau {
             Some(panneau) => {
                 let libre = panneau.libre;
@@ -1047,7 +1156,10 @@ impl Interface {
             _ => self.action_en_cours(ui, fonts, i18n, controls, en_cours),
         }
 
-        if self.ouvert {
+        if self.bilan.is_some() {
+            // Le bilan passe devant : la fenêtre du village n'est pas dessinée en même temps.
+            self.fenetre_bilan(ui, imgs, item_imgs, fonts, pulse);
+        } else if self.ouvert {
             self.fenetre(ui, imgs, item_imgs, fonts, i18n, controls, pulse, &mut evenements);
         } else if self.panneau.as_ref().is_some_and(|p| p.libre) {
             self.libre(ui, fonts, &mut evenements);
@@ -1121,8 +1233,12 @@ impl Interface {
             return;
         };
         const PASTILLE: f64 = 132.0;
+        // Plus large que les autres bandeaux : le titre, trois inscrits ou deux et le décompte
+        // tiennent côte à côte (vu en jeu : la pastille passait sur « Départ dans N s »).
+        const EXPEDITION_W: f64 = 880.0;
+        const DECOMPTE_W: f64 = 200.0;
         let fond = self.ids.expedition_fond;
-        cadre([BANDEAU_W, BANDEAU_HAUT], FOND, BORDURE, 2.0)
+        cadre([EXPEDITION_W, BANDEAU_HAUT], FOND, BORDURE, 2.0)
             .mid_top_with_margin_on(ui.window, haut)
             .set(fond, ui);
         Image::new(imgs.icon_globe)
@@ -1164,9 +1280,9 @@ impl Interface {
                     .graphics_for(fond)
                     .set(self.ids.expedition_depart, ui);
             }
-            droite += 150.0;
+            droite += DECOMPTE_W;
         }
-        let n = depart.membres.len().min(3);
+        let n = depart.membres.len().min(if reste.is_some() { 2 } else { 3 });
         assez(&mut self.ids.expedition_pastilles, n, ui);
         assez(&mut self.ids.expedition_mots, n, ui);
         for (i, (mot, pret)) in depart.membres.iter().take(n).enumerate() {
@@ -1779,6 +1895,7 @@ impl Interface {
             item_imgs,
             fonts,
             pulse,
+            VILLAGE,
         ) {
             if let Some((nom, arguments)) = commande.split_first() {
                 evenements.push(Event::SendCommand(nom.clone(), arguments.to_vec()));
@@ -1788,6 +1905,86 @@ impl Interface {
             self.reponse = None;
         }
         self.panneau = Some(panneau);
+    }
+
+    /// Le bilan de retour d'expédition : une fenêtre centrée, le corps est le panneau typé.
+    fn fenetre_bilan(
+        &mut self,
+        ui: &mut UiCell,
+        imgs: &Imgs,
+        item_imgs: &ItemImgs,
+        fonts: &Fonts,
+        pulse: f32,
+    ) {
+        let Some(bilan) = self.bilan.take() else {
+            return;
+        };
+        let fond = self.ids.bilan_fond;
+        cadre([BIL_W, BIL_H], FOND, BORDURE, 2.0)
+            .middle_of(ui.window)
+            .set(fond, ui);
+        Rectangle::fill_with([BIL_W - 4.0, BANDEAU_H], BANDEAU)
+            .mid_top_with_margin_on(fond, 2.0)
+            .graphics_for(fond)
+            .set(self.ids.bilan_bandeau, ui);
+        Rectangle::fill_with([BIL_W - 4.0, 2.0], BORDURE)
+            .mid_top_with_margin_on(fond, 2.0 + BANDEAU_H)
+            .graphics_for(fond)
+            .set(self.ids.bilan_trait, ui);
+        Text::new(&bilan.titre)
+            .font_id(fonts.alkhemi.conrod_id)
+            .font_size(fonts.alkhemi.scale(34))
+            .color(TEXTE)
+            .top_left_with_margins_on(fond, 5.0, 18.0)
+            .graphics_for(fond)
+            .set(self.ids.bilan_titre, ui);
+        Text::new(&bilan.aide)
+            .font_id(fonts.cyri.conrod_id)
+            .font_size(fonts.cyri.scale(18))
+            .color(DISCRET)
+            .top_right_with_margins_on(fond, 15.0, 54.0)
+            .graphics_for(fond)
+            .set(self.ids.bilan_aide, ui);
+        let mut ferme = Button::image(imgs.close_btn)
+            .w_h(24.0, 25.0)
+            .hover_image(imgs.close_btn_hover)
+            .press_image(imgs.close_btn_press)
+            .top_right_with_margins_on(fond, 13.0, 14.0)
+            .set(self.ids.bilan_croix, ui)
+            .was_clicked();
+
+        // Le corps : le panneau typé, ancré sur `ids.pan` comme dans la fenêtre du village.
+        Rectangle::fill_with([BIL_W - 4.0, BIL_CORPS_H], color::TRANSPARENT)
+            .top_left_with_margins_on(fond, 2.0 + BANDEAU_H + 2.0, 2.0)
+            .set(self.ids.pan, ui);
+        let mut onglet = 0;
+        dessiner_panneau(
+            &mut self.ids,
+            ui,
+            &bilan.pret,
+            &mut onglet,
+            None,
+            None,
+            imgs,
+            item_imgs,
+            fonts,
+            pulse,
+            BILAN,
+        );
+
+        ferme |= bouton(imgs, &bilan.fermer, None)
+            .w_h(BIL_BOUTON_W, ACTION_H)
+            .label_font_id(fonts.cyri.conrod_id)
+            .label_font_size(fonts.cyri.scale(22))
+            .mid_bottom_with_margin_on(fond, 16.0)
+            .set(self.ids.bilan_bouton, ui)
+            .was_clicked();
+        if ferme {
+            // Fermé pour de bon : il ne revient pas au HUD suivant.
+            crate::icebreaker::bilan_vu();
+        } else {
+            self.bilan = Some(bilan);
+        }
     }
 
     /// Un panneau libre, hors du plan : le choix de la couleur de la balise,
@@ -1885,6 +2082,7 @@ fn dessiner_panneau(
     item_imgs: &ItemImgs,
     fonts: &Fonts,
     pulse: f32,
+    g: Gabarit,
 ) -> Option<Vec<String>> {
     let ancre = ids.pan;
     let cyri = fonts.cyri.conrod_id;
@@ -1893,18 +2091,19 @@ fn dessiner_panneau(
     let lignes = p.onglets.get(*onglet).map_or(&p.lignes, |(_, lignes)| lignes);
     let rangs_objets = p.objets.len().min(2 * OBJETS_PAR_RANG).div_ceil(OBJETS_PAR_RANG);
     let rangs_actions = p.actions.len().div_ceil(p.colonnes);
-    let places = places(
+    let places = places_dans(
         !p.onglets.is_empty(),
         !p.chiffres.is_empty(),
         p.jauge.is_some(),
         rangs_objets,
         !lignes.is_empty(),
         rangs_actions,
+        g,
     );
     let mut clic = None;
 
-    // L'en-tête : icône, titre, ce que c'est en une ligne.
-    let image = icone(imgs, &p.icone);
+    // L'en-tête : icône, titre, ce que c'est en une ligne (sans le titre : la description seule).
+    let image = icone(imgs, &p.icone).filter(|_| g.titre);
     if let Some(image) = image {
         Image::new(image)
             .w_h(44.0, 44.0)
@@ -1912,24 +2111,26 @@ fn dessiner_panneau(
             .set(ids.p_icone, ui);
     }
     let x_titre = if image.is_some() { MARGE + 56.0 } else { MARGE };
-    Text::new(&p.titre)
-        .font_id(fonts.alkhemi.conrod_id)
-        .font_size(fonts.alkhemi.scale(32))
-        .color(TEXTE)
-        .top_left_with_margins_on(ancre, 8.0, x_titre)
-        .set(ids.p_titre, ui);
+    if g.titre {
+        Text::new(&p.titre)
+            .font_id(fonts.alkhemi.conrod_id)
+            .font_size(fonts.alkhemi.scale(32))
+            .color(TEXTE)
+            .top_left_with_margins_on(ancre, 8.0, x_titre)
+            .set(ids.p_titre, ui);
+    }
     Text::new(&p.description)
         .font_id(cyri)
-        .font_size(taille(18))
+        .font_size(taille(if g.titre { 18 } else { 20 }))
         .color(DISCRET)
-        .top_left_with_margins_on(ancre, 46.0, x_titre)
+        .top_left_with_margins_on(ancre, if g.titre { 46.0 } else { 8.0 }, x_titre)
         .set(ids.p_desc, ui);
 
     // Les onglets : le changement est immédiat, le serveur a déjà tout envoyé.
     if let Some(y) = places.onglets {
         let n = p.onglets.len();
         assez(&mut ids.onglets, n, ui);
-        let largeur = (LARGEUR - 6.0 * (n as f64 - 1.0)) / n as f64;
+        let largeur = (g.largeur - 6.0 * (n as f64 - 1.0)) / n as f64;
         for (i, (libelle, _)) in p.onglets.iter().enumerate() {
             let actif = i == *onglet;
             if Button::image(if actif { imgs.button_press } else { imgs.button })
@@ -1961,7 +2162,7 @@ fn dessiner_panneau(
         ] {
             assez(liste, n, ui);
         }
-        let largeur = (LARGEUR - ESPACE * (n as f64 - 1.0)) / n as f64;
+        let largeur = (g.largeur - ESPACE * (n as f64 - 1.0)) / n as f64;
         for (i, (valeur, legende, ton)) in p.chiffres.iter().enumerate() {
             let fond = ids.chiffres_fond[i];
             cadre([largeur, CHIFFRE_H], CASE, TRAIT, 2.0)
@@ -1996,10 +2197,10 @@ fn dessiner_panneau(
             .color(TEXTE)
             .top_right_with_margins_on(ancre, y, MARGE)
             .set(ids.jauge_texte, ui);
-        cadre([LARGEUR, 16.0], CASE, BORDURE, 2.0)
+        cadre([g.largeur, 16.0], CASE, BORDURE, 2.0)
             .top_left_with_margins_on(ancre, y + 26.0, MARGE)
             .set(ids.jauge_fond, ui);
-        let rempli = (LARGEUR - 4.0) * f64::from(*part);
+        let rempli = (g.largeur - 4.0) * f64::from(*part);
         if rempli >= 1.0 {
             Rectangle::fill_with([rempli, 12.0], remplissage(*ton))
                 .top_left_with_margins_on(ids.jauge_fond, 2.0, 2.0)
@@ -2058,7 +2259,7 @@ fn dessiner_panneau(
         ] {
             assez(liste, n, ui);
         }
-        Rectangle::fill_with([LARGEUR, hauteur], color::TRANSPARENT)
+        Rectangle::fill_with([g.largeur, hauteur], color::TRANSPARENT)
             .top_left_with_margins_on(ancre, y, MARGE)
             .scroll_kids_vertically()
             .set(ids.liste, ui);
@@ -2067,7 +2268,7 @@ fn dessiner_panneau(
             .auto_hide(true)
             .color(BORDURE)
             .set(ids.liste_barre, ui);
-        let largeur = LARGEUR - 12.0;
+        let largeur = g.largeur - 12.0;
         for (i, ligne) in lignes.iter().enumerate() {
             let fond = ids.lignes_fond[i];
             cadre(
@@ -2155,7 +2356,7 @@ fn dessiner_panneau(
         let n = p.actions.len();
         assez(&mut ids.actions_cadre, n, ui);
         assez(&mut ids.actions, n, ui);
-        let largeur = (LARGEUR - 8.0 * (p.colonnes as f64 - 1.0)) / p.colonnes as f64;
+        let largeur = (g.largeur - 8.0 * (p.colonnes as f64 - 1.0)) / p.colonnes as f64;
         for (i, action) in p.actions.iter().enumerate() {
             let (colonne, rang) = (i % p.colonnes, i / p.colonnes);
             let (haut, gauche) = (
@@ -2196,7 +2397,7 @@ fn dessiner_panneau(
                 Sorte::Reussite => BON,
                 Sorte::Refus => MAUVAIS,
             })
-            .w(LARGEUR)
+            .w(g.largeur)
             .wrap_by_word()
             .top_left_with_margins_on(ancre, places.message, MARGE)
             .set(ids.message, ui);
@@ -2302,6 +2503,48 @@ mod tests {
         assert!(hauteur >= LIGNE_H, "la liste garde au moins une ligne");
         assert!(actions + 2.0 * ACTION_H + 8.0 <= p.message, "les actions au-dessus du message");
         assert!(p.message + MESSAGE_H <= CORPS_H, "le message dans la fenêtre");
+    }
+
+    #[test]
+    fn le_bilan_tient_dans_sa_fenetre() {
+        // Quatre chiffres, deux rangs d'objets, le message : rien ne se chevauche.
+        let p = places_dans(false, true, false, 2, false, 0, BILAN);
+        assert_eq!(p.chiffres, Some(EN_TETE_SANS_TITRE_H));
+        let objets = p.objets.unwrap();
+        assert!(objets >= EN_TETE_SANS_TITRE_H + CHIFFRE_H);
+        assert!(objets + 2.0 * OBJET + 8.0 <= p.message, "les objets au-dessus du message");
+        assert!(p.message + MESSAGE_H <= BIL_CORPS_H, "le message dans le corps");
+        // Le corps et le bouton « Fermer » tiennent dans la fenêtre.
+        assert!(2.0 + BANDEAU_H + 2.0 + BIL_CORPS_H + BIL_BAS <= BIL_H);
+        assert!(ACTION_H + 16.0 <= BIL_BAS);
+        // Les quatre tuiles de chiffres sont assez larges pour leur texte.
+        assert!((BILAN.largeur - 3.0 * ESPACE) / 4.0 >= 200.0);
+    }
+
+    #[test]
+    fn les_textes_du_bilan_sont_coupes_et_le_titre_part_dans_le_bandeau() {
+        let long = "x".repeat(300);
+        let mut pret = Pret {
+            icone: String::new(),
+            titre: "Retour d'expédition".to_string(),
+            description: long.clone(),
+            onglets: Vec::new(),
+            chiffres: vec![(long.clone(), long.clone(), Ton::Or)],
+            jauge: None,
+            objets: Vec::new(),
+            lignes: Vec::new(),
+            actions: Vec::new(),
+            colonnes: 1,
+            message: Some((long, Sorte::Refus)),
+            libre: false,
+        };
+        let titre = ajuster_bilan(&mut pret);
+        assert_eq!(titre, "Retour d'expédition");
+        assert!(pret.titre.is_empty(), "le corps ne redessine pas le titre");
+        assert_eq!(pret.description.chars().count(), BIL_DESCRIPTION_MAX);
+        assert_eq!(pret.chiffres[0].0.chars().count(), BIL_VALEUR_MAX);
+        assert_eq!(pret.chiffres[0].1.chars().count(), BIL_LEGENDE_MAX);
+        assert_eq!(pret.message.unwrap().0.chars().count(), 160);
     }
 
     #[test]

@@ -14,7 +14,7 @@ use common::{
 use common_ecs::{Job, Origin, Phase, System};
 use common_net::msg::ServerGeneral;
 use hashbrown::HashMap;
-use specs::{Entities, Entity, Join, Read, ReadStorage, Write, WriteStorage};
+use specs::{Entities, Entity, Join, Read, ReadExpect, ReadStorage, Write, WriteStorage};
 
 /// Icebreaker : depuis quand chaque entité est à terre (temps du serveur), et quand chaque mort
 /// d'une expédition perdue a été renvoyé au village.
@@ -52,6 +52,9 @@ impl<'a> System<'a> for Sys {
         ReadStorage<'a, Player>,
         ReadStorage<'a, Pos>,
         ReadStorage<'a, Client>,
+        // Icebreaker : le décompte de la mission, pour le bilan de ceux qu'on renvoie (N.8).
+        Read<'a, crate::icebreaker_mission::IcebreakerMission>,
+        ReadExpect<'a, crate::rtsim::RtSim>,
     );
 
     const NAME: &'static str = "icebreaker_mort";
@@ -70,6 +73,8 @@ impl<'a> System<'a> for Sys {
             players,
             positions,
             clients,
+            missions,
+            rtsim,
         ): Self::SystemData,
     ) {
         let regles = IcebreakerMort::actuel();
@@ -122,6 +127,15 @@ impl<'a> System<'a> for Sys {
                 client.send_fallible(ServerGeneral::server_msg(
                     ChatType::Meta,
                     Content::Plain("L'expédition a péri : retour au village.".to_string()),
+                ));
+                // Icebreaker : le bilan de l'expédition perdue (N.8) ; le sac reste sur place.
+                client.send_fallible(ServerGeneral::IcebreakerBilan(
+                    crate::icebreaker_bilan::panneau(&crate::icebreaker_bilan::Retour {
+                        lieu: crate::icebreaker_expedition::nom_du_site(&slot.name),
+                        decompte: crate::icebreaker_bilan::decompte_de(&missions, &rtsim, slot),
+                        peri: true,
+                        ..Default::default()
+                    }),
                 ));
                 client.send_fallible(ServerGeneral::IcebreakerJouer(None));
             }

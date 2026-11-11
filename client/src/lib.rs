@@ -135,6 +135,8 @@ pub enum Event {
     Dialogue(Uid, rtsim::Dialogue<true>),
     /// Icebreaker : le panneau typé d'un bâtiment du village ou de la balise.
     IcebreakerPanel(common::icebreaker_panneau::Panneau),
+    /// Icebreaker : le bilan de retour d'expédition (N.8).
+    IcebreakerBilan(common::icebreaker_panneau::Panneau),
     /// Icebreaker: go to the place of the campaign listening on this port.
     IcebreakerTravel(u16),
     /// Icebreaker: the registry is open, enter as a ghost (jalon R).
@@ -3030,6 +3032,9 @@ impl Client {
             },
             ServerGeneral::IcebreakerJouer(id) => {
                 frontend_events.push(Event::IcebreakerJouer(id));
+            },
+            ServerGeneral::IcebreakerBilan(panneau) => {
+                frontend_events.push(Event::IcebreakerBilan(panneau));
             },
             ServerGeneral::IcebreakerPanel(panneau) => {
                 frontend_events.push(Event::IcebreakerPanel(panneau));

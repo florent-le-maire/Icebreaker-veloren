@@ -18,6 +18,7 @@ mod data_dir;
 pub mod error;
 pub mod events;
 pub mod icebreaker_balise;
+pub mod icebreaker_bilan;
 pub mod icebreaker_buildings;
 pub mod icebreaker_charrette;
 pub mod icebreaker_classes;

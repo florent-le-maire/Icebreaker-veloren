@@ -75,3 +75,5 @@ icebreaker-mort-aucun = Aucun allié en vie
 icebreaker-regarde-nom = Vous regardez { $nom }
 icebreaker-regarde-vie = vie { $vie } / { $max }
 icebreaker-regarde-aide = Clic gauche : allié suivant      { $key } : retour au village
+icebreaker-bilan-fermer = Fermer
+icebreaker-bilan-aide = Échap : fermer

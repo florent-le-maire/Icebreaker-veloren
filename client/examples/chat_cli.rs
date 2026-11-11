@@ -358,6 +358,8 @@ fn main() {
 
         const SHOW_NAME: bool = false;
         for event in events {
+            // Icebreaker : le bilan de retour se distingue du panneau par son préfixe (N.8).
+            let bilan = matches!(event, Event::IcebreakerBilan(_));
             match event {
                 Event::Chat(m) => println!(
                     "{}",
@@ -398,7 +400,7 @@ fn main() {
                     registre_next = Some(next);
                 },
                 // Icebreaker : le panneau typé (jalon N), bloc par bloc.
-                Event::IcebreakerPanel(p) => {
+                Event::IcebreakerPanel(p) | Event::IcebreakerBilan(p) => {
                     let text = |c: &comp::Content| match c {
                         comp::Content::Plain(s) => s.clone(),
                         other => format!("{other:?}"),
@@ -423,7 +425,12 @@ fn main() {
                             l.action.as_ref().map_or(String::new(), bouton),
                         )
                     };
-                    println!("Panneau « {} » : {}", text(&p.titre), text(&p.description));
+                    println!(
+                        "{} « {} » : {}",
+                        if bilan { "Bilan" } else { "Panneau" },
+                        text(&p.titre),
+                        text(&p.description)
+                    );
                     for c in &p.chiffres {
                         println!("  {} ({})", text(&c.valeur), text(&c.legende));
                     }

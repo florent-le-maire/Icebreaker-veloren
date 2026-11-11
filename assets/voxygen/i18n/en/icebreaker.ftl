@@ -75,3 +75,5 @@ icebreaker-mort-aucun = No ally alive
 icebreaker-regarde-nom = You are watching { $nom }
 icebreaker-regarde-vie = health { $vie } / { $max }
 icebreaker-regarde-aide = Left click: next ally      { $key }: back to the village
+icebreaker-bilan-fermer = Close
+icebreaker-bilan-aide = Escape: close

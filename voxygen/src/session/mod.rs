@@ -185,7 +185,12 @@ impl SessionState {
                 // TODO: evaluate context
             }
         }
-        let hud = Hud::new(global_state, persisted_state, &client.borrow());
+        let mut hud = Hud::new(global_state, persisted_state, &client.borrow());
+        // Icebreaker N.8 : un bilan de retour reçu juste avant de changer de personnage
+        // (expédition qui a péri) se montre dans ce nouveau HUD.
+        if let Some(panneau) = crate::icebreaker::bilan_garde() {
+            hud.icebreaker_bilan(panneau, &global_state.i18n.read());
+        }
         let walk_forward_dir = scene.camera().forward_xy();
         let walk_right_dir = scene.camera().right_xy();
 
@@ -417,6 +422,12 @@ impl SessionState {
                         self.hud
                             .icebreaker_batiments(buildings, &global_state.i18n.read());
                     }
+                },
+                // Icebreaker : le bilan de retour d'expédition (N.8), dans une fenêtre.
+                client::Event::IcebreakerBilan(panneau) => {
+                    crate::icebreaker::garder_bilan(panneau.clone());
+                    self.hud
+                        .icebreaker_bilan(panneau, &global_state.i18n.read());
                 },
                 client::Event::IcebreakerExpedition(expedition) => {
                     self.hud
