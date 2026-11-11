@@ -277,7 +277,8 @@ impl ActiveAbilities {
             Ability::MainWeaponAux(_) => inst_ability(EquipSlot::ActiveMainhand, false),
             Ability::OffWeaponAux(_) => inst_ability(EquipSlot::ActiveOffhand, true),
             Ability::GliderAux(_) => inst_ability(EquipSlot::Glider, false),
-            Ability::Empty => None,
+            // Icebreaker : nos compétences passent par `icebreaker_competences::resoudre`.
+            Ability::Empty | Ability::Icebreaker(_) => None,
             Ability::SpeciesMovement => matches!(body, Some(Body::Humanoid(_)))
                 .then(|| CharacterAbility::default_roll(char_state))
                 .map(|ability| {
@@ -397,6 +398,11 @@ pub enum Ability {
     Empty,
     /* For future use
      * ArmorAbility(usize), */
+    /// Icebreaker : une compétence d'arme ou un ultime de nos données (jalon A), par son numéro
+    /// (`icebreaker_competences::registre`). Elle ne vient pas du jeu de capacités de l'objet en
+    /// main : c'est `icebreaker_competences::resoudre` qui la lance. Garder cette variante en
+    /// dernier : l'ordre des variantes fait le format réseau.
+    Icebreaker(u16),
 }
 
 impl Ability {
@@ -413,7 +419,8 @@ impl Ability {
             Self::GliderAux(idx) | Self::OffWeaponAux(idx) | Self::MainWeaponAux(idx) => {
                 AbilityInput::Auxiliary(*idx)
             },
-            Self::Empty => return None,
+            // Icebreaker : nos compétences ne sont pas dans le jeu de capacités d'un objet.
+            Self::Empty | Self::Icebreaker(_) => return None,
         };
 
         Some(input)
@@ -485,6 +492,8 @@ impl Ability {
                 Ability::OffWeaponAux(_) => inst_ability(EquipSlot::ActiveOffhand),
                 Ability::GliderAux(_) => inst_ability(EquipSlot::Glider),
                 Ability::Empty => None,
+                // Icebreaker : l'icône et l'infobulle de la capacité de Veloren reprise.
+                Ability::Icebreaker(numero) => crate::icebreaker_competences::icone_de(numero),
             },
             AbilitySource::Weapons => match self {
                 Ability::ToolGuard => {
@@ -499,6 +508,8 @@ impl Ability {
                 Ability::OffWeaponAux(_) => inst_ability(EquipSlot::ActiveOffhand),
                 Ability::GliderAux(_) => inst_ability(EquipSlot::Glider),
                 Ability::Empty => None,
+                // Icebreaker : l'icône et l'infobulle de la capacité de Veloren reprise.
+                Ability::Icebreaker(numero) => crate::icebreaker_competences::icone_de(numero),
             },
         }
     }
@@ -511,7 +522,9 @@ impl Ability {
             | Ability::GliderAux(_)
             | Ability::OffWeaponAux(_)
             | Ability::ToolGuard => true,
-            Ability::SpeciesMovement | Ability::Empty => false,
+            // Icebreaker : un effet lancé par une de nos compétences ne tombe pas quand on change
+            // d'arme (un ultime est à la classe).
+            Ability::SpeciesMovement | Ability::Empty | Ability::Icebreaker(_) => false,
         }
     }
 }
@@ -587,6 +600,11 @@ impl SpecifiedAbility {
                 Ability::OffWeaponAux(_) => inst_ability(EquipSlot::ActiveOffhand),
                 Ability::GliderAux(_) => inst_ability(EquipSlot::Glider),
                 Ability::Empty => None,
+                // Icebreaker : le client choisit le geste d'après cet id : celui de la capacité
+                // de Veloren dont notre compétence reprend l'animation, à son niveau.
+                Ability::Icebreaker(numero) => {
+                    crate::icebreaker_competences::animation_de(numero, self.context_index)
+                },
             },
             AbilitySource::Weapons => match self.ability {
                 Ability::ToolGuard => inst_ability(combat::get_equip_slot_by_block_priority(inv)),
@@ -598,6 +616,10 @@ impl SpecifiedAbility {
                 Ability::OffWeaponAux(_) => inst_ability(EquipSlot::ActiveOffhand),
                 Ability::GliderAux(_) => inst_ability(EquipSlot::Glider),
                 Ability::Empty => None,
+                // Icebreaker : voir plus haut.
+                Ability::Icebreaker(numero) => {
+                    crate::icebreaker_competences::animation_de(numero, self.context_index)
+                },
             },
         }
     }

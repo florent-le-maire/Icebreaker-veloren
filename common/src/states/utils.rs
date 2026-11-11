@@ -1457,20 +1457,24 @@ fn handle_ability(
     input: InputKind,
 ) -> bool {
     if let Some(ability_input) = input.into()
-        && let Some((ability, from_offhand, spec_ability)) = data
-            .active_abilities
-            .and_then(|a| {
-                a.activate_ability(
-                    ability_input,
-                    data.inventory,
-                    data.skill_set,
-                    Some(data.body),
-                    Some(data.character),
-                    data.stance,
-                    data.combo,
-                    Some(data.stats),
-                    data.buffs,
-                )
+        // Icebreaker : un personnage du registre lance nos compétences sur les touches 1 à 3
+        // (jalon A, `icebreaker_competences::resoudre`) ; tout le reste suit Veloren.
+        && let Some((ability, from_offhand, spec_ability)) =
+            crate::icebreaker_competences::resoudre(data, ability_input)
+            .unwrap_or_else(|| {
+                data.active_abilities.and_then(|a| {
+                    a.activate_ability(
+                        ability_input,
+                        data.inventory,
+                        data.skill_set,
+                        Some(data.body),
+                        Some(data.character),
+                        data.stance,
+                        data.combo,
+                        Some(data.stats),
+                        data.buffs,
+                    )
+                })
             })
             .map(|(mut a, f, s)| {
                 let mut contextual_stats =
@@ -1523,10 +1527,14 @@ fn handle_ability(
                 {
                     match init_event {
                         AbilityInitEvent::EnterStance(stance) => {
-                            output_events.emit_server(ChangeStanceEvent {
-                                entity: data.entity,
-                                stance: *stance,
-                            });
+                            // Icebreaker : pas de postures pour un personnage du registre
+                            // (jalon A) : ses attaques de base restent celles de son arme.
+                            if data.icebreaker.is_none() {
+                                output_events.emit_server(ChangeStanceEvent {
+                                    entity: data.entity,
+                                    stance: *stance,
+                                });
+                            }
                         },
                         AbilityInitEvent::GainBuff {
                             kind,

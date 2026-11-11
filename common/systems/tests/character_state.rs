@@ -136,4 +136,135 @@ mod tests {
             }
         }
     }
+
+    // Icebreaker : jalon A — les touches 1 à 3 d'un personnage du registre lancent nos compétences.
+    mod icebreaker {
+        use super::*;
+        use common::{
+            comp::{
+                Combo, ControlAction, InputKind, Inventory, Item, ability::Ability,
+                inventory::loadout_builder::LoadoutBuilder,
+            },
+            event::{ChangeStanceEvent, EventBus},
+            icebreaker_competences::{Acquis, IcebreakerCompetences, TOUCHE_ULTIME, registre},
+        };
+
+        /// Un guerrier du registre, arme sortie, avec les armes du jeu d'armes `jeu` et le lot par
+        /// défaut de sa classe (grande épée : balayage lourd, tourbillon ; ultime : fureur).
+        fn guerrier(state: &mut State, jeu: &str) -> Entity {
+            let armes = &registre().jeu(jeu).expect("jeu d'armes").armes;
+            let loadout = LoadoutBuilder::empty()
+                .active_mainhand(Some(Item::new_from_asset_expect(&armes.0)))
+                .active_offhand(armes.1.as_deref().map(Item::new_from_asset_expect))
+                .build();
+            let entity = create_entity(state, Ori::default());
+            let ecs = state.ecs_mut();
+            ecs.write_storage()
+                .insert(entity, Inventory::with_loadout_humanoid(loadout))
+                .unwrap();
+            // Comme tout joueur : le compteur de combo, que certaines capacités consultent.
+            ecs.write_storage().insert(entity, Combo::default()).unwrap();
+            ecs.write_storage()
+                .insert(
+                    entity,
+                    IcebreakerCompetences::nouveau("guerrier", Acquis::par_defaut("guerrier"))
+                        .expect("le guerrier est décrit par nos données"),
+                )
+                .unwrap();
+            ecs.write_storage()
+                .insert(
+                    entity,
+                    CharacterState::Wielding(common::states::wielding::Data { is_sneaking: false }),
+                )
+                .unwrap();
+            entity
+        }
+
+        fn appuyer(state: &mut State, entity: Entity, touche: usize) {
+            state
+                .ecs()
+                .write_storage::<Controller>()
+                .get_mut(entity)
+                .expect("Controller")
+                .push_action(ControlAction::basic_input(InputKind::Ability(touche)));
+        }
+
+        /// La compétence en cours, si le personnage en lance une.
+        fn lancee(state: &State, entity: Entity) -> Option<Ability> {
+            state
+                .ecs()
+                .read_storage::<CharacterState>()
+                .get(entity)
+                .and_then(|character| character.ability_info())
+                .and_then(|info| info.ability)
+                .map(|specified| specified.ability)
+        }
+
+        fn numero(id: &str) -> u16 { registre().numero(id).unwrap_or_else(|| panic!("{id}")) }
+
+        #[test]
+        fn icebreaker_la_touche_1_lance_la_competence_placee() {
+            let mut state = setup();
+            let entity = guerrier(&mut state, "grande_epee");
+            // Le banc n'a pas ce bus : sans lui, l'entrée en posture serait perdue sans bruit.
+            state
+                .ecs_mut()
+                .insert(EventBus::<ChangeStanceEvent>::default());
+            appuyer(&mut state, entity, 0);
+            tick(&mut state, Duration::from_secs_f32(0.033));
+
+            // Le balayage lourd part : un `ComboMelee2`, qui porte notre numéro (le client en tire
+            // l'animation de la capacité de Veloren).
+            assert_eq!(
+                lancee(&state, entity),
+                Some(Ability::Icebreaker(numero("balayage_lourd")))
+            );
+            let characters = state.ecs().read_storage::<CharacterState>();
+            let character = characters.get(entity).expect("CharacterState");
+            assert!(matches!(character, CharacterState::ComboMelee2(_)), "{character:?}");
+            let inventories = state.ecs().read_storage::<Inventory>();
+            assert_eq!(
+                character
+                    .ability_info()
+                    .and_then(|info| info.ability)
+                    .and_then(|ability| ability.ability_id(Some(character), inventories.get(entity))),
+                Some("common.abilities.sword.heavy_sweep")
+            );
+            // Pas de posture : la capacité de Veloren en demande une, elle est ignorée.
+            assert_eq!(
+                state
+                    .ecs()
+                    .read_resource::<EventBus<ChangeStanceEvent>>()
+                    .recv_all()
+                    .len(),
+                0
+            );
+        }
+
+        #[test]
+        fn icebreaker_une_arme_non_apprise_ne_garde_que_l_ultime() {
+            let mut state = setup();
+            // Le lot par défaut ne connaît que la grande épée.
+            let entity = guerrier(&mut state, "marteau");
+            appuyer(&mut state, entity, 0);
+            tick(&mut state, Duration::from_secs_f32(0.033));
+            assert_eq!(lancee(&state, entity), None, "touche 1 vide");
+            assert!(matches!(
+                state.ecs().read_storage::<CharacterState>().get(entity),
+                Some(CharacterState::Wielding(_))
+            ));
+
+            // L'ultime est à la classe : il part quelle que soit l'arme.
+            state
+                .ecs()
+                .write_storage::<Controller>()
+                .get_mut(entity)
+                .expect("Controller")
+                .queued_inputs
+                .clear();
+            appuyer(&mut state, entity, TOUCHE_ULTIME);
+            tick(&mut state, Duration::from_secs_f32(0.033));
+            assert_eq!(lancee(&state, entity), Some(Ability::Icebreaker(numero("fureur"))));
+        }
+    }
 }

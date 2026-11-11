@@ -113,6 +113,8 @@ fn main() {
     let mut registre_next: Option<Option<common::character::CharacterId>> = None;
     // Icebreaker : les bâtiments du plan du village reçus en dernier (`!panneau <sorte>`).
     let mut batiments: Vec<common::icebreaker_panneau::Batiment> = Vec::new();
+    // Icebreaker : la touche de compétence tenue par `!touche n`, et depuis quand (jalon A).
+    let mut touche_tenue: Option<(comp::InputKind, std::time::Instant)> = None;
 
     loop {
         for msg in rx.try_iter() {
@@ -172,6 +174,29 @@ fn main() {
                     health.is_some_and(|h| h.is_dead),
                     client.position().map(|p| p.map(|e| e.round())),
                 );
+                // Icebreaker : ce que fait le personnage et la capacité en cours (jalon A).
+                if let Some(state) = states.get(client.entity()) {
+                    let geste = format!("{state:?}");
+                    let geste = geste.split(['(', ' ', '{']).next().unwrap_or_default();
+                    println!(
+                        "Geste : {geste}, capacité {:?}, endurance {:?}",
+                        state.ability_info().and_then(|info| info.ability),
+                        ecs.read_storage::<comp::Energy>()
+                            .get(client.entity())
+                            .map(|e| e.current().round()),
+                    );
+                }
+            } else if let Some(touche) = msg
+                .strip_prefix("!touche ")
+                .and_then(|n| n.trim().parse::<usize>().ok())
+                .filter(|n| (1..=5).contains(n))
+            {
+                // Icebreaker : tient la touche de compétence `n` pendant 1,5 s (jalon A : 1 et 2
+                // pour l'arme en mains, 3 pour l'ultime), le temps de sortir l'arme et de lancer ;
+                // `!etat` dit ensuite ce que fait le personnage.
+                let input = comp::InputKind::Ability(touche - 1);
+                client.handle_input(input, true, None, None);
+                touche_tenue = Some((input, std::time::Instant::now()));
             } else if msg == "!relever" || msg == "!fouiller" {
                 // Icebreaker : relever le joueur à terre ou fouiller le sac le plus proche
                 // (jalon T).
@@ -366,6 +391,14 @@ fn main() {
                 client.load_character_list();
                 created = true;
             }
+        }
+
+        // Icebreaker : la touche de `!touche n` est relâchée après 1,5 s (jalon A).
+        if let Some((input, depuis)) = touche_tenue
+            && depuis.elapsed() > Duration::from_millis(1500)
+        {
+            client.handle_input(input, false, None, None);
+            touche_tenue = None;
         }
 
         let events = match client.tick(comp::ControllerInputs::default(), clock.game_dt()) {

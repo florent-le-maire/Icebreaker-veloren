@@ -57,6 +57,8 @@ pub struct ReadData<'a> {
     stances: ReadStorage<'a, Stance>,
     prev_phys_caches: ReadStorage<'a, PreviousPhysCache>,
     buffs: ReadStorage<'a, Buffs>,
+    // Icebreaker : compétences des personnages du registre (jalon A).
+    icebreaker: ReadStorage<'a, common::icebreaker_competences::IcebreakerCompetences>,
 }
 
 /// ## Character Behavior System
@@ -232,6 +234,7 @@ impl<'a> System<'a> for Sys {
                 prev_phys_caches: &read_data.prev_phys_caches,
                 bodies: &read_data.bodies,
                 buffs: read_data.buffs.get(entity),
+                icebreaker: read_data.icebreaker.get(entity),
             };
 
             for action in actions {

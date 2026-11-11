@@ -14,15 +14,17 @@ use crate::{
     assets::{self, AssetExt, Ron},
     comp::{
         Inventory,
+        ability::{Ability, AbilityInput, CharacterAbility, SpecifiedAbility},
         buff::BuffEffect,
         inventory::{
             item::{
                 ItemKind,
-                tool::{Hands, Stats, ToolKind},
+                tool::{ContextualIndex, Hands, Stats, ToolKind},
             },
             slot::EquipSlot,
         },
     },
+    states::behavior::JoinData,
 };
 use serde::{Deserialize, Serialize};
 use specs::{Component, DerefFlaggedStorage};
@@ -33,6 +35,10 @@ use tracing::error;
 pub const NIVEAU_DEPART: u8 = 1;
 /// Compétences d'arme placées (touches 1 et 2).
 pub const PLACES_ARME: usize = 2;
+/// La touche de l'ultime (la troisième), comptée depuis zéro comme les entrées de capacité.
+pub const TOUCHE_ULTIME: usize = PLACES_ARME;
+/// Nombre de touches de compétences : deux pour l'arme, une pour l'ultime.
+pub const TOUCHES: usize = TOUCHE_ULTIME + 1;
 
 /// Une arme attendue dans la main droite : son type et le nombre de mains qu'elle prend.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
@@ -589,14 +595,119 @@ impl IcebreakerCompetences {
             recharges: BTreeMap::new(),
         })
     }
+
+    /// La compétence placée sur la touche `touche` (0 et 1 : compétences du jeu d'armes en mains ;
+    /// 2 : ultime) : (numéro, niveau). `None` : touche vide (rien de placé, jeu d'armes non appris,
+    /// arme étrangère à la classe).
+    pub fn sur_touche(&self, touche: usize, inventaire: Option<&Inventory>) -> Option<(u16, u8)> {
+        let registre = registre();
+        if touche < PLACES_ARME {
+            let (jeu, _) = jeu_en_main(&self.classe, inventaire)?;
+            let acquis = self.acquis.jeux.get(jeu)?;
+            let id = acquis.placees[touche].as_deref()?;
+            let niveau = *acquis.competences.get(id)?;
+            let numero = registre.numero(id)?;
+            // Une compétence d'une autre arme ne se lance pas avec celle-ci.
+            let du_jeu = matches!(&registre.par_numero(numero)?.sorte, Sorte::Arme { jeu: j } if j == jeu);
+            du_jeu.then_some((numero, niveau))
+        } else if touche == TOUCHE_ULTIME {
+            let id = self.acquis.ultime.as_deref()?;
+            let numero = registre.numero(id)?;
+            let de_la_classe = matches!(
+                &registre.par_numero(numero)?.sorte,
+                Sorte::Ultime { classe } if *classe == self.classe
+            );
+            de_la_classe.then_some((numero, NIVEAU_DEPART))
+        } else {
+            None
+        }
+    }
+
+    /// Secondes de recharge qui restent à la compétence `numero` au temps `maintenant` (secondes
+    /// du temps du serveur) ; `None` : prête.
+    pub fn reste_recharge(&self, numero: u16, maintenant: f64) -> Option<f64> {
+        self.recharges
+            .get(&numero)
+            .map(|fin| fin - maintenant)
+            .filter(|reste| *reste > 0.0)
+    }
+}
+
+/// Id de la capacité de Veloren dont l'interface reprend l'icône pour la compétence `numero`.
+pub fn icone_de(numero: u16) -> Option<&'static str> {
+    registre()
+        .par_numero(numero)
+        .map(|entree| entree.competence.id_icone())
+}
+
+/// Id de la capacité de Veloren dont le client reprend l'animation pour la compétence `numero`
+/// lancée au niveau `niveau` (porté par l'index de contexte de la capacité lancée).
+pub fn animation_de(numero: u16, niveau: Option<ContextualIndex>) -> Option<&'static str> {
+    let niveau = niveau.map_or(NIVEAU_DEPART, |n| u8::try_from(n.0).unwrap_or(u8::MAX));
+    registre()
+        .par_numero(numero)
+        .map(|entree| entree.competence.effectif(niveau).animation)
+}
+
+/// Ce que lance la touche `entree` pour un personnage qui a nos compétences. `None` : ce n'est pas
+/// à nous de répondre (pas de composant, attaque de base, garde, roulade, planeur en main) :
+/// Veloren s'en charge. `Some(None)` : rien ne part (touche vide, compétence en recharge).
+/// Appelé par `states::utils::handle_ability`, chez le client (prédiction) comme sur le serveur.
+pub fn resoudre(
+    data: &JoinData<'_>,
+    entree: AbilityInput,
+) -> Option<Option<(CharacterAbility, bool, SpecifiedAbility)>> {
+    let competences = data.icebreaker?;
+    let AbilityInput::Auxiliary(touche) = entree else {
+        return None;
+    };
+    if data.character.is_glide_wielded() {
+        return None;
+    }
+    Some(lancer(competences, touche, data))
+}
+
+fn lancer(
+    competences: &IcebreakerCompetences,
+    touche: usize,
+    data: &JoinData<'_>,
+) -> Option<(CharacterAbility, bool, SpecifiedAbility)> {
+    if data.stats.disable_auxiliary_abilities {
+        return None;
+    }
+    let (numero, niveau) = competences.sur_touche(touche, data.inventory)?;
+    if competences.reste_recharge(numero, data.time.0).is_some() {
+        return None;
+    }
+    let effectif = registre().par_numero(numero)?.competence.effectif(niveau);
+    let capacite = Ron::<CharacterAbility>::load(effectif.capacite)
+        .ok()?
+        .cloned()
+        .into_inner();
+    // Comme pour le jeu de capacités d'un objet, les stats de l'arme de main droite s'appliquent ;
+    // le niveau de la compétence vient par-dessus.
+    let arme = data
+        .inventory
+        .and_then(|inventaire| inventaire.equipped(EquipSlot::ActiveMainhand))
+        .and_then(|objet| match &*objet.kind() {
+            ItemKind::Tool(outil) => Some(outil.stats(objet.stats_durability_multiplier())),
+            _ => None,
+        })
+        .unwrap_or_else(Stats::one);
+    Some((
+        capacite.adjusted_by_stats(arme * effectif.stats),
+        false,
+        SpecifiedAbility {
+            ability: Ability::Icebreaker(numero),
+            context_index: Some(ContextualIndex(usize::from(niveau))),
+        },
+    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::comp::{
-        Item, ability::CharacterAbility, inventory::loadout_builder::LoadoutBuilder,
-    };
+    use crate::comp::{Item, inventory::loadout_builder::LoadoutBuilder};
 
     fn inventaire(armes: &(String, Option<String>)) -> Inventory {
         let loadout = LoadoutBuilder::empty()
@@ -803,5 +914,92 @@ mod tests {
         // Une fiche d'avant le jalon A se relit comme « rien d'acquis ».
         let ancienne: Acquis = ron::from_str("()").unwrap();
         assert!(ancienne.est_vide());
+    }
+
+    #[test]
+    fn les_touches_suivent_l_arme_en_mains() {
+        let registre = registre();
+        let numero = |id: &str| registre.numero(id).unwrap_or_else(|| panic!("{id}"));
+        let armes = |jeu: &str| inventaire(&registre.jeu(jeu).unwrap().armes);
+        let mut guerrier =
+            IcebreakerCompetences::nouveau("guerrier", Acquis::par_defaut("guerrier")).unwrap();
+        // Niveau 3 sur la touche 2 : le niveau suit la compétence.
+        guerrier
+            .acquis
+            .jeux
+            .get_mut("grande_epee")
+            .unwrap()
+            .competences
+            .insert("tourbillon".into(), 3);
+
+        // Grande épée en mains : ses deux compétences placées, puis l'ultime.
+        let grande_epee = armes("grande_epee");
+        assert_eq!(
+            guerrier.sur_touche(0, Some(&grande_epee)),
+            Some((numero("balayage_lourd"), 1))
+        );
+        assert_eq!(
+            guerrier.sur_touche(1, Some(&grande_epee)),
+            Some((numero("tourbillon"), 3))
+        );
+        assert_eq!(
+            guerrier.sur_touche(TOUCHE_ULTIME, Some(&grande_epee)),
+            Some((numero("fureur"), NIVEAU_DEPART))
+        );
+        assert_eq!(guerrier.sur_touche(TOUCHES, Some(&grande_epee)), None);
+
+        // Un marteau jamais appris : touches 1 et 2 vides, l'ultime reste.
+        let marteau = armes("marteau");
+        assert_eq!(guerrier.sur_touche(0, Some(&marteau)), None);
+        assert_eq!(guerrier.sur_touche(1, Some(&marteau)), None);
+        assert_eq!(
+            guerrier.sur_touche(TOUCHE_ULTIME, Some(&marteau)),
+            Some((numero("fureur"), NIVEAU_DEPART))
+        );
+        // Mains vides : pareil.
+        assert_eq!(guerrier.sur_touche(0, None), None);
+        assert!(guerrier.sur_touche(TOUCHE_ULTIME, None).is_some());
+
+        // Le marteau appris, avec une seule compétence placée, sur la touche 2.
+        guerrier.acquis.jeux.insert("marteau".into(), AcquisJeu {
+            competences: [("moulinet".to_string(), 2)].into_iter().collect(),
+            placees: [None, Some("moulinet".into())],
+            ..Default::default()
+        });
+        assert_eq!(guerrier.sur_touche(0, Some(&marteau)), None);
+        assert_eq!(
+            guerrier.sur_touche(1, Some(&marteau)),
+            Some((numero("moulinet"), 2))
+        );
+        // Une compétence d'une autre arme placée par erreur ne part pas.
+        guerrier.acquis.jeux.get_mut("marteau").unwrap().placees[0] = Some("tourbillon".into());
+        guerrier
+            .acquis
+            .jeux
+            .get_mut("marteau")
+            .unwrap()
+            .competences
+            .insert("tourbillon".into(), 1);
+        assert_eq!(guerrier.sur_touche(0, Some(&marteau)), None);
+
+        // L'animation et l'icône d'une compétence sont celles d'une capacité de Veloren.
+        assert_eq!(
+            animation_de(numero("tourbillon"), Some(ContextualIndex(3))),
+            Some("common.abilities.sword.cleaving_whirlwind_slice")
+        );
+        assert_eq!(icone_de(numero("fureur")), Some("common.abilities.axe.furor"));
+        assert_eq!(animation_de(u16::MAX, None), None);
+    }
+
+    #[test]
+    fn une_recharge_se_compte_en_temps_du_serveur() {
+        let mut guerrier =
+            IcebreakerCompetences::nouveau("guerrier", Acquis::par_defaut("guerrier")).unwrap();
+        assert_eq!(guerrier.reste_recharge(4, 10.0), None);
+        guerrier.recharges.insert(4, 16.0);
+        assert_eq!(guerrier.reste_recharge(4, 10.0), Some(6.0));
+        assert_eq!(guerrier.reste_recharge(4, 16.0), None);
+        assert_eq!(guerrier.reste_recharge(4, 20.0), None);
+        assert_eq!(guerrier.reste_recharge(5, 10.0), None);
     }
 }

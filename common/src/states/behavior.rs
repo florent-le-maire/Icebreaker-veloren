@@ -172,6 +172,8 @@ pub struct JoinData<'a> {
     pub prev_phys_caches: &'a ReadStorage<'a, PreviousPhysCache>,
     pub bodies: &'a ReadStorage<'a, Body>,
     pub buffs: Option<&'a Buffs>,
+    /// Icebreaker : compétences du personnage du registre (jalon A) ; absent : capacités de Veloren.
+    pub icebreaker: Option<&'a crate::icebreaker_competences::IcebreakerCompetences>,
 }
 
 pub struct JoinStruct<'a> {
@@ -208,6 +210,8 @@ pub struct JoinStruct<'a> {
     pub prev_phys_caches: &'a ReadStorage<'a, PreviousPhysCache>,
     pub bodies: &'a ReadStorage<'a, Body>,
     pub buffs: Option<&'a Buffs>,
+    /// Icebreaker : compétences du personnage du registre (jalon A).
+    pub icebreaker: Option<&'a crate::icebreaker_competences::IcebreakerCompetences>,
 }
 
 impl<'a> JoinData<'a> {
@@ -258,6 +262,7 @@ impl<'a> JoinData<'a> {
             prev_phys_caches: j.prev_phys_caches,
             bodies: j.bodies,
             buffs: j.buffs,
+            icebreaker: j.icebreaker,
         }
     }
 }
