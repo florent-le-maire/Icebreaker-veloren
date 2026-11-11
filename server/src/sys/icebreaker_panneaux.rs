@@ -4,6 +4,7 @@ use crate::{
     icebreaker_expedition,
     icebreaker_panneaux::{self, IcebreakerPanneaux, PERIODE},
     icebreaker_registre::IcebreakerRegistre,
+    icebreaker_salle,
     icebreaker_services::IcebreakerServices,
     icebreaker_treasury::IcebreakerTreasury,
     icebreaker_village::{self, IcebreakerVillage},
@@ -11,6 +12,7 @@ use crate::{
 };
 use common::{
     comp::{Health, Inventory, ItemKey, Player, Pos, Presence, PresenceKind},
+    icebreaker_competences::{IcebreakerCompetences, SalleArmes},
     resources::{Time, TimeOfDay},
     uid::Uid,
 };
@@ -44,6 +46,7 @@ impl<'a> System<'a> for Sys {
         ReadStorage<'a, Pos>,
         ReadStorage<'a, Inventory>,
         ReadStorage<'a, Health>,
+        ReadStorage<'a, IcebreakerCompetences>,
     );
 
     const NAME: &'static str = "icebreaker_panneaux";
@@ -70,6 +73,7 @@ impl<'a> System<'a> for Sys {
             positions,
             inventories,
             healths,
+            competences,
         ): Self::SystemData,
     ) {
         if panneaux.ouverts.is_empty() {
@@ -83,6 +87,7 @@ impl<'a> System<'a> for Sys {
         let config = icebreaker_village::config();
         let places = buildings.places(village.open_plots());
         let pieces = crate::icebreaker_services::coins();
+        let salle = SalleArmes::actuel();
         let prix_soin = u64::from(services.heal_price());
         let inscrits = icebreaker_expedition::resume(now).map(|expedition| expedition.membres.len());
 
@@ -177,6 +182,14 @@ impl<'a> System<'a> for Sys {
                     players.get(entity),
                     &presences,
                     &players,
+                ),
+                Place::Building(Building::SalleArmes) => icebreaker_salle::panneau(
+                    competences.get(entity),
+                    inventories.get(entity),
+                    bourse,
+                    fantome,
+                    &salle,
+                    ouvert.salle_message.clone(),
                 ),
             };
             if ouvert.panneau.as_ref() != Some(&panneau) {

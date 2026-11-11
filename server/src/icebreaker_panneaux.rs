@@ -31,6 +31,9 @@ pub struct Ouvert {
     pub a_revoir: bool,
     /// Quand il a été reconstruit en dernier (`Time`).
     pub vu: f64,
+    /// Icebreaker A.12 : ce que la dernière commande `/salle` a fait, montré dans le panneau de la
+    /// salle d'armes.
+    pub salle_message: Option<(String, Sorte)>,
 }
 
 /// Qui a le plan du village ouvert.
@@ -53,6 +56,7 @@ impl IcebreakerPanneaux {
         let ouvert = self.ouverts.entry(entity).or_default();
         ouvert.place = Some(place);
         ouvert.panneau = None;
+        ouvert.salle_message = None;
         ouvert.a_revoir = true;
     }
 

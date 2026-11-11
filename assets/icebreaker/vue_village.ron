@@ -9,7 +9,7 @@
     rayon_sortie: 120.0,
     // Apparence de chaque sorte de bâtiment sur le plan (X.4) : couleur (rouge, vert, bleu de 0 à 1) du
     // cadre et du nom, et icône du HUD parmi : utilitaire, potion, vivres, globe, outils, armes, armure, buche,
-    // lingot, planeur (ou rien). Les sortes : entrepot, caisse, intendance, infirmerie, depart, charrette,
+    // lingot, planeur (ou rien). Les sortes : entrepot, caisse, intendance, infirmerie, depart, charrette, salle_armes,
     // terrain (à bâtir), chantier.
     apparences: {
         "entrepot": (couleur: (0.95, 0.75, 0.3), icone: "utilitaire"),
@@ -18,6 +18,7 @@
         "infirmerie": (couleur: (1.0, 0.45, 0.45), icone: "potion"),
         "depart": (couleur: (0.8, 0.55, 1.0), icone: "globe"),
         "charrette": (couleur: (0.6, 1.0, 0.6), icone: "armure"),
+        "salle_armes": (couleur: (0.85, 0.6, 0.35), icone: "epees"),
         "terrain": (couleur: (0.3, 0.9, 0.3), icone: "buche"),
         "chantier": (couleur: (1.0, 0.6, 0.2), icone: "outils"),
     },

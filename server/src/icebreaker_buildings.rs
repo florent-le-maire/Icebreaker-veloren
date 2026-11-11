@@ -31,17 +31,20 @@ pub enum Building {
     Departure,
     /// Where the recruits wait, and the common registry (jalon R).
     Charrette,
+    /// Icebreaker A.11: where the weapon sets, skills, ultimates and passives are learned and set.
+    SalleArmes,
 }
 
 impl Building {
     /// In the order of the village's houses, nearest to the square first.
-    pub const ALL: [Building; 6] = [
+    pub const ALL: [Building; 7] = [
         Building::Warehouse,
         Building::Treasury,
         Building::Intendance,
         Building::Infirmary,
         Building::Departure,
         Building::Charrette,
+        Building::SalleArmes,
     ];
 
     /// Its id in the data files (`village.ron`, `vue_village.ron`) and the
@@ -54,6 +57,7 @@ impl Building {
             Building::Infirmary => "infirmerie",
             Building::Departure => "depart",
             Building::Charrette => "charrette",
+            Building::SalleArmes => "salle_armes",
         }
     }
 
@@ -65,6 +69,7 @@ impl Building {
             Building::Infirmary => "Infirmerie",
             Building::Departure => "Départ",
             Building::Charrette => "Charrette",
+            Building::SalleArmes => "Salle d'armes",
         }
     }
 }
@@ -165,7 +170,9 @@ pub fn liste(
             let (nom, sorte, etat) = match place {
                 Place::Building(building) => {
                     let etat = match building {
-                        Building::Warehouse | Building::Intendance => String::new(),
+                        Building::Warehouse | Building::Intendance | Building::SalleArmes => {
+                            String::new()
+                        },
                         Building::Treasury => format!("{caisse} or"),
                         Building::Infirmary => format!("Soin : {prix_soin} or"),
                         Building::Departure => inscrits
@@ -330,6 +337,26 @@ mod tests {
         assert_eq!(at(45.0, 1.0), Some(Place::Building(Building::Infirmary)));
         assert_eq!(at(65.0, 1.0), Some(Place::Plot(7)));
         assert_eq!(at(15.0, 5.0), None);
+    }
+
+    // Icebreaker A.11: the weapons hall comes last, so the houses of the other buildings keep
+    // their rank.
+    #[test]
+    fn the_weapons_hall_is_the_seventh_building_and_the_others_keep_their_rank() {
+        use Building::*;
+        assert_eq!(Building::ALL, [
+            Warehouse, Treasury, Intendance, Infirmary, Departure, Charrette, SalleArmes
+        ]);
+        assert_eq!(SalleArmes.id(), "salle_armes");
+        assert_eq!(SalleArmes.name(), "Salle d'armes");
+        let ids: std::collections::HashSet<_> = Building::ALL.iter().map(|b| b.id()).collect();
+        assert_eq!(ids.len(), Building::ALL.len(), "ids are unique");
+        // Its sign and its look are in the data files.
+        let config = crate::icebreaker_village::config();
+        assert!(config.enseignes.contains_key("salle_armes"));
+        for building in Building::ALL {
+            assert!(config.enseignes.contains_key(building.id()), "{building:?}");
+        }
     }
 
     #[test]

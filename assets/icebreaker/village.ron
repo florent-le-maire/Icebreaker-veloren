@@ -1,8 +1,8 @@
 // Icebreaker : le village qui grandit (jalon C, docs/icebreaker/PLAN.md).
 //
 // La ville complète est prévue dès le départ ; ses maisons sont rangées de la plus
-// proche à la plus éloignée de la place. Les 6 premières tiennent les bâtiments
-// (entrepôt, caisse, intendance, infirmerie, départ, charrette) et sont toujours bâties. Les autres
+// proche à la plus éloignée de la place. Les 7 premières tiennent les bâtiments
+// (entrepôt, caisse, intendance, infirmerie, départ, charrette, salle d'armes) et sont toujours bâties. Les autres
 // sont des terrains à bâtir. Ce qui est bâti est gardé dans la campagne
 // (`campagne/village.ron`).
 (
@@ -25,5 +25,6 @@
         "infirmerie": ["Cauldron", "Bedroll", "Lantern", "Bedroll"],
         "depart": ["Sign", "Tent", "Lantern", "Sign"],
         "charrette": ["Crate", "Barrel", "Sign", "Crate"],
+        "salle_armes": ["Anvil", "Lantern", "Barrel", "Anvil"],
     },
 )

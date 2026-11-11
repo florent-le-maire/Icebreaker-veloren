@@ -233,6 +233,8 @@ pub struct IcebreakerSettings {
     pub departure_offset: (f32, f32),
     /// Where the cart of the recruits is (jalon R), likewise.
     pub charrette_offset: (f32, f32),
+    /// Where the weapons hall is (jalon A), likewise.
+    pub salle_offset: (f32, f32),
     /// What the healer asks (in coins) to heal fully.
     pub heal_price: u32,
 }
@@ -248,6 +250,7 @@ impl Default for IcebreakerSettings {
             healer_offset: (0.0, -5.0),
             departure_offset: (0.0, 10.0),
             charrette_offset: (0.0, -10.0),
+            salle_offset: (10.0, 0.0),
             heal_price: 60,
         }
     }

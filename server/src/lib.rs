@@ -31,6 +31,7 @@ pub mod icebreaker_mort;
 pub mod icebreaker_panneaux;
 pub mod icebreaker_registre;
 pub mod icebreaker_return;
+pub mod icebreaker_salle;
 pub mod icebreaker_services;
 pub mod icebreaker_slots;
 pub mod icebreaker_treasury;
@@ -579,6 +580,7 @@ impl Server {
                 settings.icebreaker.healer_offset,
                 settings.icebreaker.departure_offset,
                 settings.icebreaker.charrette_offset,
+                settings.icebreaker.salle_offset,
             ];
             let square = spawn_point.0.xy().as_::<i32>();
             let houses = instance_site
@@ -596,7 +598,9 @@ impl Server {
                 .enumerate()
                 .map(|(i, offset)| {
                     let houses = houses.as_ref()?;
-                    let inside = i != icebreaker_buildings::Building::ALL.len() - 1;
+                    // Icebreaker A.11: the cart is the one whose NPC stays out, at the door.
+                    let inside = icebreaker_buildings::Building::ALL.get(i)
+                        != Some(&icebreaker_buildings::Building::Charrette);
                     let Some(house) = houses.get(i) else {
                         let wpos = square + Vec2::<f32>::from(*offset).as_::<i32>();
                         let pos = world.find_accessible_pos(index.as_index_ref(), wpos, false);
