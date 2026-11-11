@@ -101,13 +101,16 @@ touché). Plus tard, en données seulement : deux épées, hache + épée (la ha
 
 Un commit par tâche, fusion dans `master` à chaque tâche ; le jeu reste lançable après chacune.
 
-- [ ] **A.0 Docs et piste** — ce plan, `decisions/0020`, `design/classes.md` (section Veloren), jalon dans `README.md`,
-  Q13 tranchée et Q43 à Q46 dans `QUESTIONS.md`, les deux todos de `A-FAIRE.md` pris en compte.
-- [ ] **A.1 Données et règles** — types, lecture, `jeu_en_main`, `effectif`, points ; guerrier : 4 jeux × 4
-  compétences. *Fin* : chaque `capacite` se charge. `cargo test -p veloren-common icebreaker_competences`.
+- [x] **A.0 Docs et piste** — ce plan, `decisions/0020`, `design/classes.md` (section Veloren), jalon dans `README.md`,
+  Q13 tranchée et Q43 à Q46 dans `QUESTIONS.md`, les deux todos de `A-FAIRE.md` pris en compte. — 2c06ecba34
+- [x] **A.1 Données et règles** — `common/src/icebreaker_competences.rs` et données du guerrier (4 jeux d'armes × 4
+  compétences, 3 ultimes, inné et 4 passifs, `salle_armes.ron`). Une classe sans jeu d'armes en données (mage, archer)
+  garde les compétences de Veloren jusqu'à A.16 et A.17. Testé (5 tests ciblés) ; rien n'est encore branché en jeu.
+  — dcc97f21ba
 - [ ] **A.2 Maquettes** — canvas du jalon N : barre (2 + ultime + passif, recharge), fiche d'une recrue, salle
   d'armes. *Fin* : Flo valide. Sans code, en parallèle de A.3 à A.5.
-- [ ] **A.3 Fiche et composant** — `acquis`, lot par défaut, composant à l'entrée en jeu, réécriture au retour.
+- [ ] **A.3 Fiche et composant** — *en cours : Veloren-classes, 2026-11-11* — `acquis`, lot par défaut, composant à
+  l'entrée en jeu, réécriture au retour.
   *Fin* : un ancien `registre.ron` se relit ; le client reçoit le composant. Tests du registre, client texte.
 - [ ] **A.4 Touches 1 et 2** *(risquée, cœur du jalon)* — variante, crochet, postures neutralisées, cases de la
   barre, `!touche n` dans `chat_cli`. *Fin* : la touche 1 lance la compétence avec son animation.
