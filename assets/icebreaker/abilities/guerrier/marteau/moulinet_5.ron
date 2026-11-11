@@ -1,0 +1,30 @@
+// Icebreaker : Moulinet niveau 5 (jalon A) — copie de common.abilities.hammer.heavy_whorl, garde la portée et le poise du niveau 3 et ajoute : les ennemis touchés sont ralentis 5 s (Crippled), recul 25, portée 5.
+BasicMelee(
+    energy_cost: 15,
+    buildup_duration: 0.2,
+    swing_duration: 0.3,
+    hit_timing: 0.5,
+    recover_duration: 0.4,
+    melee_constructor: (
+        kind: Bash(
+            damage: 15,
+            poise: 40,
+            knockback: 25,
+            energy_regen: 0,
+        ),
+        range: 5.0,
+        angle: 360,
+        multi_target: Some(Normal),
+        damage_effect: Some(Buff((
+            kind: Crippled,
+            dur_secs: 5.0,
+            strength: Value(0.3),
+            chance: 1.0,
+        ))),
+    ),
+    ori_modifier: (
+        buildup: Some(0.2),
+        action: Some(0.2),
+        recover: Some(0.2),
+    ),
+)

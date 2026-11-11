@@ -1,0 +1,32 @@
+// Icebreaker : Fracasse-crâne niveau 5 (jalon A) — copie de common.abilities.axe.skull_bash : garde l'estropiement du niveau 3, poise 60 -> 100, et 50 % de dégâts en plus sur une cible qui saigne.
+ComboMelee2(
+    strikes: [
+        (
+            melee_constructor: (
+                kind: Bash(
+                    damage: 14,
+                    poise: 100,
+                    knockback: 0,
+                    energy_regen: 0,
+                ),
+                range: 3.0,
+                angle: 45.0,
+                damage_effect: Some(Buff((
+                    kind: Crippled,
+                    dur_secs: 5.0,
+                    strength: Value(0.4),
+                    chance: 1.0,
+                ))),
+                attack_effect: Some((
+                    AdditionalDamage(0.5),
+                    TargetHasBuff(Bleeding),
+                )),
+            ),
+            buildup_duration: 0.2,
+            swing_duration: 0.1,
+            hit_timing: 0.5,
+            recover_duration: 0.25,
+        ),
+    ],
+    energy_cost_per_strike: 10,
+)

@@ -1,0 +1,21 @@
+// Icebreaker : Ravage niveau 5 (jalon A) — copie de common.abilities.axe.fierce_raze : garde les quatre coups du niveau 3 et chaque coup rend de la vie (Lifesteal 0.25).
+RapidMelee(
+    buildup_duration: 0.2,
+    swing_duration: 0.1,
+    recover_duration: 0.15,
+    melee_constructor: (
+        kind: Slash(
+            damage: 9,
+            poise: 3,
+            knockback: 0,
+            energy_regen: 0,
+        ),
+        range: 4.0,
+        angle: 10.0,
+        damage_effect: Some(Lifesteal(0.25)),
+    ),
+    energy_cost: 8,
+    max_strikes: Some(4),
+    move_modifier: 0.35,
+    ori_modifier: 0.25,
+)

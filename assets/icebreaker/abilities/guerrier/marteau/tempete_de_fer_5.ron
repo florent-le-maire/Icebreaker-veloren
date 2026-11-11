@@ -1,0 +1,27 @@
+// Icebreaker : Tempête de fer niveau 5 (jalon A) — copie de common.abilities.hammer.iron_tempest, garde 12 coups et la mobilité du niveau 3 et ajoute : poise 18 par coup (les ennemis vacillent), ralentissement 3 s (Crippled), portée 4,5.
+RapidMelee(
+    buildup_duration: 0.4,
+    swing_duration: 0.2,
+    recover_duration: 0.4,
+    melee_constructor: (
+        kind: Bash(
+            damage: 5,
+            poise: 18,
+            knockback: 5,
+            energy_regen: 0,
+        ),
+        range: 4.5,
+        angle: 360.0,
+        multi_target: Some(Normal),
+        damage_effect: Some(Buff((
+            kind: Crippled,
+            dur_secs: 3.0,
+            strength: Value(0.3),
+            chance: 1.0,
+        ))),
+    ),
+    energy_cost: 3,
+    max_strikes: Some(12),
+    move_modifier: 0.4,
+    ori_modifier: 1.0,
+)

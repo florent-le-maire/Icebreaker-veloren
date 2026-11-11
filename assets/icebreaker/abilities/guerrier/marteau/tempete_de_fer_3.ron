@@ -1,0 +1,21 @@
+// Icebreaker : Tempête de fer niveau 3 (jalon A) — copie de common.abilities.hammer.iron_tempest : 12 coups au lieu de 8, portée 4,0, on se déplace plus vite pendant le tourbillon (move_modifier 0,4).
+RapidMelee(
+    buildup_duration: 0.4,
+    swing_duration: 0.2,
+    recover_duration: 0.4,
+    melee_constructor: (
+        kind: Bash(
+            damage: 5,
+            poise: 10,
+            knockback: 5,
+            energy_regen: 0,
+        ),
+        range: 4.0,
+        angle: 360.0,
+        multi_target: Some(Normal),
+    ),
+    energy_cost: 3,
+    max_strikes: Some(12),
+    move_modifier: 0.4,
+    ori_modifier: 1.0,
+)

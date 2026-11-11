@@ -1,0 +1,46 @@
+// Icebreaker : Balayage lourd niveau 3 (jalon A) — copie de common.abilities.sword.heavy_sweep : un deuxième coup de retour enchaîné, plus faible, qui déséquilibre encore.
+ComboMelee2(
+    strikes: [
+        (
+            melee_constructor: (
+                kind: Slash(
+                    damage: 20,
+                    poise: 20,
+                    knockback: 0,
+                    energy_regen: 0,
+                ),
+                range: 4.0,
+                angle: 90.0,
+                attack_effect: Some((
+                    AdditionalDamage(0.7),
+                    TargetPoised,
+                )),
+            ),
+            buildup_duration: 0.3,
+            swing_duration: 0.2,
+            hit_timing: 0.5,
+            recover_duration: 0.1,
+        ),
+        (
+            melee_constructor: (
+                kind: Slash(
+                    damage: 5,
+                    poise: 20,
+                    knockback: 0,
+                    energy_regen: 0,
+                ),
+                range: 4.0,
+                angle: 90.0,
+                attack_effect: Some((
+                    AdditionalDamage(0.7),
+                    TargetPoised,
+                )),
+            ),
+            buildup_duration: 0.15,
+            swing_duration: 0.2,
+            hit_timing: 0.5,
+            recover_duration: 0.2,
+        ),
+    ],
+    energy_cost_per_strike: 12,
+)

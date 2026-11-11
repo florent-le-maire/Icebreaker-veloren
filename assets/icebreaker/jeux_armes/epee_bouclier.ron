@@ -14,24 +14,48 @@
             description: "Pare le coup qui arrive, puis frappe en retour.",
             capacite: "common.abilities.sword.defensive_riposte",
             recharge: 8.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.guerrier.epee_bouclier.riposte_3", texte: "La riposte repousse l'ennemi et brise sa garde ; zone plus large."),
+                (puissance: 1.25, recharge: 0.85, texte: "25 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.25, recharge: 0.85, capacite: "icebreaker.abilities.guerrier.epee_bouclier.riposte_5", texte: "La riposte vole de la vie à l'ennemi et le projette plus loin."),
+            ],
         )),
         ("coup_de_pommeau", (
             nom: "Coup de pommeau",
             description: "Un coup court qui fait vaciller, surtout un ennemi en garde.",
             capacite: "common.abilities.sword.heavy_pommel_strike",
             recharge: 7.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.guerrier.epee_bouclier.coup_de_pommeau_3", texte: "L'ennemi touché vacille et recule, même s'il est en garde."),
+                (puissance: 1.25, recharge: 0.85, texte: "25 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.25, recharge: 0.85, capacite: "icebreaker.abilities.guerrier.epee_bouclier.coup_de_pommeau_5", texte: "Le coup balaie tous les ennemis devant soi et les projette."),
+            ],
         )),
         ("estoc", (
             nom: "Estoc",
             description: "Une fente en avant qui touche de loin.",
             capacite: "common.abilities.sword.basic_skewer",
             recharge: 6.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.guerrier.epee_bouclier.estoc_3", texte: "L'estoc traverse : il touche tous les ennemis sur sa ligne."),
+                (puissance: 1.3, recharge: 0.85, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.3, recharge: 0.85, capacite: "icebreaker.abilities.guerrier.epee_bouclier.estoc_5", texte: "La lame ouvre une plaie : l'ennemi saigne pendant 8 secondes."),
+            ],
         )),
         ("degagement", (
             nom: "Dégagement",
             description: "Un bond en arrière pour reprendre ses distances.",
             capacite: "common.abilities.sword.defensive_disengage",
             recharge: 9.0,
+            niveaux: [
+                (recharge: 0.9, texte: "Recharge plus courte."),
+                (recharge: 0.9, capacite: "icebreaker.abilities.guerrier.epee_bouclier.degagement_3", texte: "Un coup de bouclier repousse tous les ennemis au contact pendant le bond."),
+                (recharge: 0.75, texte: "Recharge nettement plus courte."),
+                (recharge: 0.75, capacite: "icebreaker.abilities.guerrier.epee_bouclier.degagement_5", texte: "Si le coup touche, une protection couvre le guerrier pendant 6 secondes."),
+            ],
         )),
     ],
 )

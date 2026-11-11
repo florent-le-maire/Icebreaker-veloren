@@ -1,0 +1,32 @@
+// Icebreaker : Frappe cruelle niveau 5 (jalon A) — copie de frappe_cruelle_3 : saignement plus long (9 s) et vol de vie (15 % des dégâts rendus en vie).
+ComboMelee2(
+    strikes: [
+        (
+            melee_constructor: (
+                kind: Slash(
+                    damage: 19,
+                    poise: 5,
+                    knockback: 0,
+                    energy_regen: 0,
+                ),
+                range: 3.5,
+                angle: 20.0,
+                damage_effect: Some(Buff((
+                    kind: Bleeding,
+                    dur_secs: 9.0,
+                    strength: DamageFraction(0.6),
+                    chance: 1.0,
+                ))),
+                attack_effect: Some((
+                    Lifesteal(0.15),
+                    AnyDamage,
+                )),
+            ),
+            buildup_duration: 0.05,
+            swing_duration: 0.05,
+            hit_timing: 0.5,
+            recover_duration: 0.6,
+        ),
+    ],
+    energy_cost_per_strike: 5,
+)

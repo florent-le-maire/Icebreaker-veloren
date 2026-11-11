@@ -18,24 +18,48 @@
             description: "Un large coup qui fauche devant soi et punit les ennemis déséquilibrés.",
             capacite: "common.abilities.sword.heavy_sweep",
             recharge: 6.0,
+            niveaux: [
+                (puissance: 1.1, texte: "10 % de dégâts en plus."),
+                (puissance: 1.1, capacite: "icebreaker.abilities.guerrier.grande_epee.balayage_lourd_3", texte: "Un second coup de retour suit le premier et déséquilibre encore."),
+                (puissance: 1.15, recharge: 0.9, texte: "15 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.15, recharge: 0.9, capacite: "icebreaker.abilities.guerrier.grande_epee.balayage_lourd_5", texte: "Le balayage est plus large et les ennemis touchés vacillent."),
+            ],
         )),
         ("tourbillon", (
             nom: "Tourbillon",
             description: "Deux tours d'épée qui touchent tout autour.",
             capacite: "common.abilities.sword.cleaving_whirlwind_slice",
             recharge: 10.0,
+            niveaux: [
+                (puissance: 1.1, texte: "10 % de dégâts en plus."),
+                (puissance: 1.0, capacite: "icebreaker.abilities.guerrier.grande_epee.tourbillon_3", texte: "Un troisième tour d'épée, et la zone s'élargit."),
+                (puissance: 1.1, recharge: 0.9, texte: "10 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.1, recharge: 0.9, capacite: "icebreaker.abilities.guerrier.grande_epee.tourbillon_5", texte: "La zone s'élargit encore et les ennemis touchés sont ralentis."),
+            ],
         )),
         ("fendeur_de_terre", (
             nom: "Fendeur de terre",
             description: "Un saut, puis une frappe au sol qui repousse autour du point de chute.",
             capacite: "common.abilities.sword.cleaving_earth_splitter",
             recharge: 12.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.guerrier.grande_epee.fendeur_de_terre_3", texte: "L'onde de choc est plus large et repousse plus loin."),
+                (puissance: 1.25, recharge: 0.9, texte: "25 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.25, recharge: 0.9, capacite: "icebreaker.abilities.guerrier.grande_epee.fendeur_de_terre_5", texte: "L'onde est encore plus large et les ennemis touchés vacillent."),
+            ],
         )),
         ("frappe_cruelle", (
             nom: "Frappe cruelle",
             description: "Un coup sec et rapide sur une seule cible.",
             capacite: "common.abilities.sword.basic_fell_strike",
             recharge: 5.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.guerrier.grande_epee.frappe_cruelle_3", texte: "La cible saigne après le coup."),
+                (puissance: 1.25, recharge: 0.85, texte: "25 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.25, recharge: 0.85, capacite: "icebreaker.abilities.guerrier.grande_epee.frappe_cruelle_5", texte: "Le saignement dure plus longtemps et le coup rend de la vie."),
+            ],
         )),
     ],
 )

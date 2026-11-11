@@ -1,0 +1,39 @@
+// Icebreaker : Coup de pommeau niveau 3 (jalon A) — copie de common.abilities.sword.heavy_pommel_strike : l'ennemi touché vacille (déséquilibré 6 s) et est repoussé, quelle que soit sa garde ; poise 20 -> 30.
+ComboMelee2(
+    strikes: [
+        (
+            melee_constructor: (
+                kind: Bash(
+                    damage: 12,
+                    poise: 30,
+                    knockback: 0,
+                    energy_regen: 0,
+                ),
+                range: 2.0,
+                angle: 45.0,
+                blockable: false,
+                damage_effect: Some(Buff((
+                    kind: OffBalance,
+                    dur_secs: 6.0,
+                    strength: Value(0.5),
+                    chance: 1.0,
+                ))),
+                attack_effect: Some((
+                    Knockback((
+                        direction: Away,
+                        strength: 10,
+                    )),
+                    AnyDamage,
+                )),
+            ),
+            buildup_duration: 0.3,
+            swing_duration: 0.15,
+            hit_timing: 0.5,
+            recover_duration: 0.1,
+        ),
+    ],
+    energy_cost_per_strike: 8,
+    meta: (
+        init_event: Some(EnterStance(Sword(Heavy))),
+    ),
+)

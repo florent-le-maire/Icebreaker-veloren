@@ -1,0 +1,40 @@
+// Icebreaker : Coup de pommeau niveau 5 (jalon A) — copie de icebreaker.abilities.guerrier.epee_bouclier.coup_de_pommeau_3 : le coup balaie tous les ennemis devant soi (zone large, plusieurs cibles), recul et poise renforcés.
+ComboMelee2(
+    strikes: [
+        (
+            melee_constructor: (
+                kind: Bash(
+                    damage: 12,
+                    poise: 40,
+                    knockback: 0,
+                    energy_regen: 0,
+                ),
+                range: 3.0,
+                angle: 100.0,
+                blockable: false,
+                multi_target: Some(Normal),
+                damage_effect: Some(Buff((
+                    kind: OffBalance,
+                    dur_secs: 6.0,
+                    strength: Value(0.5),
+                    chance: 1.0,
+                ))),
+                attack_effect: Some((
+                    Knockback((
+                        direction: Away,
+                        strength: 14,
+                    )),
+                    AnyDamage,
+                )),
+            ),
+            buildup_duration: 0.3,
+            swing_duration: 0.15,
+            hit_timing: 0.5,
+            recover_duration: 0.1,
+        ),
+    ],
+    energy_cost_per_strike: 8,
+    meta: (
+        init_event: Some(EnterStance(Sword(Heavy))),
+    ),
+)

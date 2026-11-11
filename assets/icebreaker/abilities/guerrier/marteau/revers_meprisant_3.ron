@@ -1,0 +1,29 @@
+// Icebreaker : Revers méprisant niveau 3 (jalon A) — copie de common.abilities.hammer.scornful_swipe : arc deux fois plus large (90°), portée 3,5, poise 25 (l'ennemi vacille), recul 8.
+BasicMelee(
+    energy_cost: 20,
+    buildup_duration: 0.5,
+    swing_duration: 0.2,
+    hit_timing: 0.5,
+    recover_duration: 0.2,
+    melee_constructor: (
+        kind: Bash(
+            damage: 23,
+            poise: 25,
+            knockback: 8,
+            energy_regen: 0,
+        ),
+        range: 3.5,
+        angle: 90.0,
+        damage_effect: Some(SelfBuff((
+            kind: ScornfulTaunt,
+            dur_secs: 20.0,
+            strength: Value(0.7),
+            chance: 1.0,
+        ))),
+    ),
+    ori_modifier: (
+        buildup: Some(0.6),
+        action: Some(0.6),
+        recover: Some(0.6),
+    ),
+)

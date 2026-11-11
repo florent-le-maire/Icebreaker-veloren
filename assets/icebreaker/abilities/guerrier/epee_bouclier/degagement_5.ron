@@ -1,0 +1,44 @@
+// Icebreaker : Dégagement niveau 5 (jalon A) — copie de icebreaker.abilities.guerrier.epee_bouclier.degagement_3 : en plus, si le coup touche, le guerrier gagne une protection (ProtectingWard 6 s) ; recul et poise renforcés.
+ComboMelee2(
+    strikes: [
+        (
+            melee_constructor: (
+                kind: Bash(
+                    damage: 4,
+                    poise: 25,
+                    knockback: 0,
+                    energy_regen: 0,
+                ),
+                range: 4.5,
+                angle: 120.0,
+                multi_target: Some(Normal),
+                damage_effect: Some(SelfBuff((
+                    kind: ProtectingWard,
+                    dur_secs: 6.0,
+                    strength: Value(0.3),
+                    chance: 1.0,
+                ))),
+                attack_effect: Some((
+                    Knockback((
+                        direction: Away,
+                        strength: 18,
+                    )),
+                    AnyDamage,
+                )),
+            ),
+            buildup_duration: 0.05,
+            swing_duration: 0.1,
+            hit_timing: 0.3,
+            recover_duration: 0.3,
+            movement: (
+                buildup: None,
+                swing: Some(Reverse(2)),
+                recover: Some(Reverse(1.5)),
+            ),
+        ),
+    ],
+    energy_cost_per_strike: 0,
+    meta: (
+        init_event: Some(EnterStance(Sword(Defensive))),
+    ),
+)

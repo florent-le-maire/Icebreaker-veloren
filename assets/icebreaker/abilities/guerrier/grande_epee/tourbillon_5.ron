@@ -1,0 +1,27 @@
+// Icebreaker : Tourbillon niveau 5 (jalon A) — copie de tourbillon_3 : portée 5,0 et chaque tour ralentit les ennemis touchés (Crippled).
+RapidMelee(
+    buildup_duration: 0.2,
+    swing_duration: 0.2,
+    recover_duration: 0.45,
+    melee_constructor: (
+        kind: Slash(
+            damage: 7,
+            poise: 2.5,
+            knockback: 0,
+            energy_regen: 0,
+        ),
+        range: 5.0,
+        angle: 360.0,
+        multi_target: Some(Normal),
+        damage_effect: Some(Buff((
+            kind: Crippled,
+            dur_secs: 3.0,
+            strength: Value(0.4),
+            chance: 1.0,
+        ))),
+    ),
+    energy_cost: 5,
+    max_strikes: Some(3),
+    ori_modifier: 0.3,
+    move_modifier: 1.0,
+)

@@ -1,0 +1,29 @@
+// Icebreaker : Riposte niveau 3 (jalon A) — copie de common.abilities.sword.defensive_riposte : la riposte repousse l'ennemi et brise sa garde (poise 5 -> 20, recul), zone un peu plus large.
+RiposteMelee(
+    energy_cost: 5,
+    buildup_duration: 0.4,
+    swing_duration: 0.1,
+    recover_duration: 0.2,
+    whiffed_recover_duration: 0.6,
+    block_strength: 1.0,
+    melee_constructor: (
+        kind: Slash(
+            damage: 13,
+            poise: 20,
+            knockback: 0,
+            energy_regen: 0,
+        ),
+        range: 4.5,
+        angle: 35.0,
+        attack_effect: Some((
+            Knockback((
+                direction: Away,
+                strength: 12,
+            )),
+            AnyDamage,
+        )),
+    ),
+    meta: (
+        init_event: Some(EnterStance(Sword(Defensive))),
+    ),
+)

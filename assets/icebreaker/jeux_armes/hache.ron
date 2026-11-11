@@ -12,24 +12,48 @@
             description: "Un grand cercle de hache autour de soi.",
             capacite: "common.abilities.axe.brutal_swing",
             recharge: 6.0,
+            niveaux: [
+                (puissance: 1.1, texte: "10 % de dégâts en plus."),
+                (puissance: 1.1, capacite: "icebreaker.abilities.guerrier.hache.coup_brutal_3", texte: "Le cercle repousse les ennemis et les déséquilibre."),
+                (puissance: 1.15, recharge: 0.9, texte: "15 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.15, recharge: 0.9, capacite: "icebreaker.abilities.guerrier.hache.coup_brutal_5", texte: "Un second tour de hache suit le premier."),
+            ],
         )),
         ("ratissage", (
             nom: "Ratissage",
             description: "Une entaille qui fait saigner.",
             capacite: "common.abilities.axe.rake",
             recharge: 8.0,
+            niveaux: [
+                (puissance: 1.1, texte: "10 % de dégâts en plus."),
+                (puissance: 1.1, capacite: "icebreaker.abilities.guerrier.hache.ratissage_3", texte: "La plaie est plus profonde : le saignement dure 12 secondes et fait plus mal."),
+                (puissance: 1.15, portee: 1.1, recharge: 0.9, texte: "15 % de dégâts en plus, portée et recharge améliorées."),
+                (puissance: 1.15, portee: 1.1, recharge: 0.9, capacite: "icebreaker.abilities.guerrier.hache.ratissage_5", texte: "Frappe 40 % plus fort une cible qui saigne déjà."),
+            ],
         )),
         ("fracasse_crane", (
             nom: "Fracasse-crâne",
             description: "Un coup du plat de la hache qui fait vaciller presque à coup sûr.",
             capacite: "common.abilities.axe.skull_bash",
             recharge: 10.0,
+            niveaux: [
+                (puissance: 1.1, texte: "10 % de dégâts en plus."),
+                (puissance: 1.1, capacite: "icebreaker.abilities.guerrier.hache.fracasse_crane_3", texte: "Le coup estropie la cible : elle ralentit pendant 5 secondes."),
+                (puissance: 1.2, recharge: 0.9, texte: "20 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.2, recharge: 0.9, capacite: "icebreaker.abilities.guerrier.hache.fracasse_crane_5", texte: "Déséquilibre presque à coup sûr et frappe 50 % plus fort une cible qui saigne."),
+            ],
         )),
         ("ravage", (
             nom: "Ravage",
             description: "Trois coups rapides enchaînés sur la même cible.",
             capacite: "common.abilities.axe.fierce_raze",
             recharge: 9.0,
+            niveaux: [
+                (puissance: 1.1, texte: "10 % de dégâts en plus."),
+                (puissance: 1.0, capacite: "icebreaker.abilities.guerrier.hache.ravage_3", texte: "Un quatrième coup s'ajoute à la rafale."),
+                (puissance: 1.1, recharge: 0.9, texte: "10 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.1, recharge: 0.9, capacite: "icebreaker.abilities.guerrier.hache.ravage_5", texte: "Chaque coup rend de la vie au guerrier."),
+            ],
         )),
     ],
 )

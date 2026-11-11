@@ -12,24 +12,48 @@
             description: "Un revers qui repousse et galvanise celui qui le porte.",
             capacite: "common.abilities.hammer.scornful_swipe",
             recharge: 8.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.guerrier.marteau.revers_meprisant_3", texte: "Le revers balaie un arc deux fois plus large, repousse plus fort et fait vaciller."),
+                (puissance: 1.3, recharge: 0.85, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.3, recharge: 0.85, capacite: "icebreaker.abilities.guerrier.marteau.revers_meprisant_5", texte: "Le revers frappe tous les ennemis de l'arc, les projette et galvanise plus longtemps."),
+            ],
         )),
         ("moulinet", (
             nom: "Moulinet",
             description: "Un tour complet qui envoie valser tout ce qui est au contact.",
             capacite: "common.abilities.hammer.heavy_whorl",
             recharge: 8.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.guerrier.marteau.moulinet_3", texte: "Le tour porte plus loin, repousse plus fort et fait vaciller tout le monde."),
+                (puissance: 1.3, recharge: 0.85, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.3, recharge: 0.85, capacite: "icebreaker.abilities.guerrier.marteau.moulinet_5", texte: "Les ennemis touchés sont ralentis et le tour porte encore plus loin."),
+            ],
         )),
         ("interception", (
             nom: "Interception",
             description: "Une charge en avant qui percute et repousse.",
             capacite: "common.abilities.hammer.intercept",
             recharge: 10.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.guerrier.marteau.interception_3", texte: "La charge dure plus longtemps, couvre un cône plus large et déséquilibre davantage."),
+                (puissance: 1.3, recharge: 0.85, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.3, recharge: 0.85, capacite: "icebreaker.abilities.guerrier.marteau.interception_5", texte: "Charge plus rapide : l'ennemi percuté reste cloué au sol deux secondes."),
+            ],
         )),
         ("tempete_de_fer", (
             nom: "Tempête de fer",
             description: "Le marteau tourne sans s'arrêter et frappe tout autour, jusqu'à huit fois.",
             capacite: "common.abilities.hammer.iron_tempest",
             recharge: 14.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.guerrier.marteau.tempete_de_fer_3", texte: "Douze coups au lieu de huit, portée plus grande, on se déplace plus vite en tournant."),
+                (puissance: 1.3, recharge: 0.85, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.3, recharge: 0.85, capacite: "icebreaker.abilities.guerrier.marteau.tempete_de_fer_5", texte: "Chaque coup fait vaciller, et les ennemis pris dans la tempête sont ralentis."),
+            ],
         )),
     ],
 )

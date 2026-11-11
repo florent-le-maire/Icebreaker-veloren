@@ -1,0 +1,38 @@
+// Icebreaker : Dégagement niveau 3 (jalon A) — copie de common.abilities.sword.defensive_disengage : un coup de bouclier (dégâts 0 -> 4) repousse tous les ennemis au contact pendant le bond, zone large (multi_target).
+ComboMelee2(
+    strikes: [
+        (
+            melee_constructor: (
+                kind: Bash(
+                    damage: 4,
+                    poise: 15,
+                    knockback: 0,
+                    energy_regen: 0,
+                ),
+                range: 4.0,
+                angle: 120.0,
+                multi_target: Some(Normal),
+                attack_effect: Some((
+                    Knockback((
+                        direction: Away,
+                        strength: 14,
+                    )),
+                    AnyDamage,
+                )),
+            ),
+            buildup_duration: 0.05,
+            swing_duration: 0.1,
+            hit_timing: 0.3,
+            recover_duration: 0.3,
+            movement: (
+                buildup: None,
+                swing: Some(Reverse(2)),
+                recover: Some(Reverse(1.5)),
+            ),
+        ),
+    ],
+    energy_cost_per_strike: 0,
+    meta: (
+        init_event: Some(EnterStance(Sword(Defensive))),
+    ),
+)
