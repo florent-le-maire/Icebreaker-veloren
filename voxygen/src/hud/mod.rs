@@ -4772,6 +4772,22 @@ impl Hud {
                 },
             }
         }
+        // Icebreaker : ce que montrent les trois cases de compétences du personnage vu (A.6) ;
+        // sans le composant, la barre reste celle de Veloren.
+        {
+            use specs::WorldExt;
+            let ecs = client.state().ecs();
+            let competences = ecs.read_storage::<common::icebreaker_competences::IcebreakerCompetences>();
+            crate::icebreaker_competences::rafraichir(
+                competences.get(info.viewpoint_entity).map(|competences| {
+                    crate::icebreaker_competences::cases(
+                        competences,
+                        client.inventories().get(info.viewpoint_entity),
+                        ecs.read_resource::<common::resources::Time>().0,
+                    )
+                }),
+            );
+        }
         self.hotbar.maintain_abilities(client, &info);
 
         // Temporary Example Quest

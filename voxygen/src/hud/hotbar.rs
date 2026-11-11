@@ -69,6 +69,20 @@ impl State {
     // Removes ability slots if not there and shouldn't be present
     pub fn maintain_abilities(&mut self, client: &client::Client, info: &HudInfo) {
         use specs::WorldExt;
+        // Icebreaker : un personnage qui a nos compétences montre les siennes sur les cases 1 à 3
+        // (touches 1 à 3) ; toute autre case de capacité est vidée, les objets restent (A.6).
+        if crate::icebreaker_competences::actif() {
+            for (i, hotbar_slot) in self.slots.iter_mut().enumerate() {
+                if i < common::icebreaker_competences::TOUCHES
+                    && crate::icebreaker_competences::case(i).is_some()
+                {
+                    *hotbar_slot = Some(SlotContents::Ability(i));
+                } else if matches!(hotbar_slot, Some(SlotContents::Ability(_))) {
+                    *hotbar_slot = None;
+                }
+            }
+            return;
+        }
         if let Some(active_abilities) = client
             .state()
             .ecs()

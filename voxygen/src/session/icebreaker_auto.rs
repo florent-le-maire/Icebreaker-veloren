@@ -29,6 +29,8 @@ pub enum Pas {
     Fermer,
     /// Mort, regarder l'allié suivant (le clic gauche).
     Regarder,
+    /// Appuyer (`true`) ou relâcher (`false`) la touche de compétence `n` (comptée depuis zéro).
+    Touche(usize, bool),
     /// Cliquer le bâtiment de cette sorte.
     Cliquer(String),
     /// Envoyer cette commande (nom, arguments), comme un bouton du panneau.
@@ -56,6 +58,16 @@ impl Auto {
             .map(str::trim)
             .filter(|sorte| !sorte.is_empty() && *sorte != "plan")
         {
+            // `touche 1` : la touche de compétence 1 (A.6), appuyée, capturée, relâchée au pas
+            // suivant.
+            if let Some(n) = sorte
+                .strip_prefix("touche ")
+                .and_then(|n| n.trim().parse::<usize>().ok())
+                .and_then(|n| n.checked_sub(1))
+            {
+                a_faire.extend([Pas::Touche(n, true), Pas::Capturer, Pas::Touche(n, false)]);
+                continue;
+            }
             a_faire.push_back(match sorte.strip_prefix('/') {
                 Some(commande) => {
                     let mut mots = commande.split_whitespace().map(str::to_string);

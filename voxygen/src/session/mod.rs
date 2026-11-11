@@ -1891,6 +1891,12 @@ impl PlayState for SessionState {
                         }
                     },
                     icebreaker_auto::Pas::Fermer => self.quitter_icebreaker_top_view(),
+                    icebreaker_auto::Pas::Touche(n, appuyee) => {
+                        // Icebreaker : la touche de compétence n (A.6).
+                        self.client
+                            .borrow_mut()
+                            .handle_input(InputKind::Ability(n), appuyee, None, None);
+                    },
                     icebreaker_auto::Pas::Regarder => {
                         // Comme le clic gauche d'un mort (T.4).
                         let mut client = self.client.borrow_mut();

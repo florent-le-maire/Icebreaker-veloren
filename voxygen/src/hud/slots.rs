@@ -172,7 +172,16 @@ impl<'a> SlotKey<HotbarSource<'a>, HotbarImageSource<'a>> for HotbarSlot {
                     None => Some((HotbarImage::Item(item_key), Some(GREYED_OUT))),
                 }
             },
+            // Icebreaker : la compétence du jeu d'armes ou l'ultime ; grisée en recharge ou faute
+            // d'endurance (A.6).
             hotbar::SlotContents::Ability(i) => {
+                if let Some(case) = crate::icebreaker_competences::case(i) {
+                    let grise = case.reste.is_some() || energy.current() < case.endurance;
+                    return Some((
+                        HotbarImage::Ability(case.icone.to_string()),
+                        Some(if grise { GREYED_OUT } else { Color::Rgba(1.0, 1.0, 1.0, 1.0) }),
+                    ));
+                }
                 let ability_id = active_abilities.and_then(|a| {
                     a.auxiliary_set(Some(inventory), Some(skillset))
                         .get(i)

@@ -55,6 +55,11 @@ widget_ids! {
         // Icebreaker : les secondes de recharge de la balise, au centre de son emplacement (N.7)
         icebreaker_balise_reste,
         icebreaker_balise_reste_ombre,
+        // Icebreaker : par case de compétence (touches 1 à 3), les secondes de recharge, leur
+        // ombre et le bord doré de l'ultime (A.6)
+        icebreaker_cases_reste[],
+        icebreaker_cases_ombre[],
+        icebreaker_cases_bord[],
         // Skillbar
         frame,
         bg_health,
@@ -1121,6 +1126,33 @@ impl<'a> Skillbar<'a> {
 
                     (title.into(), desc.into())
                 }),
+                // Icebreaker : nom et niveau, ce que fait la compétence, sa recharge (A.6).
+                hotbar::SlotContents::Ability(i)
+                    if crate::icebreaker_competences::case(i).is_some() =>
+                {
+                    crate::icebreaker_competences::case(i).map(|case| {
+                        let nom = case.nom;
+                        let titre = if case.ultime {
+                            self.localized_strings.get_msg_ctx(
+                                "icebreaker-competence-titre-ultime",
+                                &i18n::fluent_args! { "nom" => nom },
+                            )
+                        } else {
+                            self.localized_strings.get_msg_ctx(
+                                "icebreaker-competence-titre",
+                                &i18n::fluent_args! { "nom" => nom, "niveau" => case.niveau },
+                            )
+                        };
+                        let recharge = self.localized_strings.get_msg_ctx(
+                            "icebreaker-competence-recharge",
+                            &i18n::fluent_args! { "secondes" => case.recharge },
+                        );
+                        (
+                            titre.into_owned().into(),
+                            format!("{}\n{recharge}", case.description).into(),
+                        )
+                    })
+                },
                 hotbar::SlotContents::Ability(i) => active_abilities
                     .and_then(|a| {
                         a.auxiliary_set(Some(inventory), Some(skill_set))
@@ -1198,6 +1230,46 @@ impl<'a> Skillbar<'a> {
                     .color(TEXT_COLOR)
                     .graphics_for(entry.widget_id)
                     .set(state.ids.icebreaker_balise_reste, ui);
+            }
+
+            // Icebreaker : une case de compétence montre les secondes de recharge au centre et,
+            // pour l'ultime, un bord doré (A.6).
+            if let Some(hotbar::SlotContents::Ability(i)) = hotbar::State::get(self.hotbar, entry.slot)
+                && i < common::icebreaker_competences::TOUCHES
+                && let Some(case) = crate::icebreaker_competences::case(i)
+            {
+                if case.ultime {
+                    use conrod_core::Borderable;
+                    widget::BorderedRectangle::new([42.0, 42.0])
+                        .color(color::TRANSPARENT)
+                        .border(2.0)
+                        .border_color(Color::Rgba(1.0, 0.82, 0.4, 1.0))
+                        .middle_of(entry.widget_id)
+                        .graphics_for(entry.widget_id)
+                        .set(state.ids.icebreaker_cases_bord[i], ui);
+                }
+                if let Some(secondes) = case.reste {
+                    let texte = self
+                        .localized_strings
+                        .get_msg_ctx("icebreaker-competence-reste", &i18n::fluent_args! {
+                            "secondes" => secondes,
+                        })
+                        .into_owned();
+                    Text::new(&texte)
+                        .x_y_relative_to(entry.widget_id, 1.0, -1.0)
+                        .font_size(self.fonts.cyri.scale(16))
+                        .font_id(self.fonts.cyri.conrod_id)
+                        .color(BLACK)
+                        .graphics_for(entry.widget_id)
+                        .set(state.ids.icebreaker_cases_ombre[i], ui);
+                    Text::new(&texte)
+                        .middle_of(entry.widget_id)
+                        .font_size(self.fonts.cyri.scale(16))
+                        .font_id(self.fonts.cyri.conrod_id)
+                        .color(TEXT_COLOR)
+                        .graphics_for(entry.widget_id)
+                        .set(state.ids.icebreaker_cases_reste[i], ui);
+                }
             }
 
             // selection box around current hotbar index
@@ -1510,6 +1582,20 @@ impl Widget for Skillbar<'_> {
                 self::Poise::POISE_THRESHOLDS.len(),
                 &mut ui.widget_id_generator(),
             )
+        });
+
+        // Icebreaker : un identifiant de widget par case de compétence (A.6)
+        state.update(|s| {
+            let touches = common::icebreaker_competences::TOUCHES;
+            s.ids
+                .icebreaker_cases_reste
+                .resize(touches, &mut ui.widget_id_generator());
+            s.ids
+                .icebreaker_cases_ombre
+                .resize(touches, &mut ui.widget_id_generator());
+            s.ids
+                .icebreaker_cases_bord
+                .resize(touches, &mut ui.widget_id_generator());
         });
 
         // Alignment and BG

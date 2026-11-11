@@ -22,6 +22,7 @@ pub mod game_input;
 pub mod hud;
 pub mod icebreaker;
 pub mod icebreaker_balise;
+pub mod icebreaker_competences;
 pub mod icebreaker_mort;
 pub mod key_state;
 pub mod menu;
