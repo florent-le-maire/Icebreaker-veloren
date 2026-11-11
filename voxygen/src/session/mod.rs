@@ -1880,6 +1880,21 @@ impl PlayState for SessionState {
                         }
                     },
                     icebreaker_auto::Pas::Fermer => self.quitter_icebreaker_top_view(),
+                    icebreaker_auto::Pas::Regarder => {
+                        // Comme le clic gauche d'un mort (T.4).
+                        let mut client = self.client.borrow_mut();
+                        if crate::icebreaker_mort::registre()
+                            && client.is_dead()
+                            && let Some(allie) = crate::icebreaker_mort::allie_suivant(
+                                &client,
+                                self.viewpoint_entity,
+                            )
+                        {
+                            client.start_spectate_entity(allie);
+                            self.viewpoint_entity = Some(allie);
+                            self.scene.camera_mut().set_mode(CameraMode::FirstPerson);
+                        }
+                    },
                     icebreaker_auto::Pas::Cliquer(sorte) => {
                         if let Some(demande) = self.hud.icebreaker_cliquer(&sorte) {
                             self.client.borrow_mut().request_icebreaker_plan(demande);

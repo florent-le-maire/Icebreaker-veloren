@@ -40,25 +40,22 @@ pub fn registre() -> bool { REGISTRE.load(std::sync::atomic::Ordering::Relaxed) 
 /// L'allié à regarder après `actuel` : les autres joueurs vivants que le client voit, dans
 /// l'ordre de leur `Uid`, en boucle.
 pub fn allie_suivant(client: &client::Client, actuel: Option<specs::Entity>) -> Option<specs::Entity> {
-    use specs::{Join, WorldExt};
+    use specs::WorldExt;
     let ecs = client.state().ecs();
     let healths = ecs.read_storage::<common::comp::Health>();
-    let mut allies = (
-        &ecs.entities(),
-        &ecs.read_storage::<common::comp::Player>(),
-        &ecs.read_storage::<Uid>(),
-    )
-        .join()
-        .filter(|(e, _, _)| *e != client.entity())
+    let ids = ecs.read_resource::<common::uid::IdMaps>();
+    // Le composant `Player` des autres n'est pas envoyé au client (N.7 : la liste était toujours
+    // vide) : les joueurs viennent de la liste des joueurs, leur entité de leur `Uid`.
+    let mut allies = client
+        .player_list()
+        .keys()
+        .filter_map(|uid| Some((*uid, ids.uid_entity(*uid)?)))
+        .filter(|(_, e)| *e != client.entity())
         // Les fantômes (spectateurs) n'ont pas de santé.
-        .filter(|(e, _, _)| healths.get(*e).is_some_and(|h| !h.is_dead))
-        .map(|(e, _, uid)| (*uid, e))
+        .filter(|(_, e)| healths.get(*e).is_some_and(|h| !h.is_dead))
         .collect::<Vec<_>>();
     allies.sort_by_key(|(uid, _)| uid.0);
     let actuel = actuel.and_then(|e| allies.iter().position(|(_, a)| *a == e));
     let suivant = actuel.map_or(0, |i| i + 1);
     allies.get(suivant % allies.len().max(1)).map(|(_, e)| *e)
 }
-
-/// Il y a un autre joueur vivant à regarder.
-pub fn un_allie_a_regarder(client: &client::Client) -> bool { allie_suivant(client, None).is_some() }

@@ -346,7 +346,11 @@ impl Widget for Overhead<'_> {
                     Image::new(self.imgs.enemy_bar)
                         .w_h(w, h)
                         .x_y(x, MANA_BAR_Y + 8.0)
-                        .color(if self.in_group {
+                        .color(if icebreaker_a_terre.is_some() {
+                            // Icebreaker : à terre, la barre est rouge : c'est le temps restant,
+                            // pas la vie.
+                            Some(Color::Rgba(0.79, 0.19, 0.17, 1.0))
+                        } else if self.in_group {
                             // Different HP bar colors only for group members
                             Some(match hp_percentage {
                                 x if (0.0..25.0).contains(&x) => crit_hp_color,
@@ -387,7 +391,7 @@ impl Widget for Overhead<'_> {
                     if let Some((reste, _)) = icebreaker_a_terre {
                         txt = self
                             .i18n
-                            .get_msg_ctx("icebreaker-a-terre-reste", &i18n::fluent_args! {
+                            .get_msg_ctx("icebreaker-a-terre-allie", &i18n::fluent_args! {
                                 "secondes" => reste.ceil() as u32
                             })
                             .to_string();
@@ -396,7 +400,12 @@ impl Widget for Overhead<'_> {
                         .mid_top_with_margin_on(state.ids.health_bar_bg, 2.0)
                         .font_size(10)
                         .font_id(self.fonts.cyri.conrod_id)
-                        .color(TEXT_COLOR)
+                        .color(if icebreaker_a_terre.is_some() {
+                            // Icebreaker : le texte à terre est rouge.
+                            Color::Rgba(0.95, 0.44, 0.42, 1.0)
+                        } else {
+                            TEXT_COLOR
+                        })
                         .parent(id)
                         .set(state.ids.health_txt, ui);
 

@@ -4253,6 +4253,44 @@ impl Hud {
                 .get(info.viewpoint_entity)
                 .and_then(icebreaker::fouille_de),
         };
+        // À terre, mort, allié regardé : le point de vue n'est plus le personnage du joueur quand
+        // un mort regarde un allié.
+        let icebreaker_etat = {
+            let ecs = client.state().ecs();
+            let propre = client.entity();
+            let registre = crate::icebreaker_mort::registre();
+            let a_terre = match client.uid() {
+                Some(uid) if registre && info.viewpoint_entity == propre => {
+                    let healths = ecs.read_storage::<comp::Health>();
+                    let etats = ecs.read_storage::<comp::CharacterState>();
+                    let a_terre = comp::is_downed(healths.get(propre), etats.get(propre));
+                    crate::icebreaker_mort::reste(uid, a_terre, client.state().get_time())
+                },
+                _ => None,
+            };
+            let stats = ecs.read_storage::<comp::Stats>();
+            let nom_de = |entite| {
+                stats
+                    .get(entite)
+                    .map(|stats| i18n.get_content(&stats.name))
+                    .unwrap_or_default()
+            };
+            icebreaker::etat_joueur(
+                registre,
+                client.is_dead(),
+                info.viewpoint_entity != propre,
+                a_terre,
+                || nom_de(propre),
+                || crate::icebreaker_mort::allie_suivant(client, None).map(nom_de),
+                || {
+                    let vie = ecs
+                        .read_storage::<comp::Health>()
+                        .get(info.viewpoint_entity)
+                        .map_or((0, 0), |h| (h.current().round() as u32, h.maximum().round() as u32));
+                    (nom_de(info.viewpoint_entity), vie.0, vie.1)
+                },
+            )
+        };
         self.events.extend(self.icebreaker.dessiner(
             ui_widgets,
             &self.imgs,
@@ -4263,6 +4301,7 @@ impl Hud {
             self.pulse,
             icebreaker_fantome,
             icebreaker_en_cours,
+            &icebreaker_etat,
         ));
 
         // Camera clamp indicator

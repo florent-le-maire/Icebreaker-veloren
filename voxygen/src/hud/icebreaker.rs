@@ -223,7 +223,182 @@ widget_ids! {
         action_texte,
         action_jauge_fond,
         action_jauge_part,
+        // À terre (bloc de la zone « action en cours »), mort, allié regardé.
+        terre_titre,
+        terre_reste,
+        terre_jauge_fond,
+        terre_jauge_part,
+        terre_aide,
+        terre_abandon,
+        mort_fond,
+        mort_zone,
+        mort_titre,
+        mort_nom,
+        mort_perdu_fond,
+        mort_perdu,
+        mort_sac,
+        mort_cartes_fond[],
+        mort_cartes_touche_fond[],
+        mort_cartes_touche[],
+        mort_cartes_titre[],
+        mort_cartes_sous[],
+        regarde_fond,
+        regarde_pastille,
+        regarde_mot,
+        regarde_nom,
+        regarde_vie,
+        regarde_jauge_fond,
+        regarde_jauge_part,
+        regarde_aide,
     }
+}
+
+// À terre, mort, allié regardé : en unités de l'interface (maquettes `ATerre`, `Mort`,
+// `Spectateur`, en 1280 x 720, multipliées par 1,4).
+const TERRE_W: f64 = 620.0;
+const TERRE_H: f64 = 214.0;
+const TERRE_JAUGE_H: f64 = 22.0;
+const MORT_W: f64 = 950.0;
+const MORT_HAUT: f64 = 170.0;
+const MORT_PERDU_H: f64 = 132.0;
+const MORT_CARTE_H: f64 = 158.0;
+const MORT_ESPACE: f64 = 22.0;
+const REGARDE_H: f64 = 88.0;
+const REGARDE_JAUGE_W: f64 = 200.0;
+/// Le rouge de la bordure et des barres du « à terre » (`remplissage(Ton::Mauvais)`).
+const ROUGE_BORD: Color = Color::Rgba(0.79, 0.19, 0.17, 1.0);
+/// Le fond des cadres d'action de l'écran de mort.
+const FOND_CARTE: Color = Color::Rgba(0.353, 0.165, 0.102, 1.0);
+const FOND_TOUCHE: Color = Color::Rgba(0.047, 0.055, 0.063, 1.0);
+
+/// Ce que le HUD montre du joueur à terre ou mort (en campagne seulement).
+#[derive(Clone, Debug, PartialEq)]
+pub enum Etat {
+    Rien,
+    /// À terre : secondes qui restent (arrondies au-dessus) et part du délai qui reste (0 à 1).
+    ATerre { secondes: u32, part: f32 },
+    /// Mort, ne regarde personne : son nom, et le nom de l'allié que le clic gauche regarderait.
+    Mort { nom: String, allie: Option<String> },
+    /// Mort, regarde un allié : son nom, sa vie (courante, maximale).
+    Regarde { nom: String, vie: u32, max: u32 },
+}
+
+/// L'état du joueur. `regarde` : le point de vue n'est plus le personnage du joueur. Les noms ne
+/// sont cherchés que dans l'état qui les montre.
+pub fn etat_joueur(
+    registre: bool,
+    mort: bool,
+    regarde: bool,
+    a_terre: Option<(f64, f32)>,
+    nom: impl FnOnce() -> String,
+    allie: impl FnOnce() -> Option<String>,
+    regarde_de: impl FnOnce() -> (String, u32, u32),
+) -> Etat {
+    if !registre {
+        return Etat::Rien;
+    }
+    if mort {
+        return if regarde {
+            let (nom, vie, max) = regarde_de();
+            Etat::Regarde { nom, vie, max }
+        } else {
+            Etat::Mort { nom: nom(), allie: allie() }
+        };
+    }
+    match a_terre {
+        Some((reste, part)) => Etat::ATerre {
+            secondes: reste.max(0.0).ceil() as u32,
+            part: part.clamp(0.0, 1.0),
+        },
+        None => Etat::Rien,
+    }
+}
+
+/// Le texte gardé de `cle`, refait par `faire` seulement quand `cle` change.
+fn garde<'a, K: PartialEq>(
+    cache: &'a mut Option<(K, String)>,
+    cle: K,
+    faire: impl FnOnce() -> String,
+) -> &'a str {
+    if cache.as_ref().is_none_or(|(ancienne, _)| *ancienne != cle) {
+        *cache = Some((cle, faire()));
+    }
+    cache.as_ref().map_or("", |(_, texte)| texte.as_str())
+}
+
+/// Comme `garde`, pour un texte qui dépend d'un nom, sans recopier le nom à chaque image.
+fn garde_nom<'a>(
+    cache: &'a mut Option<(String, String)>,
+    nom: &str,
+    faire: impl FnOnce(&str) -> String,
+) -> &'a str {
+    if cache.as_ref().is_none_or(|(ancien, _)| ancien != nom) {
+        *cache = Some((nom.to_string(), faire(nom)));
+    }
+    cache.as_ref().map_or("", |(_, texte)| texte.as_str())
+}
+
+/// Les textes fixes du « à terre », de l'écran de mort et de l'allié regardé, dans la langue du
+/// joueur et avec ses touches.
+fn textes_vie(i18n: &Localization, controls: &ControlSettings) -> TextesVie {
+    let touche = |entree: GameInput| {
+        controls
+            .get_binding(entree)
+            .map_or_else(String::new, |touche| touche.display_string())
+    };
+    let retour = touche(GameInput::Respawn);
+    let dire = |cle: &str| i18n.get_msg(cle).into_owned();
+    TextesVie {
+        terre: dire("icebreaker-a-terre"),
+        terre_aide: dire("icebreaker-a-terre-aide"),
+        abandon: i18n
+            .get_msg_ctx("icebreaker-a-terre-abandon", &i18n::fluent_args! {
+                "key" => touche(GameInput::GiveUp),
+            })
+            .into_owned(),
+        mot_mort: dire("icebreaker-mort-mot"),
+        mort_titre: dire("icebreaker-mort-titre"),
+        perdu: dire("icebreaker-mort-perdu"),
+        sac: dire("icebreaker-mort-sac"),
+        retour: dire("icebreaker-mort-retour"),
+        retour_sous: dire("icebreaker-mort-retour-sous"),
+        clic: dire("icebreaker-mort-clic"),
+        regarder: dire("icebreaker-mort-regarder-allie"),
+        aucun: dire("icebreaker-mort-aucun"),
+        aide_regarde: i18n
+            .get_msg_ctx("icebreaker-regarde-aide", &i18n::fluent_args! {
+                "key" => retour.clone(),
+            })
+            .into_owned(),
+        touche_retour: retour,
+    }
+}
+
+/// Les textes fixes du « à terre », de l'écran de mort et de l'allié regardé, préparés une fois.
+struct TextesVie {
+    terre: String,
+    terre_aide: String,
+    abandon: String,
+    mot_mort: String,
+    mort_titre: String,
+    perdu: String,
+    sac: String,
+    touche_retour: String,
+    retour: String,
+    retour_sous: String,
+    clic: String,
+    regarder: String,
+    aucun: String,
+    aide_regarde: String,
+}
+
+/// Les textes qui changent avec l'état, gardés tant que leur donnée ne change pas.
+#[derive(Default)]
+struct TextesVivants {
+    reste: Option<(u32, String)>,
+    allie: Option<(String, String)>,
+    regarde: Option<(String, String)>,
+    vie: Option<((u32, u32), String)>,
 }
 
 // La zone « action en cours », en bas au centre, au-dessus de la barre de raccourcis.
@@ -624,6 +799,9 @@ pub struct Interface {
     /// Les textes de la zone « action en cours » (rappel des touches, cible perdue, fouille),
     /// préparés une fois.
     textes_action: Option<[String; 3]>,
+    /// Les textes de l'état à terre, mort et allié regardé.
+    textes_vie: Option<TextesVie>,
+    vivants: TextesVivants,
 }
 
 impl Interface {
@@ -648,6 +826,8 @@ impl Interface {
             annonces: Vec::new(),
             mots: None,
             textes_action: None,
+            textes_vie: None,
+            vivants: TextesVivants::default(),
         }
     }
 
@@ -824,8 +1004,13 @@ impl Interface {
         pulse: f32,
         fantome: bool,
         en_cours: EnCours,
+        etat: &Etat,
     ) -> Vec<Event> {
         let mut evenements = Vec::new();
+        // Les textes du « à terre », de la mort et de l'allié regardé, préparés une fois.
+        if !matches!(etat, Etat::Rien) && self.textes_vie.is_none() {
+            self.textes_vie = Some(textes_vie(i18n, controls));
+        }
         if let Some((contenu, sorte)) = self.reponse_recue.take() {
             self.reponse = Some((couper(&i18n.get_content(&contenu), 110), sorte, Instant::now()));
         }
@@ -850,9 +1035,17 @@ impl Interface {
             self.bandeau_fantome(ui, fonts, i18n, controls, haut);
             haut += BANDEAU_HAUT + 6.0;
         }
+        if let Etat::Regarde { nom, vie, max } = etat {
+            self.bandeau_regarde(ui, fonts, i18n, nom, *vie, *max, haut);
+            haut += REGARDE_H + 6.0;
+        }
         self.bandeau_expedition(ui, imgs, fonts, i18n, haut);
         self.messages(ui, fonts, i18n);
-        self.action_en_cours(ui, fonts, i18n, controls, en_cours);
+        match etat {
+            Etat::ATerre { secondes, part } => self.bloc_a_terre(ui, fonts, i18n, *secondes, *part),
+            Etat::Mort { nom, allie } => self.ecran_mort(ui, fonts, i18n, nom, allie.as_deref()),
+            _ => self.action_en_cours(ui, fonts, i18n, controls, en_cours),
+        }
 
         if self.ouvert {
             self.fenetre(ui, imgs, item_imgs, fonts, i18n, controls, pulse, &mut evenements);
@@ -1126,6 +1319,289 @@ impl Interface {
         } else {
             texte.middle_of(fond).set(self.ids.action_texte, ui);
         }
+    }
+
+    /// Le bas d'écran de la zone « action en cours » : au-dessus du panneau libre de la balise.
+    fn bas_action(&self) -> f64 {
+        if self.panneau.as_ref().is_some_and(|p| p.libre) {
+            ACTION_BAS + LIBRE_H + 10.0
+        } else {
+            ACTION_BAS
+        }
+    }
+
+    /// À terre : un seul bloc, qui prend la zone « action en cours » : le temps qui reste avant
+    /// la mort, ce qu'on peut attendre, et la touche d'abandon.
+    fn bloc_a_terre(
+        &mut self,
+        ui: &mut UiCell,
+        fonts: &Fonts,
+        i18n: &Localization,
+        secondes: u32,
+        part: f32,
+    ) {
+        let bas = self.bas_action();
+        let Some(t) = self.textes_vie.as_ref() else {
+            return;
+        };
+        let reste = garde(&mut self.vivants.reste, secondes, || {
+            i18n.get_msg_ctx("icebreaker-a-terre-reste", &i18n::fluent_args! {
+                "secondes" => secondes,
+            })
+            .into_owned()
+        });
+        let fond = self.ids.action_fond;
+        cadre([TERRE_W, TERRE_H], FOND, ROUGE_BORD, 2.0)
+            .mid_bottom_with_margin_on(ui.window, bas)
+            .set(fond, ui);
+        Text::new(&t.terre)
+            .font_id(fonts.alkhemi.conrod_id)
+            .font_size(fonts.alkhemi.scale(52))
+            .color(MAUVAIS)
+            .top_left_with_margins_on(fond, 12.0, 20.0)
+            .graphics_for(fond)
+            .set(self.ids.terre_titre, ui);
+        Text::new(reste)
+            .font_id(fonts.cyri.conrod_id)
+            .font_size(fonts.cyri.scale(36))
+            .color(TEXTE)
+            .top_right_with_margins_on(fond, 24.0, 20.0)
+            .graphics_for(fond)
+            .set(self.ids.terre_reste, ui);
+        let largeur = TERRE_W - 40.0;
+        cadre([largeur, TERRE_JAUGE_H], CASE, BORDURE, 2.0)
+            .top_left_with_margins_on(fond, 76.0, 20.0)
+            .graphics_for(fond)
+            .set(self.ids.terre_jauge_fond, ui);
+        let rempli = (largeur - 4.0) * f64::from(part.clamp(0.0, 1.0));
+        if rempli >= 1.0 {
+            Rectangle::fill_with([rempli, TERRE_JAUGE_H - 4.0], ROUGE_BORD)
+                .top_left_with_margins_on(self.ids.terre_jauge_fond, 2.0, 2.0)
+                .graphics_for(fond)
+                .set(self.ids.terre_jauge_part, ui);
+        }
+        Text::new(&t.terre_aide)
+            .font_id(fonts.cyri.conrod_id)
+            .font_size(fonts.cyri.scale(31))
+            .color(TEXTE)
+            .top_left_with_margins_on(fond, 114.0, 20.0)
+            .graphics_for(fond)
+            .set(self.ids.terre_aide, ui);
+        Text::new(&t.abandon)
+            .font_id(fonts.cyri.conrod_id)
+            .font_size(fonts.cyri.scale(25))
+            .color(DISCRET)
+            .bottom_left_with_margins_on(fond, 14.0, 20.0)
+            .graphics_for(fond)
+            .set(self.ids.terre_abandon, ui);
+    }
+
+    /// L'écran de mort, centré sur le fond noir : le titre, le nom, ce qui est perdu, puis les
+    /// rappels des deux touches (retour au village, regarder un allié). Ce ne sont pas des
+    /// boutons : le curseur reste capturé.
+    fn ecran_mort(
+        &mut self,
+        ui: &mut UiCell,
+        fonts: &Fonts,
+        i18n: &Localization,
+        nom: &str,
+        allie: Option<&str>,
+    ) {
+        let Some(t) = self.textes_vie.as_ref() else {
+            return;
+        };
+        let cyri = fonts.cyri.conrod_id;
+        let zone = self.ids.mort_zone;
+        // Un fond sombre sous tout le bloc : les noms des entités du monde, dessinés avant, ne se
+        // lisent plus à travers le titre.
+        const MARGE: f64 = 28.0;
+        let hauteur = 180.0 + MORT_PERDU_H + MORT_ESPACE + MORT_CARTE_H;
+        Rectangle::fill_with(
+            [MORT_W + 2.0 * MARGE, hauteur + 2.0 * MARGE],
+            Color::Rgba(0.0, 0.0, 0.0, 0.95),
+        )
+        .mid_top_with_margin_on(ui.window, MORT_HAUT - MARGE)
+        .set(self.ids.mort_fond, ui);
+        Rectangle::fill_with([MORT_W, hauteur], color::TRANSPARENT)
+            .mid_top_with_margin_on(ui.window, MORT_HAUT)
+            .set(zone, ui);
+        Text::new(&t.mort_titre)
+            .font_id(fonts.alkhemi.conrod_id)
+            .font_size(fonts.alkhemi.scale(88))
+            .color(MAUVAIS)
+            .mid_top_with_margin_on(zone, 0.0)
+            .graphics_for(zone)
+            .set(self.ids.mort_titre, ui);
+        Text::new(nom)
+            .font_id(cyri)
+            .font_size(fonts.cyri.scale(38))
+            .color(TEXTE)
+            .mid_top_with_margin_on(zone, 112.0)
+            .graphics_for(zone)
+            .set(self.ids.mort_nom, ui);
+        // Ce qui est perdu, et ce qui reste.
+        let perdu = self.ids.mort_perdu_fond;
+        cadre([MORT_W, MORT_PERDU_H], CASE, ROUGE_BORD, 2.0)
+            .mid_top_with_margin_on(zone, 180.0)
+            .graphics_for(zone)
+            .set(perdu, ui);
+        Text::new(&t.perdu)
+            .font_id(cyri)
+            .font_size(fonts.cyri.scale(38))
+            .color(TEXTE)
+            .top_left_with_margins_on(perdu, 20.0, 26.0)
+            .graphics_for(perdu)
+            .set(self.ids.mort_perdu, ui);
+        Text::new(&t.sac)
+            .font_id(cyri)
+            .font_size(fonts.cyri.scale(28))
+            .color(CLAIR)
+            .top_left_with_margins_on(perdu, 76.0, 26.0)
+            .graphics_for(perdu)
+            .set(self.ids.mort_sac, ui);
+        // Les deux rappels, côte à côte.
+        for liste in [
+            &mut self.ids.mort_cartes_fond,
+            &mut self.ids.mort_cartes_touche_fond,
+            &mut self.ids.mort_cartes_touche,
+            &mut self.ids.mort_cartes_titre,
+            &mut self.ids.mort_cartes_sous,
+        ] {
+            assez(liste, 2, ui);
+        }
+        let sous_allie = allie.map(|allie| {
+            garde_nom(&mut self.vivants.allie, allie, |allie| {
+                i18n.get_msg_ctx("icebreaker-mort-allie", &i18n::fluent_args! { "nom" => allie })
+                    .into_owned()
+            })
+        });
+        let largeur = (MORT_W - MORT_ESPACE) / 2.0;
+        let haut = 180.0 + MORT_PERDU_H + MORT_ESPACE;
+        // (touche, titre, sous-titre, actif, bordure)
+        let cartes = [
+            (&t.touche_retour, &t.retour, Some(&*t.retour_sous), true, OR),
+            (&t.clic, &t.regarder, Some(sous_allie.unwrap_or(&t.aucun)), allie.is_some(), BORDURE),
+        ];
+        for (i, (touche, titre, sous, actif, bord)) in cartes.into_iter().enumerate() {
+            let fond = self.ids.mort_cartes_fond[i];
+            cadre(
+                [largeur, MORT_CARTE_H],
+                if actif { FOND_CARTE } else { CASE },
+                if actif { bord } else { TRAIT },
+                2.0,
+            )
+            .top_left_with_margins_on(zone, haut, i as f64 * (largeur + MORT_ESPACE))
+            .graphics_for(zone)
+            .set(fond, ui);
+            let touche_fond = self.ids.mort_cartes_touche_fond[i];
+            // Une lettre fait environ 14 unités de large à cette taille.
+            let w_touche = touche.chars().count() as f64 * 14.0 + 24.0;
+            cadre([w_touche, 38.0], FOND_TOUCHE, if actif { CLAIR } else { BORDURE }, 2.0)
+                .top_left_with_margins_on(fond, 18.0, 20.0)
+                .graphics_for(fond)
+                .set(touche_fond, ui);
+            Text::new(touche)
+                .font_id(cyri)
+                .font_size(fonts.cyri.scale(25))
+                .color(if actif { TEXTE } else { GRIS })
+                .middle_of(touche_fond)
+                .graphics_for(fond)
+                .set(self.ids.mort_cartes_touche[i], ui);
+            Text::new(titre)
+                .font_id(cyri)
+                .font_size(fonts.cyri.scale(38))
+                .color(if actif { TEXTE } else { GRIS })
+                .top_left_with_margins_on(fond, 66.0, 20.0)
+                .graphics_for(fond)
+                .set(self.ids.mort_cartes_titre[i], ui);
+            Text::new(sous.unwrap_or(""))
+                .font_id(cyri)
+                .font_size(fonts.cyri.scale(25))
+                .color(if actif { CLAIR } else { DISCRET })
+                .top_left_with_margins_on(fond, 112.0, 20.0)
+                .graphics_for(fond)
+                .set(self.ids.mort_cartes_sous[i], ui);
+        }
+    }
+
+    /// Le bandeau de l'allié regardé par un mort, en haut au centre : son nom et sa vie, puis
+    /// les deux touches utiles.
+    fn bandeau_regarde(
+        &mut self,
+        ui: &mut UiCell,
+        fonts: &Fonts,
+        i18n: &Localization,
+        nom: &str,
+        vie: u32,
+        max: u32,
+        haut: f64,
+    ) {
+        let Some(t) = self.textes_vie.as_ref() else {
+            return;
+        };
+        let cyri = fonts.cyri.conrod_id;
+        let regarde = garde_nom(&mut self.vivants.regarde, nom, |nom| {
+            couper(
+                &i18n
+                    .get_msg_ctx("icebreaker-regarde-nom", &i18n::fluent_args! { "nom" => nom }),
+                32,
+            )
+        });
+        let texte_vie = garde(&mut self.vivants.vie, (vie, max), || {
+            i18n.get_msg_ctx("icebreaker-regarde-vie", &i18n::fluent_args! {
+                "vie" => vie,
+                "max" => max,
+            })
+            .into_owned()
+        });
+        let fond = self.ids.regarde_fond;
+        cadre([BANDEAU_W, REGARDE_H], FOND, BORDURE, 2.0)
+            .mid_top_with_margin_on(ui.window, haut)
+            .set(fond, ui);
+        cadre([84.0, 30.0], FOND, MAUVAIS, 2.0)
+            .top_left_with_margins_on(fond, 12.0, 14.0)
+            .graphics_for(fond)
+            .set(self.ids.regarde_pastille, ui);
+        Text::new(&t.mot_mort)
+            .font_id(cyri)
+            .font_size(fonts.cyri.scale(18))
+            .color(MAUVAIS)
+            .middle_of(self.ids.regarde_pastille)
+            .graphics_for(fond)
+            .set(self.ids.regarde_mot, ui);
+        Text::new(regarde)
+            .font_id(cyri)
+            .font_size(fonts.cyri.scale(24))
+            .color(TEXTE)
+            .top_left_with_margins_on(fond, 13.0, 112.0)
+            .graphics_for(fond)
+            .set(self.ids.regarde_nom, ui);
+        cadre([REGARDE_JAUGE_W, 18.0], CASE, BORDURE, 2.0)
+            .top_right_with_margins_on(fond, 16.0, 14.0)
+            .graphics_for(fond)
+            .set(self.ids.regarde_jauge_fond, ui);
+        let part = if max == 0 { 0.0 } else { (vie as f32 / max as f32).clamp(0.0, 1.0) };
+        let rempli = (REGARDE_JAUGE_W - 4.0) * f64::from(part);
+        if rempli >= 1.0 {
+            Rectangle::fill_with([rempli, 14.0], remplissage(Ton::Bon))
+                .top_left_with_margins_on(self.ids.regarde_jauge_fond, 2.0, 2.0)
+                .graphics_for(fond)
+                .set(self.ids.regarde_jauge_part, ui);
+        }
+        Text::new(texte_vie)
+            .font_id(cyri)
+            .font_size(fonts.cyri.scale(20))
+            .color(CLAIR)
+            .top_right_with_margins_on(fond, 15.0, 14.0 + REGARDE_JAUGE_W + 12.0)
+            .graphics_for(fond)
+            .set(self.ids.regarde_vie, ui);
+        Text::new(&t.aide_regarde)
+            .font_id(cyri)
+            .font_size(fonts.cyri.scale(18))
+            .color(DISCRET)
+            .top_left_with_margins_on(fond, 56.0, 14.0)
+            .graphics_for(fond)
+            .set(self.ids.regarde_aide, ui);
     }
 
     /// La fenêtre du village : bandeau de titre, plan à gauche, panneau à droite.
@@ -1857,6 +2333,85 @@ mod tests {
         // La fouille l'emporte sur le verrouillage, et sa part reste dans [0, 1].
         let fouille = EnCours { verrou: Avis::Rappel, fouille: Some(1.4) };
         assert_eq!(fouille.zone(), Some(Zone::Fouille(1.0)));
+    }
+
+    fn etat(registre: bool, mort: bool, regarde: bool, a_terre: Option<(f64, f32)>, allie: bool) -> Etat {
+        etat_joueur(
+            registre,
+            mort,
+            regarde,
+            a_terre,
+            || "Brunhild".to_string(),
+            || allie.then(|| "Sayanel".to_string()),
+            || ("Sayanel".to_string(), 64, 100),
+        )
+    }
+
+    #[test]
+    fn l_etat_du_joueur_selon_la_situation() {
+        // Vivant, ou hors campagne : rien.
+        assert_eq!(etat(true, false, false, None, true), Etat::Rien);
+        assert_eq!(etat(false, true, false, Some((10.0, 0.5)), true), Etat::Rien);
+        // À terre : les secondes arrondies au-dessus, la part bornée.
+        assert_eq!(
+            etat(true, false, false, Some((17.2, 1.3)), false),
+            Etat::ATerre { secondes: 18, part: 1.0 }
+        );
+        // Mort sans allié en vie, puis avec.
+        assert_eq!(
+            etat(true, true, false, None, false),
+            Etat::Mort { nom: "Brunhild".into(), allie: None }
+        );
+        assert_eq!(
+            etat(true, true, false, None, true),
+            Etat::Mort { nom: "Brunhild".into(), allie: Some("Sayanel".into()) }
+        );
+        // Mort qui regarde un allié : le bandeau, plus l'écran de mort.
+        assert_eq!(
+            etat(true, true, true, None, true),
+            Etat::Regarde { nom: "Sayanel".into(), vie: 64, max: 100 }
+        );
+    }
+
+    #[test]
+    fn les_noms_ne_sont_cherches_que_si_l_etat_les_montre() {
+        use std::cell::Cell;
+        let appels = Cell::new(0);
+        let compter = || {
+            appels.set(appels.get() + 1);
+            String::new()
+        };
+        etat_joueur(true, false, false, None, compter, || None, || (String::new(), 0, 0));
+        etat_joueur(true, false, false, Some((5.0, 0.2)), compter, || None, || (String::new(), 0, 0));
+        assert_eq!(appels.get(), 0);
+        etat_joueur(true, true, false, None, compter, || None, || (String::new(), 0, 0));
+        assert_eq!(appels.get(), 1);
+    }
+
+    #[test]
+    fn un_texte_n_est_refait_que_si_sa_donnee_change() {
+        use std::cell::Cell;
+        let faits = Cell::new(0);
+        let mut cache = None;
+        for secondes in [30u32, 30, 30, 29, 29, 28] {
+            let texte = garde(&mut cache, secondes, || {
+                faits.set(faits.get() + 1);
+                format!("Mort dans {secondes} s")
+            });
+            assert_eq!(texte, format!("Mort dans {secondes} s"));
+        }
+        assert_eq!(faits.get(), 3);
+        // Un nom : refait quand il change, pas à chaque image.
+        let mut nom = None;
+        let mut refaits = 0;
+        for qui in ["Sayanel", "Sayanel", "Flo"] {
+            garde_nom(&mut nom, qui, |qui| {
+                refaits += 1;
+                format!("{qui} est encore en vie")
+            });
+        }
+        assert_eq!(refaits, 2);
+        assert_eq!(nom.unwrap().1, "Flo est encore en vie");
     }
 
     #[test]

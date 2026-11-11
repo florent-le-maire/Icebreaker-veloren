@@ -52,10 +52,6 @@ widget_ids! {
         death_message_2_bg,
         death_message_3,
         death_message_3_bg,
-        // Icebreaker : temps qui reste à terre (T.2)
-        icebreaker_a_terre_fond,
-        icebreaker_a_terre_barre,
-        icebreaker_a_terre_texte,
         // Icebreaker : les secondes de recharge de la balise, au centre de son emplacement (N.7)
         icebreaker_balise_reste,
         icebreaker_balise_reste_ombre,
@@ -398,37 +394,11 @@ impl<'a> Skillbar<'a> {
             .set(text, ui);
     }
 
-    /// Icebreaker : barre et « Mort dans N s » sous le message à terre (T.2).
-    fn icebreaker_show_a_terre(&self, state: &State, ui: &mut UiCell) {
-        let Some(uid) = self.client.uid() else { return };
-        let Some((reste, part)) =
-            crate::icebreaker_mort::reste(uid, true, self.client.state().get_time())
-        else {
-            return;
-        };
-        const LARGEUR: f64 = 300.0;
-        Rectangle::fill_with([LARGEUR + 4.0, 16.0], Color::Rgba(0.0, 0.0, 0.0, 0.8))
-            .mid_bottom_with_margin_on(ui.window, 100.0)
-            .set(state.ids.icebreaker_a_terre_fond, ui);
-        Rectangle::fill_with([LARGEUR * f64::from(part), 12.0], CRITICAL_HP_COLOR)
-            .top_left_with_margins_on(state.ids.icebreaker_a_terre_fond, 2.0, 2.0)
-            .set(state.ids.icebreaker_a_terre_barre, ui);
-        let texte = self
-            .localized_strings
-            .get_msg_ctx("icebreaker-a-terre-reste", &i18n::fluent_args! {
-                "secondes" => reste.ceil() as u32
-            });
-        Text::new(&texte)
-            .mid_bottom_with_margin_on(state.ids.icebreaker_a_terre_fond, 20.0)
-            .font_size(self.fonts.cyri.scale(20))
-            .font_id(self.fonts.cyri.conrod_id)
-            .color(CRITICAL_HP_COLOR)
-            .set(state.ids.icebreaker_a_terre_texte, ui);
-    }
-
     fn show_give_up_message(&self, state: &State, ui: &mut UiCell) {
-        // Icebreaker : temps qui reste à terre (T.2).
-        self.icebreaker_show_a_terre(state, ui);
+        // Icebreaker : en campagne, le bloc « À terre » est dessiné par `hud/icebreaker.rs`.
+        if crate::icebreaker_mort::registre() {
+            return;
+        }
         let localized_strings = self.localized_strings;
         let hardcore = self.client.current::<Hardcore>().is_some();
 
@@ -500,6 +470,10 @@ impl<'a> Skillbar<'a> {
     }
 
     fn show_death_message(&self, state: &State, ui: &mut UiCell) {
+        // Icebreaker : en campagne, l'écran de mort est dessiné par `hud/icebreaker.rs`.
+        if crate::icebreaker_mort::registre() {
+            return;
+        }
         let localized_strings = self.localized_strings;
         let hardcore = self.client.current::<Hardcore>().is_some();
 
@@ -522,18 +496,6 @@ impl<'a> Skillbar<'a> {
                         "key" => key.display_string()
                     },
                 )
-            } else if crate::icebreaker_mort::registre() {
-                // Icebreaker : retour au village, ou regarder un allié (T.4).
-                let mut msg = localized_strings
-                    .get_msg_ctx("icebreaker-mort-village", &i18n::fluent_args! {
-                        "key" => key.display_string()
-                    })
-                    .into_owned();
-                if crate::icebreaker_mort::un_allie_a_regarder(self.client) {
-                    msg.push_str(" — ");
-                    msg.push_str(&localized_strings.get_msg("icebreaker-mort-regarder"));
-                }
-                msg.into()
             } else {
                 localized_strings.get_msg_ctx("hud-press_key_to_respawn", &i18n::fluent_args! {
                     "key" => key.display_string()
@@ -541,9 +503,6 @@ impl<'a> Skillbar<'a> {
             };
             let penalty_msg = if hardcore {
                 self.localized_strings.get_msg("hud-hardcore_char_deleted")
-            } else if crate::icebreaker_mort::registre() {
-                // Icebreaker : mort en expédition, le personnage est perdu (T.6).
-                self.localized_strings.get_msg("icebreaker-mort-definitive")
             } else {
                 self.localized_strings.get_msg("hud-items_lost_dur")
             };
