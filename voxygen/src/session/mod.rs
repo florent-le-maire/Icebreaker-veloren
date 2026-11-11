@@ -1917,6 +1917,7 @@ impl PlayState for SessionState {
                             self.client.borrow_mut().request_icebreaker_plan(demande);
                         }
                     },
+                    icebreaker_auto::Pas::Onglet(n) => self.hud.icebreaker_onglet(n),
                     icebreaker_auto::Pas::Commande(nom, arguments) => {
                         // Icebreaker : comme `/balise` tapé dans le chat, le choix des couleurs
                         // s'ouvre hors de la vue de dessus (N.7).

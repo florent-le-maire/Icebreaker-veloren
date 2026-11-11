@@ -10,7 +10,8 @@
 //! de captures du client (`screenshots_path` de ses réglages). `plan` seul : le
 //! plan sans panneau. `fermer` ferme le plan, pour voir ce qui se montre hors
 //! du plan (`/balise`). `regarder` : mort, passe à l'allié suivant, comme le
-//! clic gauche (`/kill` deux fois avant : à terre, puis mort).
+//! clic gauche (`/kill` deux fois avant : à terre, puis mort). `onglet 3` : le
+//! troisième onglet du panneau ouvert (salle d'armes).
 
 use std::{
     collections::VecDeque,
@@ -33,6 +34,8 @@ pub enum Pas {
     Touche(usize, bool),
     /// Cliquer le bâtiment de cette sorte.
     Cliquer(String),
+    /// Cliquer l'onglet `n` (compté depuis zéro) du panneau ouvert.
+    Onglet(usize),
     /// Envoyer cette commande (nom, arguments), comme un bouton du panneau.
     Commande(String, Vec<String>),
     Capturer,
@@ -66,6 +69,15 @@ impl Auto {
                 .and_then(|n| n.checked_sub(1))
             {
                 a_faire.extend([Pas::Touche(n, true), Pas::Capturer, Pas::Touche(n, false)]);
+                continue;
+            }
+            // `onglet 3` : le troisième onglet du panneau ouvert, puis sa capture.
+            if let Some(n) = sorte
+                .strip_prefix("onglet ")
+                .and_then(|n| n.trim().parse::<usize>().ok())
+                .and_then(|n| n.checked_sub(1))
+            {
+                a_faire.extend([Pas::Onglet(n), Pas::Capturer]);
                 continue;
             }
             a_faire.push_back(match sorte.strip_prefix('/') {
@@ -140,6 +152,27 @@ mod tests {
             Pas::Fermer,
             Pas::Capturer,
             Pas::Regarder,
+            Pas::Capturer,
+        ]);
+    }
+
+    #[test]
+    fn onglet_3_choisit_le_troisieme_onglet_puis_capture() {
+        let debut = Instant::now();
+        let mut auto = Auto::de("salle_armes, onglet 3, onglet zero", debut);
+        let mut t = debut + ENTREE;
+        let mut pas = Vec::new();
+        while let Some(p) = auto.pas(t) {
+            pas.push(p);
+            t += ENTRE_DEUX;
+        }
+        assert_eq!(pas[2..], [
+            Pas::Cliquer("salle_armes".into()),
+            Pas::Capturer,
+            Pas::Onglet(2),
+            Pas::Capturer,
+            // Pas un numéro : pris pour une sorte de bâtiment, comme avant.
+            Pas::Cliquer("onglet zero".into()),
             Pas::Capturer,
         ]);
     }

@@ -20,7 +20,7 @@ use common::{
         NIVEAU_DEPART, PLACES_ARME, Registre, SalleArmes, Sorte as SorteCompetence, jeu_en_main,
         registre,
     },
-    icebreaker_panneau::{Action, Chiffre, Jauge, Ligne, Onglet, Panneau, Sorte, Ton, texte},
+    icebreaker_panneau::{Action, Jauge, Ligne, Onglet, Panneau, Sorte, Ton, texte},
 };
 
 /// L'icône du HUD du panneau (celles de `vue_village.ron`).
@@ -359,7 +359,10 @@ pub fn activer_passif(acquis: &mut Acquis, classe: &str, id: &str) -> Result<Str
 /// Le jeu d'armes en mains, s'il est appris : (id, définition, ce qui est acquis).
 type EnMains<'a> = (&'a str, &'a JeuArmes, &'a AcquisJeu);
 
-/// Les compétences du jeu d'armes en mains : une ligne par compétence du jeu.
+/// Les compétences du jeu d'armes en mains : une ligne par compétence du jeu. Le bouton d'une ligne
+/// est étroit : il ne porte que le verbe. Le coût, ce que fait la compétence et ce qu'apporte le
+/// niveau suivant sont dans le sous-titre, que le client passe à la ligne. Cadre doré : la
+/// compétence est sur une touche.
 fn onglet_competences(en_mains: Option<EnMains<'_>>, salle: &SalleArmes) -> Vec<Ligne> {
     let Some((_, def, acquis)) = en_mains else {
         return vec![Ligne::nouvelle("Prenez en mains une arme que vous savez manier.").estompee()];
@@ -370,35 +373,52 @@ fn onglet_competences(en_mains: Option<EnMains<'_>>, salle: &SalleArmes) -> Vec<
         .map(|(id, competence)| {
             let ligne = Ligne::nouvelle(competence.nom.clone()).icone(def.icone.clone());
             let Some(niveau) = acquis.competences.get(id).copied() else {
-                return ligne.sous_titre("à débloquer").estompee().action(
-                    Action::nouvelle(
-                        format!("Débloquer ({} pt)", salle.cout_debloquer),
-                        &["salle", "debloquer", id],
-                    )
-                    .principale()
-                    .permise(disponibles >= salle.cout_debloquer),
-                );
+                return ligne
+                    .sous_titre(format!(
+                        "{} · {}",
+                        points(salle.cout_debloquer),
+                        competence.description
+                    ))
+                    .estompee()
+                    .action(
+                        Action::nouvelle("Débloquer", &["salle", "debloquer", id])
+                            .principale()
+                            .permise(disponibles >= salle.cout_debloquer),
+                    );
             };
-            let monter = cout_monter(acquis, id, competence, salle).map(|cout| {
-                Action::nouvelle(format!("Monter ({cout} pt)"), &["salle", "monter", id])
-                    .principale()
-                    .permise(disponibles >= cout)
-            });
+            let monter = cout_monter(acquis, id, competence, salle);
             let touche = acquis
                 .placees
                 .iter()
                 .position(|placee| placee.as_deref() == Some(id.as_str()));
-            let ligne = ligne.sous_titre(format!(
-                "niveau {niveau} · recharge {}",
-                secondes(competence.effectif(niveau).recharge)
-            ));
-            let ligne = match touche {
-                Some(touche) => ligne.pastille(format!("touche {}", touche + 1), Ton::Info),
-                None if niveau >= competence.niveau_max() => ligne.pastille("niveau max", Ton::Bon),
-                None => ligne,
-            };
+            let mut dit = Vec::new();
+            if let Some(touche) = touche {
+                dit.push(format!("touche {}", touche + 1));
+            }
+            dit.push(format!("niveau {niveau}"));
+            dit.push(format!("recharge {}", secondes(competence.effectif(niveau).recharge)));
+            if let Some(cout) = monter {
+                // Ce qu'apporte le niveau suivant, et son prix.
+                let vise = niveau + 1;
+                let apport = competence
+                    .niveaux
+                    .get(usize::from(vise - NIVEAU_DEPART).saturating_sub(1))
+                    .map_or("", |niveau| niveau.texte.as_str());
+                dit.push(if apport.is_empty() {
+                    format!("niveau {vise} ({})", points(cout))
+                } else {
+                    format!("niveau {vise} ({}) : {apport}", points(cout))
+                });
+            }
+            let ligne = ligne.sous_titre(dit.join(" · "));
+            let ligne = if touche.is_some() { ligne.choisie() } else { ligne };
             match monter {
-                Some(action) => ligne.action(action),
+                Some(cout) => ligne.action(
+                    Action::nouvelle("Monter", &["salle", "monter", id])
+                        .principale()
+                        .permise(disponibles >= cout),
+                ),
+                None if niveau >= competence.niveau_max() => ligne.pastille("niveau max", Ton::Bon),
                 None => ligne,
             }
         })
@@ -424,14 +444,22 @@ fn onglet_armes(
                     appris.maitrise,
                     points(appris.points_disponibles(salle))
                 )),
-                None => ligne.sous_titre("à apprendre").action(
-                    Action::nouvelle(
-                        format!("Apprendre ({} or)", salle.prix_jeu_armes),
-                        &["salle", "apprendre", "jeu", id],
-                    )
-                    .principale()
-                    .permise(bourse >= u64::from(salle.prix_jeu_armes)),
-                ),
+                // À apprendre : son prix, puis les compétences qu'il ouvre.
+                None => ligne
+                    .sous_titre(format!(
+                        "{} or · {}",
+                        salle.prix_jeu_armes,
+                        jeu.competences
+                            .iter()
+                            .map(|(_, competence)| competence.nom.as_str())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ))
+                    .action(
+                        Action::nouvelle("Apprendre", &["salle", "apprendre", "jeu", id])
+                            .principale()
+                            .permise(bourse >= u64::from(salle.prix_jeu_armes)),
+                    ),
             };
             if en_mains == Some(id) {
                 ligne.pastille("en mains", Ton::Bon)
@@ -448,25 +476,22 @@ fn onglet_ultimes(registre: &Registre, classe: &str, acquis: &Acquis, salle: &Sa
         .ultimes_de(classe)
         .iter()
         .map(|(id, ultime)| {
-            let ligne = Ligne::nouvelle(ultime.nom.clone())
-                .sous_titre(format!(
-                    "{} · recharge {}",
-                    ultime.description,
-                    secondes(ultime.recharge)
-                ));
+            let ligne = Ligne::nouvelle(ultime.nom.clone());
+            let connu = format!("recharge {} · {}", secondes(ultime.recharge), ultime.description);
             if acquis.ultime.as_deref() == Some(id.as_str()) {
-                ligne.pastille("actif", Ton::Bon)
+                ligne.sous_titre(connu).pastille("actif", Ton::Bon)
             } else if acquis.ultimes.contains(id) {
-                ligne.action(Action::nouvelle("Activer", &["salle", "activer", "ultime", id]))
+                ligne
+                    .sous_titre(connu)
+                    .action(Action::nouvelle("Activer", &["salle", "activer", "ultime", id]))
             } else {
-                ligne.action(
-                    Action::nouvelle(
-                        format!("Apprendre ({} or)", salle.prix_ultime),
-                        &["salle", "apprendre", "ultime", id],
+                ligne
+                    .sous_titre(format!("{} or · {connu}", salle.prix_ultime))
+                    .action(
+                        Action::nouvelle("Apprendre", &["salle", "apprendre", "ultime", id])
+                            .principale()
+                            .permise(bourse >= u64::from(salle.prix_ultime)),
                     )
-                    .principale()
-                    .permise(bourse >= u64::from(salle.prix_ultime)),
-                )
             }
         })
         .collect()
@@ -480,20 +505,21 @@ fn onglet_passifs(registre: &Registre, classe: &str, acquis: &Acquis, salle: &Sa
         .unwrap_or_default()
         .iter()
         .map(|(id, passif)| {
-            let ligne = Ligne::nouvelle(passif.nom.clone()).sous_titre(passif.description.clone());
+            let ligne = Ligne::nouvelle(passif.nom.clone());
             if acquis.passif.as_deref() == Some(id.as_str()) {
-                ligne.pastille("actif", Ton::Bon)
+                ligne.sous_titre(passif.description.clone()).pastille("actif", Ton::Bon)
             } else if acquis.passifs.contains(id) {
-                ligne.action(Action::nouvelle("Activer", &["salle", "activer", "passif", id]))
+                ligne
+                    .sous_titre(passif.description.clone())
+                    .action(Action::nouvelle("Activer", &["salle", "activer", "passif", id]))
             } else {
-                ligne.action(
-                    Action::nouvelle(
-                        format!("Apprendre ({} or)", salle.prix_passif),
-                        &["salle", "apprendre", "passif", id],
+                ligne
+                    .sous_titre(format!("{} or · {}", salle.prix_passif, passif.description))
+                    .action(
+                        Action::nouvelle("Apprendre", &["salle", "apprendre", "passif", id])
+                            .principale()
+                            .permise(bourse >= u64::from(salle.prix_passif)),
                     )
-                    .principale()
-                    .permise(bourse >= u64::from(salle.prix_passif)),
-                )
             }
         })
         .collect()
@@ -523,26 +549,22 @@ pub fn panneau(
     let en_mains: Option<EnMains<'_>> =
         tenu.and_then(|(id, def)| acquis.jeux.get(id).map(|appris| (id, def, appris)));
 
+    // Les points d'arme du jeu en mains et l'or de la bourse tiennent dans la description : sans
+    // bloc de chiffres, la liste garde la place de ses lignes (vu dans le vrai client).
     let description = match (en_mains, tenu) {
         (Some((_, def, appris)), _) => format!(
-            "{} : {} à dépenser.",
+            "{} : {} · {bourse} or",
             def.nom,
             points(appris.points_disponibles(salle))
         ),
-        (None, Some((_, def))) => format!("Vous tenez « {} » : arme non apprise.", def.nom),
+        (None, Some((_, def))) => format!("{} : arme non apprise · {bourse} or", def.nom),
         (None, None) => match arme_tenue(inventaire) {
-            Some(arme) => format!("Vous tenez {arme} : arme non apprise."),
-            None => "Prenez une arme en mains pour voir ses compétences.".to_string(),
+            Some(arme) => format!("Arme non apprise ({arme}) · {bourse} or"),
+            None => format!("Aucune arme en mains · {bourse} or"),
         },
     };
     let mut panneau = Panneau::nouveau(ICONE, "Salle d'armes", description);
     if let Some((_, _, appris)) = en_mains {
-        let disponibles = appris.points_disponibles(salle);
-        panneau.chiffres.push(Chiffre::nouveau(
-            disponibles.to_string(),
-            "points d'arme",
-            if disponibles > 0 { Ton::Bon } else { Ton::Normal },
-        ));
         let (_, reste, cout) = salle.progression(appris.maitrise);
         panneau.jauge = Some(Jauge {
             legende: texte("Maîtrise"),
@@ -551,10 +573,6 @@ pub fn panneau(
             ton: Ton::Info,
         });
     }
-    panneau
-        .chiffres
-        .push(Chiffre::nouveau(format!("{bourse} or"), "sur vous", Ton::Or));
-
     panneau.onglets = vec![
         Onglet {
             libelle: texte("Compétences"),
@@ -573,17 +591,14 @@ pub fn panneau(
             lignes: onglet_passifs(registre, classe, acquis, salle, bourse),
         },
     ];
-    // Les deux touches d'arme : chaque appui y met la compétence connue suivante.
+    // Les deux touches d'arme : chaque appui y met la compétence connue suivante. Le libellé reste
+    // court (deux boutons côte à côte) : la ligne de la compétence dit déjà sur quelle touche elle est.
     if let Some((_, def, appris)) = en_mains {
         panneau.colonnes = 2;
         panneau.actions = (0..PLACES_ARME)
             .map(|touche| {
-                let nom = appris.placees[touche]
-                    .as_deref()
-                    .and_then(|id| registre.competence(id))
-                    .map_or("vide", |entree| entree.competence.nom.as_str());
                 Action::nouvelle(
-                    format!("Touche {} : {nom}", touche + 1),
+                    format!("Touche {} : changer", touche + 1),
                     &["salle", "placer", &(touche + 1).to_string()],
                 )
                 .permise(suivante(def, appris, touche).is_some())
@@ -800,10 +815,9 @@ mod tests {
         let competences = guerrier(150);
         let inventaire = inventaire(Some("grande_epee"));
         let p = panneau(Some(&competences), Some(&inventaire), 120, false, &salle, None);
-        assert_eq!(p.description, texte("Grande épée : 1 point à dépenser."));
-        assert_eq!(p.chiffres[0].valeur, texte("1"));
-        assert_eq!(p.chiffres[1].valeur, texte("120 or"));
-        assert_eq!(p.chiffres[1].ton, Ton::Or);
+        // Les points et l'or sont dans la description : pas de bloc de chiffres, la liste a la place.
+        assert_eq!(p.description, texte("Grande épée : 1 point · 120 or"));
+        assert!(p.chiffres.is_empty());
         let jauge = p.jauge.expect("jauge");
         assert_eq!(jauge.texte, texte("50 / 150 vers le prochain point"));
         assert!((jauge.part - 50.0 / 150.0).abs() < 1e-6);
@@ -811,8 +825,8 @@ mod tests {
         assert!(p.message.is_none());
         // Les deux touches d'arme, en bas, communes aux onglets.
         assert_eq!(p.actions.len(), 2);
-        assert_eq!(p.actions[0].libelle, texte("Touche 1 : Balayage lourd"));
-        assert_eq!(p.actions[1].libelle, texte("Touche 2 : Tourbillon"));
+        assert_eq!(p.actions[0].libelle, texte("Touche 1 : changer"));
+        assert_eq!(p.actions[1].libelle, texte("Touche 2 : changer"));
         assert_eq!(p.actions[1].commande, vec!["salle".to_string(), "placer".into(), "2".into()]);
         assert!(
             p.actions.iter().all(|a| !a.permise),
@@ -825,6 +839,35 @@ mod tests {
         (a.commande.join(" "), a.permise)
     }
 
+    /// Le sous-titre d'une ligne, en clair.
+    fn sous_titre(l: &Ligne) -> &str {
+        match &l.sous_titre {
+            common::comp::Content::Plain(sous_titre) => sous_titre,
+            autre => panic!("sous-titre attendu en clair : {autre:?}"),
+        }
+    }
+
+    // Le bouton d'une ligne fait 96 px de large dans le client : le verbe seul y tient.
+    #[test]
+    fn les_boutons_des_lignes_ne_portent_que_le_verbe() {
+        let salle = SalleArmes::actuel();
+        for classe in ["guerrier", "mage", "archer"] {
+            let competences =
+                IcebreakerCompetences::nouveau(classe, Acquis::par_defaut(classe)).unwrap();
+            let jeu = registre().jeu_par_defaut(classe).map(|(id, _)| id);
+            let p = panneau(Some(&competences), Some(&inventaire(jeu)), 0, false, &salle, None);
+            assert!(p.onglets.iter().all(|onglet| !onglet.lignes.is_empty()), "{classe}");
+            for l in p.onglets.iter().flat_map(|onglet| &onglet.lignes) {
+                if let Some(action) = &l.action {
+                    let common::comp::Content::Plain(libelle) = &action.libelle else {
+                        panic!("libellé attendu en clair : {:?}", action.libelle);
+                    };
+                    assert!(libelle.chars().count() <= 9, "{classe} : « {libelle} » dépasse du bouton");
+                }
+            }
+        }
+    }
+
     #[test]
     fn les_lignes_portent_leur_bouton_grise_quand_c_est_impossible() {
         let salle = SalleArmes::actuel();
@@ -833,14 +876,14 @@ mod tests {
         let competences = guerrier(100);
         let p = panneau(Some(&competences), Some(&inventaire), 125, false, &salle, None);
         let c = lignes(&p, 0);
-        assert_eq!(ligne(c, "Fendeur de terre").action.as_ref().unwrap().libelle, texte("Débloquer (1 pt)"));
+        assert_eq!(ligne(c, "Fendeur de terre").action.as_ref().unwrap().libelle, texte("Débloquer"));
         assert_eq!(commande(ligne(c, "Fendeur de terre")), ("salle debloquer fendeur_de_terre".into(), true));
         let tourbillon = ligne(c, "Tourbillon");
-        assert_eq!(tourbillon.action.as_ref().unwrap().libelle, texte("Monter (1 pt)"));
+        assert_eq!(tourbillon.action.as_ref().unwrap().libelle, texte("Monter"));
         assert_eq!(commande(tourbillon), ("salle monter tourbillon".into(), true));
         let armes = lignes(&p, 1);
         let hache = ligne(armes, "Hache à deux mains");
-        assert_eq!(hache.action.as_ref().unwrap().libelle, texte("Apprendre (150 or)"));
+        assert_eq!(hache.action.as_ref().unwrap().libelle, texte("Apprendre"));
         assert_eq!(commande(hache), ("salle apprendre jeu hache".into(), false));
         assert!(ligne(armes, "Grande épée").action.is_none(), "déjà appris");
         let ultimes = lignes(&p, 2);
@@ -1035,17 +1078,27 @@ mod tests {
         let def = registre().jeu("grande_epee").unwrap();
         assert_eq!(l.len(), def.competences.len(), "une ligne par compétence du jeu");
 
+        // Sur une touche : cadre doré, et le sous-titre dit la touche, le niveau, la recharge, puis
+        // ce qu'apporte le niveau suivant et son prix.
         let tourbillon = ligne(l, "Tourbillon");
-        assert_eq!(tourbillon.sous_titre, texte("niveau 2 · recharge 10 s"));
-        assert_eq!(tourbillon.pastille, Some((texte("touche 2"), Ton::Info)));
-        assert!(!tourbillon.estompee);
+        let niveau_3 = &registre().competence("tourbillon").unwrap().competence.niveaux[1].texte;
+        assert!(!niveau_3.is_empty());
+        assert_eq!(
+            sous_titre(tourbillon),
+            format!("touche 2 · niveau 2 · recharge 10 s · niveau 3 (1 point) : {niveau_3}")
+        );
+        assert!(tourbillon.choisie && tourbillon.pastille.is_none() && !tourbillon.estompee);
 
         let balayage = ligne(l, "Balayage lourd");
         assert_eq!(balayage.pastille, Some((texte("niveau max"), Ton::Bon)));
+        assert!(!balayage.choisie && balayage.action.is_none());
+        assert!(sous_titre(balayage).starts_with("niveau 5 · recharge "), "{}", sous_titre(balayage));
 
+        // À débloquer : le prix, puis ce que fait la compétence.
         let inconnue = ligne(l, "Fendeur de terre");
-        assert_eq!(inconnue.sous_titre, texte("à débloquer"));
-        assert!(inconnue.estompee && inconnue.pastille.is_none());
+        let description = &registre().competence("fendeur_de_terre").unwrap().competence.description;
+        assert_eq!(sous_titre(inconnue), format!("1 point · {description}"));
+        assert!(inconnue.estompee && inconnue.pastille.is_none() && !inconnue.choisie);
     }
 
     #[test]
@@ -1061,7 +1114,10 @@ mod tests {
         assert_eq!(epee.sous_titre, texte("maîtrise 320 · 2 points"));
         assert_eq!(epee.pastille, Some((texte("en mains"), Ton::Bon)));
         let hache = ligne(l, "Hache à deux mains");
-        assert_eq!(hache.sous_titre, texte("à apprendre"));
+        // À apprendre : le prix, puis les compétences que le jeu d'armes ouvre.
+        let noms = registre().jeu("hache").unwrap().competences.iter();
+        let noms = noms.map(|(_, c)| c.nom.as_str()).collect::<Vec<_>>().join(", ");
+        assert_eq!(sous_titre(hache), format!("{} or · {noms}", salle.prix_jeu_armes));
         assert!(hache.pastille.is_none());
     }
 
@@ -1078,15 +1134,20 @@ mod tests {
         let (_, ultime) = &registre().ultimes_de("guerrier")[0];
         assert_eq!(
             fureur.sous_titre,
-            texte(format!("{} · recharge {}", ultime.description, secondes(ultime.recharge)))
+            texte(format!("recharge {} · {}", secondes(ultime.recharge), ultime.description))
         );
         assert_eq!(ultimes.iter().filter(|l| l.pastille.is_some()).count(), 1);
+        // Un ultime à apprendre commence par son prix.
+        let seisme = sous_titre(ligne(ultimes, "Séisme"));
+        assert!(seisme.starts_with(&format!("{} or · recharge ", salle.prix_ultime)), "{seisme}");
 
         let passifs = lignes(&p, 3);
         let robuste = ligne(passifs, "Robuste");
         assert_eq!(robuste.pastille, Some((texte("actif"), Ton::Bon)));
         assert_eq!(passifs.iter().filter(|l| l.pastille.is_some()).count(), 1);
         assert!(!robuste.sous_titre.eq(&texte("")), "sa description");
+        let peau = sous_titre(ligne(passifs, "Peau dure"));
+        assert!(peau.starts_with(&format!("{} or · ", salle.prix_passif)), "{peau}");
     }
 
     #[test]
@@ -1097,16 +1158,16 @@ mod tests {
         // Une hache : un jeu d'armes du guerrier, mais pas appris.
         let hache = inventaire(Some("hache"));
         let p = panneau(Some(&competences), Some(&hache), 0, false, &salle, None);
-        assert_eq!(p.description, texte("Vous tenez « Hache à deux mains » : arme non apprise."));
-        assert_eq!(p.chiffres.len(), 1, "pas de points à montrer");
-        assert!(p.jauge.is_none());
+        assert_eq!(p.description, texte("Hache à deux mains : arme non apprise · 0 or"));
+        assert!(p.chiffres.is_empty());
+        assert!(p.jauge.is_none(), "pas de maîtrise à montrer");
         assert_eq!(lignes(&p, 0).len(), 1);
         assert!(lignes(&p, 0)[0].estompee);
         assert_eq!(p.onglets.len(), 4, "on peut quand même apprendre ce jeu");
 
         let vide = inventaire(None);
         let p = panneau(Some(&competences), Some(&vide), 0, false, &salle, None);
-        assert_eq!(p.description, texte("Prenez une arme en mains pour voir ses compétences."));
+        assert_eq!(p.description, texte("Aucune arme en mains · 0 or"));
     }
 
     #[test]

@@ -5624,6 +5624,9 @@ impl Hud {
         self.icebreaker.cliquer(sorte)
     }
 
+    /// Icebreaker : comme un clic sur un onglet du panneau ouvert (essai sans les mains).
+    pub fn icebreaker_onglet(&mut self, onglet: usize) { self.icebreaker.onglet(onglet); }
+
     /// Start showing a temporary notification ([ChangeNotification]) that zoom
     /// lock was toggled on/off.
     pub fn zoom_lock_toggle(&mut self, state: bool) {

@@ -134,6 +134,13 @@ const JAUGE_H: f64 = 44.0;
 const OBJET: f64 = 54.0;
 const OBJETS_PAR_RANG: usize = 8;
 const LIGNE_H: f64 = 52.0;
+// Une ligne : à droite, le bouton, le cadenas, la pastille ; le sous-titre prend ce qui reste et
+// passe à la ligne s'il est long (A.12 : la salle d'armes), sa ligne grandit d'autant.
+const LIGNE_BOUTON_W: f64 = 96.0;
+const LIGNE_CADENAS_W: f64 = 30.0;
+const LIGNE_PASTILLE_W: f64 = 92.0;
+const SOUS_TITRE_RANG_H: f64 = 18.0;
+const SOUS_TITRE_RANGS_MAX: usize = 5;
 const ACTION_H: f64 = 44.0;
 /// Deux lignes de texte.
 const MESSAGE_H: f64 = 44.0;
@@ -675,6 +682,33 @@ pub fn places_dans(
     }
 }
 
+/// Ce qui reste de large au texte d'une ligne de `largeur`, écrit à partir de `x_texte`, une fois
+/// posés à droite son bouton, son cadenas et sa pastille.
+pub fn largeur_texte_ligne(
+    largeur: f64,
+    x_texte: f64,
+    bouton: bool,
+    cadenas: bool,
+    pastille: bool,
+) -> f64 {
+    let mut droite = 8.0;
+    if bouton {
+        droite += LIGNE_BOUTON_W + 8.0;
+    }
+    if cadenas {
+        droite += LIGNE_CADENAS_W + 10.0;
+    }
+    if pastille {
+        droite += LIGNE_PASTILLE_W + 8.0;
+    }
+    (largeur - x_texte - droite).max(LIGNE_PASTILLE_W)
+}
+
+/// La hauteur d'une ligne dont le sous-titre tient sur `rangs` rangs de texte.
+pub fn hauteur_ligne(rangs: usize) -> f64 {
+    LIGNE_H + (rangs.clamp(1, SOUS_TITRE_RANGS_MAX) - 1) as f64 * SOUS_TITRE_RANG_H
+}
+
 /// Un texte au plus long de `max` caractères, coupé d'un « … ».
 pub fn couper(texte: &str, max: usize) -> String {
     if texte.chars().count() <= max {
@@ -1045,6 +1079,10 @@ impl Interface {
         let emprise = self.cases.iter().find(|case| case.sorte == sorte)?.emprise;
         Some(self.choisir(emprise))
     }
+
+    /// Comme un clic sur l'onglet `onglet` (compté depuis zéro) du panneau ouvert (essai sans les
+    /// mains).
+    pub fn onglet(&mut self, onglet: usize) { self.onglet = onglet; }
 
     /// Un message du serveur : réponse à une action (refus, confirmation) ou
     /// annonce. Avec un panneau ouvert, il s'affiche dans sa ligne de message,
@@ -2269,17 +2307,35 @@ fn dessiner_panneau(
             .color(BORDURE)
             .set(ids.liste_barre, ui);
         let largeur = g.largeur - 12.0;
+        let mut haut = 0.0;
         for (i, ligne) in lignes.iter().enumerate() {
             let fond = ids.lignes_fond[i];
+            let image = icone(imgs, &ligne.icone);
+            let x_texte = if image.is_some() { 52.0 } else { 12.0 };
+            // Le sous-titre passe à la ligne dans la place que lui laissent le bouton, le cadenas
+            // et la pastille ; la ligne grandit avec lui.
+            let sous_w = largeur_texte_ligne(
+                largeur,
+                x_texte,
+                ligne.action.is_some(),
+                ligne.cadenas.is_some(),
+                ligne.pastille.is_some(),
+            );
+            let rangs = ui.fonts.get(cyri).map_or(1, |police| {
+                conrod_core::text::line::infos(&ligne.sous_titre, police, taille(16))
+                    .wrap_by_whitespace(sous_w)
+                    .count()
+            });
+            let ligne_h = hauteur_ligne(rangs);
             cadre(
-                [largeur, LIGNE_H],
+                [largeur, ligne_h],
                 CASE,
                 if ligne.choisie { OR } else { TRAIT },
                 2.0,
             )
-            .top_left_with_margins_on(ids.liste, i as f64 * (LIGNE_H + 4.0), 0.0)
+            .top_left_with_margins_on(ids.liste, haut, 0.0)
             .set(fond, ui);
-            let image = icone(imgs, &ligne.icone);
+            haut += ligne_h + 4.0;
             if let Some(image) = image {
                 Image::new(image)
                     .w_h(32.0, 32.0)
@@ -2287,7 +2343,6 @@ fn dessiner_panneau(
                     .graphics_for(fond)
                     .set(ids.lignes_icone[i], ui);
             }
-            let x_texte = if image.is_some() { 52.0 } else { 12.0 };
             let seul = ligne.sous_titre.is_empty();
             Text::new(&ligne.titre)
                 .font_id(cyri)
@@ -2301,6 +2356,8 @@ fn dessiner_panneau(
                     .font_id(cyri)
                     .font_size(taille(16))
                     .color(DISCRET)
+                    .w(sous_w)
+                    .wrap_by_word()
                     .top_left_with_margins_on(fond, 29.0, x_texte)
                     .graphics_for(fond)
                     .set(ids.lignes_sous[i], ui);
@@ -2309,7 +2366,7 @@ fn dessiner_panneau(
             let mut droite = 8.0;
             if let Some(action) = &ligne.action {
                 if bouton(imgs, action, attente)
-                    .w_h(96.0, 36.0)
+                    .w_h(LIGNE_BOUTON_W, 36.0)
                     .label_font_id(cyri)
                     .label_font_size(taille(20))
                     .mid_right_with_margin_on(fond, droite)
@@ -2319,11 +2376,11 @@ fn dessiner_panneau(
                 {
                     clic = Some(action.commande.clone());
                 }
-                droite += 96.0 + 8.0;
+                droite += LIGNE_BOUTON_W + 8.0;
             }
             if let Some((ferme, commande)) = &ligne.cadenas {
                 if Button::image(imgs.lock)
-                    .w_h(30.0, 30.0)
+                    .w_h(LIGNE_CADENAS_W, 30.0)
                     .image_color(if *ferme { OR } else { IMAGE_GRISE })
                     .hover_image(imgs.lock)
                     .press_image(imgs.lock)
@@ -2333,10 +2390,10 @@ fn dessiner_panneau(
                 {
                     clic = Some(commande.clone());
                 }
-                droite += 30.0 + 10.0;
+                droite += LIGNE_CADENAS_W + 10.0;
             }
             if let Some((mot, ton)) = &ligne.pastille {
-                cadre([92.0, 28.0], CASE, teinte(*ton), 2.0)
+                cadre([LIGNE_PASTILLE_W, 28.0], CASE, teinte(*ton), 2.0)
                     .mid_right_with_margin_on(fond, droite)
                     .graphics_for(fond)
                     .set(ids.lignes_pastille[i], ui);
@@ -2673,5 +2730,26 @@ mod tests {
         assert_eq!(couper("exactement", 10), "exactement");
         assert_eq!(couper("beaucoup trop long", 10), "beaucoup …");
         assert_eq!(couper("été à l'été", 5).chars().count(), 5);
+    }
+
+    #[test]
+    fn le_sous_titre_d_une_ligne_a_ce_que_laissent_le_bouton_et_la_pastille() {
+        let largeur = LARGEUR - 12.0;
+        let tout = largeur_texte_ligne(largeur, 12.0, false, false, false);
+        assert_eq!(tout, largeur - 12.0 - 8.0);
+        let bouton = largeur_texte_ligne(largeur, 12.0, true, false, false);
+        assert_eq!(tout - bouton, LIGNE_BOUTON_W + 8.0);
+        let complet = largeur_texte_ligne(largeur, 52.0, true, true, true);
+        assert!(complet < bouton && complet >= LIGNE_PASTILLE_W, "{complet}");
+        // Jamais moins qu'une pastille de large, même dans une ligne trop étroite.
+        assert_eq!(largeur_texte_ligne(100.0, 52.0, true, true, true), LIGNE_PASTILLE_W);
+    }
+
+    #[test]
+    fn une_ligne_grandit_avec_les_rangs_de_son_sous_titre() {
+        assert_eq!(hauteur_ligne(0), LIGNE_H);
+        assert_eq!(hauteur_ligne(1), LIGNE_H);
+        assert_eq!(hauteur_ligne(3), LIGNE_H + 2.0 * SOUS_TITRE_RANG_H);
+        assert_eq!(hauteur_ligne(99), hauteur_ligne(SOUS_TITRE_RANGS_MAX));
     }
 }
