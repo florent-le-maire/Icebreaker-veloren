@@ -223,6 +223,7 @@ fn do_command(
         ServerChatCommand::Respawn => handle_respawn,
         ServerChatCommand::RevokeBuild => handle_revoke_build,
         ServerChatCommand::RevokeBuildAll => handle_revoke_build_all,
+        ServerChatCommand::Salle => crate::icebreaker_salle::handle_salle,
         ServerChatCommand::Safezone => handle_safezone,
         ServerChatCommand::Say => handle_say,
         ServerChatCommand::ServerPhysics => handle_server_physics,

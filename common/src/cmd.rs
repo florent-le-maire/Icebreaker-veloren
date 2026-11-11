@@ -452,6 +452,8 @@ pub enum ServerChatCommand {
     RtsimNpc,
     RtsimPurge,
     RtsimTp,
+    /// Icebreaker A.12: the weapons hall (skills, weapon sets, ultimates, passives).
+    Salle,
     Safezone,
     Say,
     Scale,
@@ -954,6 +956,15 @@ impl ServerChatCommand {
                 Content::localized("command-region-desc"),
                 None,
             ),
+            ServerChatCommand::Salle => cmd(
+                vec![
+                    Any("action", Required),
+                    Any("cible", Optional),
+                    Any("id", Optional),
+                ],
+                Content::localized("command-salle-desc"),
+                None,
+            ),
             ServerChatCommand::Safezone => cmd(
                 vec![Float("range", 100.0, Optional)],
                 Content::localized("command-safezone-desc"),
@@ -1295,6 +1306,7 @@ impl ServerChatCommand {
             ServerChatCommand::Rentrer => "rentrer",
             ServerChatCommand::RevokeBuild => "revoke_build",
             ServerChatCommand::RevokeBuildAll => "revoke_build_all",
+            ServerChatCommand::Salle => "salle",
             ServerChatCommand::Safezone => "safezone",
             ServerChatCommand::Say => "say",
             ServerChatCommand::ServerPhysics => "server_physics",
