@@ -26,6 +26,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | `PLAN-WIKI.md` | Le wiki de l'équipe : site généré depuis ces docs et `assets/icebreaker/` (jalon W) |
 | `PLAN-INTERFACE.md` | Refonte de l'interface ajoutée par Icebreaker : maquettes, charte, règles (jalon N) |
 | `A-FAIRE.md` | Todos de l'équipe (wiki local) : « Ouvert » à traiter en début de session, puis « Pris en compte » |
+| `MAINTENANCE.md` | Lancer le jeu et le serveur, faire le zip du client, déployer sur le VPS |
 | `IDEES.md` | Boîte à idées non décidées, avec leur effort |
 | `VISION.md` | Vision du jeu (copie du dépôt Godot ; ses « grandes phases » sont celles du projet Godot) |
 | `GAME_DESIGN.md` | Index des règles de `design/`, avec ce qui vaut pour Veloren |
