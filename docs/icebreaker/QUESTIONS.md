@@ -3,7 +3,7 @@
 Source unique des questions pour l'équipe (Flo, Sayanel) et des petites décisions prises en route. Règle : une
 question nouvelle s'écrit ici (pas dans un plan, qui se contente d'y renvoyer) ; une fois tranchée, elle passe dans
 « Tranché » avec la date et l'endroit où la règle est écrite. Une décision importante (choix technique, changement de
-cap) mérite une note dans `decisions/` (prochain numéro : 0019). Les numéros Qn ne changent pas, pour pouvoir les citer.
+cap) mérite une note dans `decisions/` (prochain numéro : 0021). Les numéros Qn ne changent pas, pour pouvoir les citer.
 
 Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendant.
 
@@ -36,7 +36,7 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q11 Entretien du village** : coûte-t-il de l'or chaque jour de carte (pression permanente, façon Darkest
   Dungeon) ? *Proposé* : non pour la démo, à essayer après. Variante « tribut du seigneur » : `IDEES.md`, idée 8.
 - **Q12 Patrouilles toutes les 12 min** : trop punitif pour une première soirée ? *Proposé* : commencer à 20 min.
-- **Q13 Salle d'armes** : bloquer l'arbre de compétences de Veloren hors du village, ou le laisser libre pour la démo.
+- **Q13** *(numéro réservé : « salle d'armes et arbre de compétences » est tranchée, voir plus bas, 2026-11-11).*
 - **Q14** *(numéro réservé : la question « PV entre deux lieux » est tranchée, voir plus bas, 2026-10-29).*
 
 ## 3. Donjon généré et grotte (`PLAN-DONJON.md`, `PLAN-GROTTE.md`, jalon G)
@@ -86,7 +86,8 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   agent les applique.
 - **Q35 La menace** (`design/menace.md`) : proposition ; son palier 1 est G.15 et G.16.
 - **Q36 Neuf classes et combos** (`decisions/0010`, `design/classes.md`) : garder ce cap sur Veloren ? Le prototype a
-  trois classes en données (R.1, R.6 à R.8). *Qui* : Flo.
+  trois classes, refaites par le jalon A (`decisions/0020` : jeux d'armes, ultime, passif, maîtrise). Restent ouverts :
+  les six autres classes et les combos de zones. *Qui* : Flo.
 - **Q37 Les âmes** (`design/ames.md`) : Sayanel conçoit ; restent à définir le niveau d'âme (comment il monte) et les
   couleurs redistribuées à chaque partie.
 - **Q38 Les idées** (`IDEES.md`) : lesquelles passent en tâches ? *Proposé* : curiosités (3) (relever un allié, 1, est fait : jalon T),
@@ -101,6 +102,22 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   de bon » même au village, où le personnage reste pourtant au registre (vu à l'essai avec `/kill`). Peut-on mourir
   au village en vrai jeu ? Si oui, que dit l'écran, et le personnage est-il perdu ? *Proposé* : non perdu, un texte
   à part. *Qui* : Flo.
+
+## 6. Armes, classes et compétences (`PLAN-CLASSES.md`, jalon A)
+
+- **Q43 Chiffres de départ** : points d'arme par expédition (proposé : 1 à 2), prix d'un jeu d'armes, d'un ultime,
+  d'un passif, recharges (compétence 6 à 15 s, ultime 60 à 120 s). Tout est en données (`salle_armes.ron`,
+  `jeux_armes/`) ; à régler après les premières parties. *Qui* : Flo.
+- **Q44 Choix de l'agent à confirmer** : (1) un jeu d'armes non appris ne donne que les attaques de base, sans
+  blocage à l'équipement ; (2) la maîtrise se compte par jeu d'armes (grande épée et épée + bouclier séparées) et vient
+  de l'expérience des ennemis tués ; (3) chaque classe a un inné non choisi (guerrier : PV et tenue ; mage : énergie ;
+  archer : vitesse). *Qui* : Flo.
+- **Q45 Ultimes et arme tenue** : un ultime de classe reprend le geste d'une arme de Veloren (la fureur vient de la
+  hache, le séisme du marteau). Rendu avec une autre arme en mains à voir en jeu (A.14) ; s'il choque, un geste neutre
+  par ultime. *Qui* : Flo, après A.14.
+- **Q46 La suite des armes** : bascule entre deux jeux d'armes en combat (façon Guild Wars 2 ; la pioche irait dans le
+  sac, voir Q25), et les jeux « deux épées » et « hache + épée » du guerrier (en données ; la hache à une main
+  n'existe qu'en arme forgée). *Proposé* : après le jalon A. *Qui* : Flo.
 
 ## Tranché
 
@@ -136,3 +153,9 @@ Petites décisions, par date ; les règles qui en sortent sont dans le fichier i
   mod, mort, serveur, wiki) ; une piste reprise se recrée depuis `master`.
 - **2026-11-11 (Flo, Q40, `decisions/0019`, `PLAN-INTERFACE.md`)** : les maquettes de l'interface conviennent ;
   style proche de Veloren, panneau typé piloté par le serveur et envoyé au changement ; réalisation N.3 à N.9.
+- **2026-11-11 (Flo, `decisions/0020`, `design/classes.md`, `PLAN-CLASSES.md`)** : le jeu d'armes en mains donne 2
+  compétences d'arme, la classe un ultime (longue recharge) et un passif, sans niveau ; jouer une arme en expédition
+  rapporte des points d'arme, dépensés à la salle d'armes pour débloquer ou monter (niveaux 1 à 5, les 3 et 5
+  transforment) ; recrues tirées avec un lot au hasard, puis tout s'apprend ; changement d'arme libre en bas ;
+  guerrier d'abord, puis mage et archer ; maquettes avant l'interface. Ex-Q13 : l'arbre de compétences de Veloren est
+  coupé pour les personnages du registre, on ne dépense qu'à la salle d'armes.

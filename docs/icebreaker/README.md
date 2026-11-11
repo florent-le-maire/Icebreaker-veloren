@@ -25,6 +25,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | `PLAN-MOD.md` | Proposition : passer d'une copie modifiée à un mod (jalon M) |
 | `PLAN-WIKI.md` | Le wiki de l'équipe : site généré depuis ces docs et `assets/icebreaker/` (jalon W) |
 | `PLAN-INTERFACE.md` | Refonte de l'interface ajoutée par Icebreaker : maquettes, charte, règles (jalon N) |
+| `PLAN-CLASSES.md` | Armes, classes et compétences : jeux d'armes, ultime, passif, maîtrise, salle d'armes (jalon A) |
 | `A-FAIRE.md` | Todos de l'équipe (wiki local) : « Ouvert » à traiter en début de session, puis « Pris en compte » |
 | `MAINTENANCE.md` | Lancer le jeu et le serveur, faire le zip du client, déployer sur le VPS |
 | `IDEES.md` | Boîte à idées non décidées, avec leur effort |
@@ -56,6 +57,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | J | Balise lumineuse | `HISTORIQUE.md` | fait, vu en jeu | — (supprimé) |
 | W | Wiki de l'équipe | `PLAN-WIKI.md` | W.1 à W.6 et W.8 à W.17 faits ; W.7 (VPS) à lancer | `Veloren-wiki` |
 | N | Interface Icebreaker | `HISTORIQUE.md` (charte et règles : `PLAN-INTERFACE.md`) | fait, vu en jeu | — (supprimé) |
+| A | Armes, classes et compétences | `PLAN-CLASSES.md` | plan validé le 2026-11-11 ; A.0 fait, A.1 à A.18 restent | `Veloren-classes` |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 
@@ -68,6 +70,6 @@ Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont 
 - Une question nouvelle va dans `QUESTIONS.md` (numéro Qn suivant, jamais réattribué) ; le plan concerné y renvoie.
   Une fois tranchée, elle passe dans « Tranché » avec la date et le fichier où la règle est écrite.
 - Une décision importante (choix technique, changement de cap) = une note `decisions/00NN-<sujet>.md` (prochain
-  numéro : 0020), au format des existantes (date, statut, problème, options, décision, conséquences).
+  numéro : 0021), au format des existantes (date, statut, problème, options, décision, conséquences).
 - Une idée pas encore décidée va dans `IDEES.md` ; retenue, elle devient une tâche et sort de là.
 - Un worktree par piste (`CLAUDE.md`) ; la colonne ci-dessus dit lequel.

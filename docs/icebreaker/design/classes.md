@@ -1,5 +1,35 @@
 # Classes et combos
 
+## Veloren : armes, classes et compétences (jalon A, Flo, 2026-11-11)
+
+Ce qui vaut pour le prototype Veloren. Décision : `decisions/0020-armes-classes-competences.md` ; tâches :
+`PLAN-CLASSES.md` ; valeurs : `assets/icebreaker/jeux_armes/`, `ultimes/`, `passifs/`, `salle_armes.ron` (ce sont les
+données qui font foi). Le reste de ce fichier est la proposition d'octobre pour le projet Godot : une référence.
+
+- **Jeu d'armes** : ce qu'on tient en mains (épée + bouclier, grande épée, marteau à deux mains, hache à deux mains ;
+  bâton, sceptre ; arc). Il donne les attaques de base (clic gauche, clic droit, garde) et un pool de **compétences
+  d'arme**, dont **2** sont placées sur les touches 1 et 2.
+- **Classe** : elle donne un pool d'**ultimes** (1 placé, touche 3, longue recharge) et de **passifs** (1 actif),
+  qui ne changent pas avec l'arme et n'ont pas de niveau. Chaque classe a aussi un **inné** non choisi (guerrier : PV
+  et tenue ; mage : énergie ; archer : vitesse).
+- **Recharges** : toute compétence a un temps de recharge, visible dans la barre.
+- **Maîtrise** : jouer un jeu d'armes en expédition (expérience des ennemis tués, jeu d'armes en mains) fait monter sa
+  maîtrise et rapporte des **points d'arme**. Les mannequins n'en donnent pas.
+- **Salle d'armes** (village) : seul endroit où l'on dépense. Un point d'arme débloque une compétence de cette arme ou
+  monte d'un niveau une compétence connue ; l'or apprend un nouveau jeu d'armes, un ultime ou un passif ; on y place
+  ses 2 compétences, son ultime et son passif.
+- **Niveaux** : 1 à 5. Niveaux 2 et 4 : des chiffres (dégâts, portée, recharge). Niveaux 3 et 5 : la compétence se
+  **transforme** (effet nouveau).
+- **Recrues** : chaque recrue de la charrette tire un petit lot (un jeu d'armes maîtrisé, 2 compétences, un ultime, un
+  passif, les armes qui vont avec) ; ensuite tout s'apprend.
+- **En expédition** : on change d'arme librement par l'inventaire, les compétences suivent ce qu'on tient ; un jeu
+  d'armes non appris ne donne que les attaques de base. Pas de montée de niveau en bas (pilier).
+- **Mort** : définitive (T.6), maîtrise et niveaux perdus avec le personnage.
+- Trois classes pour commencer : **guerrier** (tenir la ligne), **mage** (frapper de loin), **archer** (tenir la
+  distance). Les combos de zones décrits plus bas ne sont pas dans ce jalon (Q36).
+
+## Proposition d'octobre (projet Godot, référence)
+
 *Proposition du 2026-10-21 (Flo et l'agent), à valider avec l'équipe.* Décision : `docs/decisions/0010-classes-et-combos.md`.
 Découpage : `docs/roadmap/piste-S-classes.md`. Les valeurs sont des valeurs de départ, à régler en jouant ; ce sont
 les données (`game/data/combat/`) qui font foi.

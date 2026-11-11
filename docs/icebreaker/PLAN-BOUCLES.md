@@ -210,8 +210,8 @@ Chaque tâche = quelques heures, un critère de fin, le jeu reste lançable. Les
   *Fin* : un blessé a moins de PV max jusqu'à l'infirmerie.
 - [ ] **B.11 Forge** — réparer ; recettes de Veloren permises selon le niveau de la forge.
   *Fin* : forge niveau 1 : on fabrique du bronze, pas du fer.
-- [ ] **B.12 Salle d'armes** — arbre de compétences verrouillé hors de la salle d'armes.
-  *Fin* : impossible de dépenser un point en donjon, possible au village.
+- [ ] **B.12 Salle d'armes** — *remplacée le 2026-11-11 par le jalon A (`PLAN-CLASSES.md`, A.11 et A.12)* : points
+  d'arme dépensés à la salle d'armes, arbre de compétences de Veloren coupé pour les personnages du registre.
 - [ ] **B.13 Taverne et bilan** — rumeurs sur les contrats selon le niveau ; bilan complet au retour et chronique.
   *Fin* : la taverne niveau 2 affiche la menace exacte d'un contrat.
 

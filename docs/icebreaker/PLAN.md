@@ -32,6 +32,8 @@ Le jeu doit rester lançable après chaque tâche.
   (`PLAN-DONJON.md`, E.1 à E.16), mod (`PLAN-MOD.md`), piliers, menace et âmes (`design/`), idées (`IDEES.md`).
 - **Prochaine étape proposée** : une session de test dans le vrai client sur la liste « À vérifier en jeu », puis le
   bloc 1 des boucles (B.1 à B.4) (à plusieurs sur le VPS, `QUESTIONS.md`, Q7).
+- **En cours (2026-11-11)** : jalon A, armes, classes et compétences (`PLAN-CLASSES.md`, `decisions/0020`), plan
+  validé par Flo ; worktree `Veloren-classes`.
 
 ## Architecture visée
 
@@ -189,6 +191,12 @@ tombe, tous rentrent. Le personnage mort est perdu : il quitte le registre et il
 - [x] **T.7 Plantage du client au passage en fantôme** — caméra libre sans touche enfoncée : NaN dans la caméra
   avant le point de départ du serveur, le son plantait (build debug). Vu en jeu (Flo, 2026-11-08). 4d205f18b0
 
+## Jalon A — Armes, classes et compétences (Flo, 2026-11-11)
+
+Le jeu d'armes en mains donne 2 compétences d'arme, la classe un ultime et un passif ; jouer une arme en expédition
+rapporte des points d'arme, dépensés à la salle d'armes ; recrues tirées avec un lot au hasard. Règles :
+`design/classes.md` (section Veloren) ; tâches A.0 à A.18 : `PLAN-CLASSES.md`.
+
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
 Ce qui rend l'enchaînement village → donjon → village intéressant (risque, butin, besoins du village) : règles et
@@ -272,7 +280,7 @@ tâche pour ce qui casse.
 
 - Passage automatique du client d'une instance à l'autre.
 - Biome imposé pour terracotta, myrmidons et sahagins.
-- Classes (`decisions/0010-classes-et-combos.md`) : capacités en fichiers de données.
+- Classes au-delà du jalon A (`decisions/0010-classes-et-combos.md`, Q36) : les six autres classes, les combos de zones.
 - Recrues, traits, blessures, rang (`design/village.md`, `PLAN-BOUCLES.md` B.10).
 - Carte stratégique façon Mount & Blade sur un grand monde Veloren, rencontres qui lancent les instances.
 
