@@ -450,7 +450,7 @@ fn plan_village(village: &Fichier) -> Schema {
     let prix = nombre(village, "prix_maison", 300.0);
     let heures = nombre(village, "heures_chantier", 6.0);
     let habitants = nombre(village, "habitants_par_maison", 2.0);
-    let batiments = ["entrepôt", "caisse", "intendance", "infirmerie", "départ", "charrette"];
+    let batiments = ["entrepôt", "caisse", "intendance", "infirmerie", "départ", "charrette", "salle d'armes"];
     let (cx, cy) = (360.0, 170.0);
     let mut c = String::new();
     c += &format!("<circle cx=\"{cx}\" cy=\"{cy}\" r=\"46\" class=\"sch-place\"/>");
@@ -488,7 +488,7 @@ fn plan_village(village: &Fichier) -> Schema {
     Schema {
         svg: svg(740.0, 380.0, &c),
         legende: format!(
-            "Les six bâtiments de l'équipe entourent la place ; {} maisons sont bâties au départ et {} terrains attendent \
+            "Les sept bâtiments de l'équipe entourent la place ; {} maisons sont bâties au départ et {} terrains attendent \
 l'or de la caisse ({} or, {} h de carte).",
             maisons,
             terrains,

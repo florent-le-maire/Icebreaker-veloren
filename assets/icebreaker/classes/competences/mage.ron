@@ -1,7 +1,0 @@
-// Icebreaker : compétences de départ du mage (classes.ron), sur les touches 1 et 2.
-// Format des préréglages de compétences de Veloren (assets/common/skillset/preset/).
-[
-    Group(Weapon(Staff)),
-    Skill((Staff(FireShockwave), 1)),
-    Skill((Staff(FireDash), 1)),
-]

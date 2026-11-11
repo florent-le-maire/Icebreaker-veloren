@@ -78,8 +78,7 @@ pub fn create_character(
 
 /// Icebreaker : une recrue de la charrette (jalon R) part avec l'équipement de
 /// sa classe (`assets/icebreaker/classes.ron`) au lieu de l'arme choisie, et
-/// les compétences de sa classe débloquées (R.6), dans l'ordre de ses touches
-/// (R.8).
+/// les armes de son lot (jalon A) ; ses compétences viennent d'`IcebreakerCompetences`.
 pub fn create_recruit(
     entity: Entity,
     player_uuid: String,
@@ -97,21 +96,15 @@ pub fn create_recruit(
         return Err(CreationError::InvalidBody);
     }
     // Icebreaker : une classe décrite par nos données (jalon A) porte les armes de son lot et n'a plus
-    // de compétences de Veloren : ses touches viennent d'`IcebreakerCompetences`.
-    let (inventory, skill_set, abilities) =
-        if common::icebreaker_competences::registre().classe_geree(&class.id) {
-            (
-                crate::icebreaker_classes::inventaire_du_lot(class, acquis),
-                SkillSet::default(),
-                common::comp::ActiveAbilities::default_limited(BASE_ABILITY_LIMIT),
-            )
-        } else {
-            let inventory = crate::icebreaker_classes::starting_inventory(class);
-            let skill_set = crate::icebreaker_classes::starting_skill_set(class);
-            let abilities =
-                crate::icebreaker_classes::starting_abilities(class, &inventory, &skill_set);
-            (inventory, skill_set, abilities)
-        };
+    // de compétences de Veloren : ses touches viennent d'`IcebreakerCompetences`. Une classe que nos
+    // données ne décrivent pas (repli, aucune aujourd'hui) garde l'équipement de sa classe.
+    let inventory = if common::icebreaker_competences::registre().classe_geree(&class.id) {
+        crate::icebreaker_classes::inventaire_du_lot(class, acquis)
+    } else {
+        crate::icebreaker_classes::starting_inventory(class)
+    };
+    let skill_set = SkillSet::default();
+    let abilities = common::comp::ActiveAbilities::default_limited(BASE_ABILITY_LIMIT);
     persist_new_character(
         entity,
         player_uuid,

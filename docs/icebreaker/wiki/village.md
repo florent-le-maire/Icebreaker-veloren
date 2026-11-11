@@ -43,7 +43,7 @@ nom = "Habitants par maison"
 
 ## La règle
 
-Le village est une ville de Veloren dont on a gardé la place et les maisons les plus proches. Les six premières
+Le village est une ville de Veloren dont on a gardé la place et les maisons les plus proches. Les sept premières
 sont les **bâtiments** de l'équipe, chacun tenu par un personnage devant sa porte :
 
 - **Entrepôt** : un inventaire commun à tous les joueurs ; on y dépose et on y reprend par la fenêtre d'échange.
@@ -52,6 +52,8 @@ sont les **bâtiments** de l'équipe, chacun tenu par un personnage devant sa po
 - **Infirmerie** : soin complet contre de l'or.
 - **Départ** : le chef choisit la destination, les autres rejoignent, et on part groupés par téléportation.
 - **Charrette** : les recrues du jour (voir la fiche Charrette et registre).
+- **Salle d'armes** : on y place ses compétences. Les points d'arme gagnés en expédition y débloquent une compétence
+  ou la font monter d'un niveau ; l'or y fait apprendre un jeu d'armes, un ultime ou un passif.
 
 La touche **U** ouvre la **fenêtre du village**. À gauche, le plan : une case colorée par bâtiment, rangée près de
 sa place, avec son icône, son nom et ce qu'il faut en savoir (l'or de la caisse, les recrues du jour, les inscrits

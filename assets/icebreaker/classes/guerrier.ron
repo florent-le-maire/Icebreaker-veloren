@@ -9,6 +9,7 @@
     belt: Item("common.items.armor.leather_plate.belt"),
     legs: Item("common.items.armor.leather_plate.pants"),
     feet: Item("common.items.armor.leather_plate.foot"),
+    // Repli : l'arme tenue vient du jeu d'armes du lot de la recrue (jeux_armes/).
     active_hands: InHands((Item("common.items.weapons.sword.starter"), None)),
     inactive_hands: InHands((Item("common.items.tool.pickaxe_stone"), None)),
 )
