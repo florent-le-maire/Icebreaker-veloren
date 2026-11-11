@@ -54,7 +54,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | T | À terre, mort et sac du mort | `PLAN.md` | T.1 à T.6 faits, à voir en jeu | `Veloren-mort` |
 | J | Balise lumineuse | `HISTORIQUE.md` | fait, vu en jeu | — (supprimé) |
 | W | Wiki de l'équipe | `PLAN-WIKI.md` | W.1 à W.6 et W.8 à W.17 faits ; W.7 (VPS) à lancer | `Veloren-wiki` |
-| N | Interface Icebreaker | `PLAN-INTERFACE.md` | maquettes validées (N.1, N.2) ; N.3 à N.9 en cours | `Veloren-interface` |
+| N | Interface Icebreaker | `PLAN-INTERFACE.md` | N.1 à N.5 faits (fenêtre du village, à voir à la souris) ; N.6 à N.9 restent | `Veloren-interface` |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 

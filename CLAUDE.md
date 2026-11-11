@@ -76,6 +76,10 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   avec le même `VELOREN_USERDATA`) ; puis `!ouvrir x y z` (serrure, coffre), `!bloc x y z`, `!sac`, `!voisins`, `!echange`.
 - Vrai client sans clic : `ICEBREAKER_AUTO_CAMPAGNE=1` fait cliquer « Campagne » au menu (pseudo pris dans
   `<userdata>/voxygen/settings.ron`, `VELOREN_USERDATA` pour un dossier à part) ; journal dans `<userdata>/voxygen/logs`.
+  Avec `ICEBREAKER_AUTO_ADRESSE=localhost:<port>`, il va droit à ce serveur sans rien lancer ; avec
+  `ICEBREAKER_AUTO_PLAN=charrette,caisse,/expedition 2`, il ouvre le plan du village 25 s après l'entrée, clique
+  chaque bâtiment (ou envoie la commande) et prend une capture à chaque pas (dossier `screenshots_path` de ses
+  réglages ; `fullscreen: (enabled: false)` pour une fenêtre).
 - Wiki de l'équipe (jalon W, `docs/icebreaker/PLAN-WIKI.md`) : `cargo run -p icebreaker-wiki` écrit `site/` (ouvrir
   `site/index.html`) depuis `docs/icebreaker/` et `assets/icebreaker/` ; la vulgarisation s'écrit dans
   `docs/icebreaker/wiki/<domaine>.md` (en-tête TOML : design, réglages, tâches, systèmes, chiffres, icone, schema) ;

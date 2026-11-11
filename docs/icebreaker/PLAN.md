@@ -224,6 +224,10 @@ tâche pour ce qui casse.
 - V.5 : bilan au retour avec du vrai butin.
 - C.1 à C.3 : maison bâtie contre terrain vide, bouton « Bâtir (300 or) », maison dessinée après relance
   (`heures_chantier` à baisser pour l'essai).
+- N.4 / N.5 fenêtre du village (vue en capture seulement, par l'essai sans les mains) : à la souris, clic sur une
+  case du plan, onglets, cadenas, boutons, croix, Échap ; liste du registre qui défile au-delà de cinq personnages ;
+  un versement d'or (réponse dans le panneau, boutons qui se grisent) ; couleurs de la balise (F9) ; bandeau
+  d'expédition à plusieurs et son décompte ; messages à droite ; une autre taille d'écran ou d'interface.
 - X.1 fermeture de la vue U au départ et à la mort ; X.11 plan : cases à leur place, clic, point du joueur, Échap, fantôme en vol ; X.3 et X.9
   panneau, icônes, Échap, fermeture pour de bon ; X.4 couleurs et icônes des bâtiments ; X.5 E et T sur les PNJ dans
   leur maison ; X.8 recrues devant la charrette (posées 8 blocs trop haut sur le village d'essai ? `QUESTIONS.md`, Q30).

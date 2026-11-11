@@ -86,6 +86,14 @@ marteau, sceptre, dagues, épée et bouclier pour les classes à venir). Une cla
 
 ## Réalisation (accord de Flo le 2026-11-11 pour N.3 à N.9)
 
+Pour voir l'interface dans le vrai client sans y toucher : un village d'essai sur un port à part
+(`icebreaker.ps1 village -Port 14160 -Partie essai`), puis le client avec `ICEBREAKER_AUTO_CAMPAGNE=1`,
+`ICEBREAKER_AUTO_ADRESSE=localhost:14160` et `ICEBREAKER_AUTO_PLAN=charrette,/registre engager 0,depart,/expedition 2`
+(`CLAUDE.md`, commandes). Captures de la première version : `wiki/images/interface-*.png`.
+
+À savoir pour la suite : dans la version de conrod de Veloren, `Rectangle::outline_styled` est à éviter (les
+contours s'accumulent et prennent tous la couleur du dernier) ; un cadre se dessine avec `BorderedRectangle`.
+
 Les types partagés, dans `common/src/icebreaker_panneau.rs` (tous sérialisés, comparables) :
 
 - `Panneau { icone, titre, description, onglets: Vec<Onglet>, onglet, chiffres: Vec<Chiffre>, jauge: Option<Jauge>,
@@ -103,20 +111,13 @@ Les onglets se changent côté client (le serveur envoie les lignes de chaque on
 à une action reste un message de chat du serveur ; le client l'affiche aussi dans la ligne de message du panneau
 tant que la fenêtre est ouverte, et en message à droite sinon.
 
-- [ ] **N.3 Protocole : panneau typé, envoyé au changement** — `server/src/icebreaker_panneaux.rs` (ressource
-  `IcebreakerPanneaux` : qui a quoi d'ouvert, dernier envoi ; constructeurs purs `caisse`, `infirmerie`, `terrain`,
-  `chantier`, `entrepot`, `intendance`), `server/src/sys/icebreaker_panneaux.rs` (à chaque tic : reconstruit pour
-  les joueurs marqués ou toutes les 0,25 s, n'envoie que ce qui a changé), `icebreaker_registre::panneau_pour`,
-  `icebreaker_expedition::panneau_pour`, `icebreaker_balise` (panneau `libre`), `cmd.rs` (une commande marque le
-  panneau du joueur), `classes.ron` (`icone`). Client : `request_icebreaker_plan`, `chat_cli` (`!batiments`,
-  `!panneau x y`, `!fermer`). Fin : tests des constructeurs (bouton grisé sans or, raison écrite) ; au client
-  texte, `/caisse 10` puis le panneau reçu sans le redemander.
-- [ ] **N.4 Fenêtre du village** — `voxygen/src/hud/icebreaker.rs` (nouveau : état, textes préparés à la
-  réception, dessin de la fenêtre : plan à gauche, panneau typé à droite, tailles fixes, liste qui défile, bouton
-  « en cours » au clic), `hud/mod.rs` (l'ancien dessin part), `session/mod.rs` (plus de demande chaque seconde ni de
-  calcul du plan à chaque image ; survol et clic dans le HUD). Fin : tests de mise en page ; capture en jeu.
-- [ ] **N.5 Bandeaux et messages** — bandeau du fantôme, bandeau d'expédition (envoyé au changement, décompte côté
-  client), messages à droite (annonces, refus, infos) quand la fenêtre est fermée.
+- [x] **N.3 Protocole : panneau typé, envoyé au changement** — le client dit ce qu'il a d'ouvert, le serveur envoie
+  les bâtiments et le panneau quand ils changent (au tic suivant après une commande du joueur, sinon dans la
+  demi-seconde). Vu au client texte : le panneau arrive sans être redemandé. `f308093b2e`
+- [x] **N.4 Fenêtre du village** et **N.5 Bandeaux et messages** — `voxygen/src/hud/icebreaker.rs` : plan rangé
+  sur une grille à gauche, panneau typé à droite, tailles fixes, bandeaux du fantôme et de l'expédition, messages à
+  droite. Vu en capture dans le vrai client, pas à la souris : voir « À vérifier en jeu » de `PLAN.md`.
+  `3d52bdebab`
 - [ ] **N.6 Menu** — bloc Icebreaker, liste des parties qui défile, erreur sous le champ, étapes du lancement.
 - [ ] **N.7 Donjon** — rappel des touches au verrouillage, couleurs de la balise en pastilles, quantité et recharge
   ensemble, bloc « à terre », marqueur d'un allié à terre, écran de mort, bandeau de l'allié regardé.
