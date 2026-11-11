@@ -85,6 +85,7 @@ pub fn create_recruit(
     player_uuid: String,
     character_alias: String,
     class: &crate::icebreaker_classes::Class,
+    acquis: &common::icebreaker_competences::Acquis,
     body: Body,
     character_updater: &mut WriteExpect<'_, CharacterUpdater>,
     waypoint: Option<Waypoint>,
@@ -95,9 +96,22 @@ pub fn create_recruit(
     if !matches!(body, Body::Humanoid(_)) {
         return Err(CreationError::InvalidBody);
     }
-    let inventory = crate::icebreaker_classes::starting_inventory(class);
-    let skill_set = crate::icebreaker_classes::starting_skill_set(class);
-    let abilities = crate::icebreaker_classes::starting_abilities(class, &inventory, &skill_set);
+    // Icebreaker : une classe décrite par nos données (jalon A) porte les armes de son lot et n'a plus
+    // de compétences de Veloren : ses touches viennent d'`IcebreakerCompetences`.
+    let (inventory, skill_set, abilities) =
+        if common::icebreaker_competences::registre().classe_geree(&class.id) {
+            (
+                crate::icebreaker_classes::inventaire_du_lot(class, acquis),
+                SkillSet::default(),
+                common::comp::ActiveAbilities::default_limited(BASE_ABILITY_LIMIT),
+            )
+        } else {
+            let inventory = crate::icebreaker_classes::starting_inventory(class);
+            let skill_set = crate::icebreaker_classes::starting_skill_set(class);
+            let abilities =
+                crate::icebreaker_classes::starting_abilities(class, &inventory, &skill_set);
+            (inventory, skill_set, abilities)
+        };
     persist_new_character(
         entity,
         player_uuid,

@@ -3,7 +3,7 @@ use crate::TerrainPersistence;
 use crate::{EditableSettings, Settings, client::Client};
 use common::{
     comp::{
-        Admin, AdminRole, Body, CanBuild, ControlEvent, Controller, ForceUpdate, Health, Ori,
+        Admin, AdminRole, Body, CanBuild, ChatType, Content, ControlEvent, Controller, ForceUpdate, Health, Ori,
         Player, Pos, Presence, PresenceKind, Scale, SkillSet, SpectatingEntity, Vel,
     },
     event::{self, EmitExt},
@@ -81,6 +81,7 @@ impl Sys {
         time_for_vd_changes: Instant,
         msg: ClientGeneral,
         player_physics: &mut Option<(Pos, Vel, Ori)>,
+        has_icebreaker_skills: bool,
     ) -> Result<(), crate::error::Error> {
         let presence = match maybe_presence.as_deref_mut() {
             Some(g) => g,
@@ -214,6 +215,16 @@ impl Sys {
                     }
                 }
             },
+            ClientGeneral::UnlockSkill(_) if has_icebreaker_skills => {
+                // Icebreaker : un personnage qui a nos compétences n'a plus l'arbre de Veloren (jalon A.7).
+                client.send_fallible(ServerGeneral::server_msg(
+                    ChatType::CommandError,
+                    Content::Plain(
+                        "Les compétences s'apprennent à la salle d'armes, pas dans l'arbre."
+                            .to_string(),
+                    ),
+                ));
+            },
             ClientGeneral::UnlockSkill(skill) => {
                 // FIXME: How do we want to handle the error?  Probably not by swallowing it.
                 let _ = skill_set
@@ -312,6 +323,7 @@ impl<'a> System<'a> for Sys {
             Read<'a, DeltaTime>,
             Read<'a, Settings>,
             Read<'a, AreasContainer<BuildArea>>,
+            ReadStorage<'a, common::icebreaker_competences::IcebreakerCompetences>,
         ),
         ReadStorage<'a, CanBuild>,
         WriteStorage<'a, ForceUpdate>,
@@ -345,7 +357,7 @@ impl<'a> System<'a> for Sys {
             entities,
             events,
             (terrain, slow_jobs, editable_settings),
-            (id_maps, dt, settings, build_areas),
+            (id_maps, dt, settings, build_areas, icebreaker_skills),
             can_build,
             mut force_updates,
             is_rider,
@@ -449,6 +461,7 @@ impl<'a> System<'a> for Sys {
                             time_for_vd_changes,
                             msg,
                             &mut player_physics,
+                            icebreaker_skills.contains(entity),
                         )
                     });
 

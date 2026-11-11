@@ -11,6 +11,7 @@ use common::{
         inventory::{item::tool::AbilityKind, loadout_builder::LoadoutBuilder, slot::EquipSlot},
         skills::Skill,
     },
+    icebreaker_competences::{Acquis, IcebreakerCompetences, JeuArmes, jeu_en_main, registre},
     skillset_builder::SkillSetBuilder,
 };
 use serde::Deserialize;
@@ -73,6 +74,94 @@ pub fn starting_inventory(class: &Class) -> Inventory {
     Inventory::with_loadout_humanoid(loadout)
 }
 
+/// Icebreaker : l'inventaire de départ d'une classe décrite par nos données (jalon A.7) : son
+/// équipement (armure, pioche en mains secondaires…) où les armes actives sont remplacées par celles
+/// du jeu d'armes `jeu` (main gauche vidée s'il n'en a pas).
+pub fn inventaire_avec_jeu(class: &Class, jeu: &JeuArmes) -> Inventory {
+    use common::comp::{Item, inventory::slot::EquipSlot};
+    use common::resources::Time;
+    let mut inventory = starting_inventory(class);
+    let (droite, gauche) = &jeu.armes;
+    // Les mains d'abord vidées : une arme à deux mains ne tient pas avec un bouclier déjà là.
+    inventory.replace_loadout_item(EquipSlot::ActiveOffhand, None, Time(0.0));
+    inventory.replace_loadout_item(EquipSlot::ActiveMainhand, None, Time(0.0));
+    inventory.replace_loadout_item(
+        EquipSlot::ActiveMainhand,
+        Some(Item::new_from_asset_expect(droite)),
+        Time(0.0),
+    );
+    inventory.replace_loadout_item(
+        EquipSlot::ActiveOffhand,
+        gauche.as_deref().map(Item::new_from_asset_expect),
+        Time(0.0),
+    );
+    inventory
+}
+
+/// Icebreaker : l'inventaire de départ d'une recrue de `class` qui porte le lot `acquis` : les armes
+/// du premier jeu d'armes de son lot si la classe est décrite par nos données, sinon l'équipement de
+/// la classe tel quel.
+pub fn inventaire_du_lot(class: &Class, acquis: &Acquis) -> Inventory {
+    match jeu_du_lot(&class.id, acquis) {
+        Some(jeu) => inventaire_avec_jeu(class, jeu),
+        None => starting_inventory(class),
+    }
+}
+
+/// Icebreaker : le jeu d'armes d'un lot, pour une classe décrite par nos données. Un lot vide
+/// (recrue d'avant le jalon A) donne le jeu par défaut de sa classe.
+pub fn jeu_du_lot(classe: &str, acquis: &Acquis) -> Option<&'static JeuArmes> {
+    let registre = registre();
+    if !registre.classe_geree(classe) {
+        return None;
+    }
+    let (id, _) = if acquis.est_vide() {
+        registre.jeu_par_defaut(classe)?
+    } else {
+        let id = acquis.jeux.keys().next()?;
+        (id.as_str(), registre.jeu(id)?)
+    };
+    registre.jeu(id)
+}
+
+/// Icebreaker : où en est un personnage avec ce qu'il tient en mains (jalon A.7).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum EtatArme {
+    /// Mains vides : rien à dire.
+    Rien,
+    /// Le jeu d'armes en mains est appris.
+    Appris,
+    /// Le jeu d'armes de sa classe, pas encore appris : son nom.
+    NonAppris(String),
+    /// Une arme en main droite qui n'est pas un jeu d'armes de sa classe.
+    Etrangere,
+}
+
+impl EtatArme {
+    /// Ce qu'on dit au joueur quand il entre dans cet état.
+    pub fn message(&self) -> Option<String> {
+        match self {
+            Self::Rien | Self::Appris => None,
+            Self::NonAppris(nom) => {
+                Some(format!("{nom} : arme non apprise. Attaques de base seulement."))
+            },
+            Self::Etrangere => Some(
+                "Cette arme n'est pas de votre classe. Attaques de base seulement.".to_string(),
+            ),
+        }
+    }
+}
+
+/// Icebreaker : l'état d'un personnage qui a nos compétences, d'après ses armes en mains (A.7).
+pub fn etat_arme(competences: &IcebreakerCompetences, inventaire: &Inventory) -> EtatArme {
+    match jeu_en_main(&competences.classe, Some(inventaire)) {
+        Some((id, _)) if competences.acquis.jeux.contains_key(id) => EtatArme::Appris,
+        Some((_, jeu)) => EtatArme::NonAppris(jeu.nom.clone()),
+        None if inventaire.equipped(EquipSlot::ActiveMainhand).is_some() => EtatArme::Etrangere,
+        None => EtatArme::Rien,
+    }
+}
+
 /// The skills a recruit of `class` starts with (R.6).
 pub fn starting_skill_set(class: &Class) -> SkillSet {
     SkillSetBuilder::from_asset_expect(&class.competences).build()
@@ -131,6 +220,7 @@ mod tests {
         inventory::slot::{ArmorSlot, EquipSlot},
         item::ItemDefinitionId,
     };
+    use common::icebreaker_competences::registre;
 
     fn equipped(inventory: &Inventory, slot: EquipSlot) -> Option<String> {
         inventory
@@ -169,6 +259,59 @@ mod tests {
             assert_eq!(icones[0], ItemKey::Simple(weapon.to_string()), "{id}");
         }
         assert_eq!(classes().len(), 3);
+    }
+
+    // Jalon A.7 : le jeu d'armes d'un lot décide des armes en mains.
+    #[test]
+    fn icebreaker_classes_a_weapon_set_replaces_the_weapons_in_hand() {
+        let class = class("guerrier").unwrap();
+        for (id, jeu) in registre().jeux_de("guerrier") {
+            let inventory = inventaire_avec_jeu(&class, jeu);
+            assert_eq!(jeu_en_main("guerrier", Some(&inventory)).map(|(i, _)| i), Some(id), "{id}");
+            // Le reste de l'équipement reste celui de la classe.
+            assert!(equipped(&inventory, EquipSlot::Armor(ArmorSlot::Chest)).is_some(), "{id}");
+            assert_eq!(
+                equipped(&inventory, EquipSlot::InactiveMainhand).as_deref(),
+                Some("common.items.tool.pickaxe_stone"),
+                "{id}"
+            );
+        }
+    }
+
+    #[test]
+    fn icebreaker_classes_the_message_follows_the_weapons_in_hand() {
+        let class = class("guerrier").unwrap();
+        let marteau = registre().jeu("marteau").unwrap();
+        let inventory = inventaire_avec_jeu(&class, marteau);
+        let mut competences =
+            IcebreakerCompetences::nouveau("guerrier", Acquis::par_defaut("guerrier")).unwrap();
+        // Le marteau n'est pas appris : le message nomme le jeu.
+        let etat = etat_arme(&competences, &inventory);
+        assert_eq!(etat, EtatArme::NonAppris(marteau.nom.clone()));
+        assert_eq!(
+            etat.message(),
+            Some(format!("{} : arme non apprise. Attaques de base seulement.", marteau.nom))
+        );
+        // La grande épée, apprise : rien à dire.
+        let epee = inventaire_du_lot(&class, &competences.acquis);
+        assert_eq!(etat_arme(&competences, &epee), EtatArme::Appris);
+        assert_eq!(EtatArme::Appris.message(), None);
+        // Une arme d'une autre classe en main droite.
+        let arc = LoadoutBuilder::empty()
+            .active_mainhand(Some(common::comp::Item::new_from_asset_expect(
+                "common.items.weapons.bow.starter",
+            )))
+            .build();
+        let arc = Inventory::with_loadout_humanoid(arc);
+        assert_eq!(etat_arme(&competences, &arc), EtatArme::Etrangere);
+        assert!(EtatArme::Etrangere.message().unwrap().starts_with("Cette arme n'est pas de votre classe."));
+        // Mains vides.
+        let vide = Inventory::with_loadout_humanoid(LoadoutBuilder::empty().build());
+        assert_eq!(etat_arme(&competences, &vide), EtatArme::Rien);
+        assert_eq!(EtatArme::Rien.message(), None);
+        // Le marteau appris : plus de message.
+        competences.acquis.jeux.insert("marteau".into(), Default::default());
+        assert_eq!(etat_arme(&competences, &inventory), EtatArme::Appris);
     }
 
     #[test]

@@ -636,6 +636,7 @@ pub(crate) fn handle_registre(
                     REGISTRE_UUID.to_string(),
                     recrue.nom.clone(),
                     &class,
+                    &recrue.acquis,
                     body,
                     &mut updater,
                     None,
