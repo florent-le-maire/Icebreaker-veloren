@@ -24,6 +24,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | `PLAN-GROTTE.md` | La grotte façon Deep Rock Galactic (jalon K, fait en première version) |
 | `PLAN-MOD.md` | Proposition : passer d'une copie modifiée à un mod (jalon M) |
 | `PLAN-WIKI.md` | Le wiki de l'équipe : site généré depuis ces docs et `assets/icebreaker/` (jalon W) |
+| `PLAN-INTERFACE.md` | Refonte de l'interface ajoutée par Icebreaker : maquettes, charte, règles (jalon N) |
 | `A-FAIRE.md` | Todos de l'équipe (wiki local) : « Ouvert » à traiter en début de session, puis « Pris en compte » |
 | `IDEES.md` | Boîte à idées non décidées, avec leur effort |
 | `VISION.md` | Vision du jeu (copie du dépôt Godot ; ses « grandes phases » sont celles du projet Godot) |
@@ -53,6 +54,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | T | À terre, mort et sac du mort | `PLAN.md` | T.1 à T.6 faits, à voir en jeu | `Veloren-mort` |
 | J | Balise lumineuse | `HISTORIQUE.md` | fait, vu en jeu | — (supprimé) |
 | W | Wiki de l'équipe | `PLAN-WIKI.md` | W.1 à W.6 et W.8 à W.17 faits ; W.7 (VPS) à lancer | `Veloren-wiki` |
+| N | Interface Icebreaker | `PLAN-INTERFACE.md` | N.1 (maquettes) fait ; à lire par l'équipe (Q39) | `Veloren-interface` |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 
@@ -65,6 +67,6 @@ Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont 
 - Une question nouvelle va dans `QUESTIONS.md` (numéro Qn suivant, jamais réattribué) ; le plan concerné y renvoie.
   Une fois tranchée, elle passe dans « Tranché » avec la date et le fichier où la règle est écrite.
 - Une décision importante (choix technique, changement de cap) = une note `decisions/00NN-<sujet>.md` (prochain
-  numéro : 0019), au format des existantes (date, statut, problème, options, décision, conséquences).
+  numéro : 0020), au format des existantes (date, statut, problème, options, décision, conséquences).
 - Une idée pas encore décidée va dans `IDEES.md` ; retenue, elle devient une tâche et sort de là.
 - Un worktree par piste (`CLAUDE.md`) ; la colonne ci-dessus dit lequel.

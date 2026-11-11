@@ -91,6 +91,9 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   couleurs redistribuées à chaque partie.
 - **Q38 Les idées** (`IDEES.md`) : lesquelles passent en tâches ? *Proposé* : curiosités (3) (relever un allié, 1, est fait : jalon T),
   dépouilles de chef (4) avec bâtiments débloqués (7), puis tribut (8) et mémorial (10).
+- **Q39 L'interface Icebreaker** (`PLAN-INTERFACE.md`, `decisions/0019`) : les maquettes conviennent-elles, et
+  part-on sur le panneau typé piloté par le serveur ? *Qui* : Flo et Sayanel. *Proposé* : oui, puis le découpage N.3
+  à N.9.
 
 ## Tranché
 
