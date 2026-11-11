@@ -93,6 +93,14 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   dépouilles de chef (4) avec bâtiments débloqués (7), puis tribut (8) et mémorial (10).
 - **Q40** *(numéro réservé : « l'interface Icebreaker » est tranchée, voir plus bas, 2026-11-11 ; Q39 était déjà
   pris par les worktrees, 2026-11-07).*
+- **Q41 Le bilan de retour : chacun le sien, ou toute l'expédition ?** (`PLAN-INTERFACE.md`, N.8) La maquette montre
+  « ce que chacun rapporte » ; en jeu chacun rentre seul par `/rentrer` et ne voit que ce qu'il rapporte lui-même,
+  les autres n'en ont qu'une ligne dans le chat. *Proposé* : garder ainsi tant que le retour est individuel ; un
+  bilan commun demande un retour groupé (toute l'expédition rentre ensemble). *Qui* : Flo et Sayanel.
+- **Q42 Mourir au village** (`PLAN-INTERFACE.md`, N.7) : l'écran de mort dit « Mort en expédition » et « perdu pour
+  de bon » même au village, où le personnage reste pourtant au registre (vu à l'essai avec `/kill`). Peut-on mourir
+  au village en vrai jeu ? Si oui, que dit l'écran, et le personnage est-il perdu ? *Proposé* : non perdu, un texte
+  à part. *Qui* : Flo.
 
 ## Tranché
 
