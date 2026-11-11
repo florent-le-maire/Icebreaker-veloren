@@ -1,10 +1,7 @@
 // Icebreaker : le plan du village (touche U par défaut,
-// `voxygen/src/session/icebreaker_vue.rs`), dessiné par le HUD par-dessus le jeu.
+// `voxygen/src/session/icebreaker_vue.rs`), dessiné par le HUD dans la fenêtre du village
+// (`voxygen/src/hud/icebreaker.rs`, jalon N).
 (
-    // Largeur et hauteur du panneau du plan, en fraction de l'écran (0 à 1).
-    taille: (0.55, 0.8),
-    // Vide entre le bord du panneau et le plan, en fraction de la hauteur de l'écran.
-    marge: 0.06,
     // Couleur (rouge, vert, bleu de 0 à 1) du point qui marque le joueur (rien pour un fantôme).
     couleur_joueur: (1.0, 1.0, 1.0),
     // Distance en blocs de l'ouverture au-delà de laquelle le plan se ferme de lui-même

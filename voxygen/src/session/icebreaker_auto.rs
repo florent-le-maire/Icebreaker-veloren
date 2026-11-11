@@ -1,0 +1,132 @@
+//! Icebreaker : essai du plan du village sans les mains (jalon N), pour voir
+//! l'interface dans le vrai client sans y toucher.
+//!
+//! Avec `ICEBREAKER_AUTO_PLAN=caisse,charrette`, le client attend d'être entré
+//! dans le monde, ouvre le plan du village et en prend une capture d'écran,
+//! puis, pour chaque sorte de bâtiment de la liste (celles de
+//! `vue_village.ron`), clique dessus et prend une capture de son panneau. Un
+//! élément qui commence par `/` est une commande (`/expedition 2`), envoyée
+//! comme le ferait un bouton, puis capturée. Les captures vont dans le dossier
+//! de captures du client (`screenshots_path` de ses réglages). `plan` seul : le
+//! plan sans panneau.
+
+use std::{
+    collections::VecDeque,
+    time::{Duration, Instant},
+};
+
+/// Le temps d'entrer dans le monde et de charger le village.
+const ENTREE: Duration = Duration::from_secs(25);
+/// Le temps qu'un panneau arrive et s'affiche avant sa capture.
+const ENTRE_DEUX: Duration = Duration::from_secs(3);
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Pas {
+    Ouvrir,
+    /// Cliquer le bâtiment de cette sorte.
+    Cliquer(String),
+    /// Envoyer cette commande (nom, arguments), comme un bouton du panneau.
+    Commande(String, Vec<String>),
+    Capturer,
+}
+
+pub struct Auto {
+    a_faire: VecDeque<Pas>,
+    /// Pas avant.
+    quand: Instant,
+}
+
+impl Auto {
+    /// L'essai demandé par `ICEBREAKER_AUTO_PLAN`, s'il l'est.
+    pub fn charger() -> Option<Self> {
+        let sortes = std::env::var("ICEBREAKER_AUTO_PLAN").ok()?;
+        Some(Self::de(&sortes, Instant::now()))
+    }
+
+    fn de(sortes: &str, maintenant: Instant) -> Self {
+        let mut a_faire = VecDeque::from([Pas::Ouvrir, Pas::Capturer]);
+        for sorte in sortes
+            .split(',')
+            .map(str::trim)
+            .filter(|sorte| !sorte.is_empty() && *sorte != "plan")
+        {
+            a_faire.push_back(match sorte.strip_prefix('/') {
+                Some(commande) => {
+                    let mut mots = commande.split_whitespace().map(str::to_string);
+                    Pas::Commande(mots.next().unwrap_or_default(), mots.collect())
+                },
+                None => Pas::Cliquer(sorte.to_string()),
+            });
+            a_faire.push_back(Pas::Capturer);
+        }
+        Self {
+            a_faire,
+            quand: maintenant + ENTREE,
+        }
+    }
+
+    /// Le pas à faire maintenant, s'il est temps ; le suivant attendra.
+    pub fn pas(&mut self, maintenant: Instant) -> Option<Pas> {
+        if maintenant < self.quand {
+            return None;
+        }
+        let pas = self.a_faire.pop_front()?;
+        self.quand = maintenant + ENTRE_DEUX;
+        Some(pas)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn l_essai_ouvre_le_plan_puis_clique_et_capture_chaque_batiment() {
+        let debut = Instant::now();
+        let mut auto = Auto::de("caisse, charrette", debut);
+        assert_eq!(auto.pas(debut), None, "pas avant d'être entré dans le monde");
+        let mut t = debut + ENTREE;
+        let mut pas = Vec::new();
+        while let Some(p) = auto.pas(t) {
+            assert_eq!(auto.pas(t), None, "un pas à la fois");
+            pas.push(p);
+            t += ENTRE_DEUX;
+        }
+        assert_eq!(pas, vec![
+            Pas::Ouvrir,
+            Pas::Capturer,
+            Pas::Cliquer("caisse".into()),
+            Pas::Capturer,
+            Pas::Cliquer("charrette".into()),
+            Pas::Capturer,
+        ]);
+    }
+
+    #[test]
+    fn un_element_qui_commence_par_une_barre_est_une_commande() {
+        let debut = Instant::now();
+        let mut auto = Auto::de("depart, /expedition 2", debut);
+        let mut t = debut + ENTREE;
+        let mut pas = Vec::new();
+        while let Some(p) = auto.pas(t) {
+            pas.push(p);
+            t += ENTRE_DEUX;
+        }
+        assert_eq!(pas[2..], [
+            Pas::Cliquer("depart".into()),
+            Pas::Capturer,
+            Pas::Commande("expedition".into(), vec!["2".into()]),
+            Pas::Capturer,
+        ]);
+    }
+
+    #[test]
+    fn plan_seul_ne_clique_rien() {
+        let debut = Instant::now();
+        let mut auto = Auto::de("plan", debut);
+        let t = debut + ENTREE;
+        assert_eq!(auto.pas(t), Some(Pas::Ouvrir));
+        assert_eq!(auto.pas(t + ENTRE_DEUX), Some(Pas::Capturer));
+        assert_eq!(auto.pas(t + ENTRE_DEUX * 2), None);
+    }
+}

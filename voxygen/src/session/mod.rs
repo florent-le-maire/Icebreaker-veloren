@@ -1,4 +1,6 @@
 mod icebreaker_lock;
+// Icebreaker : essai du plan du village sans les mains (jalon N).
+mod icebreaker_auto;
 pub mod icebreaker_vue;
 pub mod interactable;
 pub mod settings_change;
@@ -120,6 +122,8 @@ pub struct SessionState {
     icebreaker_lock: Option<icebreaker_lock::Verrou>,
     icebreaker_lock_settings: icebreaker_lock::Reglages,
     icebreaker_vue_settings: icebreaker_vue::Reglages,
+    /// Icebreaker : essai du plan du village sans les mains (`ICEBREAKER_AUTO_PLAN`, jalon N).
+    icebreaker_auto: Option<icebreaker_auto::Auto>,
     auto_walk: bool,
     walking_speed: bool,
     camera_clamp: bool,
@@ -200,6 +204,7 @@ impl SessionState {
             icebreaker_lock: None,
             icebreaker_lock_settings: icebreaker_lock::Reglages::charger(),
             icebreaker_vue_settings: icebreaker_vue::Reglages::charger(),
+            icebreaker_auto: icebreaker_auto::Auto::charger(),
             auto_walk: false,
             walking_speed: false,
             camera_clamp: false,
@@ -406,25 +411,21 @@ impl SessionState {
                     if let Some(view) = &mut self.icebreaker_top_view {
                         // No building: not in the village, the view closes (X.1).
                         view.hors_village = buildings.is_empty();
-                        view.buildings = buildings;
+                        self.hud
+                            .icebreaker_batiments(buildings, &global_state.i18n.read());
                     }
                 },
                 client::Event::IcebreakerExpedition(expedition) => {
-                    self.hud.icebreaker_expedition(expedition);
+                    self.hud
+                        .icebreaker_expedition(expedition, &global_state.i18n.read());
                 },
-                // Icebreaker: a panel asked for before it was closed (answer still
-                // on its way) does not open it again.
-                client::Event::IcebreakerPanel(title, lines, actions) => {
-                    if self
-                        .icebreaker_top_view
-                        .as_ref()
-                        .is_some_and(|view| view.last_click.is_some())
-                    {
-                        self.hud.icebreaker_panel(Some((title, lines, actions)));
-                    } else if self.icebreaker_menu_balise {
-                        // Icebreaker : le choix de la couleur de la balise, en jeu (J.3).
-                        self.icebreaker_menu_balise = false;
-                        self.hud.icebreaker_panel_libre(Some((title, lines, actions)));
+                // Icebreaker : le panneau typé (jalon N) du bâtiment cliqué dans le plan (le HUD
+                // ignore celui qui arrive après la fermeture), ou le choix de la couleur de la
+                // balise s'il a été demandé (J.3).
+                client::Event::IcebreakerPanel(panneau) => {
+                    if !panneau.libre || std::mem::take(&mut self.icebreaker_menu_balise) {
+                        self.hud
+                            .icebreaker_panneau(panneau, &global_state.i18n.read());
                     }
                 },
                 // Icebreaker: off to another place of the campaign, through the main
@@ -1473,15 +1474,13 @@ impl PlayState for SessionState {
                         }
                     },
 
-                    // Icebreaker: in the top view, a click asks for the building under it.
+                    // Icebreaker : plan du village ouvert, le clic est pour le HUD (un bâtiment, un
+                    // bouton), pas pour le personnage.
                     Event::MouseButton(
                         crate::window::MouseButton::Left,
                         crate::window::PressState::Pressed,
                     )
-                        if self.icebreaker_top_view.is_some() =>
-                    {
-                        self.click_icebreaker_top_view();
-                    },
+                        if self.icebreaker_top_view.is_some() => {},
 
                     // Pass all other events to the scene
                     event => {
@@ -1862,8 +1861,34 @@ impl PlayState for SessionState {
                 }
             });
 
-            // Icebreaker: where the village buildings are on screen.
-            self.update_icebreaker_top_view(global_state);
+            // Icebreaker : le plan du village se ferme seul hors du village ; où est le joueur.
+            self.update_icebreaker_top_view();
+            // Icebreaker : essai sans les mains (`ICEBREAKER_AUTO_PLAN`, jalon N) : ouvrir le plan,
+            // cliquer un bâtiment, prendre une capture d'écran.
+            if let Some(pas) = self
+                .icebreaker_auto
+                .as_mut()
+                .and_then(|auto| auto.pas(std::time::Instant::now()))
+            {
+                match pas {
+                    icebreaker_auto::Pas::Ouvrir => {
+                        if self.icebreaker_top_view.is_none() {
+                            self.toggle_icebreaker_top_view();
+                        }
+                    },
+                    icebreaker_auto::Pas::Cliquer(sorte) => {
+                        if let Some(demande) = self.hud.icebreaker_cliquer(&sorte) {
+                            self.client.borrow_mut().request_icebreaker_plan(demande);
+                        }
+                    },
+                    icebreaker_auto::Pas::Commande(nom, arguments) => {
+                        self.client.borrow_mut().send_command(nom, arguments);
+                    },
+                    icebreaker_auto::Pas::Capturer => {
+                        global_state.window.take_screenshot(&global_state.settings)
+                    },
+                }
+            }
 
             let inverted_interactable_map = self.interactables.inverted_map();
 
@@ -1930,15 +1955,14 @@ impl PlayState for SessionState {
                         // TODO: Handle result
                         self.client.borrow_mut().send_chat(msg);
                     },
-                    // Icebreaker: the panel closed, it is not asked for every second
-                    // any more (else it opened again a second later).
-                    HudEvent::IcebreakerPanelClosed => {
-                        if let Some(view) = &mut self.icebreaker_top_view {
-                            view.last_click = None;
-                        }
+                    // Icebreaker : ce que le joueur fait dans le plan du village (jalon N) : le
+                    // serveur l'apprend, et envoie ce qui change.
+                    HudEvent::IcebreakerPlan(demande) => match demande {
+                        common::icebreaker_panneau::Demande::Fermer => {
+                            self.quitter_icebreaker_top_view()
+                        },
+                        demande => self.client.borrow_mut().request_icebreaker_plan(demande),
                     },
-                    // Icebreaker: Escape closes the village plan (X.11).
-                    HudEvent::IcebreakerTopViewClosed => self.quitter_icebreaker_top_view(),
                     HudEvent::SendCommand(name, args) => {
                         // Icebreaker : « /balise » tapé dans le chat ouvre le choix des couleurs (J.3).
                         if name == "balise" && args.is_empty() {
@@ -2588,27 +2612,17 @@ fn auto_glide(
     Dir::from_unnormalized(dir)
 }
 
-/// Icebreaker: the village plan (X.11). The HUD draws a panel with a box per
-/// building, placed from its real bounds and scaled to fit; the camera does
-/// not move and the character stands still. The cursor is free to point at a
-/// building (named, highlighted under the cursor) and click it for its panel.
+/// Icebreaker: the village plan (X.11, jalon N). The HUD draws a window with
+/// the plan (a box per building, placed from its real bounds) and the panel of
+/// the building clicked (`hud/icebreaker.rs`); the camera does not move and the
+/// character stands still. The server sends the buildings and the panel when
+/// they change: nothing is asked for again.
 struct IcebreakerTopView {
     /// Where the character was when the view opened: the view closes if it
     /// gets far from there (teleported away, X.1).
     entree: Vec3<f32>,
     /// Whether the server's last answer had no building (not in the village).
     hors_village: bool,
-    /// The buildings and plots to build on (name, bounds in world coordinates,
-    /// ground altitude, kind: `Building::id`, « terrain » or « chantier »), once
-    /// the server sent them.
-    buildings: Vec<(comp::Content, Aabr<i32>, i32, String)>,
-    /// The centre of the building under the cursor this frame, if any (X.2).
-    survole: Option<Vec2<f32>>,
-    /// Where the last click was, and when its panel and the buildings were last
-    /// asked for: they are asked for again every second (chantiers, treasury,
-    /// expedition change).
-    last_click: Option<Vec2<f32>>,
-    last_refresh: std::time::Instant,
 }
 
 impl SessionState {
@@ -2617,7 +2631,6 @@ impl SessionState {
             self.quitter_icebreaker_top_view();
             return;
         }
-        // Read apart: the client is borrowed again below to ask for the buildings.
         // A ghost of the registry (spectator, jalon R) has no position: `sortie`
         // never compares it with `entree`, the camera's focus will do.
         let position = self.client.borrow().position();
@@ -2625,130 +2638,52 @@ impl SessionState {
         self.icebreaker_top_view = Some(IcebreakerTopView {
             entree: pos,
             hors_village: false,
-            buildings: Vec::new(),
-            survole: None,
-            last_click: None,
-            last_refresh: std::time::Instant::now(),
         });
         self.hud.icebreaker_top_view(true);
-        self.client.borrow_mut().request_icebreaker_building(None);
+        self.client
+            .borrow_mut()
+            .request_icebreaker_plan(common::icebreaker_panneau::Demande::Ouvrir);
     }
 
-    /// Plan, panel and buildings gone from the HUD (the camera never moved).
+    /// Plan, panel and buildings gone from the HUD (the camera never moved);
+    /// the server stops sending them.
     fn quitter_icebreaker_top_view(&mut self) {
         if self.icebreaker_top_view.take().is_some() {
             self.hud.icebreaker_top_view(false);
+            self.client
+                .borrow_mut()
+                .request_icebreaker_plan(common::icebreaker_panneau::Demande::Fermer);
         }
     }
 
-    /// The cursor, as a screen point (-1 to 1, y up).
-    fn icebreaker_cursor_ndc(global_state: &GlobalState) -> Vec2<f32> {
-        let size = global_state.window.window().inner_size();
-        let cursor = global_state.window.cursor_position();
-        Vec2::new(
-            2.0 * cursor.x / f64::from(size.width.max(1)) - 1.0,
-            1.0 - 2.0 * cursor.y / f64::from(size.height.max(1)),
-        )
-        .as_::<f32>()
-    }
-
-    /// Asks for the panel of the building under the cursor (the one drawn
-    /// highlighted, X.2).
-    fn click_icebreaker_top_view(&mut self) {
-        // Not through the HUD (the panel's buttons).
-        if !self.hud.icebreaker_cursor_free() {
-            return;
-        }
-        let Some(view) = &mut self.icebreaker_top_view else {
+    /// The view closes by itself once the player is not in the village any
+    /// more (X.1): teleported away, dead, or no building sent by the server.
+    /// Otherwise, the HUD is told where the player is, for its dot on the plan.
+    fn update_icebreaker_top_view(&mut self) {
+        let Some(view) = &self.icebreaker_top_view else {
             return;
         };
-        let Some(wpos) = view.survole else {
-            return;
+        let (position, mort) = {
+            let client = self.client.borrow();
+            (client.position(), client.is_dead())
         };
-        view.last_click = Some(wpos);
-        self.client
-            .borrow_mut()
-            .request_icebreaker_building(Some(wpos));
-    }
-
-    /// The plan drawn this frame, for the HUD: panel, each building's screen
-    /// rectangle (-1 to 1, y up) and whether the cursor is over it, player dot.
-    fn update_icebreaker_top_view(&mut self, global_state: &GlobalState) {
-        // The view closes by itself once the player is not in the village any
-        // more (X.1): teleported away, dead, or no building sent by the server.
-        if let Some(view) = &self.icebreaker_top_view {
-            let (position, mort) = {
-                let client = self.client.borrow();
-                (client.position(), client.is_dead())
-            };
-            if let Some(sortie) = icebreaker_vue::sortie(
-                view.entree,
-                position,
-                mort,
-                view.hors_village,
-                self.icebreaker_vue_settings.rayon_sortie,
-            ) {
-                self.quitter_icebreaker_top_view();
-                if sortie == icebreaker_vue::Sortie::HorsVillage {
-                    self.hud.new_message(
-                        ChatType::CommandInfo
-                            .into_msg(Content::localized("icebreaker-vue-hors-village")),
-                    );
-                }
-                return;
+        if let Some(sortie) = icebreaker_vue::sortie(
+            view.entree,
+            position,
+            mort,
+            view.hors_village,
+            self.icebreaker_vue_settings.rayon_sortie,
+        ) {
+            self.quitter_icebreaker_top_view();
+            if sortie == icebreaker_vue::Sortie::HorsVillage {
+                self.hud.new_message(
+                    ChatType::CommandInfo
+                        .into_msg(Content::localized("icebreaker-vue-hors-village")),
+                );
             }
-        }
-        if let Some(view) = &mut self.icebreaker_top_view
-            && view.last_refresh.elapsed() > std::time::Duration::from_secs(1)
-        {
-            view.last_refresh = std::time::Instant::now();
-            let mut client = self.client.borrow_mut();
-            client.request_icebreaker_building(None);
-            if let Some(wpos) = view.last_click {
-                client.request_icebreaker_building(Some(wpos));
-            }
-        }
-        let Some(view) = &mut self.icebreaker_top_view else {
             return;
-        };
-        // The real bounds scaled into the panel, the same way for every
-        // building and for the player (X.11); the click sends the building's
-        // world centre, as before.
-        let reglages = &self.icebreaker_vue_settings;
-        let aspect = self.scene.camera().get_aspect_ratio();
-        let cadre = icebreaker_vue::cadre(reglages.taille, reglages.marge, aspect);
-        let emprises: Vec<Aabr<i32>> = view.buildings.iter().map(|(_, bounds, _, _)| *bounds).collect();
-        let joueur = self.client.borrow().position().map(|p| p.xy());
-        let (rects, joueur) = icebreaker_vue::plan(&emprises, joueur, cadre, aspect);
-        let cursor = Self::icebreaker_cursor_ndc(global_state);
-        let mut survole = None;
-        let batiments = view
-            .buildings
-            .iter()
-            .zip(rects)
-            .map(|((name, bounds, _, kind), rect)| {
-                let hovered = rect.contains_point(cursor);
-                if hovered {
-                    survole = Some(Aabr {
-                        min: bounds.min.as_::<f32>(),
-                        max: bounds.max.as_::<f32>(),
-                    }
-                    .center());
-                }
-                (name.clone(), rect, hovered, reglages.apparence(kind))
-            })
-            .collect();
-        view.survole = survole;
-        let demi = Vec2::new(reglages.taille.0, reglages.taille.1);
-        self.hud.icebreaker_plan(icebreaker_vue::Plan {
-            panneau: Aabr {
-                min: -demi,
-                max: demi,
-            },
-            batiments,
-            joueur,
-            couleur_joueur: reglages.couleur_joueur,
-        });
+        }
+        self.hud.icebreaker_joueur(position.map(|p| p.xy()));
     }
 }
 

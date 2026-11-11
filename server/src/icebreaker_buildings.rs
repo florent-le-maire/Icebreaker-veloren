@@ -185,8 +185,9 @@ pub fn liste(
                             crate::icebreaker_panneaux::heures(hours_left(chantier.fin, now).ceil())
                         ),
                     ),
+                    // « Terrain » : le nom tient dans la case du plan ; son panneau dit le reste.
                     None => (
-                        "Terrain à bâtir",
+                        "Terrain",
                         "terrain",
                         format!("{} or", config.prix_maison),
                     ),
@@ -370,7 +371,7 @@ mod tests {
         assert_eq!(etat("entrepot"), texte(""));
         assert_eq!(etat("terrain"), texte(format!("{} or", config.prix_maison)));
         let terrain = liste.iter().find(|b| b.sorte == "terrain").unwrap();
-        assert_eq!(terrain.nom, texte("Terrain à bâtir"));
+        assert_eq!(terrain.nom, texte("Terrain"));
 
         let seul = super::liste(&places, &village, &config, 0, 60, 1, Some(1), 0.0);
         let etat = |sorte: &str| seul.iter().find(|b| b.sorte == sorte).unwrap().etat.clone();

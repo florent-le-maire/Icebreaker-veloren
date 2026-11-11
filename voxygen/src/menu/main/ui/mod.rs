@@ -933,6 +933,11 @@ impl MainMenuUi {
     /// `ICEBREAKER_AUTO_PARTIE`, else the most recent one, else « Partie 1 »
     /// (X.10).
     pub fn icebreaker_campagne_auto(&mut self) -> Option<Event> {
+        // Icebreaker : `ICEBREAKER_AUTO_ADRESSE=hôte:port` va droit à ce serveur, sans rien lancer
+        // (essais sur un serveur à part, jalon N).
+        if let Ok(adresse) = std::env::var("ICEBREAKER_AUTO_ADRESSE") {
+            return Some(self.controls.icebreaker_connect(&mut self.ui, adresse));
+        }
         let lieu = icebreaker::lieux()
             .read()
             .0

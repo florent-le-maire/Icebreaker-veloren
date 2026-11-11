@@ -9,6 +9,8 @@ mod diary;
 mod esc_menu;
 mod group;
 mod hotbar;
+// Icebreaker : l'interface ajoutée au HUD (jalon N).
+mod icebreaker;
 mod loot_scroller;
 mod map;
 mod minimap;
@@ -128,7 +130,6 @@ use common::{
 use common_base::{prof_span, span};
 use common_net::{msg::world_msg::SiteId, sync::WorldSyncExt};
 use conrod_core::{
-    UiCell,
     Color, Colorable, Labelable, Positionable, Sizeable, Widget,
     text::cursor::Index,
     widget::{self, Button, Image, Rectangle, Text},
@@ -338,27 +339,6 @@ widget_ids! {
         zoom_lock_txt,
         zoom_lock_bg,
 
-        // Icebreaker: top view of the village
-        icebreaker_hint,
-        icebreaker_panel_top,
-        icebreaker_panel_mid,
-        icebreaker_panel_bot,
-        icebreaker_panel_title,
-        icebreaker_panel_close,
-        icebreaker_panel_lines[],
-        icebreaker_panel_icons[],
-        icebreaker_panel_buttons[],
-        icebreaker_expedition_top,
-        icebreaker_expedition_mid,
-        icebreaker_expedition_bot,
-        icebreaker_expedition_txt,
-        icebreaker_building_rects[],
-        icebreaker_building_fills[],
-        icebreaker_building_icons[],
-        icebreaker_building_names[],
-        icebreaker_plan_bg,
-        icebreaker_plan_cadre,
-        icebreaker_plan_joueur,
         // Icebreaker: ring on the locked enemy
         icebreaker_lock_ring,
         icebreaker_lock_halo,
@@ -701,41 +681,13 @@ pub struct HudInfo<'a> {
     pub key_state: &'a KeyState,
 }
 
-/// Icebreaker: the HUD icon called `name` in `vue_village.ron` (X.4), if any.
-fn icebreaker_icone(imgs: &Imgs, name: &str) -> Option<conrod_core::image::Id> {
-    Some(match name {
-        "utilitaire" => imgs.icon_utility,
-        "potion" => imgs.icon_potion,
-        "vivres" => imgs.icon_food,
-        "globe" => imgs.icon_globe,
-        "outils" => imgs.icon_tools,
-        "armes" => imgs.icon_weapon,
-        "armure" => imgs.icon_armor,
-        "buche" => imgs.icon_log,
-        "lingot" => imgs.icon_ingot,
-        "planeur" => imgs.icon_glider,
-        _ => return None,
-    })
-}
-
-/// Icebreaker: the panel of a village building in the top view: title, lines
-/// (text, and the items drawn as icons before it), and buttons (label, and the
-/// chat command it sends).
-pub type IcebreakerPanel = (
-    comp::Content,
-    Vec<(comp::Content, Vec<comp::ItemKey>)>,
-    Vec<(comp::Content, Vec<String>)>,
-);
-
 #[derive(Clone)]
 pub enum Event {
     SendMessage(String),
     SendCommand(String, Vec<String>),
-    /// Icebreaker: the building's panel was closed (cross or Escape): stop
-    /// asking the server for it again.
-    IcebreakerPanelClosed,
-    /// Icebreaker: Escape closes the village plan (X.11).
-    IcebreakerTopViewClosed,
+    /// Icebreaker : ce que le joueur fait dans le plan du village (jalon N) : un clic sur un
+    /// bâtiment, la fermeture du panneau ou du plan ; à dire au serveur.
+    IcebreakerPlan(common::icebreaker_panneau::Demande),
 
     CharacterSelection,
     UseSlot {
@@ -1409,19 +1361,8 @@ pub struct Hud {
     pub show: Show,
     to_focus: Option<Option<widget::Id>>,
     force_ungrab: bool,
-    /// Icebreaker: whether the top view of the village is on, and the panel of
-    /// the last building clicked there (title, lines).
-    icebreaker_top_view: bool,
-    icebreaker_panel: Option<IcebreakerPanel>,
-    /// Icebreaker : le panneau est montré hors de la vue de dessus (choix de la couleur de la
-    /// balise, J.3) ; il libère la souris et se ferme au premier bouton.
-    icebreaker_panel_libre: bool,
-    /// Icebreaker: the expedition being prepared at the village (title,
-    /// members: alias and whether ready), shown on the left (V.11).
-    icebreaker_expedition: Option<(comp::Content, Vec<(String, bool)>)>,
-    /// Icebreaker: the village plan drawn in the top view (panel, buildings,
-    /// player dot), from -1 to 1 with y up (X.11).
-    icebreaker_plan: crate::session::icebreaker_vue::Plan,
+    /// Icebreaker : l'interface ajoutée (jalon N) : fenêtre du village, bandeaux, panneau libre.
+    icebreaker: icebreaker::Interface,
     force_chat_input: Option<String>,
     force_chat_cursor: Option<Index>,
     tab_complete: Option<String>,
@@ -1454,6 +1395,8 @@ impl Hud {
         ui.set_scaling_mode(settings.interface.ui_scale);
         // Generate ids.
         let ids = Ids::new(ui.id_generator());
+        // Icebreaker : les identifiants de l'interface ajoutée (jalon N).
+        let icebreaker = icebreaker::Interface::new(ui.id_generator());
         // Load world map
         let mut layers = Vec::new();
         for layer in client.world_data().map_layers() {
@@ -1526,11 +1469,7 @@ impl Hud {
             show: Show::new(),
             to_focus: None,
             force_ungrab: false,
-            icebreaker_top_view: false,
-            icebreaker_panel: None,
-            icebreaker_panel_libre: false,
-            icebreaker_expedition: None,
-            icebreaker_plan: Default::default(),
+            icebreaker,
             force_chat_input: None,
             force_chat_cursor: None,
             tab_complete: None,
@@ -4291,272 +4230,21 @@ impl Hud {
                 .set(self.ids.zoom_lock_txt, ui_widgets);
         }
 
-        // Icebreaker: the village plan (X.11), and the panel of the clicked building.
-        if self.icebreaker_top_view {
-            let half_win = Vec2::new(ui_widgets.win_w, ui_widgets.win_h) / 2.0;
-            // The panel first (under everything): Veloren's dark frame of the
-            // Escape menu, which stretches well, and an outline.
-            let panneau = self.icebreaker_plan.panneau;
-            let panneau_size = [
-                f64::from(panneau.size().w) * half_win.x,
-                f64::from(panneau.size().h) * half_win.y,
-            ];
-            Image::new(self.imgs.esc_frame)
-                .w_h(panneau_size[0], panneau_size[1])
-                .x_y(0.0, 0.0)
-                .color(Some(Color::Rgba(1.0, 1.0, 1.0, 0.9)))
-                .set(self.ids.icebreaker_plan_bg, ui_widgets);
-            Rectangle::outline_styled(panneau_size, widget::line::Style::solid().thickness(2.0))
-                .color(UI_HIGHLIGHT_0)
-                .x_y(0.0, 0.0)
-                .set(self.ids.icebreaker_plan_cadre, ui_widgets);
-            // The buildings, named, the one under the cursor highlighted.
-            let count = self.icebreaker_plan.batiments.len();
-            if self.ids.icebreaker_building_rects.len() < count {
-                let ids = &mut ui_widgets.widget_id_generator();
-                self.ids.icebreaker_building_rects.resize(count, ids);
-                self.ids.icebreaker_building_names.resize(count, ids);
-            }
-            if self.ids.icebreaker_building_fills.len() < count {
-                let ids = &mut ui_widgets.widget_id_generator();
-                self.ids.icebreaker_building_fills.resize(count, ids);
-                self.ids.icebreaker_building_icons.resize(count, ids);
-            }
-            for (i, (name, rect, hovered, look)) in self.icebreaker_plan.batiments.iter().enumerate() {
-                let min = rect.min.as_::<f64>() * half_win;
-                let max = rect.max.as_::<f64>() * half_win;
-                let center = (min + max) / 2.0;
-                let size = [(max.x - min.x).abs(), (max.y - min.y).abs()];
-                // Each kind of building has its colour and its icon (X.4,
-                // `vue_village.ron`); brighter and bigger under the cursor.
-                let (r, g, b) = look.couleur;
-                let (alpha, fill_alpha, font_size, icon_size) = if *hovered {
-                    (1.0, 0.3, 22, 36.0)
-                } else {
-                    (0.75, 0.1, 16, 28.0)
-                };
-                Rectangle::fill(size)
-                    .rgba(r, g, b, fill_alpha)
-                    .x_y(center.x, center.y)
-                    .set(self.ids.icebreaker_building_fills[i], ui_widgets);
-                Rectangle::outline_styled(
-                    size,
-                    widget::line::Style::solid().thickness(if *hovered { 3.0 } else { 1.5 }),
-                )
-                .rgba(r, g, b, alpha)
-                .x_y(center.x, center.y)
-                .set(self.ids.icebreaker_building_rects[i], ui_widgets);
-                let icon = icebreaker_icone(&self.imgs, &look.icone);
-                if let Some(icon) = icon {
-                    Image::new(icon)
-                        .w_h(icon_size, icon_size)
-                        .x_y(center.x, center.y + 10.0)
-                        .color(Some(Color::Rgba(1.0, 1.0, 1.0, alpha)))
-                        .set(self.ids.icebreaker_building_icons[i], ui_widgets);
-                }
-                Text::new(&i18n.get_content(name))
-                    .color(Color::Rgba(r, g, b, alpha))
-                    .x_y(center.x, center.y - if icon.is_some() { 16.0 } else { 0.0 })
-                    .font_id(self.fonts.cyri.conrod_id)
-                    .font_size(self.fonts.cyri.scale(font_size))
-                    .set(self.ids.icebreaker_building_names[i], ui_widgets);
-            }
-            // The player, as a dot over the buildings (none for a ghost).
-            if let Some(joueur) = self.icebreaker_plan.joueur {
-                let (r, g, b) = self.icebreaker_plan.couleur_joueur;
-                let p = joueur.as_::<f64>() * half_win;
-                widget::Circle::fill(5.0)
-                    .color(Color::Rgba(r, g, b, 1.0))
-                    .x_y(p.x, p.y)
-                    .set(self.ids.icebreaker_plan_joueur, ui_widgets);
-            }
-
-            let key = global_state
-                .settings
-                .controls
-                .get_binding(GameInput::IcebreakerTopView)
-                .map_or_else(String::new, |key| key.display_string());
-            Text::new(&i18n.get_msg_ctx("icebreaker-vue-aide", &i18n::fluent_args! {
-                "key" => key,
-            }))
-            .color(TEXT_COLOR)
-            .mid_top_with_margin_on(self.ids.icebreaker_plan_bg, 6.0)
-            .font_id(self.fonts.cyri.conrod_id)
-            .font_size(self.fonts.cyri.scale(20))
-            .set(self.ids.icebreaker_hint, ui_widgets);
-        }
-        // The building's panel (X.3): a window in Veloren's dialog frames, its
-        // title, a close button, lines with item icons, and buttons in a column.
-        // The command of the button clicked, if any.
-        let mut icebreaker_command = None;
-        let mut icebreaker_close = false;
-        const ICEBREAKER_PANEL_W: f64 = 420.0;
-        const ICEBREAKER_ICON: f64 = 22.0;
-        const ICEBREAKER_ICONS_PER_LINE: usize = 3;
-        const ICEBREAKER_GAP: f64 = 6.0;
-        const ICEBREAKER_BUTTON_H: f64 = 32.0;
-        let icebreaker_panel_shown = self.icebreaker_top_view && self.icebreaker_panel.is_some();
-        if (self.icebreaker_top_view || self.icebreaker_panel_libre)
-            && let Some((title, lines, actions)) = &self.icebreaker_panel
-        {
-            let ids = &mut self.ids;
-            if ids.icebreaker_panel_lines.len() < lines.len() {
-                let generator = &mut ui_widgets.widget_id_generator();
-                ids.icebreaker_panel_lines.resize(lines.len(), generator);
-                ids.icebreaker_panel_icons
-                    .resize(lines.len() * ICEBREAKER_ICONS_PER_LINE, generator);
-            }
-            if ids.icebreaker_panel_buttons.len() < actions.len() {
-                ids.icebreaker_panel_buttons
-                    .resize(actions.len(), &mut ui_widgets.widget_id_generator());
-            }
-            // The lines are laid out from their heights of the last frame (a
-            // wrapped text knows its height once drawn).
-            let line_h = |ui_widgets: &UiCell, id: widget::Id| {
-                ui_widgets.h_of(id).unwrap_or(20.0).max(ICEBREAKER_ICON) + ICEBREAKER_GAP
-            };
-            let lines_h: f64 = ids
-                .icebreaker_panel_lines
-                .iter()
-                .take(lines.len())
-                .map(|id| line_h(ui_widgets, *id))
-                .sum();
-            let mid_h = 10.0
-                + lines_h
-                + actions.len() as f64 * (ICEBREAKER_BUTTON_H + ICEBREAKER_GAP)
-                + 4.0;
-            Image::new(self.imgs.prompt_top)
-                .w_h(ICEBREAKER_PANEL_W, 24.0)
-                .top_left_with_margins_on(ui_widgets.window, 120.0, 20.0)
-                .color(Some(UI_HIGHLIGHT_0))
-                .set(ids.icebreaker_panel_top, ui_widgets);
-            Image::new(self.imgs.prompt_mid)
-                .w_h(ICEBREAKER_PANEL_W, mid_h)
-                .down_from(ids.icebreaker_panel_top, 0.0)
-                .color(Some(UI_HIGHLIGHT_0))
-                .set(ids.icebreaker_panel_mid, ui_widgets);
-            Image::new(self.imgs.prompt_bot)
-                .w_h(ICEBREAKER_PANEL_W, 35.0)
-                .down_from(ids.icebreaker_panel_mid, 0.0)
-                .color(Some(UI_HIGHLIGHT_0))
-                .set(ids.icebreaker_panel_bot, ui_widgets);
-            Text::new(&i18n.get_content(title))
-                .mid_top_with_margin_on(ids.icebreaker_panel_top, 0.0)
-                .font_id(self.fonts.alkhemi.conrod_id)
-                .font_size(self.fonts.alkhemi.scale(26))
-                .color(TEXT_COLOR)
-                .set(ids.icebreaker_panel_title, ui_widgets);
-            if Button::image(self.imgs.close_btn)
-                .w_h(24.0, 25.0)
-                .hover_image(self.imgs.close_btn_hover)
-                .press_image(self.imgs.close_btn_press)
-                .top_right_with_margins_on(ids.icebreaker_panel_top, 0.0, 4.0)
-                .set(ids.icebreaker_panel_close, ui_widgets)
-                .was_clicked()
-            {
-                icebreaker_close = true;
-            }
-            let mut y = 6.0;
-            for (i, (line, icons)) in lines.iter().enumerate() {
-                let icons = &icons[..icons.len().min(ICEBREAKER_ICONS_PER_LINE)];
-                for (k, key) in icons.iter().enumerate() {
-                    Image::new(animate_by_pulse(
-                        &self.item_imgs.img_ids_or_not_found_img(key.clone()),
-                        self.pulse,
-                    ))
-                    .w_h(ICEBREAKER_ICON, ICEBREAKER_ICON)
-                    .top_left_with_margins_on(
-                        ids.icebreaker_panel_mid,
-                        y,
-                        15.0 + k as f64 * (ICEBREAKER_ICON + 4.0),
-                    )
-                    .set(ids.icebreaker_panel_icons[i * ICEBREAKER_ICONS_PER_LINE + k], ui_widgets);
-                }
-                let icons_w = icons.len() as f64 * (ICEBREAKER_ICON + 4.0);
-                Text::new(&i18n.get_content(line))
-                    .w(ICEBREAKER_PANEL_W - 30.0 - icons_w)
-                    .wrap_by_word()
-                    .top_left_with_margins_on(ids.icebreaker_panel_mid, y + 2.0, 15.0 + icons_w)
-                    .font_id(self.fonts.cyri.conrod_id)
-                    .font_size(self.fonts.cyri.scale(16))
-                    .color(TEXT_COLOR)
-                    .set(ids.icebreaker_panel_lines[i], ui_widgets);
-                y += line_h(ui_widgets, ids.icebreaker_panel_lines[i]);
-            }
-            y += 4.0;
-            for (i, (label, command)) in actions.iter().enumerate() {
-                if Button::image(self.imgs.button)
-                    .w_h(ICEBREAKER_PANEL_W - 30.0, ICEBREAKER_BUTTON_H)
-                    .hover_image(self.imgs.button_hover)
-                    .press_image(self.imgs.button_press)
-                    .top_left_with_margins_on(
-                        ids.icebreaker_panel_mid,
-                        y + i as f64 * (ICEBREAKER_BUTTON_H + ICEBREAKER_GAP),
-                        15.0,
-                    )
-                    .label(&i18n.get_content(label))
-                    .label_font_id(self.fonts.cyri.conrod_id)
-                    .label_font_size(self.fonts.cyri.scale(15))
-                    .label_color(TEXT_COLOR)
-                    .set(ids.icebreaker_panel_buttons[i], ui_widgets)
-                    .was_clicked()
-                    && let Some((name, args)) = command.split_first()
-                {
-                    icebreaker_command = Some(Event::SendCommand(name.clone(), args.to_vec()));
-                    // Icebreaker : la couleur choisie, le panneau de la balise se ferme (J.3).
-                    icebreaker_close |= self.icebreaker_panel_libre;
-                }
-            }
-        }
-        if icebreaker_close {
-            self.icebreaker_panel = None;
-            self.icebreaker_panel_libre = false;
-            self.events.push(Event::IcebreakerPanelClosed);
-        }
-        self.events.extend(icebreaker_command);
-
-        // Icebreaker: the expedition being prepared, for the village: under the
-        // panel in the top view, else top left (X.3).
-        if let Some((title, members)) = &self.icebreaker_expedition {
-            const EXPEDITION_W: f64 = 300.0;
-            let pret = i18n.get_msg("icebreaker-expedition-pret");
-            let text = std::iter::once(i18n.get_content(title))
-                .chain(members.iter().map(|(alias, ready)| {
-                    if *ready {
-                        format!("  {alias} : {pret}")
-                    } else {
-                        format!("  {alias}")
-                    }
-                }))
-                .collect::<Vec<_>>()
-                .join("\n");
-            let top = Image::new(self.imgs.prompt_top)
-                .w_h(EXPEDITION_W, 24.0)
-                .color(Some(UI_HIGHLIGHT_0));
-            let top = if icebreaker_panel_shown {
-                top.down_from(self.ids.icebreaker_panel_bot, 16.0)
-                    .align_left_of(self.ids.icebreaker_panel_bot)
-            } else {
-                top.top_left_with_margins_on(ui_widgets.window, 120.0, 20.0)
-            };
-            top.set(self.ids.icebreaker_expedition_top, ui_widgets);
-            Image::new(self.imgs.prompt_mid)
-                .w_h(EXPEDITION_W, 8.0 + 20.0 * (members.len() + 1) as f64)
-                .down_from(self.ids.icebreaker_expedition_top, 0.0)
-                .color(Some(UI_HIGHLIGHT_0))
-                .set(self.ids.icebreaker_expedition_mid, ui_widgets);
-            Image::new(self.imgs.prompt_bot)
-                .w_h(EXPEDITION_W, 35.0)
-                .down_from(self.ids.icebreaker_expedition_mid, 0.0)
-                .color(Some(UI_HIGHLIGHT_0))
-                .set(self.ids.icebreaker_expedition_bot, ui_widgets);
-            Text::new(&text)
-                .color(TEXT_COLOR)
-                .top_left_with_margins_on(self.ids.icebreaker_expedition_mid, 4.0, 15.0)
-                .font_id(self.fonts.cyri.conrod_id)
-                .font_size(self.fonts.cyri.scale(16))
-                .set(self.ids.icebreaker_expedition_txt, ui_widgets);
-        }
+        // Icebreaker : la fenêtre du village (plan et panneau du bâtiment cliqué), les bandeaux
+        // (fantôme, expédition), les messages du serveur et le panneau libre de la balise
+        // (jalon N) : `hud/icebreaker.rs`.
+        let icebreaker_fantome = crate::icebreaker_mort::registre()
+            && matches!(client.presence(), Some(PresenceKind::Spectator));
+        self.events.extend(self.icebreaker.dessiner(
+            ui_widgets,
+            &self.imgs,
+            &self.item_imgs,
+            &self.fonts,
+            i18n,
+            &global_state.settings.controls,
+            self.pulse,
+            icebreaker_fantome,
+        ));
 
         // Camera clamp indicator
         if let Some(cameraclamp_key) = global_state
@@ -5232,7 +4920,12 @@ impl Hud {
         }
     }
 
-    pub fn new_message(&mut self, msg: comp::ChatMsg) { self.new_messages.push_back(msg); }
+    pub fn new_message(&mut self, msg: comp::ChatMsg) {
+        // Icebreaker : la réponse du serveur à une action s'affiche aussi dans le panneau ouvert
+        // (jalon N).
+        self.icebreaker.message_du_serveur(&msg);
+        self.new_messages.push_back(msg);
+    }
 
     pub fn new_notification(&mut self, msg: UserNotification) {
         self.new_notifications.push_back(msg);
@@ -5428,13 +5121,10 @@ impl Hud {
                 if self.typing() {
                     self.ui.focus_widget(None);
                     self.force_chat = false;
-                } else if self.icebreaker_panel.is_some() {
-                    // Icebreaker: Escape closes the building's panel first (X.3).
-                    self.icebreaker_panel = None;
-                    self.events.push(Event::IcebreakerPanelClosed);
-                } else if self.icebreaker_top_view {
-                    // Icebreaker: then the village plan itself (X.11).
-                    self.events.push(Event::IcebreakerTopViewClosed);
+                } else if let icebreaker::Echap::Ferme(demande) = self.icebreaker.echap() {
+                    // Icebreaker : Échap ferme d'abord le panneau, puis le plan du village (jalon N).
+                    self.events
+                        .extend(demande.map(Event::IcebreakerPlan));
                 } else if self.show.trade {
                     self.events.push(Event::TradeAction(TradeAction::Decline));
                 } else {
@@ -5637,8 +5327,7 @@ impl Hud {
         // Handle cursor grab (Icebreaker: free in the top view of the village).
         global_state.window.grab_cursor(
             !self.force_ungrab
-                && !self.icebreaker_top_view
-                && !(self.icebreaker_panel_libre && self.icebreaker_panel.is_some())
+                && !self.icebreaker.curseur_libre()
                 && self.show.want_grab,
         );
 
@@ -5783,46 +5472,49 @@ impl Hud {
         }
     }
 
-    /// Icebreaker: the top view of the village frees the cursor and shows the
-    /// panel of the building clicked.
-    pub fn icebreaker_top_view(&mut self, on: bool) {
-        self.icebreaker_top_view = on;
-        self.icebreaker_panel = None;
-        self.icebreaker_plan = Default::default();
+    /// Icebreaker : le plan du village s'ouvre ou se ferme (jalon N) ; ouvert, il libère le
+    /// curseur. Tout ce qui suit est dessiné par `hud/icebreaker.rs`.
+    pub fn icebreaker_top_view(&mut self, on: bool) { self.icebreaker.ouvrir(on); }
+
+    /// Icebreaker : les bâtiments du plan, envoyés par le serveur quand ils changent.
+    pub fn icebreaker_batiments(
+        &mut self,
+        batiments: Vec<common::icebreaker_panneau::Batiment>,
+        i18n: &Localization,
+    ) {
+        self.icebreaker.batiments(batiments, i18n);
     }
 
-    /// Icebreaker: whether a click at the cursor is on the village of the top
-    /// view: over no widget, or over a building's rectangle or name (not over
-    /// the panel, its buttons, or the rest of the HUD).
-    pub fn icebreaker_cursor_free(&self) -> bool {
-        self.ui.widget_capturing_mouse().is_none_or(|id| {
-            self.ids.icebreaker_building_rects.contains(&id)
-                || self.ids.icebreaker_building_fills.contains(&id)
-                || self.ids.icebreaker_building_icons.contains(&id)
-                || self.ids.icebreaker_building_names.contains(&id)
-                || id == self.ids.icebreaker_plan_bg
-                || id == self.ids.icebreaker_plan_cadre
-                || id == self.ids.icebreaker_plan_joueur
-        })
+    /// Icebreaker : le panneau typé d'un bâtiment du plan, ou le panneau libre de la balise.
+    pub fn icebreaker_panneau(
+        &mut self,
+        panneau: common::icebreaker_panneau::Panneau,
+        i18n: &Localization,
+    ) {
+        self.icebreaker.panneau(panneau, i18n);
     }
 
-    pub fn icebreaker_expedition(&mut self, expedition: Option<(comp::Content, Vec<(String, bool)>)>) {
-        self.icebreaker_expedition = expedition;
+    /// Icebreaker : l'expédition en préparation au village, ou aucune.
+    pub fn icebreaker_expedition(
+        &mut self,
+        expedition: Option<common::icebreaker_panneau::Expedition>,
+        i18n: &Localization,
+    ) {
+        self.icebreaker.expedition(expedition, i18n);
     }
 
-    pub fn icebreaker_panel(&mut self, panel: Option<IcebreakerPanel>) {
-        self.icebreaker_panel = panel;
-        self.icebreaker_panel_libre = false;
+    /// Icebreaker : où est le joueur, pour son point sur le plan (rien pour un fantôme).
+    pub fn icebreaker_joueur(&mut self, position: Option<Vec2<f32>>) {
+        self.icebreaker.joueur(position);
     }
 
-    /// Icebreaker : un panneau montré en jeu, hors de la vue de dessus (couleur de la balise, J.3).
-    pub fn icebreaker_panel_libre(&mut self, panel: Option<IcebreakerPanel>) {
-        self.icebreaker_panel_libre = panel.is_some();
-        self.icebreaker_panel = panel;
-    }
-
-    pub fn icebreaker_plan(&mut self, plan: crate::session::icebreaker_vue::Plan) {
-        self.icebreaker_plan = plan;
+    /// Icebreaker : comme un clic sur le bâtiment de cette sorte dans le plan (essai sans les
+    /// mains, `ICEBREAKER_AUTO_PLAN`) ; ce qu'il faut dire au serveur.
+    pub fn icebreaker_cliquer(
+        &mut self,
+        sorte: &str,
+    ) -> Option<common::icebreaker_panneau::Demande> {
+        self.icebreaker.cliquer(sorte)
     }
 
     /// Start showing a temporary notification ([ChangeNotification]) that zoom
