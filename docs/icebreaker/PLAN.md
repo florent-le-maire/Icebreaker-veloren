@@ -247,6 +247,17 @@ tâche pour ce qui casse.
 - A.4 : guerrier dans le vrai client : touches 1, 2 (arme en mains) et 3 (ultime), gestes et animations ; clic gauche
   et clic droit inchangés (plus de postures) ; l'ultime (fureur) avec une épée en mains (`QUESTIONS.md`, Q45).
 - A.5 : une touche tenue ne relance pas ; la recharge se voit dans la barre (A.6).
+- A.6 : la barre d'un guerrier : icônes sur 1, 2 et 3, bord doré de l'ultime, cases 1 et 2 grisées avec les
+  secondes après un lancer, infobulle au survol, case grisée faute d'endurance ; la barre d'un mage ou d'un archer
+  inchangée.
+- A.7 : prendre en mains une arme non apprise (marteau pour un guerrier à l'épée) : cases 1 et 2 vides et un message,
+  une seule fois ; l'arbre de compétences de Veloren refuse un point.
+- A.8 : deux recrues guerrières à la charrette : lots et armes différents, visibles dans le panneau et sur les recrues
+  debout devant la charrette.
+- A.9 : tuer des créatures en expédition : annonce « un point d'arme gagné » ; au retour, la maîtrise dans la fenêtre
+  du bilan.
+- A.10, A.15 : chaque compétence aux niveaux 3 et 5 (geste, effet), équilibre des seize compétences du guerrier.
+- A.13 : PV max d'un guerrier (inné et passif) vus par un coéquipier ; le passif ne tombe ni à terre ni à la mort.
 
 **Combat (donjon Gnarling)**
 - L.1 : nombre de coups pour tuer et mourir (cible : 3 et 3 à 4), autres armes, boss.

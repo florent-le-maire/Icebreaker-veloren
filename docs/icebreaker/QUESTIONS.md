@@ -107,7 +107,8 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 
 - **Q43 Chiffres de départ** : points d'arme par expédition (proposé : 1 à 2), prix d'un jeu d'armes, d'un ultime,
   d'un passif, recharges (compétence 6 à 15 s, ultime 60 à 120 s). Tout est en données (`salle_armes.ron`,
-  `jeux_armes/`) ; à régler après les premières parties. *Qui* : Flo.
+  `jeux_armes/`) ; à régler après les premières parties. Repère (essai du 2026-11-11) : un gnarling tué seul donne 17
+  de maîtrise ; le premier point d'arme en demande 100, le suivant 150. *Qui* : Flo.
 - **Q44 Choix de l'agent à confirmer** : (1) un jeu d'armes non appris ne donne que les attaques de base, sans
   blocage à l'équipement ; (2) la maîtrise se compte par jeu d'armes (grande épée et épée + bouclier séparées) et vient
   de l'expérience des ennemis tués ; (3) chaque classe a un inné non choisi (guerrier : PV et tenue ; mage : énergie ;
