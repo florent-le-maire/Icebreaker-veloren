@@ -19,4 +19,8 @@ git fetch -q
 git reset -q --hard origin/master
 echo "Icebreaker : compilation de $(git log --oneline -1)"
 cargo build --release --target aarch64-unknown-linux-gnu -p veloren-server-cli --features plugins
+# Le binaire est copié dans target/vps du dossier Windows : depuis Windows, \\wsl.localhost lit /root avec
+# l'utilisateur par défaut de WSL, qui n'y a pas accès.
+mkdir -p "$origine/target/vps"
+cp target/aarch64-unknown-linux-gnu/release/veloren-server-cli "$origine/target/vps/"
 echo "Icebreaker : serveur prêt, lancer icebreaker-serveur/deployer.sh root@<ip> depuis Git Bash"

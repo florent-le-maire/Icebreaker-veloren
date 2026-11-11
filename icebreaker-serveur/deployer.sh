@@ -7,13 +7,13 @@
 #   cargo build --release --target aarch64-unknown-linux-gnu -p veloren-server-cli --features plugins
 # avec CC_/CXX_/AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc/g++/ar, et un lien
 # /usr/bin/aarch64-linux-gnu-ld.mold vers mold (le gcc croisé d'Ubuntu 22.04 le cherche sous ce nom).
-# BINAIRE : son chemin, par défaut celui du clone /root/veloren de la distribution Ubuntu-22.04.
+# BINAIRE : son chemin, par défaut target/vps/veloren-server-cli, posé par compiler-vps.sh.
 # LIEUX : lieux lancés (« campagne » par défaut, décision 0016 : village et donjons dans un seul serveur) ; leurs ports sont ouverts dans le pare-feu (ufw).
 # Sur le VPS : /opt/icebreaker-veloren, utilisateur veloren ; les personnages (userdata-icebreaker) restent.
 set -e
 hote="$1"
 [ -n "$hote" ] || { echo "usage : $0 <utilisateur@hote>" >&2; exit 1; }
-binaire=${BINAIRE:-//wsl.localhost/Ubuntu-22.04/root/veloren/target/aarch64-unknown-linux-gnu/release/veloren-server-cli}
+binaire=${BINAIRE:-$(cd "$(dirname "$0")/.." && pwd)/target/vps/veloren-server-cli}
 lieux=${LIEUX:-campagne}
 
 repo=$(cd "$(dirname "$0")/.." && pwd)
