@@ -174,6 +174,8 @@ pub struct JoinData<'a> {
     pub buffs: Option<&'a Buffs>,
     /// Icebreaker : compétences du personnage du registre (jalon A) ; absent : capacités de Veloren.
     pub icebreaker: Option<&'a crate::icebreaker_competences::IcebreakerCompetences>,
+    /// Icebreaker : l'heure du serveur, en secondes, pour lire les recharges (jalon A).
+    pub icebreaker_horloge: f64,
 }
 
 pub struct JoinStruct<'a> {
@@ -212,6 +214,8 @@ pub struct JoinStruct<'a> {
     pub buffs: Option<&'a Buffs>,
     /// Icebreaker : compétences du personnage du registre (jalon A).
     pub icebreaker: Option<&'a crate::icebreaker_competences::IcebreakerCompetences>,
+    /// Icebreaker : l'heure du serveur, en secondes (jalon A).
+    pub icebreaker_horloge: f64,
 }
 
 impl<'a> JoinData<'a> {
@@ -263,6 +267,7 @@ impl<'a> JoinData<'a> {
             bodies: j.bodies,
             buffs: j.buffs,
             icebreaker: j.icebreaker,
+            icebreaker_horloge: j.icebreaker_horloge,
         }
     }
 }

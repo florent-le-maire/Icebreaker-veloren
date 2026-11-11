@@ -389,6 +389,8 @@ impl State {
         ecs.insert(Calendar::default());
         ecs.insert(WeatherGrid::new(Vec2::zero()));
         ecs.insert(Time(0.0));
+        // Icebreaker : écart avec l'horloge du serveur, réglé par le client (jalon A).
+        ecs.insert(common::icebreaker_competences::IcebreakerDecalageHorloge::default());
         ecs.insert(ProgramTime(0.0));
         ecs.insert(TimeScale(1.0));
 

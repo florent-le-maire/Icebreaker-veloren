@@ -610,6 +610,14 @@ impl Component for IcebreakerCompetences {
     type Storage = DerefFlaggedStorage<Self, specs::VecStorage<Self>>;
 }
 
+/// Ressource : l'écart entre l'horloge du serveur et celle de ce monde, en secondes (temps du
+/// serveur moins temps local). Les recharges sont notées en temps du serveur, or l'horloge d'un
+/// client ne suit celle du serveur qu'à quelques secondes près (Veloren ne la recale qu'au-delà de
+/// 5 s d'écart) : le client note l'écart à chaque message d'heure du serveur, et s'en sert pour
+/// lire les recharges. Nul sur le serveur.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct IcebreakerDecalageHorloge(pub f64);
+
 impl IcebreakerCompetences {
     /// Le composant d'un personnage de `classe` qui a acquis `acquis`, sans recharge en cours ;
     /// `None` si nos données ne décrivent pas cette classe.
@@ -820,7 +828,10 @@ fn lancer(
         return None;
     }
     let (numero, niveau) = competences.sur_touche(touche, data.inventory)?;
-    if competences.reste_recharge(numero, data.time.0).is_some() {
+    if competences
+        .reste_recharge(numero, data.icebreaker_horloge)
+        .is_some()
+    {
         return None;
     }
     let effectif = registre().par_numero(numero)?.competence.effectif(niveau);

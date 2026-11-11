@@ -283,6 +283,15 @@ fn main() {
                         println!("Ultime {:?} parmi {:?}", c.acquis.ultime, c.acquis.ultimes);
                         println!("Passif {:?} parmi {:?}", c.acquis.passif, c.acquis.passifs);
                         println!("Recharges : {:?}", c.recharges);
+                        let ecs = client.state().ecs();
+                        let horloge = ecs.read_resource::<common::resources::Time>().0;
+                        let decalage = ecs
+                            .read_resource::<common::icebreaker_competences::IcebreakerDecalageHorloge>()
+                            .0;
+                        println!(
+                            "Horloge : client {horloge:.1}, serveur {:.1} (écart {decalage:+.1})",
+                            horloge + decalage
+                        );
                     },
                     None => println!("Compétences : aucune (capacités de Veloren)"),
                 }

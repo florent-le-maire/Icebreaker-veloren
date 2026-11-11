@@ -338,6 +338,35 @@ mod tests {
             assert!(reste(&state).is_some());
         }
 
+        // Les recharges sont notées à l'heure du serveur ; l'horloge d'un client peut s'en écarter.
+        #[test]
+        fn icebreaker_les_recharges_se_lisent_a_l_heure_du_serveur() {
+            use common::icebreaker_competences::IcebreakerDecalageHorloge;
+            let mut state = setup();
+            let entity = guerrier(&mut state, "grande_epee");
+            let balayage = numero("balayage_lourd");
+            // Ce monde a 10 s d'avance sur le serveur. Une recharge qui finit à 95 (heure du
+            // serveur) a encore 5 s à courir quand l'horloge locale dit 100.
+            state.ecs_mut().write_resource::<Time>().0 = 100.0;
+            state.ecs_mut().write_resource::<IcebreakerDecalageHorloge>().0 = -10.0;
+            {
+                let mut competences = state.ecs().write_storage::<IcebreakerCompetences>();
+                let mut competences =
+                    competences.get_mut(entity).expect("IcebreakerCompetences");
+                competences.recharges.insert(balayage, 95.0);
+            }
+            appuyer(&mut state, entity, 0);
+            tick(&mut state, Duration::from_secs_f32(0.033));
+            assert_eq!(lancee(&state, entity), None, "encore 5 s à l'heure du serveur");
+
+            // Horloges égales : la même recharge est finie depuis 5 s.
+            au_repos(&mut state, entity);
+            state.ecs_mut().write_resource::<IcebreakerDecalageHorloge>().0 = 0.0;
+            appuyer(&mut state, entity, 0);
+            tick(&mut state, Duration::from_secs_f32(0.033));
+            assert_eq!(lancee(&state, entity), Some(Ability::Icebreaker(balayage)));
+        }
+
         // A.10 : le niveau d'une compétence change ses chiffres, puis la transforme.
         #[test]
         fn icebreaker_le_niveau_change_les_chiffres_puis_transforme() {

@@ -2783,6 +2783,14 @@ impl Client {
                 } else {
                     0.99
                 };
+                // Icebreaker : l'écart qui reste avec l'horloge du serveur, pour lire les recharges
+                // de compétences, notées en temps du serveur (jalon A).
+                let decalage = new_time.0 - time.0;
+                drop(time);
+                self.state
+                    .ecs_mut()
+                    .write_resource::<common::icebreaker_competences::IcebreakerDecalageHorloge>()
+                    .0 = decalage;
             },
             ServerGeneral::EntitySync(entity_sync_package) => {
                 let uid = self.uid();

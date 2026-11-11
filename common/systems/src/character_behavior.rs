@@ -59,6 +59,7 @@ pub struct ReadData<'a> {
     buffs: ReadStorage<'a, Buffs>,
     // Icebreaker : compétences des personnages du registre (jalon A).
     icebreaker: ReadStorage<'a, common::icebreaker_competences::IcebreakerCompetences>,
+    icebreaker_decalage: Read<'a, common::icebreaker_competences::IcebreakerDecalageHorloge>,
 }
 
 /// ## Character Behavior System
@@ -235,6 +236,7 @@ impl<'a> System<'a> for Sys {
                 bodies: &read_data.bodies,
                 buffs: read_data.buffs.get(entity),
                 icebreaker: read_data.icebreaker.get(entity),
+                icebreaker_horloge: read_data.time.0 + read_data.icebreaker_decalage.0,
             };
 
             for action in actions {

@@ -69,6 +69,8 @@ apprend d'autres.
 **La recharge.** Toute compétence en a une, visible dans la barre : la case se grise et affiche les secondes qui
 restent.
 
+![La barre d'une guerrière à la hache : la compétence de la touche 1 en recharge (4 s), puis son ultime, bord doré (58 s)](images/classes-barre.png)
+
 **Les niveaux.** Une compétence d'arme va du niveau 1 au niveau 5. Aux niveaux 2 et 4, des chiffres changent (dégâts,
 portée, recharge). Aux niveaux 3 et 5, la compétence **se transforme** : un coup de plus, une zone plus large, un
 effet nouveau (saignement, ralentissement). La page Classes et jeux d'armes de la rubrique Compétences dit, pour
