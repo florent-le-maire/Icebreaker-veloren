@@ -20,6 +20,8 @@ pub mod icebreaker_combat;
 pub mod icebreaker_mort;
 // Icebreaker : balise lumineuse (jalon J).
 pub mod icebreaker_balise;
+// Icebreaker : panneau typé de l'interface (jalon N).
+pub mod icebreaker_panneau;
 pub mod comp;
 pub mod consts;
 pub mod resources;

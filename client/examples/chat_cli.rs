@@ -111,6 +111,8 @@ fn main() {
     // Icebreaker : le personnage du registre à jouer (ou un fantôme) une fois sorti
     // du monde (jalon R).
     let mut registre_next: Option<Option<common::character::CharacterId>> = None;
+    // Icebreaker : les bâtiments du plan du village reçus en dernier (`!panneau <sorte>`).
+    let mut batiments: Vec<common::icebreaker_panneau::Batiment> = Vec::new();
 
     loop {
         for msg in rx.try_iter() {
@@ -129,13 +131,29 @@ fn main() {
                     entity: 5,
                 });
             } else if msg == "!batiments" {
-                // Icebreaker : les bâtiments du village (nom, emprise), puis `!panneau x y`.
-                client.request_icebreaker_building(None);
+                // Icebreaker : ouvre le plan du village (nom, emprise, état des bâtiments), puis
+                // `!panneau x y` ; le serveur envoie ensuite ce qui change (jalon N). `!fermer`
+                // ferme le plan.
+                client.request_icebreaker_plan(common::icebreaker_panneau::Demande::Ouvrir);
             } else if let Some(rest) = msg.strip_prefix("!panneau ") {
+                // `!panneau x y`, ou `!panneau <sorte>` (caisse, charrette, depart…) d'après la
+                // dernière liste de bâtiments reçue.
                 let mut xy = rest.split_whitespace().filter_map(|w| w.parse::<f32>().ok());
-                if let (Some(x), Some(y)) = (xy.next(), xy.next()) {
-                    client.request_icebreaker_building(Some(vek::Vec2::new(x, y)));
+                let ou = match (xy.next(), xy.next()) {
+                    (Some(x), Some(y)) => Some(vek::Vec2::new(x, y)),
+                    _ => batiments
+                        .iter()
+                        .find(|b| b.sorte == rest.trim())
+                        .map(|b| (b.emprise.min + b.emprise.max).as_::<f32>() / 2.0),
+                };
+                match ou {
+                    Some(ou) => client.request_icebreaker_plan(
+                        common::icebreaker_panneau::Demande::Batiment(ou),
+                    ),
+                    None => println!("Pas de bâtiment « {} » (d'abord !batiments)", rest.trim()),
                 }
+            } else if msg == "!fermer" {
+                client.request_icebreaker_plan(common::icebreaker_panneau::Demande::Fermer);
             } else if msg == "!echange" {
                 // Icebreaker : l'échange en cours, s'il y en a un.
                 println!("Échange en cours : {}", client.pending_trade().is_some());
@@ -359,30 +377,70 @@ fn main() {
                     if buildings.is_empty() {
                         println!("Aucun bâtiment : pas de village ici");
                     }
-                    for (name, bounds, alt, kind) in buildings {
-                        let center = bounds.center();
-                        println!("Bâtiment {name:?} ({kind}) : centre {} {}, altitude {alt}", center.x, center.y);
+                    batiments = buildings.clone();
+                    for b in buildings {
+                        let center = b.emprise.center();
+                        println!(
+                            "Bâtiment {:?} ({}) : centre {} {}, altitude {}, état {:?}",
+                            b.nom, b.sorte, center.x, center.y, b.altitude, b.etat
+                        );
                     }
+                },
+                Event::IcebreakerExpedition(expedition) => match expedition {
+                    Some(e) => println!(
+                        "Expédition vers {} : départ {:?}, inscrits {:?}",
+                        e.destination, e.depart_dans, e.membres
+                    ),
+                    None => println!("Expédition : aucune"),
                 },
                 Event::IcebreakerJouer(next) => {
                     client.request_remove_character();
                     registre_next = Some(next);
                 },
-                Event::IcebreakerPanel(title, lines, actions) => {
+                // Icebreaker : le panneau typé (jalon N), bloc par bloc.
+                Event::IcebreakerPanel(p) => {
                     let text = |c: &comp::Content| match c {
                         comp::Content::Plain(s) => s.clone(),
                         other => format!("{other:?}"),
                     };
-                    println!("Panneau « {} »", text(&title));
-                    for (line, icons) in &lines {
-                        if icons.is_empty() {
-                            println!("  {}", text(line));
-                        } else {
-                            println!("  {} (icônes : {icons:?})", text(line));
-                        }
+                    let bouton = |a: &common::icebreaker_panneau::Action| {
+                        format!(
+                            "[{}{}{}] /{}",
+                            text(&a.libelle),
+                            if a.principale { " *" } else { "" },
+                            if a.permise { "" } else { " (grisé)" },
+                            a.commande.join(" ")
+                        )
+                    };
+                    let ligne = |l: &common::icebreaker_panneau::Ligne| {
+                        format!(
+                            "  - {} | {} | icône {:?} | {} | cadenas {:?} | {}",
+                            text(&l.titre),
+                            text(&l.sous_titre),
+                            l.icone,
+                            l.pastille.as_ref().map_or(String::new(), |(mot, _)| text(mot)),
+                            l.cadenas.as_ref().map(|(ferme, _)| *ferme),
+                            l.action.as_ref().map_or(String::new(), bouton),
+                        )
+                    };
+                    println!("Panneau « {} » : {}", text(&p.titre), text(&p.description));
+                    for c in &p.chiffres {
+                        println!("  {} ({})", text(&c.valeur), text(&c.legende));
                     }
-                    for (label, command) in &actions {
-                        println!("  [{}] /{}", text(label), command.join(" "));
+                    if let Some(j) = &p.jauge {
+                        println!("  jauge {} : {} ({:.0} %)", text(&j.legende), text(&j.texte), j.part * 100.0);
+                    }
+                    for (objet, n) in &p.objets {
+                        println!("  {n} x {objet:?}");
+                    }
+                    for (i, o) in p.onglets.iter().enumerate() {
+                        println!("  onglet {}{}", text(&o.libelle), if i == usize::from(p.onglet) { " (ouvert)" } else { "" });
+                        o.lignes.iter().for_each(|l| println!("  {}", ligne(l)));
+                    }
+                    p.lignes.iter().for_each(|l| println!("{}", ligne(l)));
+                    p.actions.iter().for_each(|a| println!("  {}", bouton(a)));
+                    if let Some((message, sorte)) = &p.message {
+                        println!("  message ({sorte:?}) : {}", text(message));
                     }
                 },
                 Event::DisconnectionNotification(time) => {

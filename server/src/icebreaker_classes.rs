@@ -29,6 +29,10 @@ pub struct Class {
     /// unlocked skills follow. Empty: Veloren's order.
     #[serde(default)]
     pub touches: Vec<Skill>,
+    /// Icebreaker : l'icône de la classe dans l'interface (jalon N), parmi les
+    /// icônes d'armes du HUD : epees, epee, baton, arc, hache, marteau, sceptre.
+    #[serde(default)]
+    pub icone: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]

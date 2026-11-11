@@ -249,11 +249,10 @@ pub struct ExitIngameEvent {
     pub entity: EcsEntity,
 }
 
-/// Icebreaker: a player asks for the panel of the village building at `wpos`,
-/// or for the buildings (`None`).
+/// Icebreaker : ce qu'un joueur fait dans le plan du village (jalon N).
 pub struct IcebreakerBuildingEvent {
     pub entity: EcsEntity,
-    pub wpos: Option<Vec2<f32>>,
+    pub demande: crate::icebreaker_panneau::Demande,
 }
 
 pub struct RequestSiteInfoEvent {

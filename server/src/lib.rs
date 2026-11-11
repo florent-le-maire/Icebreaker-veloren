@@ -25,6 +25,7 @@ pub mod icebreaker_entrainement;
 pub mod icebreaker_expedition;
 pub mod icebreaker_mission;
 pub mod icebreaker_mort;
+pub mod icebreaker_panneaux;
 pub mod icebreaker_registre;
 pub mod icebreaker_return;
 pub mod icebreaker_services;
@@ -721,6 +722,8 @@ impl Server {
         state.ecs_mut().insert(sys::icebreaker_mort::IcebreakerATerre::default());
         // Icebreaker : balise lumineuse (jalon J).
         state.ecs_mut().insert(icebreaker_balise::IcebreakerBalises::default());
+        // Icebreaker : qui a le plan du village ouvert (jalon N).
+        state.ecs_mut().insert(icebreaker_panneaux::IcebreakerPanneaux::default());
 
         // Set the spawn point we calculated above
         state.ecs_mut().insert(spawn_point);

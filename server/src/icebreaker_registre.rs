@@ -13,7 +13,7 @@ use crate::{icebreaker_classes, icebreaker_warehouse::write_campaign_file};
 use common::{
     assets::{AssetExt, Ron},
     character::CharacterId,
-    comp::{ItemKey, Player, Presence, PresenceKind},
+    comp::{Player, Presence, PresenceKind},
 };
 use rand::prelude::IndexedRandom;
 use serde::{Deserialize, Serialize};
@@ -371,43 +371,42 @@ pub fn joueurs(presences: &ReadStorage<Presence>, players: &ReadStorage<Player>)
         .collect()
 }
 
-/// The cart's panel for the account `uuid` playing `current` (none: a ghost):
-/// lines, and buttons (label, chat command).
-pub fn panel_for(
+/// Icebreaker : le panneau typé de la charrette (jalon N) pour le compte `uuid`
+/// qui joue `current` (aucun : un fantôme). Les recrues du jour et le registre
+/// sont deux onglets ; chaque personnage est une ligne avec l'icône de sa classe,
+/// son état, le cadenas (réserver) et ce qu'on peut en faire.
+pub fn panneau_pour(
     registre: &IcebreakerRegistre,
     uuid: &str,
     current: Option<i64>,
     joueurs: &Joueurs,
-) -> (Vec<(String, Vec<ItemKey>)>, Vec<(String, Vec<String>)>) {
+) -> common::icebreaker_panneau::Panneau {
+    use common::icebreaker_panneau::{Action, Ligne, Onglet, Panneau, Sorte, Ton, texte};
     let config = config();
-    let command = |words: &[&str]| words.iter().map(|w| w.to_string()).collect::<Vec<_>>();
-    // The icons of a class (X.8): its weapon and its chest armour.
-    let icones = |classe: &str| icebreaker_classes::class(classe).map(|c| icebreaker_classes::icones(&c)).unwrap_or_default();
-    let mut lines: Vec<(String, Vec<ItemKey>)> = Vec::new();
-    let mut buttons = Vec::new();
-    if registre.charrette().is_empty() {
-        lines.push(("Personne à la charrette aujourd'hui.".to_string(), Vec::new()));
+    let icone = |classe: &str| {
+        icebreaker_classes::class(classe)
+            .map(|class| class.icone)
+            .unwrap_or_default()
+    };
+    let recrues = if registre.charrette().is_empty() {
+        vec![Ligne::nouvelle("Personne à la charrette aujourd'hui.").estompee()]
     } else {
-        lines.push(("À la charrette :".to_string(), Vec::new()));
-    }
-    for (i, recrue) in registre.charrette().iter().enumerate() {
-        let classe = nom_de_classe(&recrue.classe);
-        lines.push((format!("  {}, {classe}", recrue.nom), icones(&recrue.classe)));
-        if current.is_none() {
-            buttons.push((
-                format!("Engager {} ({classe})", recrue.nom),
-                command(&["registre", "engager", &i.to_string()]),
-            ));
-        }
-    }
-    lines.push((
-        format!(
-            "Registre ({}/{}) :",
-            registre.personnages().len(),
-            config.places_registre
-        ),
-        Vec::new(),
-    ));
+        registre
+            .charrette()
+            .iter()
+            .enumerate()
+            .map(|(i, recrue)| {
+                Ligne::nouvelle(recrue.nom.clone())
+                    .icone(icone(&recrue.classe))
+                    .sous_titre(nom_de_classe(&recrue.classe))
+                    .action(
+                        Action::nouvelle("Engager", &["registre", "engager", &i.to_string()])
+                            .principale()
+                            .permise(current.is_none()),
+                    )
+            })
+            .collect()
+    };
     // Those reserved by the player first.
     let mut fiches: Vec<&Fiche> = registre.personnages().iter().collect();
     fiches.sort_by_key(|fiche| fiche.reserve_par.as_deref() != Some(uuid));
@@ -415,36 +414,87 @@ pub fn panel_for(
         .iter()
         .filter(|fiche| fiche.reserve_par.as_deref() == Some(uuid))
         .count();
-    for fiche in fiches {
-        let id = fiche.id.to_string();
-        let etat = match (joueurs.get(&fiche.id), fiche.reserve_par.as_deref()) {
-            (Some(joueur), _) if joueur.uuid == uuid => "vous".to_string(),
-            (Some(joueur), _) => format!("joué par {}", joueur.alias),
-            (None, Some(owner)) if owner == uuid => "réservé pour vous".to_string(),
-            (None, Some(_)) => "réservé".to_string(),
-            (None, None) => "libre".to_string(),
-        };
-        lines.push((
-            format!("  {}, {} : {etat}", fiche.nom, nom_de_classe(&fiche.classe)),
-            icones(&fiche.classe),
-        ));
-        let mien = fiche.reserve_par.as_deref() == Some(uuid);
-        if current != Some(fiche.id) && registre.peut_jouer_fiche(fiche, uuid, joueurs).is_ok() {
-            buttons.push((format!("Jouer {}", fiche.nom), command(&["registre", "jouer", &id])));
-        }
-        if mien {
-            buttons.push((format!("Libérer {}", fiche.nom), command(&["registre", "liberer", &id])));
-        } else if fiche.reserve_par.is_none() && mine < config.reservations_par_compte {
-            buttons.push((format!("Réserver {}", fiche.nom), command(&["registre", "reserver", &id])));
-        }
-    }
+    let lignes = fiches
+        .iter()
+        .map(|fiche| {
+            let id = fiche.id.to_string();
+            let classe = nom_de_classe(&fiche.classe);
+            let ligne = Ligne::nouvelle(fiche.nom.clone()).icone(icone(&fiche.classe));
+            let jouer = Action::nouvelle("Jouer", &["registre", "jouer", &id]).permise(
+                current.is_none() && registre.peut_jouer_fiche(fiche, uuid, joueurs).is_ok(),
+            );
+            if current == Some(fiche.id) {
+                return ligne.sous_titre(classe).pastille("vous", Ton::Or).choisie();
+            }
+            match (joueurs.get(&fiche.id), fiche.reserve_par.as_deref()) {
+                (Some(joueur), _) if joueur.uuid == uuid => {
+                    ligne.sous_titre(classe).pastille("vous", Ton::Or).choisie()
+                },
+                (Some(joueur), _) => ligne
+                    .sous_titre(format!("{classe}, joué par {}", joueur.alias))
+                    .pastille("en jeu", Ton::Discret)
+                    .estompee(),
+                (None, Some(owner)) if owner == uuid => ligne
+                    .sous_titre(classe)
+                    .pastille("à vous", Ton::Info)
+                    .cadenas(true, &["registre", "liberer", &id])
+                    .action(jouer.principale()),
+                (None, Some(_)) => ligne
+                    .sous_titre(classe)
+                    .pastille("réservé", Ton::Discret)
+                    .estompee(),
+                (None, None) => {
+                    let ligne = ligne.sous_titre(classe).action(jouer);
+                    if mine < config.reservations_par_compte {
+                        ligne.cadenas(false, &["registre", "reserver", &id])
+                    } else {
+                        ligne
+                    }
+                },
+            }
+        })
+        .collect();
+    let joue = current
+        .and_then(|id| registre.personnages().iter().find(|fiche| fiche.id == id))
+        .map(|fiche| fiche.nom.clone());
+    let mut panneau = Panneau::nouveau("armure", "Charrette", match (&joue, current) {
+        (Some(nom), _) => format!("Vous jouez {nom}."),
+        (None, Some(_)) => "Vous jouez un personnage.".to_string(),
+        (None, None) => "Fantôme : choisissez un personnage.".to_string(),
+    });
+    panneau.onglets = vec![
+        Onglet {
+            libelle: texte(format!("Recrues ({})", registre.charrette().len())),
+            lignes: recrues,
+        },
+        Onglet {
+            libelle: texte(format!(
+                "Registre ({}/{})",
+                registre.personnages().len(),
+                config.places_registre
+            )),
+            lignes,
+        },
+    ];
+    panneau.onglet = u8::from(current.is_some() || mine > 0);
     if current.is_some() {
-        buttons.push((
-            "Rendre au registre (redevenir fantôme)".to_string(),
-            command(&["registre", "rendre"]),
+        panneau.actions.push(Action::nouvelle(
+            match &joue {
+                Some(nom) => format!("Rendre {nom} au registre"),
+                None => "Rendre au registre".to_string(),
+            },
+            &["registre", "rendre"],
         ));
+        panneau.message("Rendez votre personnage pour en changer.", Sorte::Info)
+    } else {
+        panneau.message(
+            format!(
+                "Le cadenas réserve un personnage ({} au plus).",
+                config.reservations_par_compte
+            ),
+            Sorte::Info,
+        )
     }
-    (lines, buttons)
 }
 
 /// `/registre engager <n> | jouer <id> | rendre | reserver <id> | liberer
@@ -721,26 +771,53 @@ mod tests {
 
     #[test]
     fn icebreaker_registre_panel_offers_what_the_player_may_do() {
+        use common::icebreaker_panneau::{Ligne, Ton, texte};
         let mut registre = registre_de(&[1, 2]);
         registre.etat.charrette.push(Recrue {
             nom: "Anna".into(),
             classe: "archer".into(),
         });
         registre.etat.personnages[1].reserve_par = Some("b".into());
-        let (lines, buttons) = panel_for(&registre, "a", None, &Joueurs::new());
-        let labels: Vec<&str> = buttons.iter().map(|(label, _)| label.as_str()).collect();
+        let ligne = |lignes: &[Ligne], nom: &str| {
+            lignes
+                .iter()
+                .find(|l| l.titre == texte(nom))
+                .cloned()
+                .unwrap_or_else(|| panic!("no line {nom} in {lignes:?}"))
+        };
+        let permise = |l: &Ligne| l.action.as_ref().is_some_and(|action| action.permise);
+
+        // A ghost: the recruits first, hiring and playing allowed.
+        let panneau = panneau_pour(&registre, "a", None, &Joueurs::new());
+        assert_eq!(panneau.onglet, 0);
+        let anna = ligne(&panneau.onglets[0].lignes, "Anna");
+        assert_eq!(anna.sous_titre, texte("archer"));
+        assert_eq!(anna.icone, "arc", "the icon of its class");
+        assert!(permise(&anna));
+        let fiches = &panneau.onglets[1].lignes;
+        let p1 = ligne(fiches, "P1");
+        assert!(permise(&p1));
+        assert_eq!(p1.cadenas.as_ref().map(|(ferme, _)| *ferme), Some(false));
+        let p2 = ligne(fiches, "P2");
+        assert!(p2.action.is_none() && p2.estompee, "reserved by b");
+        assert_eq!(p2.pastille, Some((texte("réservé"), Ton::Discret)));
+        assert!(panneau.actions.is_empty(), "nothing to give back");
+
+        // Playing P1: the registry first, hiring greyed, giving back offered.
+        let panneau = panneau_pour(&registre, "a", Some(1), &Joueurs::new());
+        assert_eq!(panneau.onglet, 1);
         assert!(
-            lines.iter().any(|(l, icones)| l.contains("Anna, archer") && icones.len() == 2),
-            "{lines:?}"
+            !permise(&ligne(&panneau.onglets[0].lignes, "Anna")),
+            "a character does not hire"
         );
-        assert!(labels.contains(&"Engager Anna (archer)"));
-        assert!(labels.contains(&"Jouer P1"));
-        assert!(!labels.contains(&"Jouer P2"), "reserved by b");
-        assert!(!labels.iter().any(|l| l.starts_with("Rendre")));
-        let (_, buttons) = panel_for(&registre, "a", Some(1), &Joueurs::new());
-        let labels: Vec<&str> = buttons.iter().map(|(label, _)| label.as_str()).collect();
-        assert!(!labels.iter().any(|l| l.starts_with("Engager")), "a character does not hire");
-        assert!(labels.iter().any(|l| l.starts_with("Rendre")));
+        let p1 = ligne(&panneau.onglets[1].lignes, "P1");
+        assert!(p1.choisie && p1.action.is_none());
+        assert_eq!(p1.pastille, Some((texte("vous"), Ton::Or)));
+        assert_eq!(panneau.actions.len(), 1);
+        assert_eq!(panneau.actions[0].commande, vec![
+            "registre".to_string(),
+            "rendre".to_string()
+        ]);
     }
 
     #[test]

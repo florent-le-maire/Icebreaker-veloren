@@ -105,6 +105,13 @@ impl ChatCommandExt for ServerChatCommand {
                 ServerGeneral::server_msg(ChatType::CommandError, err),
             );
         }
+        // Icebreaker : le joueur vient d'agir, son panneau du plan du village est reconstruit
+        // au prochain tic (jalon N).
+        server
+            .state
+            .ecs()
+            .write_resource::<crate::icebreaker_panneaux::IcebreakerPanneaux>()
+            .marquer(entity);
     }
 }
 

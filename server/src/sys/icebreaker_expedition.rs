@@ -91,15 +91,26 @@ impl<'a> System<'a> for Sys {
         };
         announce.into_iter().for_each(tell_all);
 
-        // The expedition, shown every second to the players of the village.
-        if time.0 - expedition.last_shown >= 1.0 {
+        // Icebreaker : l'expédition, montrée aux joueurs du village (jalon N). Elle part quand
+        // elle change (inscrits, prêts, destination, décompte lancé ou arrêté), et chaque seconde
+        // tant qu'elle existe, pour ceux qui arrivent ; le client fait le décompte.
+        let resume = icebreaker_expedition::resume(time.0);
+        let sans_decompte = |expedition: &Option<common::icebreaker_panneau::Expedition>| {
+            expedition.as_ref().map(|expedition| {
+                (
+                    expedition.destination.clone(),
+                    expedition.membres.clone(),
+                    expedition.depart_dans.is_some(),
+                )
+            })
+        };
+        let change = sans_decompte(&expedition.montree) != sans_decompte(&resume);
+        if change || (resume.is_some() && time.0 - expedition.last_shown >= 1.0) {
             expedition.last_shown = time.0;
-            let summary = icebreaker_expedition::summary(time.0).map(|(title, members)| {
-                (Content::Plain(title), members)
-            });
+            expedition.montree = resume.clone();
             for (client, pos) in (&clients, &positions).join() {
                 // Nothing for those away in a dungeon slot.
-                let shown = summary.clone().filter(|_| slots.at(pos.0.xy()).is_none());
+                let shown = resume.clone().filter(|_| slots.at(pos.0.xy()).is_none());
                 client.send_fallible(ServerGeneral::IcebreakerExpedition(shown));
             }
         }

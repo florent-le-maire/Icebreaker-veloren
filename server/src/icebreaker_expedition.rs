@@ -34,6 +34,8 @@ pub struct IcebreakerExpedition {
     leader_pos: Option<Vec3<f32>>,
     /// When the expedition was last shown to the village (`Time`).
     pub last_shown: f64,
+    /// Icebreaker : ce qui a été montré au village en dernier (jalon N).
+    pub montree: Option<common::icebreaker_panneau::Expedition>,
 }
 
 impl IcebreakerExpedition {
@@ -44,6 +46,7 @@ impl IcebreakerExpedition {
         Self {
             leader_pos,
             last_shown: 0.0,
+            montree: None,
         }
     }
 
@@ -291,33 +294,121 @@ fn answer_of_word(word: &str) -> Option<u16> {
     }
 }
 
-/// The « Départ » panel of the top view for `player` (V.11): the question of
-/// the expedition leader, and its answers as buttons (label, command).
-pub fn panel_for(player: Uid) -> (String, Vec<(String, Vec<String>)>) {
-    let (question, answers) = question(expedition().as_ref(), player);
-    let buttons = answers
-        .into_iter()
-        .filter(|(id, _)| *id != NOT_NOW)
-        .map(|(id, label)| (label, vec!["expedition".to_string(), answer_word(id)]))
-        .collect();
-    (question, buttons)
+/// Icebreaker : le panneau typé « Départ » du plan (jalon N) pour `player`
+/// (`fantome` : sans personnage) : les destinations tant qu'il n'y a pas
+/// d'expédition, sinon ses inscrits, qui est prêt, et ce que le joueur peut
+/// faire.
+pub fn panneau_pour(player: Uid, fantome: bool, now: f64) -> common::icebreaker_panneau::Panneau {
+    panneau_de(expedition().as_ref(), player, fantome, now)
 }
 
-/// The expedition being prepared, for the list shown to the village (V.11):
-/// its title, and its members (alias, ready).
-pub fn summary(now: f64) -> Option<(String, Vec<(String, bool)>)> {
-    expedition().as_ref().map(|exp| {
-        let title = match exp.departure {
-            Some(departure) => format!(
-                "Expédition vers {} : départ dans {:.0} s",
-                exp.destination_name(),
-                (departure - now).max(0.0).ceil()
-            ),
-            None => format!("Expédition vers {}", exp.destination_name()),
+fn panneau_de(
+    expedition: Option<&Expedition>,
+    player: Uid,
+    fantome: bool,
+    now: f64,
+) -> common::icebreaker_panneau::Panneau {
+    use common::icebreaker_panneau::{Action, Chiffre, Ligne, Panneau, Sorte, Ton};
+    let refus = crate::icebreaker_registre::GHOST_REFUSAL;
+    let Some(exp) = expedition else {
+        let mut panneau = Panneau::nouveau("globe", "Départ", "Où part l'expédition ?");
+        panneau.lignes = destinations()
+            .into_iter()
+            .map(|(index, lieu)| {
+                let ligne = Ligne::nouvelle(lieu.nom.clone()).icone("globe").action(
+                    Action::nouvelle("Choisir", &["expedition", &answer_word(index as u16)])
+                        .principale()
+                        .permise(lieu.actif && !fantome),
+                );
+                if lieu.actif {
+                    ligne
+                } else {
+                    ligne.sous_titre("pas encore ouvert").estompee()
+                }
+            })
+            .collect();
+        return if fantome {
+            panneau.message(refus, Sorte::Refus)
+        } else {
+            panneau.message("Personne n'est inscrit pour l'instant.", Sorte::Info)
         };
-        let members = exp.members.iter().map(|m| (m.alias.clone(), m.ready)).collect();
-        (title, members)
-    })
+    };
+    let prets = exp.members.iter().filter(|m| m.ready).count();
+    let reste = exp.departure.map(|departure| (departure - now).max(0.0).ceil());
+    let mut panneau = Panneau::nouveau(
+        "globe",
+        "Départ",
+        format!("Expédition vers : {}.", exp.destination_name()),
+    );
+    panneau.chiffres = vec![
+        Chiffre::nouveau(
+            format!("{prets} / {}", exp.members.len()),
+            "prêts",
+            if prets == exp.members.len() {
+                Ton::Bon
+            } else {
+                Ton::Normal
+            },
+        ),
+        match reste {
+            Some(reste) => Chiffre::nouveau(format!("{reste:.0} s"), "avant le départ", Ton::Or),
+            None => Chiffre::nouveau("en attente", "avant le départ", Ton::Discret),
+        },
+    ];
+    panneau.lignes = exp
+        .members
+        .iter()
+        .map(|m| {
+            let ligne = if m.ready {
+                Ligne::nouvelle(m.alias.clone()).pastille("prêt", Ton::Bon)
+            } else {
+                Ligne::nouvelle(m.alias.clone()).pastille("pas prêt", Ton::Discret)
+            };
+            if m.uid == player { ligne.choisie() } else { ligne }
+        })
+        .collect();
+    match exp.member(player) {
+        None => {
+            panneau.actions = vec![
+                Action::nouvelle("Rejoindre l'expédition", &["expedition", "rejoindre"])
+                    .principale()
+                    .permise(!fantome),
+            ];
+            if fantome {
+                return panneau.message(refus, Sorte::Refus);
+            }
+        },
+        Some(member) => {
+            panneau.colonnes = 2;
+            panneau.actions = vec![
+                if member.ready {
+                    Action::nouvelle("Attendre encore", &["expedition", "attendre"])
+                } else {
+                    Action::nouvelle("Je suis prêt", &["expedition", "pret"]).principale()
+                },
+                Action::nouvelle("Me désinscrire", &["expedition", "quitter"]),
+            ];
+        },
+    }
+    match reste {
+        Some(reste) => panneau.message(
+            format!("Tous prêts : départ dans {reste:.0} s."),
+            Sorte::Reussite,
+        ),
+        None => panneau.message("Le départ se lance quand tout le monde est prêt.", Sorte::Info),
+    }
+}
+
+/// Icebreaker : l'expédition en préparation, pour le bandeau du village (jalon
+/// N) : sa destination, le temps avant le départ, ses inscrits (pseudo, prêt).
+pub fn resume(now: f64) -> Option<common::icebreaker_panneau::Expedition> {
+    expedition()
+        .as_ref()
+        .map(|exp| common::icebreaker_panneau::Expedition {
+            destination: exp.destination_name(),
+            depart_dans: exp.departure.map(|departure| (departure - now).max(0.0) as f32),
+            membres: exp.members.iter().map(|m| (m.alias.clone(), m.ready)).collect(),
+        })
 }
 
 /// `/expedition <choix>` (the « Départ » panel, V.11): a destination number,
@@ -650,6 +741,77 @@ mod tests {
         assert_eq!(lieu.nom, lieux()[usize::from(donjon)].nom);
         assert_eq!(members, vec![flo, sayanel]);
         assert_eq!(exp, None);
+    }
+
+    #[test]
+    fn the_departure_panel_offers_what_the_player_may_do() {
+        use common::icebreaker_panneau::{Sorte, Ton, texte};
+        let uid = |n| Uid(std::num::NonZeroU64::new(n).unwrap());
+        let (flo, sayanel) = (uid(1), uid(2));
+        let (donjon, _) = destinations()
+            .into_iter()
+            .find(|(_, lieu)| lieu.actif)
+            .expect("an open destination");
+        let commandes = |panneau: &common::icebreaker_panneau::Panneau| {
+            panneau
+                .actions
+                .iter()
+                .map(|action| (action.commande.join(" "), action.principale, action.permise))
+                .collect::<Vec<_>>()
+        };
+
+        // No expedition: the destinations, one line each; a ghost may not choose.
+        let libre = panneau_de(None, flo, false, 0.0);
+        assert_eq!(libre.lignes.len(), destinations().len());
+        assert!(libre.lignes.iter().any(|l| l.action.as_ref().is_some_and(|a| a.permise)));
+        assert!(
+            libre
+                .lignes
+                .iter()
+                .filter(|l| l.estompee)
+                .all(|l| l.action.as_ref().is_some_and(|a| !a.permise)),
+            "a closed destination is greyed"
+        );
+        let fantome = panneau_de(None, flo, true, 0.0);
+        assert!(fantome.lignes.iter().all(|l| l.action.as_ref().is_some_and(|a| !a.permise)));
+        assert_eq!(fantome.message.map(|(_, sorte)| sorte), Some(Sorte::Refus));
+
+        // Sayanel is in and ready, Flo is not in yet: she may join.
+        let mut exp = Expedition {
+            destination: donjon,
+            members: vec![Member {
+                uid: sayanel,
+                alias: "Sayanel".into(),
+                ready: true,
+            }],
+            departure: None,
+        };
+        let dehors = panneau_de(Some(&exp), flo, false, 0.0);
+        assert_eq!(commandes(&dehors), vec![("expedition rejoindre".to_string(), true, true)]);
+
+        // Flo in, not ready: « Je suis prêt » is the main action, nobody leaves yet.
+        exp.members.push(Member {
+            uid: flo,
+            alias: "Flo".into(),
+            ready: false,
+        });
+        let attente = panneau_de(Some(&exp), flo, false, 0.0);
+        assert_eq!(commandes(&attente), vec![
+            ("expedition pret".to_string(), true, true),
+            ("expedition quitter".to_string(), false, true)
+        ]);
+        assert_eq!(attente.chiffres[0].valeur, texte("1 / 2"));
+        assert_eq!(attente.chiffres[1].valeur, texte("en attente"));
+        assert!(attente.lignes[1].choisie && !attente.lignes[0].choisie, "her own line");
+        assert_eq!(attente.lignes[0].pastille, Some((texte("prêt"), Ton::Bon)));
+
+        // Everyone ready, leaving at 5 s: the countdown, and waiting is offered.
+        exp.members[1].ready = true;
+        exp.departure = Some(5.0);
+        let depart = panneau_de(Some(&exp), flo, false, 1.2);
+        assert_eq!(commandes(&depart)[0], ("expedition attendre".to_string(), false, true));
+        assert_eq!(depart.chiffres[1].valeur, texte("4 s"));
+        assert_eq!(depart.message, Some((texte("Tous prêts : départ dans 4 s."), Sorte::Reussite)));
     }
 
     #[test]

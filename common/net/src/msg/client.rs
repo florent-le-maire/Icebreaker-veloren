@@ -107,10 +107,10 @@ pub enum ClientGeneral {
     },
     UnlockSkill(Skill),
     RequestSiteInfo(SiteId),
-    /// Icebreaker: in the top view of the village, the player clicked this world
-    /// position (the server answers with the panel of the building there), or
-    /// asks for the buildings (`None`).
-    IcebreakerBuilding(Option<Vec2<f32>>),
+    /// Icebreaker : ce que le joueur fait dans le plan du village (jalon N) : il
+    /// l'ouvre, clique un bâtiment, ferme le panneau ou le plan. Le serveur envoie
+    /// ensuite ce qui change, sans qu'on le redemande.
+    IcebreakerPlan(common::icebreaker_panneau::Demande),
     UpdateMapMarker(comp::MapMarkerChange),
     SetBattleMode(BattleMode),
 
@@ -174,7 +174,7 @@ impl ClientMsg {
                         | ClientGeneral::TerrainChunkRequest { .. }
                         | ClientGeneral::UnlockSkill(_)
                         | ClientGeneral::RequestSiteInfo(_)
-                        | ClientGeneral::IcebreakerBuilding(_)
+                        | ClientGeneral::IcebreakerPlan(_)
                         | ClientGeneral::RequestPlayerPhysics { .. }
                         | ClientGeneral::RequestLossyTerrainCompression { .. }
                         | ClientGeneral::UpdateMapMarker(_)

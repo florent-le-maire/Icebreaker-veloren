@@ -223,8 +223,8 @@ impl Sys {
                     })
                     .transpose();
             },
-            ClientGeneral::IcebreakerBuilding(wpos) => {
-                emitters.emit(event::IcebreakerBuildingEvent { entity, wpos });
+            ClientGeneral::IcebreakerPlan(demande) => {
+                emitters.emit(event::IcebreakerBuildingEvent { entity, demande });
             },
             ClientGeneral::RequestSiteInfo(id) => {
                 emitters.emit(event::RequestSiteInfoEvent { entity, id });

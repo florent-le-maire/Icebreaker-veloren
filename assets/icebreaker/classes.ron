@@ -7,14 +7,16 @@
 //   l'arme débloquées au départ, qui se placent sur les premières touches
 //   dans l'ordre de Veloren ;
 // - `touches` (facultatif) : les compétences à mettre d'abord, dans cet ordre, sur les touches 1, 2, 3…
+// - `icone` (facultatif) : l'icône de la classe dans l'interface (jalon N), parmi les icônes d'armes du
+//   jeu : epees, epee, baton, arc, hache, marteau, sceptre.
 (
     classes: [
-        (id: "guerrier", nom: "guerrier", equipement: "icebreaker.classes.guerrier",
+        (id: "guerrier", nom: "guerrier", icone: "epees", equipement: "icebreaker.classes.guerrier",
             competences: "icebreaker.classes.competences.guerrier",
             touches: [Sword(DefensiveRiposte), Sword(HeavySweep), Sword(CleavingWhirlwindSlice)]),
-        (id: "mage", nom: "mage", equipement: "icebreaker.classes.mage",
+        (id: "mage", nom: "mage", icone: "baton", equipement: "icebreaker.classes.mage",
             competences: "icebreaker.classes.competences.mage"),
-        (id: "archer", nom: "archer", equipement: "icebreaker.classes.archer",
+        (id: "archer", nom: "archer", icone: "arc", equipement: "icebreaker.classes.archer",
             competences: "icebreaker.classes.competences.archer"),
     ],
 )

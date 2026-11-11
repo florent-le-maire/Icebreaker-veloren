@@ -133,13 +133,8 @@ pub enum Event {
     SpectatePosition(Vec3<f32>),
     PluginDataReceived(Vec<u8>),
     Dialogue(Uid, rtsim::Dialogue<true>),
-    /// Icebreaker: the panel of a village building (title, lines, and buttons:
-    /// label, and the chat command it sends).
-    IcebreakerPanel(
-        comp::Content,
-        Vec<(comp::Content, Vec<comp::ItemKey>)>,
-        Vec<(comp::Content, Vec<String>)>,
-    ),
+    /// Icebreaker : le panneau typé d'un bâtiment du village ou de la balise.
+    IcebreakerPanel(common::icebreaker_panneau::Panneau),
     /// Icebreaker: go to the place of the campaign listening on this port.
     IcebreakerTravel(u16),
     /// Icebreaker: the registry is open, enter as a ghost (jalon R).
@@ -147,12 +142,11 @@ pub enum Event {
     /// Icebreaker: play this character of the registry, or become a ghost again.
     IcebreakerJouer(Option<CharacterId>),
     /// Icebreaker: the expedition being prepared at the village, or none.
-    IcebreakerExpedition(Option<(comp::Content, Vec<(String, bool)>)>),
+    IcebreakerExpedition(Option<common::icebreaker_panneau::Expedition>),
     /// Icebreaker : secondes avant que la balise se recharge (0 : prête).
     IcebreakerBaliseRecharge(f32),
-    /// Icebreaker: the village buildings and plots to build on (name, bounds in
-    /// world coordinates, whether a plot).
-    IcebreakerBuildings(Vec<(comp::Content, Aabr<i32>, i32, String)>),
+    /// Icebreaker : les bâtiments et les terrains du plan du village.
+    IcebreakerBuildings(Vec<common::icebreaker_panneau::Batiment>),
     Gizmos(Vec<Gizmos>),
 }
 
@@ -1165,7 +1159,7 @@ impl Client {
                     | ClientGeneral::PlayerPhysics { .. }
                     | ClientGeneral::UnlockSkill(_)
                     | ClientGeneral::RequestSiteInfo(_)
-                    | ClientGeneral::IcebreakerBuilding(_)
+                    | ClientGeneral::IcebreakerPlan(_)
                     | ClientGeneral::RequestPlayerPhysics { .. }
                     | ClientGeneral::RequestLossyTerrainCompression { .. }
                     | ClientGeneral::UpdateMapMarker(_)
@@ -2171,10 +2165,10 @@ impl Client {
         }
     }
 
-    /// Icebreaker: asks for the panel of the village building at `wpos`, or for
-    /// the buildings (`None`).
-    pub fn request_icebreaker_building(&mut self, wpos: Option<Vec2<f32>>) {
-        self.send_msg(ClientGeneral::IcebreakerBuilding(wpos))
+    /// Icebreaker : dit au serveur ce que le joueur fait dans le plan du village
+    /// (jalon N) ; le serveur envoie ensuite ce qui change.
+    pub fn request_icebreaker_plan(&mut self, demande: common::icebreaker_panneau::Demande) {
+        self.send_msg(ClientGeneral::IcebreakerPlan(demande))
     }
 
     pub fn request_site_economy(&mut self, id: SiteId) {
@@ -3037,8 +3031,8 @@ impl Client {
             ServerGeneral::IcebreakerJouer(id) => {
                 frontend_events.push(Event::IcebreakerJouer(id));
             },
-            ServerGeneral::IcebreakerPanel(title, lines, actions) => {
-                frontend_events.push(Event::IcebreakerPanel(title, lines, actions));
+            ServerGeneral::IcebreakerPanel(panneau) => {
+                frontend_events.push(Event::IcebreakerPanel(panneau));
             },
             ServerGeneral::IcebreakerBaliseRecharge(reste) => {
                 frontend_events.push(Event::IcebreakerBaliseRecharge(reste));

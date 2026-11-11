@@ -5,25 +5,18 @@
 //! plots to build on (jalon C) are shown and clicked likewise.
 
 use crate::{
-    client::Client,
     events::ServerEvent,
+    icebreaker_panneaux::IcebreakerPanneaux,
     icebreaker_registre::{self, IcebreakerRegistre},
-    icebreaker_services::IcebreakerServices,
-    icebreaker_treasury::IcebreakerTreasury,
-    icebreaker_village::{self, Chantier, IcebreakerVillage, VillageConfig},
-    icebreaker_warehouse::IcebreakerWarehouse,
+    icebreaker_village::{IcebreakerVillage, VillageConfig},
     sys::icebreaker_zone::Zone,
 };
 use common::{
-    comp::{
-        Content, ItemKey, LocalizationArg, Player, Pos, Presence, PresenceKind,
-        item::ItemDesc, item::ItemI18n,
-    },
+    comp::{Content, Player, Presence, PresenceKind},
     event::IcebreakerBuildingEvent,
-    resources::TimeOfDay,
+    icebreaker_panneau::{Batiment, Demande, Panneau, Sorte, texte},
     uid::Uid,
 };
-use common_net::msg::ServerGeneral;
 use specs::{Read, ReadStorage, Write};
 use tracing::info;
 use vek::*;
@@ -149,252 +142,92 @@ fn place_at(places: &[(Place, Aabr<i32>, i32)], wpos: Vec2<f32>) -> Option<Place
 }
 
 /// Hours of map time left until map time `fin`, at map time `now`.
-fn hours_left(fin: f64, now: f64) -> f64 { ((fin - now) / 3600.0).max(0.0) }
+pub(crate) fn hours_left(fin: f64, now: f64) -> f64 { ((fin - now) / 3600.0).max(0.0) }
 
-/// What a plot to build on is called on the top view.
-fn plot_name(config: &VillageConfig, chantier: Option<Chantier>, now: f64) -> String {
-    match chantier {
-        Some(chantier) => format!("Chantier ({:.0} h)", hours_left(chantier.fin, now).ceil()),
-        None => format!("Terrain à bâtir ({} or)", config.prix_maison),
-    }
-}
-
-/// What a panel shows: title, lines, and buttons (label, chat command).
-/// A line of a panel: its text, and the items drawn as icons before it (X.3).
-type Ligne = (Content, Vec<ItemKey>);
-type Panel = (Content, Vec<Ligne>, Vec<(Content, Vec<String>)>);
-
-/// A button sending the chat command `command`.
-fn button(label: impl Into<String>, command: &[&str]) -> (Content, Vec<String>) {
-    (
-        Content::Plain(label.into()),
-        command.iter().map(|word| word.to_string()).collect(),
-    )
-}
-
-/// The panel of `place` at map time `now`.
-fn panel(
-    place: Place,
-    warehouse: &IcebreakerWarehouse,
-    treasury: &IcebreakerTreasury,
-    services: &IcebreakerServices,
+/// Icebreaker : les bâtiments et les terrains du plan (jalon N), chacun avec ce
+/// qu'il faut en savoir sans l'ouvrir : l'or de la caisse, le prix du soin, les
+/// recrues du jour, les inscrits au départ, le prix d'un terrain, la fin d'un
+/// chantier.
+pub fn liste(
+    places: &[(Place, Aabr<i32>, i32)],
     village: &IcebreakerVillage,
+    config: &VillageConfig,
+    caisse: u64,
+    prix_soin: u64,
+    recrues: usize,
+    inscrits: Option<usize>,
     now: f64,
-    player: Option<Uid>,
-) -> Panel {
-    let plain = |text: String| Content::Plain(text);
-    let ligne = |text: String| (Content::Plain(text), Vec::new());
-    let building = match place {
-        Place::Building(building) => building,
-        Place::Plot(rank) => {
-            let config = icebreaker_village::config();
-            if let Some(chantier) = village.chantier(rank) {
-                return (
-                    plain("Chantier".to_string()),
-                    vec![ligne(format!(
-                        "Une maison est en construction : finie dans {:.1} h de carte.",
-                        hours_left(chantier.fin, now)
-                    ))],
-                    Vec::new(),
-                );
-            }
-            return (
-                plain("Terrain à bâtir".to_string()),
-                vec![
-                    ligne(format!(
-                        "Une maison : {} pièces d'or de la caisse (la caisse en a {}).",
-                        config.prix_maison,
-                        treasury.coins()
-                    )),
-                    ligne(format!(
-                        "Chantier : {} h de carte, puis de nouveaux habitants.",
-                        config.heures_chantier
-                    )),
-                ],
-                vec![button(format!("Bâtir ({} or)", config.prix_maison), &[
-                    "batir",
-                    &rank.to_string(),
-                ])],
-            );
-        },
-    };
-    let actions;
-    let lines = match building {
-        Building::Warehouse => {
-            actions = vec![button("Ouvrir l'échange", &["echanger", "entrepot"])];
-            let items = warehouse.load_items();
-            if items.is_empty() {
-                vec![ligne("L'entrepôt est vide.".to_string())]
-            } else {
-                let i18n = ItemI18n::new_expect();
-                items
-                    .iter()
-                    .map(|item| {
-                        (
-                            Content::localized_with_args("icebreaker-bilan-item", [
-                                ("amount", LocalizationArg::from(u64::from(item.amount()))),
-                                ("item", LocalizationArg::from(item.i18n(&i18n).0)),
-                            ]),
-                            vec![ItemKey::from(item)],
-                        )
-                    })
-                    .collect()
-            }
-        },
-        Building::Treasury => {
-            actions = vec![
-                button("Verser 10 or", &["caisse", "10"]),
-                button("Verser 50 or", &["caisse", "50"]),
-                button("Verser 100 or", &["caisse", "100"]),
-                button("Verser tout mon or", &["caisse", "tout"]),
-            ];
-            vec![
-                ligne(format!("La caisse du village : {} pièces d'or.", treasury.coins())),
-                ligne("Elle paie les chantiers du village.".to_string()),
-            ]
-        },
-        Building::Intendance => {
-            actions = vec![button("Ouvrir l'échange", &["echanger", "intendance"])];
-            vec![
-                ligne("Potions et vivres, aux prix de la ville.".to_string()),
-                ligne("L'intendant vend, et rachète ce que vous rapportez.".to_string()),
-            ]
-        },
-        Building::Infirmary => {
-            let price = services.heal_price();
-            actions = vec![button(format!("Me soigner ({price} or)"), &["soigner"])];
-            vec![ligne(format!("Soin complet : {price} pièces d'or."))]
-        },
-        // The expedition leader's question and answers, as buttons (V.11).
-        Building::Departure => {
-            let Some(player) = player else {
-                return (plain(building.name().to_string()), Vec::new(), Vec::new());
+) -> Vec<Batiment> {
+    let pluriel = |n: usize, mot: &str| format!("{n} {mot}{}", if n > 1 { "s" } else { "" });
+    places
+        .iter()
+        .map(|(place, emprise, altitude)| {
+            let (nom, sorte, etat) = match place {
+                Place::Building(building) => {
+                    let etat = match building {
+                        Building::Warehouse | Building::Intendance => String::new(),
+                        Building::Treasury => format!("{caisse} or"),
+                        Building::Infirmary => format!("Soin : {prix_soin} or"),
+                        Building::Departure => inscrits
+                            .map_or_else(|| "Personne".to_string(), |n| pluriel(n, "inscrit")),
+                        Building::Charrette => pluriel(recrues, "recrue"),
+                    };
+                    (building.name(), building.id(), etat)
+                },
+                // A plot's kind tells its look (X.4): "terrain", or "chantier"
+                // while a house is being built.
+                Place::Plot(rank) => match village.chantier(*rank) {
+                    Some(chantier) => (
+                        "Chantier",
+                        "chantier",
+                        format!(
+                            "Fini dans {}",
+                            crate::icebreaker_panneaux::heures(hours_left(chantier.fin, now).ceil())
+                        ),
+                    ),
+                    None => (
+                        "Terrain à bâtir",
+                        "terrain",
+                        format!("{} or", config.prix_maison),
+                    ),
+                },
             };
-            let (question, buttons) = crate::icebreaker_expedition::panel_for(player);
-            actions = buttons
-                .into_iter()
-                .map(|(label, command)| (plain(label), command))
-                .collect();
-            vec![ligne(question)]
-        },
-        // Built by the event handler, which knows the registry.
-        Building::Charrette => {
-            return (plain(building.name().to_string()), Vec::new(), Vec::new());
-        },
-    };
-    (plain(building.name().to_string()), lines, actions)
+            Batiment {
+                nom: texte(nom),
+                emprise: *emprise,
+                altitude: *altitude,
+                sorte: sorte.to_string(),
+                etat: texte(etat),
+            }
+        })
+        .collect()
 }
 
+/// Icebreaker : le serveur retient ce que le joueur a d'ouvert (jalon N) ; le
+/// système `sys::icebreaker_panneaux` envoie les bâtiments et le panneau, puis
+/// ce qui change.
 impl ServerEvent for IcebreakerBuildingEvent {
     type SystemData<'a> = (
-        ReadStorage<'a, Client>,
         Read<'a, IcebreakerBuildings>,
-        Read<'a, IcebreakerWarehouse>,
-        Read<'a, IcebreakerTreasury>,
-        Read<'a, IcebreakerServices>,
         Read<'a, IcebreakerVillage>,
-        Read<'a, TimeOfDay>,
-        ReadStorage<'a, Uid>,
-        Write<'a, IcebreakerRegistre>,
-        ReadStorage<'a, Presence>,
-        ReadStorage<'a, Player>,
-        ReadStorage<'a, Pos>,
+        Write<'a, IcebreakerPanneaux>,
     );
 
     fn handle(
         events: impl ExactSizeIterator<Item = Self>,
-        (
-            clients,
-            buildings,
-            warehouse,
-            treasury,
-            services,
-            village,
-            time_of_day,
-            uids,
-            mut registre,
-            presences,
-            players,
-            positions,
-        ): Self::SystemData<'_>,
+        (buildings, village, mut panneaux): Self::SystemData<'_>,
     ) {
-        let now = time_of_day.0;
-        let places = buildings.places(village.open_plots());
         for event in events {
-            let Some(client) = clients.get(event.entity) else {
-                continue;
-            };
-            // Out of the village (a dungeon slot of the campaign): no building,
-            // which makes the client leave the top view (X.1).
-            let in_village = positions
-                .get(event.entity)
-                .is_some_and(|pos| buildings.in_village(pos.0.xy()));
-            match event.wpos {
-                Some(_) if !in_village => {},
-                None if !in_village => {
-                    client.send_fallible(ServerGeneral::IcebreakerBuildings(Vec::new()));
-                },
-                Some(wpos) => {
-                    if let Some(Place::Building(Building::Charrette)) = place_at(&places, wpos) {
-                        let panel = charrette_panel(
-                            &mut registre,
-                            now,
-                            presences.get(event.entity),
-                            players.get(event.entity),
-                            &presences,
-                            &players,
-                        );
-                        client.send_fallible(ServerGeneral::IcebreakerPanel(
-                            Content::Plain(Building::Charrette.name().to_string()),
-                            panel
-                                .0
-                                .into_iter()
-                                .map(|(line, icons)| (Content::Plain(line), icons))
-                                .collect(),
-                            panel
-                                .1
-                                .into_iter()
-                                .map(|(label, command)| (Content::Plain(label), command))
-                                .collect(),
-                        ));
-                    } else if let Some(place) = place_at(&places, wpos) {
-                        let (title, lines, action) =
-                            panel(
-                            place,
-                            &warehouse,
-                            &treasury,
-                            &services,
-                            &village,
-                            now,
-                            uids.get(event.entity).copied(),
-                        );
-                        client.send_fallible(ServerGeneral::IcebreakerPanel(title, lines, action));
+            match event.demande {
+                Demande::Ouvrir => panneaux.ouvrir(event.entity),
+                Demande::Batiment(wpos) => {
+                    let places = buildings.places(village.open_plots());
+                    if let Some(place) = place_at(&places, wpos) {
+                        panneaux.choisir(event.entity, place);
                     }
                 },
-                None => {
-                    let config = icebreaker_village::config();
-                    client.send_fallible(ServerGeneral::IcebreakerBuildings(
-                        places
-                            .iter()
-                            .map(|(place, bounds, alt)| match place {
-                                Place::Building(building) => (
-                                    Content::Plain(building.name().to_string()),
-                                    *bounds,
-                                    *alt,
-                                    building.id().to_string(),
-                                ),
-                                // A plot's kind tells its look (X.4): "terrain", or
-                                // "chantier" while a house is being built.
-                                Place::Plot(rank) => {
-                                    let chantier = village.chantier(*rank);
-                                    let name = plot_name(&config, chantier, now);
-                                    let kind = if chantier.is_some() { "chantier" } else { "terrain" };
-                                    (Content::Plain(name), *bounds, *alt, kind.to_string())
-                                },
-                            })
-                            .collect(),
-                    ))
-                },
+                Demande::FermerPanneau => panneaux.fermer_panneau(event.entity),
+                Demande::Fermer => panneaux.fermer(event.entity),
             }
         }
     }
@@ -402,22 +235,22 @@ impl ServerEvent for IcebreakerBuildingEvent {
 
 /// The cart's panel for the player of `presence`: the cart is renewed on a new
 /// day of map time, and filled at once if a ghost has no one to take.
-fn charrette_panel(
+pub fn charrette_panneau(
     registre: &mut IcebreakerRegistre,
     now: f64,
     presence: Option<&Presence>,
     player: Option<&Player>,
     presences: &ReadStorage<Presence>,
     players: &ReadStorage<Player>,
-) -> (Vec<(String, Vec<ItemKey>)>, Vec<(String, Vec<String>)>) {
+) -> Panneau {
+    let vide = |message: &str| {
+        Panneau::nouveau("armure", Building::Charrette.name(), "").message(message, Sorte::Refus)
+    };
     if !icebreaker_registre::active() {
-        return (
-            vec![("Pas de registre ici.".to_string(), Vec::new())],
-            Vec::new(),
-        );
+        return vide("Pas de registre ici.");
     }
     let Some(player) = player else {
-        return (Vec::new(), Vec::new());
+        return vide("Il faut être connecté pour voir le registre.");
     };
     let uuid = player.uuid().to_string();
     let current = match presence.map(|p| p.kind) {
@@ -431,7 +264,7 @@ fn charrette_panel(
     if current.is_none() && !registre.de_quoi_jouer(&uuid, &joueurs) {
         registre.completer(&config, &mut rng);
     }
-    icebreaker_registre::panel_for(registre, &uuid, current, &joueurs)
+    icebreaker_registre::panneau_pour(registre, &uuid, current, &joueurs)
 }
 
 /// `/echanger <entrepot|intendance>` (the panels of the top view, V.12):
@@ -511,13 +344,37 @@ mod tests {
     }
 
     #[test]
-    fn a_plot_is_named_after_its_price_or_its_chantier() {
-        let config = icebreaker_village::config();
-        assert!(plot_name(&config, None, 0.0).contains(&config.prix_maison.to_string()));
-        let chantier = Chantier {
-            rang: 7,
-            fin: 3.0 * 3600.0,
+    fn the_plan_tells_each_place_s_state_without_opening_it() {
+        let square = |x: i32| Aabr {
+            min: Vec2::new(x, 0),
+            max: Vec2::new(x + 10, 10),
         };
-        assert_eq!(plot_name(&config, Some(chantier), 0.5 * 3600.0), "Chantier (3 h)");
+        let buildings = IcebreakerBuildings::new(
+            Building::ALL.iter().enumerate().map(|(i, _)| Some((square(20 * i as i32), 0))),
+        );
+        let places = buildings.places([(7, square(200), 0)]);
+        let config = crate::icebreaker_village::config();
+        let village = IcebreakerVillage::default();
+        let liste = liste(&places, &village, &config, 420, 60, 3, None, 0.0);
+        let etat = |sorte: &str| {
+            liste
+                .iter()
+                .find(|b| b.sorte == sorte)
+                .map(|b| b.etat.clone())
+                .unwrap_or_else(|| panic!("no {sorte} in {liste:?}"))
+        };
+        assert_eq!(etat("caisse"), texte("420 or"));
+        assert_eq!(etat("infirmerie"), texte("Soin : 60 or"));
+        assert_eq!(etat("charrette"), texte("3 recrues"));
+        assert_eq!(etat("depart"), texte("Personne"));
+        assert_eq!(etat("entrepot"), texte(""));
+        assert_eq!(etat("terrain"), texte(format!("{} or", config.prix_maison)));
+        let terrain = liste.iter().find(|b| b.sorte == "terrain").unwrap();
+        assert_eq!(terrain.nom, texte("Terrain à bâtir"));
+
+        let seul = super::liste(&places, &village, &config, 0, 60, 1, Some(1), 0.0);
+        let etat = |sorte: &str| seul.iter().find(|b| b.sorte == sorte).unwrap().etat.clone();
+        assert_eq!(etat("charrette"), texte("1 recrue"));
+        assert_eq!(etat("depart"), texte("1 inscrit"));
     }
 }

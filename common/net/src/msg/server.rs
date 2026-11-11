@@ -7,7 +7,7 @@ use common::{
     calendar::Calendar,
     character::{self, CharacterItem},
     comp::{
-        self, AdminRole, Content, ItemKey, body::Gender, gizmos::Gizmos, invite::InviteKind,
+        self, AdminRole, Content, body::Gender, gizmos::Gizmos, invite::InviteKind,
         item::MaterialStatManifest,
     },
     event::{PluginHash, UpdateCharacterMetadata},
@@ -222,28 +222,24 @@ pub enum ServerGeneral {
     FinishedTrade(TradeResult),
     /// Economic information about sites
     SiteEconomy(EconomyInfo),
-    /// Icebreaker: the panel of a village building (title, lines, and buttons:
-    /// label, and the chat command it sends).
-    IcebreakerPanel(
-        Content,
-        Vec<(Content, Vec<ItemKey>)>,
-        Vec<(Content, Vec<String>)>,
-    ),
+    /// Icebreaker : le panneau typé d'un bâtiment du village, ou de la balise
+    /// (jalon N) ; envoyé à l'ouverture, puis chaque fois qu'il change.
+    IcebreakerPanel(common::icebreaker_panneau::Panneau),
     /// Icebreaker: go to the place of the campaign listening on this port, on the
     /// same host (the client leaves this server and connects there).
     IcebreakerTravel(u16),
     /// Icebreaker: play this character of the registry, or none: become a ghost
     /// again (jalon R); the client leaves the world to the character screen.
     IcebreakerJouer(Option<character::CharacterId>),
-    /// Icebreaker: the expedition being prepared at the village (title, members:
-    /// alias and whether ready), or none; sent every second to the village.
-    IcebreakerExpedition(Option<(Content, Vec<(String, bool)>)>),
+    /// Icebreaker : l'expédition en préparation au village, ou aucune ; envoyée
+    /// quand elle change (jalon N).
+    IcebreakerExpedition(Option<common::icebreaker_panneau::Expedition>),
     /// Icebreaker : secondes avant que la balise lumineuse se recharge (0 : prête),
     /// envoyé à la pose et quand on en ramasse une (jalon J).
     IcebreakerBaliseRecharge(f32),
-    /// Icebreaker: the village buildings and plots to build on (name, bounds in
-    /// world coordinates, whether a plot).
-    IcebreakerBuildings(Vec<(Content, Aabr<i32>, i32, String)>),
+    /// Icebreaker : les bâtiments et les terrains du plan du village ; envoyés à
+    /// l'ouverture du plan, puis quand ils changent (jalon N).
+    IcebreakerBuildings(Vec<common::icebreaker_panneau::Batiment>),
     MapMarker(comp::MapMarkerUpdate),
     WeatherUpdate(SharedWeatherGrid),
     LocalWindUpdate(Vec2<f32>),
