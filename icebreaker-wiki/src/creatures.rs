@@ -335,7 +335,9 @@ pub fn collecter(d: &Donnees) -> Result<Vec<Creature>> {
     // Jouables : les classes, puis les espèces humanoïdes de Veloren (une recrue a un corps au hasard).
     static CLASSE: OnceLock<Regex> = OnceLock::new();
     let classe = CLASSE.get_or_init(|| {
-        Regex::new(r#"\(id:\s*"([^"]+)",\s*nom:\s*"([^"]+)",\s*equipement:\s*"([^"]+)""#).expect("regex")
+        // L'icône (jalon N) s'intercale entre le nom et l'équipement.
+        Regex::new(r#"\(id:\s*"([^"]+)",\s*nom:\s*"([^"]+)",(?:\s*icone:\s*"[^"]*",)?\s*equipement:\s*"([^"]+)""#)
+            .expect("regex")
     });
     for c in classe.captures_iter(d.classes) {
         let nom: String = c[2].to_string();
