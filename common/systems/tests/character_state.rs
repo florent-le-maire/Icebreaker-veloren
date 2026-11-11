@@ -338,6 +338,53 @@ mod tests {
             assert!(reste(&state).is_some());
         }
 
+        // A.10 : le niveau d'une compétence change ses chiffres, puis la transforme.
+        #[test]
+        fn icebreaker_le_niveau_change_les_chiffres_puis_transforme() {
+            use common::comp::melee::MeleeConstructorKind;
+            let mut state = setup();
+            let entity = guerrier(&mut state, "grande_epee");
+            // Le tourbillon (touche 2) lancé au niveau `niveau` : (dégâts d'un tour, nombre de tours).
+            let mut tourbillon = |niveau: u8| {
+                au_repos(&mut state, entity);
+                {
+                    let mut competences = state.ecs().write_storage::<IcebreakerCompetences>();
+                    let mut competences =
+                        competences.get_mut(entity).expect("IcebreakerCompetences");
+                    competences.recharges.clear();
+                    competences
+                        .acquis
+                        .jeux
+                        .get_mut("grande_epee")
+                        .expect("grande épée")
+                        .competences
+                        .insert("tourbillon".into(), niveau);
+                }
+                appuyer(&mut state, entity, 1);
+                tick(&mut state, Duration::from_secs_f32(0.033));
+                match state.ecs().read_storage::<CharacterState>().get(entity) {
+                    Some(CharacterState::RapidMelee(data)) => {
+                        let MeleeConstructorKind::Slash { damage, .. } =
+                            data.static_data.melee_constructor.kind
+                        else {
+                            panic!("un tourbillon tranche");
+                        };
+                        (damage, data.static_data.max_strikes)
+                    },
+                    autre => panic!("le tourbillon n'est pas parti : {autre:?}"),
+                }
+            };
+            let (degats_1, tours_1) = tourbillon(1);
+            let (degats_2, tours_2) = tourbillon(2);
+            let (_, tours_3) = tourbillon(3);
+            // Niveau 2 : des chiffres (plus de dégâts, mêmes tours).
+            assert!(degats_2 > degats_1 * 1.05, "{degats_2} pour {degats_1}");
+            assert_eq!(tours_2, tours_1);
+            // Niveau 3 : la compétence se transforme (un tour de plus).
+            assert_eq!(tours_1, Some(2));
+            assert_eq!(tours_3, Some(3));
+        }
+
         // A.13 : l'inné de la classe et le passif.
         #[test]
         fn icebreaker_l_inne_et_le_passif_montent_les_pv_max() {
