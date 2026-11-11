@@ -119,6 +119,10 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q46 La suite des armes** : bascule entre deux jeux d'armes en combat (façon Guild Wars 2 ; la pioche irait dans le
   sac, voir Q25), et les jeux « deux épées » et « hache + épée » du guerrier (en données ; la hache à une main
   n'existe qu'en arme forgée). *Proposé* : après le jalon A. *Qui* : Flo.
+- **Q48 Les compétences blessent les habitants du village.** Vu à l'essai du 2026-11-11 : un séisme lancé sur la
+  place touche les recrues debout devant la charrette ; elles ripostent et tuent le personnage suivant dès son
+  arrivée. Voisin de Q42 (mourir au village). *Proposé* : pas de dégâts au village hors des mannequins (zone sûre),
+  ou des recrues qui n'attaquent jamais. *Qui* : Flo.
 - **Q47 Maquettes du jalon A** (A.2) : la barre de compétences et les panneaux de la charrette et de la salle d'armes
   (rangée 4 du canvas) conviennent-ils ? À trancher avant les tâches d'interface (A.6, A.8, A.11, A.12). Points à
   regarder : le passif en case ronde ; la salle d'armes en quatre onglets (Compétences, Armes, Ultimes, Passifs) où

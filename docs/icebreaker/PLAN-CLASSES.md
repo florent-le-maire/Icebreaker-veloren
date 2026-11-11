@@ -2,7 +2,7 @@
 
 *Plan validé par Flo le 2026-11-11.* Décision : `decisions/0020-armes-classes-competences.md`. Règles de jeu :
 `design/classes.md` (section « Veloren »). Worktree `Veloren-classes`, branche `icebreaker-classes`. Questions pour
-l'équipe : `QUESTIONS.md`, Q43 à Q47.
+l'équipe : `QUESTIONS.md`, Q43 à Q48.
 
 ## Pourquoi
 
@@ -156,7 +156,12 @@ Un commit par tâche, fusion dans `master` à chaque tâche ; le jeu reste lanç
   appliqué à chaque tic par le système des effets ; le personnage entre avec tous ses PV. Testé (9 + 4 tests ;
   village et client texte : guerrière à 143,75 / 143,75 PV) ; pas vu : les PV d'un coéquipier à deux clients, le
   changement de passif (A.12), l'icône du passif dans la barre. Le protocole change. — 3234aeed36
-- [ ] **A.14 Ultimes du guerrier** — touche 3, longue recharge, trois ultimes. À voir avec les 4 jeux d'armes en mains.
+- [x] **A.14 Ultimes du guerrier** — fureur, séisme, rempart (données de A.1, touche 3 de A.4, recharge de A.5) :
+  rien de plus à coder. Essai (village et client texte, huit recrues couvrant les quatre jeux d'armes) : chaque
+  recrue porte les armes de son lot ; la fureur part avec épée et bouclier ou grande épée, le séisme avec épée et
+  bouclier, marteau ou hache, le rempart avec le marteau ; 13 des 16 compétences d'arme vues partir. Pas vu : le
+  geste des ultimes avec une arme qui n'est pas la leur (`QUESTIONS.md`, Q45), dans le vrai client. — 4e8d8cfc69,
+  0d714e99f8
 - [x] **A.15 Paliers des trois autres jeux du guerrier** — contenu seul, écrit avec celui de A.10. Testé au
   chargement ; équilibre et rendu à voir en jeu (vol de vie en mêlée, second coup des balayages, ralentissements).
   — 928bc52b1d

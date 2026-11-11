@@ -257,6 +257,7 @@ tâche pour ce qui casse.
 - A.9 : tuer des créatures en expédition : annonce « un point d'arme gagné » ; au retour, la maîtrise dans la fenêtre
   du bilan.
 - A.10, A.15 : chaque compétence aux niveaux 3 et 5 (geste, effet), équilibre des seize compétences du guerrier.
+- A.14 : fureur, séisme et rempart avec chacun des quatre jeux d'armes : le geste est-il lisible (`QUESTIONS.md`, Q45) ?
 - A.13 : PV max d'un guerrier (inné et passif) vus par un coéquipier ; le passif ne tombe ni à terre ni à la mort.
 
 **Combat (donjon Gnarling)**
