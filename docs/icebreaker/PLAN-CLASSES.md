@@ -116,21 +116,28 @@ Un commit par tâche, fusion dans `master` à chaque tâche ; le jeu reste lanç
   l'entrée en jeu d'après la fiche, envoyé au seul joueur, réécrit dans la fiche à `/rentrer` et à la sauvegarde ;
   `!competences` au client texte. Testé (59 tests du serveur, village et client texte : guerrière avec son lot,
   archère sans composant, fiche réécrite) ; rien à voir dans le vrai client. Le protocole change. — a8c4a0690a
-- [ ] **A.4 Touches 1 et 2** *(risquée, cœur du jalon)* — *en cours : Veloren-classes, 2026-11-11* — variante,
-  crochet, postures neutralisées, cases de la
-  barre, `!touche n` dans `chat_cli`. *Fin* : la touche 1 lance la compétence avec son animation.
-  `cargo test -p veloren-common-systems icebreaker` (banc `common/systems/tests/character_state.rs`).
-- [ ] **A.5 Recharges** — *Fin* : second appui refusé avant la fin de la recharge (même banc, deux tics).
-- [ ] **A.6 Barre de compétences** — icônes, infobulles, secondes, passif, selon la maquette. Capture au vrai client.
-- [ ] **A.7 Jeux d'armes** — équipement de chaque jeu, jeu non appris = touches vides et message, `UnlockSkill` refusé.
-- [ ] **A.8 Tirage et fiche à la charrette** *(format du registre)* — lot tiré, armes du lot, recrue devant la
+- [x] **A.4 Touches 1 à 3** — crochet `resoudre` dans `handle_ability`, variante `Ability::Icebreaker` (animation de
+  la capacité de Veloren reprise), postures ignorées pour ces personnages, niveaux appliqués ; `!touche n` et `!etat`
+  au client texte. Testé (7 + 2 tests ; village et client texte : balayage lourd, tourbillon, fureur, rien sur la 4) ;
+  pas vu dans le vrai client, dont la barre montre encore les cases de Veloren jusqu'à A.6. — 4e8d8cfc69
+- [x] **A.5 Recharges** — la compétence lancée part en recharge (armée par le serveur, lue par le client) ; une touche
+  tenue ne relance plus. Testé (3 tests du banc ; village et client texte : refus 2 s après, relance 6 s après) ;
+  l'affichage vient avec A.6. — 0d714e99f8
+- [ ] **A.6 Barre de compétences** — *en cours : Veloren-classes-barre (agent), 2026-11-11* — icônes, infobulles,
+  secondes, selon la maquette (le passif en case ronde viendra avec A.13). Capture au vrai client.
+- [ ] **A.7 Jeux d'armes** — *en cours : Veloren-classes-charrette (agent), 2026-11-11* — équipement de chaque jeu,
+  jeu non appris = touches vides et message, `UnlockSkill` refusé.
+- [ ] **A.8 Tirage et fiche à la charrette** *(format du registre)* — *à la suite de A.7, même agent* — lot tiré,
+  armes du lot, recrue devant la
   charrette avec ses armes, lot lisible dans le panneau. *Fin* : deux guerriers diffèrent. Tests du registre.
-- [ ] **A.9 Maîtrise d'arme** — expérience des ennemis tués en expédition → maîtrise du jeu en mains → points ; ligne
+- [ ] **A.9 Maîtrise d'arme** — *en cours : Veloren-classes, 2026-11-11* — expérience des ennemis tués en expédition
+  → maîtrise du jeu en mains → points ; ligne
   au bilan de retour. *Fin* : des points après une expédition, aucun sur les mannequins.
 - [ ] **A.10 Niveaux et paliers** — `effectif` branché ; grande épée : paliers 3 et 5 de ses 4 compétences.
   *Fin* : le niveau 3 se voit en jeu (autre geste ou effet), le niveau 2 frappe plus fort.
   *Contenu écrit d'avance (928bc52b1d)* : niveaux 2 à 5 des seize compétences du guerrier, 32 variantes sous
-  `assets/icebreaker/abilities/guerrier/` ; reste à brancher les niveaux et à les voir en jeu.
+  `assets/icebreaker/abilities/guerrier/`. *Niveaux branchés par A.4* (`sur_touche` rend le niveau, `resoudre`
+  l'applique) ; reste à les voir en jeu, une fois qu'on peut monter une compétence (A.12).
 - [ ] **A.11 Salle d'armes : le bâtiment** — 7e bâtiment, panneau en lecture (compétences, niveaux, maîtrise, points).
 - [ ] **A.12 Salle d'armes : agir** — placer, débloquer, monter (points) ; apprendre un jeu d'armes, un ultime, un
   passif (or). *Fin* : chaque bouton agit ou dit pourquoi non. Test du constructeur de panneau, client texte.

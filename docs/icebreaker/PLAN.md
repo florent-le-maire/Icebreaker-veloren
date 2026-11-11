@@ -241,7 +241,12 @@ tâche pour ce qui casse.
   leur maison ; X.8 recrues devant la charrette (posées 8 blocs trop haut sur le village d'essai ? `QUESTIONS.md`, Q30).
 - X.10 : panneau « Campagne » (continuer, nouvelle partie), passage de l'ancienne campagne en « Partie 1 ».
 - R.6 à R.8 : barre de compétences du vrai client ; mage en jeu ; tourbillon, fendeur et les trois postures du
-  guerrier ; les recrues créées avant R.6 n'ont pas de compétences.
+  guerrier ; les recrues créées avant R.6 n'ont pas de compétences. *Guerrier : remplacé par le jalon A.*
+
+**Armes, classes et compétences (jalon A, `PLAN-CLASSES.md`)**
+- A.4 : guerrier dans le vrai client : touches 1, 2 (arme en mains) et 3 (ultime), gestes et animations ; clic gauche
+  et clic droit inchangés (plus de postures) ; l'ultime (fureur) avec une épée en mains (`QUESTIONS.md`, Q45).
+- A.5 : une touche tenue ne relance pas ; la recharge se voit dans la barre (A.6).
 
 **Combat (donjon Gnarling)**
 - L.1 : nombre de coups pour tuer et mourir (cible : 3 et 3 à 4), autres armes, boss.
