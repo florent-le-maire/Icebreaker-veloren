@@ -11,6 +11,10 @@ export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc CXX_aarch64_unknown_li
 export AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar
 export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C link-arg=-B/usr/libexec/mold"
 cd /root/veloren
+# Le dossier Windows appartient à l'utilisateur par défaut de WSL, pas à root : git le refuse sans safe.directory.
+origine=$(git remote get-url origin)
+git config --global --get-all safe.directory | grep -qx "$origine/.git" ||
+    git config --global --add safe.directory "$origine/.git"
 git fetch -q
 git reset -q --hard origin/master
 echo "Icebreaker : compilation de $(git log --oneline -1)"

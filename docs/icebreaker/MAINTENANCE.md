@@ -45,18 +45,14 @@ Client et serveur doivent venir du **même commit** : si le protocole a changé,
 
 VPS : `root@116.202.107.125`, ARM64 Debian 12. Le binaire se compile dans WSL (`Ubuntu-22.04`, clone `/root/veloren`).
 
-**a. Compiler dans WSL** (`wsl -d Ubuntu-22.04 -u root`) ; à la première ouverture, WSL demande de créer un
-utilisateur : en donner un autre que `root` (ex. `lemai`) avec un mot de passe, une seule fois.
+**a. Compiler dans WSL** (PowerShell, racine du dépôt, après avoir committé sur master) :
 
-```sh
-cd /root/veloren && git fetch && git reset --hard origin/master   # origin = le dossier Windows Veloren-test
-export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++ \
-       AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar \
-       CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C link-arg=-B/usr/libexec/mold"
-cargo build --release --target aarch64-unknown-linux-gnu -p veloren-server-cli --features plugins
+```powershell
+wsl -d Ubuntu-22.04 -u root -e sh icebreaker-serveur/compiler-vps.sh
 ```
 
-Garder ces variables telles quelles : en changer une recompile tout.
+Le script reprend le master du dossier Windows dans `/root/veloren` et compile en root. Ne pas compiler à la main
+dans un shell WSL ouvert avec un autre utilisateur (cargo trop vieux, pas d'accès à `/root/veloren`).
 
 **b. Envoyer et relancer** (Git Bash, sur Windows) :
 
