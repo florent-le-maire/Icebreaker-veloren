@@ -1,8 +1,8 @@
 # 0019 — Interface Icebreaker : un panneau typé, proche de Veloren
 
 - **Date** : 2026-11-11
-- **Statut** : proposé ; style choisi par Flo le 2026-11-11 ; le reste est à trancher après lecture des maquettes
-  (`QUESTIONS.md`, Q39)
+- **Statut** : choisi par Flo le 2026-11-11, après lecture des maquettes (`QUESTIONS.md`, Q40) ; réalisation :
+  jalon N, N.3 à N.9
 - **Règles** : `PLAN-INTERFACE.md` (charte, règles, tâches du jalon N) ; maquettes :
   <https://claude.ai/artifact/KXR2tEFGXNNdTk8QJMUcdW>
 
@@ -29,7 +29,7 @@ La décision `0018` (option 1) avait réparé les défauts un par un en gardant 
    actions permises ou non, message), le client les range toujours au même endroit, dans une seule fenêtre.
 3. **Des fenêtres dédiées dans le client**, une par bâtiment, chacune avec sa mise en page et ses messages réseau.
 
-## Décision proposée
+## Décision
 
 - **Option 2.** Elle donne la mise en page voulue (chiffres en grand, boutons grisés avec leur raison, listes qui
   défilent) avec un seul gabarit à écrire côté client ; ajouter un bâtiment reste un changement côté serveur.

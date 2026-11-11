@@ -3,7 +3,7 @@
 Flo (2026-11-10) : refaire toute l'interface qu'Icebreaker a ajoutée à Veloren, pour qu'elle soit ergonomique, claire
 et qu'elle réponde tout de suite. On ne touche pas à l'interface d'origine de Veloren (sac, carte, chat, barre de
 vie). La décision `0018` avait gardé les cadres de Veloren et réparé défaut par défaut ; ce jalon reprend l'ensemble.
-Décision proposée : `decisions/0019-interface-icebreaker.md`. Question à l'équipe : `QUESTIONS.md`, Q39.
+Décision : `decisions/0019-interface-icebreaker.md` (choisie par Flo le 2026-11-11, `QUESTIONS.md`, Q40).
 
 ## Choix de Flo (2026-11-11)
 
@@ -81,16 +81,44 @@ marteau, sceptre, dagues, épée et bouclier pour les classes à venir). Une cla
 - [x] **N.1 Maquettes** — 14 planches sur le canvas ci-dessus, charte, règles, décision `0019` proposée. Le rendu
   n'a pas été relu par l'agent (le canvas ne se capture pas d'ici) : à relire par Flo. Aucun code du jeu touché.
   `91d04b1f1b`
-- [ ] **N.2 Lecture par l'équipe** — Flo et Sayanel annotent le canvas ; `0019` est tranchée ; Q39 passe dans
-  « Tranché ».
+- [x] **N.2 Lecture par l'équipe** — Flo, 2026-11-11 : « la maquette me va bien, tu peux implémenter ça en jeu ».
+  `0019` choisie, Q40 tranchée. Sayanel n'a pas encore vu le canvas (à partager).
 
-Suite proposée, à présenter pour accord après N.2 (une tâche = quelques heures, ordre à discuter) :
+## Réalisation (accord de Flo le 2026-11-11 pour N.3 à N.9)
 
-- N.3 Protocole : le panneau typé, envoyé au changement et après chaque action (client et serveur ensemble).
-- N.4 Fenêtre du village : plan et panneau dans un seul cadre, gabarit unique, tailles fixes.
-- N.5 Bandeaux (fantôme, expédition) et messages typés à droite.
-- N.6 Menu : bloc Icebreaker, liste des parties, écran de lancement.
-- N.7 Donjon : rappel des touches du verrouillage, balise (pastilles, quantité et recharge), à terre (temps envoyé
-  par le serveur), mort, allié regardé.
-- N.8 Bilan de retour.
-- N.9 Coûts par image restants (cibles du verrouillage, `mort.ron`, alliés à regarder).
+Les types partagés, dans `common/src/icebreaker_panneau.rs` (tous sérialisés, comparables) :
+
+- `Panneau { icone, titre, description, onglets: Vec<Onglet>, onglet, chiffres: Vec<Chiffre>, jauge: Option<Jauge>,
+  objets: Vec<(ItemKey, u32)>, lignes: Vec<Ligne>, actions: Vec<Action>, colonnes, message: Option<(Content, Sorte)>,
+  libre }` ; `Onglet { libelle, lignes }` ; `Chiffre { valeur, legende, ton }` ; `Jauge { legende, texte, part, ton }` ;
+  `Ligne { icone, titre, sous_titre, pastille: Option<(Content, Ton)>, cadenas: Option<(bool, Vec<String>)>,
+  action: Option<Action>, choisie, estompee }` ; `Action { libelle, commande, principale, permise, couleur }` ;
+  `Ton { Normal, Or, Bon, Mauvais, Info, Discret }` ; `Sorte { Info, Reussite, Refus }`.
+- `Demande { Ouvrir, Batiment(Vec2<f32>), FermerPanneau, Fermer }` (le client dit ce qu'il fait dans le plan) ;
+  `Batiment { nom, emprise, altitude, sorte, etat }` ; `Expedition { destination, depart_dans, membres }`.
+- Messages : `ClientGeneral::IcebreakerPlan(Demande)` ; `ServerGeneral::IcebreakerPanel(Panneau)`,
+  `IcebreakerBuildings(Vec<Batiment>)`, `IcebreakerExpedition(Option<Expedition>)`.
+
+Les onglets se changent côté client (le serveur envoie les lignes de chaque onglet) : pas d'aller-retour. La réponse
+à une action reste un message de chat du serveur ; le client l'affiche aussi dans la ligne de message du panneau
+tant que la fenêtre est ouverte, et en message à droite sinon.
+
+- [ ] **N.3 Protocole : panneau typé, envoyé au changement** — `server/src/icebreaker_panneaux.rs` (ressource
+  `IcebreakerPanneaux` : qui a quoi d'ouvert, dernier envoi ; constructeurs purs `caisse`, `infirmerie`, `terrain`,
+  `chantier`, `entrepot`, `intendance`), `server/src/sys/icebreaker_panneaux.rs` (à chaque tic : reconstruit pour
+  les joueurs marqués ou toutes les 0,25 s, n'envoie que ce qui a changé), `icebreaker_registre::panneau_pour`,
+  `icebreaker_expedition::panneau_pour`, `icebreaker_balise` (panneau `libre`), `cmd.rs` (une commande marque le
+  panneau du joueur), `classes.ron` (`icone`). Client : `request_icebreaker_plan`, `chat_cli` (`!batiments`,
+  `!panneau x y`, `!fermer`). Fin : tests des constructeurs (bouton grisé sans or, raison écrite) ; au client
+  texte, `/caisse 10` puis le panneau reçu sans le redemander.
+- [ ] **N.4 Fenêtre du village** — `voxygen/src/hud/icebreaker.rs` (nouveau : état, textes préparés à la
+  réception, dessin de la fenêtre : plan à gauche, panneau typé à droite, tailles fixes, liste qui défile, bouton
+  « en cours » au clic), `hud/mod.rs` (l'ancien dessin part), `session/mod.rs` (plus de demande chaque seconde ni de
+  calcul du plan à chaque image ; survol et clic dans le HUD). Fin : tests de mise en page ; capture en jeu.
+- [ ] **N.5 Bandeaux et messages** — bandeau du fantôme, bandeau d'expédition (envoyé au changement, décompte côté
+  client), messages à droite (annonces, refus, infos) quand la fenêtre est fermée.
+- [ ] **N.6 Menu** — bloc Icebreaker, liste des parties qui défile, erreur sous le champ, étapes du lancement.
+- [ ] **N.7 Donjon** — rappel des touches au verrouillage, couleurs de la balise en pastilles, quantité et recharge
+  ensemble, bloc « à terre », marqueur d'un allié à terre, écran de mort, bandeau de l'allié regardé.
+- [ ] **N.8 Bilan de retour** — fenêtre au retour au village (créatures, coffres, or, ce que chacun rapporte).
+- [ ] **N.9 Coûts par image restants** — cibles du verrouillage, `mort.ron`, alliés à regarder.
