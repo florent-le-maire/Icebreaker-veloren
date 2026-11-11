@@ -1,0 +1,31 @@
+// Icebreaker : passifs de l'archer (jalon A, `docs/icebreaker/PLAN-CLASSES.md`). Format et effets possibles : voir
+// `passifs/guerrier.ron`.
+(
+    // Tenir la distance : rapide, un peu plus d'endurance.
+    inne: [
+        MovementSpeed(1.1),
+        MaxEnergyModifier(value: 1.15, kind: Multiplicative),
+    ],
+    passifs: [
+        ("tir_puissant", (
+            nom: "Tir puissant",
+            description: "10 % de dégâts en plus.",
+            effets: [AttackDamage(1.1)],
+        )),
+        ("oeil_de_lynx", (
+            nom: "Œil de lynx",
+            description: "Les coups critiques font 20 % de dégâts en plus.",
+            effets: [PrecisionPowerMult(1.2)],
+        )),
+        ("souffle_long", (
+            nom: "Souffle long",
+            description: "Les compétences coûtent un cinquième d'endurance en moins.",
+            effets: [EnergyEfficiency(1.2)],
+        )),
+        ("cuir_souple", (
+            nom: "Cuir souple",
+            description: "8 % de dégâts reçus en moins.",
+            effets: [DamageReduction(0.08)],
+        )),
+    ],
+)

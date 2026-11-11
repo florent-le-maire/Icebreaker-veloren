@@ -930,7 +930,7 @@ mod tests {
         let panneau = panneau_pour(&registre, "a", None, &Joueurs::new());
         assert_eq!(panneau.onglet, 0);
         let anna = ligne(&panneau.onglets[0].lignes, "Anna");
-        assert_eq!(anna.sous_titre, texte("archer"));
+        assert_eq!(anna.sous_titre, texte("archer · arc"));
         assert_eq!(anna.icone, "arc", "the icon of its class");
         assert!(permise(&anna));
         let fiches = &panneau.onglets[1].lignes;
@@ -982,22 +982,23 @@ mod tests {
         ];
         let panneau = panneau_pour(&registre, "a", None, &Joueurs::new());
         let lignes = &panneau.onglets[0].lignes;
-        // Deux lignes par guerrier, une pour l'archer.
-        assert_eq!(lignes.len(), 5, "{lignes:?}");
+        // Deux lignes par recrue d'une classe décrite (guerrier, archer).
+        assert_eq!(lignes.len(), 6, "{lignes:?}");
         assert_eq!(lignes[0].titre, texte("Leif"));
         assert_eq!(lignes[0].sous_titre, texte("guerrier · marteau à deux mains"));
         assert_eq!(lignes[1].sous_titre, texte("ultime Fureur · passif Robuste"));
         assert!(lignes[1].estompee && lignes[1].action.is_none());
         assert_eq!(lignes[2].titre, texte("Anna"));
-        assert_eq!(lignes[2].sous_titre, texte("archer"));
-        assert_eq!(lignes[3].titre, texte("Bob"));
-        assert!(lignes[4].estompee && lignes[4].action.is_none());
+        assert_eq!(lignes[2].sous_titre, texte("archer · arc"));
+        assert_eq!(lignes[3].sous_titre, texte("ultime Volée mortelle · passif Tir puissant"));
+        assert_eq!(lignes[4].titre, texte("Bob"));
+        assert!(lignes[3].estompee && lignes[5].estompee && lignes[5].action.is_none());
         // Les numéros des commandes sont ceux des recrues, pas des lignes.
         let rang = |l: &common::icebreaker_panneau::Ligne| {
             l.action.as_ref().map(|a| a.commande.last().cloned().unwrap())
         };
         assert_eq!(
-            [rang(&lignes[0]), rang(&lignes[2]), rang(&lignes[3])],
+            [rang(&lignes[0]), rang(&lignes[2]), rang(&lignes[4])],
             [Some("0".to_string()), Some("1".to_string()), Some("2".to_string())]
         );
         // Un personnage d'une classe décrite montre son jeu d'armes dans le registre.
@@ -1044,8 +1045,8 @@ mod tests {
         let recrue = Recrue { nom: "X".into(), classe: "guerrier".into(), acquis: Acquis::default() };
         assert_eq!(recrue.lot(), Acquis::par_defaut("guerrier"));
         assert!(ligne_du_lot(&recrue).is_some());
-        let archer = Recrue { classe: "archer".into(), ..recrue };
-        assert!(ligne_du_lot(&archer).is_none());
+        let inconnue = Recrue { classe: "classe inconnue".into(), ..recrue };
+        assert!(ligne_du_lot(&inconnue).is_none());
     }
 
     #[test]

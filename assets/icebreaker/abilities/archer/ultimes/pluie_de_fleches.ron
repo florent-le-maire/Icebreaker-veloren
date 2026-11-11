@@ -1,0 +1,21 @@
+// Icebreaker : Pluie de flèches (ultime de l'archer, jalon A) — copie de common.abilities.bow.fusillade : dix flèches au lieu de cinq, plus fortes (damage 6,5) et moins chères (energy_cost 6 par flèche).
+RapidRanged(
+    energy_cost: 6,
+    buildup_duration: 0.55,
+    shoot_duration: 0.05,
+    recover_duration: 0.1,
+    options: (
+        max_projectiles: Some(10),
+        fire_all: true,
+    ),
+    projectile: (
+        kind: Simple,
+        attack: Some((
+            damage: 6.5,
+            without_combo: true,
+            damage_kind: Piercing,
+        )),
+    ),
+    projectile_body: Object(Arrow),
+    projectile_speed: 120.0,
+)

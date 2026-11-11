@@ -1,0 +1,61 @@
+// Icebreaker : jeu d'armes « arc » de l'archer (jalon A). Format : voir `grande_epee.ron`.
+// L'archer tient la distance : précision, mobilité, harcèlement.
+#![enable(implicit_some)]
+(
+    nom: "Arc",
+    classe: "archer",
+    icone: "arc",
+    defaut: true,
+    main_droite: (arme: Bow, mains: Two),
+    armes: ("common.items.weapons.bow.starter", None),
+    competences: [
+        ("trait_lourd", (
+            nom: "Trait lourd",
+            description: "Une flèche lourde qui explose à l'impact et repousse la cible.",
+            capacite: "common.abilities.bow.heavy_nock",
+            recharge: 6.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.archer.arc.trait_lourd_3", texte: "L'explosion est plus large (rayon 4) et repousse bien plus fort."),
+                (puissance: 1.3, recharge: 0.9, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.archer.arc.trait_lourd_5", texte: "50 % de dégâts en plus ; les ennemis touchés sont ralentis pendant 5 secondes."),
+            ],
+        )),
+        ("vent_percant", (
+            nom: "Vent perçant",
+            description: "Une flèche très rapide qui transperce tous les ennemis alignés.",
+            capacite: "common.abilities.bow.piercing_gale",
+            recharge: 8.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.archer.arc.vent_percant_3", texte: "Les ennemis transpercés saignent pendant 6 secondes."),
+                (puissance: 1.3, recharge: 0.9, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.archer.arc.vent_percant_5", texte: "50 % de dégâts en plus ; la flèche part plus vite (tension plus courte) et le saignement est plus profond."),
+            ],
+        )),
+        ("pieu_d_epines", (
+            nom: "Pieu d'épines",
+            description: "Plante un pieu au sol : il blesse tout ennemi qui s'y empale et reste longtemps en place.",
+            capacite: "common.abilities.bow.thorn_stake",
+            recharge: 10.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.archer.arc.pieu_d_epines_3", texte: "Le pieu estropie l'ennemi touché : il ralentit pendant 4 secondes."),
+                (puissance: 1.3, recharge: 0.9, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.archer.arc.pieu_d_epines_5", texte: "50 % de dégâts en plus ; le ralentissement est plus fort et dure 8 secondes, et le pieu tient 60 secondes."),
+            ],
+        )),
+        ("bond_arriere", (
+            nom: "Bond arrière",
+            description: "Un bond pour reprendre de la distance ; au contact d'un ennemi, l'archer le frappe du pied et lui tire dessus.",
+            capacite: "common.abilities.bow.foothold",
+            recharge: 10.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.archer.arc.bond_arriere_3", texte: "L'archer tire toujours en bondissant, même sans ennemi au contact."),
+                (puissance: 1.3, recharge: 0.9, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.archer.arc.bond_arriere_5", texte: "50 % de dégâts en plus ; le bond porte plus loin et le coup de pied repousse plus fort."),
+            ],
+        )),
+    ],
+)

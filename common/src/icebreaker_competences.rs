@@ -934,8 +934,13 @@ mod tests {
         }
         assert_eq!(registre.ultimes_de("mage").len(), 3);
         assert!(registre.passifs_de("mage").is_some_and(|p| p.passifs.len() >= 3));
+        // L'archer : un seul jeu d'armes (l'arc) de quatre compétences ; trois ultimes ; trois passifs au moins.
+        assert_eq!(registre.jeux_de("archer").count(), 1);
+        assert!(registre.jeux_de("archer").all(|(id, jeu)| jeu.competences.len() == 4 && !id.is_empty()));
+        assert_eq!(registre.ultimes_de("archer").len(), 3);
+        assert!(registre.passifs_de("archer").is_some_and(|p| p.passifs.len() >= 3));
         // Un inné ou un passif ne porte que des réglages permanents des stats.
-        for classe in ["guerrier", "mage"] {
+        for classe in ["guerrier", "mage", "archer"] {
             let passifs = registre.passifs_de(classe).expect("passifs");
             let effets = passifs
                 .inne
@@ -978,7 +983,7 @@ mod tests {
         }
 
         // Par classe : un seul jeu par défaut, et le lot par défaut ne cite que ce qui existe.
-        for classe in ["guerrier", "mage"] {
+        for classe in ["guerrier", "mage", "archer"] {
             assert_eq!(registre.jeux_de(classe).filter(|(_, jeu)| jeu.defaut).count(), 1, "{classe}");
             let lot = Acquis::par_defaut(classe);
             assert!(!lot.est_vide(), "{classe}");

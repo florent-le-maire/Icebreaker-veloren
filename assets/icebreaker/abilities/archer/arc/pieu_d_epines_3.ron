@@ -1,0 +1,29 @@
+// Icebreaker : Pieu d'épines niveau 3 (jalon A) — copie de common.abilities.bow.thorn_stake : le pieu estropie l'ennemi touché (Crippled, 4 s, ralentissement 0,4).
+BasicRanged(
+    energy_cost: 15,
+    buildup_duration: 0.6,
+    recover_duration: 0.15,
+    projectile: (
+        kind: Simple,
+        attack: Some((
+            damage: 15,
+            buff: Some((
+                kind: Crippled,
+                dur_secs: 4.0,
+                strength: Value(0.4),
+                chance: 1.0,
+            )),
+            damage_kind: Piercing,
+        )),
+        lifetime_override: Some(30.0),
+        is_point: false,
+        hazard: true,
+    ),
+    projectile_body: Object(ThornStake),
+    projectile_light: None,
+    projectile_speed: 30.0,
+    movement_modifier: (
+        buildup: Some(0.7),
+        recover: Some(0.7),
+    ),
+)

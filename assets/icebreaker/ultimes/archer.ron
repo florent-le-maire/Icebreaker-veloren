@@ -1,0 +1,26 @@
+// Icebreaker : ultimes de l'archer (jalon A, `docs/icebreaker/PLAN-CLASSES.md`). Format : voir `ultimes/guerrier.ron`.
+// La Pluie de flèches est une copie sous `abilities/archer/ultimes/`.
+#![enable(implicit_some)]
+(
+    ultimes: [
+        ("volee_mortelle", (
+            nom: "Volée mortelle",
+            description: "Une flèche qui se disperse en quinze traits et couvre une large zone devant l'archer.",
+            capacite: "common.abilities.bow.death_volley",
+            recharge: 90.0,
+        )),
+        ("pluie_de_fleches", (
+            nom: "Pluie de flèches",
+            description: "Dix flèches rapides tirées d'une seule traite sur la cible.",
+            capacite: "icebreaker.abilities.archer.ultimes.pluie_de_fleches",
+            animation: "common.abilities.bow.fusillade",
+            recharge: 75.0,
+        )),
+        ("oeil_d_aigle", (
+            nom: "Œil d'aigle",
+            description: "Quinze secondes de visée parfaite : les tirs de l'archer frappent bien plus fort.",
+            capacite: "common.abilities.bow.eagle_eye",
+            recharge: 100.0,
+        )),
+    ],
+)
