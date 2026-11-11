@@ -66,9 +66,10 @@ La conséquence, c'est qu'on ne fonce plus. On **verrouille** l'ennemi le plus p
 par défaut) : la caméra le suit, la molette passe à l'ennemi voisin, et un anneau doré respire sur lui. Trop loin,
 le verrouillage saute.
 
-Chaque classe a ses attaques de base et **trois compétences** sur les touches 1, 2 et 3. Le guerrier a trois
-postures (riposte, balayage lourd, tranche-tourbillon) ; le mage et l'archer, les premières compétences de leur
-arme dans l'ordre de Veloren. Le détail de chaque compétence (arme, touche, posture, déblocage) est dans la rubrique
+Le jeu d'armes qu'on tient donne les attaques de base et **deux compétences** sur les touches 1 et 2 ; la classe
+donne l'**ultime** de la touche 3. Toutes ont une recharge. Les règles sont dans la fiche
+[Classes, armes et compétences](classes.html) ; chaque classe, ses jeux d'armes et leurs compétences sont dans la
+page [Classes et jeux d'armes](../competences/classes.html), et toutes les capacités de Veloren dans la rubrique
 [Compétences](../competences/index.html).
 
 ## Pourquoi

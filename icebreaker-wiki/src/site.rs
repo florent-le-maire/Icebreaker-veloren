@@ -20,6 +20,7 @@ const GABARIT_TODO: &str = include_str!("../gabarits/todo.html");
 const GABARIT_A_VOIR: &str = include_str!("../gabarits/a-voir.html");
 const GABARIT_CREATURES: &str = include_str!("../gabarits/creatures.html"); // Icebreaker : W.15
 const GABARIT_COMPETENCES: &str = include_str!("../gabarits/competences.html"); // Icebreaker : W.17
+const GABARIT_CLASSES: &str = include_str!("../gabarits/classes.html"); // Icebreaker : A.18
 const STYLE: &str = include_str!("../static/style.css");
 const SCRIPT: &str = include_str!("../static/wiki.js");
 const LOGO: &str = include_str!("../static/logo.svg");
@@ -58,6 +59,7 @@ fn environnement() -> Result<Environment<'static>> {
     env.add_template("a-voir.html", GABARIT_A_VOIR)?;
     env.add_template("creatures.html", GABARIT_CREATURES)?;
     env.add_template("competences.html", GABARIT_COMPETENCES)?;
+    env.add_template("classes.html", GABARIT_CLASSES)?;
     Ok(env)
 }
 

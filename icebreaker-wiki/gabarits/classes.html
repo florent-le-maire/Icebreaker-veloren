@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block contenu %}
+{% set c = extra %}
+<article class="article article-large">
+<header class="entete-page">
+  <div class="entete-icone"><img src="{{ racine | safe }}assets/{{ c.icone | safe }}" alt=""></div>
+  <div class="entete-texte">
+    <p class="fil">Compétences</p>
+    <h1>{{ c.titre }}</h1>
+    <p class="resume">{{ c.resume }} <span class="chiffre">{{ c.nombre }}</span></p>
+  </div>
+</header>
+<p>Un <strong>jeu d'armes</strong> (ce qu'on tient en mains) donne deux compétences placées sur les touches 1 et 2, à
+prendre dans son pool. La <strong>classe</strong> donne un ultime (touche 3), un passif, et un inné qu'on ne choisit
+pas. Chaque compétence d'arme a une recharge et cinq niveaux : les niveaux 3 et 5 la transforment. Les règles et les
+chiffres de la progression : fiche « Classes, armes et compétences ». Pour une capacité de Veloren reprise ici, voir
+la rubrique <a href="{{ racine | safe }}competences/index.html">Compétences</a>.</p>
+{% if c.classes | length > 1 %}
+<nav class="sommaire-competences">{% for k in c.classes %}<a href="#classe-{{ k.id }}">{{ k.nom }}</a>{% endfor %}</nav>
+{% endif %}
+{% for k in c.classes %}
+<section class="jeu-competences" id="classe-{{ k.id }}">
+<h2><img class="icone-table" src="{{ racine | safe }}assets/{{ k.icone | safe }}" alt=""><a href="#classe-{{ k.id }}">{{ k.nom }}</a></h2>
+
+<h3>Inné</h3>
+{% if k.inne %}
+<ul>{% for e in k.inne %}<li>{{ e }}</li>{% endfor %}</ul>
+{% else %}<p class="competence-desc">Pas encore décrit dans les données.</p>{% endif %}
+
+<h3>Passifs <span class="chiffre">{{ k.passifs | length }}</span></h3>
+{% if k.passifs %}
+<div class="cadre-table"><table class="competences">
+  <thead><tr><th>Passif</th><th>Effets</th></tr></thead>
+  <tbody>
+  {% for p in k.passifs %}
+  <tr>
+    <td class="competence-nom"><strong>{{ p.nom }}</strong>{% if p.description %}<span class="competence-desc">{{ p.description }}</span>{% endif %}</td>
+    <td>{{ p.effets | join(", ") }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<p class="competence-desc">Pas encore décrits dans les données.</p>{% endif %}
+
+<h3>Ultimes <span class="chiffre">{{ k.ultimes | length }}</span></h3>
+{% if k.ultimes %}
+<div class="cadre-table"><table class="competences">
+  <thead><tr><th>Ultime</th><th>Recharge</th></tr></thead>
+  <tbody>
+  {% for u in k.ultimes %}
+  <tr>
+    <td class="competence-nom"><strong>{{ u.nom }}</strong>{% if u.description %}<span class="competence-desc">{{ u.description }}</span>{% endif %}
+      <code class="competence-id">{{ u.capacite }}</code></td>
+    <td class="competence-chiffres">{{ u.recharge }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<p class="competence-desc">Pas encore décrits dans les données.</p>{% endif %}
+
+{% for j in k.jeux %}
+<h3 id="jeu-{{ k.id }}-{{ j.id }}"><img class="icone-table" src="{{ racine | safe }}assets/{{ j.icone | safe }}" alt="">{{ j.nom }} <span class="chiffre">{{ j.competences | length }}</span></h3>
+<p class="jeu-porteurs"><strong>Armes remises :</strong> {{ j.armes | join(", ") }}</p>
+<div class="cadre-table"><table class="competences">
+  <thead><tr><th>Compétence</th><th>Recharge</th><th>Niveau 2</th><th>Niveau 3</th><th>Niveau 4</th><th>Niveau 5</th></tr></thead>
+  <tbody>
+  {% for s in j.competences %}
+  <tr>
+    <td class="competence-nom"><strong>{{ s.nom }}</strong>{% if s.description %}<span class="competence-desc">{{ s.description }}</span>{% endif %}
+      <code class="competence-id">{{ s.capacite }}</code></td>
+    <td class="competence-chiffres">{{ s.recharge }}</td>
+    {% for n in s.niveaux %}
+    <td>{% if n.transforme %}<span class="etiquette etiquette-chaud">transformée</span> {% endif %}{{ n.texte }}<span class="competence-desc">recharge {{ n.recharge }}</span></td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endfor %}
+{% if not k.jeux %}<p class="competence-desc">Aucun jeu d'armes dans les données pour l'instant : cette classe garde les compétences de Veloren.</p>{% endif %}
+</section>
+{% endfor %}
+<footer class="source">Lu dans <code>assets/icebreaker/jeux_armes/</code>, <code>ultimes/</code> et <code>passifs/</code> : toutes les classes qu'on y trouve, sans liste dans le wiki. Format : <code>common/src/icebreaker_competences.rs</code>.</footer>
+</article>
+{% endblock %}

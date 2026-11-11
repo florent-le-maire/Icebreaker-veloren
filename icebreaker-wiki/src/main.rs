@@ -4,6 +4,7 @@
 //! Lancer depuis la racine du dépôt : `cargo run -p icebreaker-wiki` (ou passer la racine en argument).
 
 mod avancement;
+mod classes; // Icebreaker : A.18
 mod commits;
 mod competences; // Icebreaker : W.17
 mod creatures; // Icebreaker : W.15

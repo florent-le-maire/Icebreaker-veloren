@@ -26,8 +26,9 @@ différents.</p>
 <h2>Comment lire un tableau</h2>
 <ul>
   <li><strong>Touche</strong> : clic gauche (attaque principale), clic droit (secondaire), garde (blocage), ou
-  « Compétence n » : la n-ième compétence de l'arme. Le joueur choisit lesquelles placer sur les touches 1 à 5 ; une
-  classe d'Icebreaker les place d'office (<code>classes.ron</code>, « touches »). Pour une créature, c'est l'IA qui
+  « Compétence n » : la n-ième compétence de l'arme. Le joueur choisit lesquelles placer sur les touches 1 à 5 ; un
+  personnage d'Icebreaker n'a que deux compétences d'arme (touches 1 et 2) et un ultime (touche 3), voir la page
+  <a href="{{ racine | safe }}competences/classes.html">Classes et jeux d'armes</a> ; une capacité reprise par l'une d'elles porte une étiquette (« Guerrier · grande épée : Tourbillon »). Pour une créature, c'est l'IA qui
   déclenche ses attaques selon sa tactique.</li>
   <li><strong>Condition</strong> : la même touche donne une autre compétence selon la posture (épée, arc), le combo
   accumulé, une flèche enchantée active, ou deux armes pareilles en main ; la ligne « sinon » vaut le reste du
@@ -102,6 +103,6 @@ montre le nom anglais (ou le nom de fichier).</p>
 </section>
 {% endfor %}
 {% endif %}
-<footer class="source">Lu dans <code>assets/common/abilities/ability_set_manifest.ron</code> et les fichiers de compétence à côté, <code>assets/voxygen/i18n/fr/hud/ability.ftl</code> (repli : <code>en</code>), <code>assets/common/skill_trees/skill_prerequisites.ron</code>, les objets, équipements et entités de <code>assets/common/</code>, <code>default_main_tool</code> (<code>common/src/comp/inventory/loadout_builder.rs</code>) et <code>assets/icebreaker/classes.ron</code>.</footer>
+<footer class="source">Lu dans <code>assets/common/abilities/ability_set_manifest.ron</code> et les fichiers de compétence à côté, <code>assets/voxygen/i18n/fr/hud/ability.ftl</code> (repli : <code>en</code>), <code>assets/common/skill_trees/skill_prerequisites.ron</code>, les objets, équipements et entités de <code>assets/common/</code>, <code>default_main_tool</code> (<code>common/src/comp/inventory/loadout_builder.rs</code>) et, pour les étiquettes d'Icebreaker, <code>assets/icebreaker/jeux_armes/</code> et <code>ultimes/</code>.</footer>
 </article>
 {% endblock %}

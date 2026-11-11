@@ -1,13 +1,13 @@
 //! Icebreaker : la rubrique « Compétences » du wiki (W.17) : toutes les compétences de Veloren, pas seulement
 //! celles d'Icebreaker, avec pour chacune l'arme ou la créature qui l'a, la touche, la condition (posture, combo,
 //! flèche enchantée, deux armes), ce qu'il faut débloquer dans l'arbre et ses prérequis, son type, ses chiffres et
-//! la classe d'Icebreaker qui l'a au départ.
+//! la compétence ou l'ultime d'Icebreaker qui la reprend.
 //!
 //! Sources : `assets/common/abilities/ability_set_manifest.ron` (qui a quoi, sur quelle touche) et un fichier par
 //! compétence à côté, les noms de `assets/voxygen/i18n/{fr,en}/hud/ability.ftl`, les prérequis de
 //! `assets/common/skill_trees/skill_prerequisites.ron`, les porteurs (objets `ability_spec: Some(Custom(…))` →
 //! équipements → entités, et `default_main_tool` de `common/src/comp/inventory/loadout_builder.rs` pour les
-//! créatures sauvages), et les classes d'Icebreaker (`assets/icebreaker/classes.ron`, `classes/competences/`).
+//! créatures sauvages), et les jeux d'armes, ultimes et passifs d'Icebreaker (`assets/icebreaker/jeux_armes/`, `ultimes/`, `passifs/`, lus par `classes.rs`).
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -76,7 +76,7 @@ fn fermeture(texte: &str, ouvrant: usize) -> Option<usize> {
 }
 
 /// Les morceaux séparés par des virgules au niveau 0, sans espaces autour, sans les vides.
-fn separer(texte: &str) -> Vec<&str> {
+pub(crate) fn separer(texte: &str) -> Vec<&str> {
     let mut morceaux = Vec::new();
     let (mut profondeur, mut dans_chaine, mut precedent, mut debut) = (0i32, false, ' ', 0);
     for (i, c) in texte.char_indices() {
@@ -97,7 +97,7 @@ fn separer(texte: &str) -> Vec<&str> {
 }
 
 /// Les champs `clé: valeur` au niveau 0.
-fn champs(texte: &str) -> Vec<(&str, &str)> {
+pub(crate) fn champs(texte: &str) -> Vec<(&str, &str)> {
     separer(texte)
         .into_iter()
         .filter_map(|m| m.split_once(':').map(|(k, v)| (k.trim(), v.trim())))
@@ -105,7 +105,7 @@ fn champs(texte: &str) -> Vec<(&str, &str)> {
 }
 
 /// Le contenu de `Nom( … )` (ou `( … )`, `[ … ]` si `nom` est vide), si le texte a cette forme.
-fn dedans<'a>(texte: &'a str, nom: &str) -> Option<&'a str> {
+pub(crate) fn dedans<'a>(texte: &'a str, nom: &str) -> Option<&'a str> {
     let texte = texte.trim();
     let reste = texte.strip_prefix(nom)?;
     let ouvrant = texte.len() - reste.len();
@@ -117,7 +117,7 @@ fn dedans<'a>(texte: &'a str, nom: &str) -> Option<&'a str> {
 }
 
 /// `Some(x)` → `x`, `None` → rien (le manifeste écrit les deux, `implicit_some`).
-fn sans_some(texte: &str) -> Option<&str> {
+pub(crate) fn sans_some(texte: &str) -> Option<&str> {
     let t = texte.trim();
     if t == "None" {
         None
@@ -126,7 +126,7 @@ fn sans_some(texte: &str) -> Option<&str> {
     }
 }
 
-fn chaine(texte: &str) -> String { texte.trim().trim_matches('"').to_string() }
+pub(crate) fn chaine(texte: &str) -> String { texte.trim().trim_matches('"').to_string() }
 
 /// `CrescentSlash` → `crescent_slash`.
 pub fn serpent(nom: &str) -> String {
@@ -369,9 +369,8 @@ pub struct Donnees {
     pub entites: BTreeMap<String, String>,
     /// Texte de `loadout_builder.rs` (pour `default_main_tool`).
     pub outils_par_defaut: String,
-    /// Texte de `classes.ron` et des fichiers de compétences des classes (id `icebreaker.classes.competences.x`).
-    pub classes: String,
-    pub competences_classes: BTreeMap<String, String>,
+    /// Les classes d'Icebreaker lues dans leurs données (A.18) : de quoi dire quelle compétence reprend une capacité.
+    pub classes: Vec<crate::classes::Classe>,
 }
 
 /// D'où vient le nom affiché.
@@ -397,7 +396,7 @@ pub struct Ligne {
     pub chiffres: String,
     /// « Fait entrer en posture lourde ».
     pub effet: String,
-    /// Classes d'Icebreaker qui l'ont au départ (« Guerrier · touche 1 »).
+    /// Compétences d'Icebreaker qui la reprennent (« Guerrier · grande épée : Tourbillon »).
     pub icebreaker: Vec<String>,
 }
 
@@ -775,32 +774,6 @@ fn nom_d_espece(corps: &str, espece: &str, noms: &BTreeMap<String, String>) -> S
         .map_or_else(|| mots(espece), |(_, n)| n.clone())
 }
 
-/// Les classes d'Icebreaker : (nom, arme, compétences débloquées, touches).
-fn classes(d: &Donnees) -> Vec<(String, String, Vec<String>, Vec<String>)> {
-    static CLASSE: OnceLock<Regex> = OnceLock::new();
-    static ARME: OnceLock<Regex> = OnceLock::new();
-    static COMPETENCE: OnceLock<Regex> = OnceLock::new();
-    let classe = CLASSE.get_or_init(|| {
-        Regex::new(r#"(?s)\(id:\s*"[^"]+",\s*nom:\s*"([^"]+)".*?competences:\s*"([^"]+)"(?:,\s*touches:\s*\[([^\]]*)\])?"#)
-            .expect("regex")
-    });
-    let arme = ARME.get_or_init(|| Regex::new(r"Group\(Weapon\((\w+)\)\)").expect("regex"));
-    let competence = COMPETENCE.get_or_init(|| Regex::new(r"Skill\(\(\s*(\w+\(\w+\))").expect("regex"));
-    let texte = sans_commentaires(&d.classes);
-    classe
-        .captures_iter(&texte)
-        .filter_map(|c| {
-            let fichier = d.competences_classes.get(&c[2])?;
-            let arme = arme.captures(fichier)?[1].to_string();
-            let competences = competence.captures_iter(fichier).map(|s| s[1].to_string()).collect();
-            let touches = c.get(3).map_or(Vec::new(), |t| separer(t.as_str()).into_iter().map(str::to_string).collect());
-            let mut nom = c[1].chars();
-            let nom = nom.next().map(|p| p.to_uppercase().chain(nom).collect()).unwrap_or_default();
-            Some((nom, arme, competences, touches))
-        })
-        .collect()
-}
-
 /// Les prérequis de l'arbre : compétence → (« Any » ou « All », compétences).
 fn prerequis(texte: &str) -> BTreeMap<String, (bool, Vec<String>)> {
     static LIGNE: OnceLock<Regex> = OnceLock::new();
@@ -819,7 +792,7 @@ pub fn collecter(d: &Donnees) -> Resultat {
     let jeux = lire_manifeste(&d.manifeste);
     let prerequis = prerequis(&d.prerequis);
     let porteurs = porteurs(d);
-    let classes = classes(d);
+    let reprises = crate::classes::par_capacite(&d.classes);
 
     // Le nom d'une compétence de l'arbre : celui de la case `Simple` qui la demande, sinon le nom commun d'une
     // case à variantes, sinon ses mots.
@@ -945,20 +918,7 @@ pub fn collecter(d: &Donnees) -> Resultat {
                         (nom_arbre(s), p)
                     },
                 };
-                let mut icebreaker = Vec::new();
-                for (classe, arme, competences, touches) in &classes {
-                    if outil != Some(arme.as_str()) {
-                        continue;
-                    }
-                    match &v.competence {
-                        None => icebreaker.push(classe.clone()),
-                        Some(s) if competences.contains(s) => match touches.iter().position(|x| x == s) {
-                            Some(i) => icebreaker.push(format!("{classe} · touche {}", i + 1)),
-                            None => icebreaker.push(classe.clone()),
-                        },
-                        _ => {},
-                    }
-                }
+                let icebreaker = reprises.get(&v.id).cloned().unwrap_or_default();
                 lignes.push(Ligne {
                     id: v.id.clone(),
                     nom,
@@ -1012,11 +972,13 @@ pub fn collecter(d: &Donnees) -> Resultat {
             ancre.push('-');
         }
         let nombre = groupes.iter().map(|g| g.lignes.len()).sum();
-        let classes_de = classes
-            .iter()
-            .filter(|(_, arme, _, _)| outil == Some(arme.as_str()))
-            .map(|(n, _, _, _)| n.clone())
-            .collect();
+        let mut classes_de: Vec<String> = Vec::new();
+        for k in groupes.iter().flat_map(|g| &g.lignes).flat_map(|l| &l.icebreaker) {
+            let classe = k.split(" · ").next().unwrap_or(k).to_string();
+            if !classes_de.contains(&classe) {
+                classes_de.push(classe);
+            }
+        }
         resultat.pages.entry(categorie).or_default().push(JeuVue {
             ancre,
             spec: jeu.spec.clone(),
@@ -1170,7 +1132,7 @@ pub fn pages_du_depot(racine: &Path) -> Result<Vec<crate::Page>> {
     }
     let manifeste_objets = lire("assets/common/item_i18n_manifest.ron").unwrap_or_default();
     let paire = Regex::new(r#"Simple\(\s*"([^"]+)",?\s*\):\s*"([^"]+)""#).expect("regex");
-    let noms_objets = paire
+    let noms_objets: BTreeMap<String, String> = paire
         .captures_iter(&manifeste_objets)
         .filter_map(|c| noms_cles.get(&c[2]).map(|n| (c[1].to_string(), n.clone())))
         .collect();
@@ -1182,14 +1144,15 @@ pub fn pages_du_depot(racine: &Path) -> Result<Vec<crate::Page>> {
         prerequis: lire("assets/common/skill_trees/skill_prerequisites.ron")?,
         noms: lire_noms(&lire("assets/voxygen/i18n/fr/name.ftl")?),
         objets: lire_ids(&assets.join("common/items"), "common.items.", |t| t.contains("ability_spec")),
-        noms_objets,
+        noms_objets: noms_objets.clone(),
         equipements: lire_ids(&assets.join("common/loadout"), "common.loadout.", |_| true),
         entites: lire_ids(&assets.join("common/entity"), "common.entity.", |_| true),
         outils_par_defaut: lire("common/src/comp/inventory/loadout_builder.rs").unwrap_or_default(),
-        classes: lire("assets/icebreaker/classes.ron")?,
-        competences_classes: lire_ids(&assets.join("icebreaker/classes/competences"), "icebreaker.classes.competences.", |_| true),
+        classes: crate::classes::lire_depot(racine, noms_objets.clone()), // Icebreaker : A.18
     };
-    Ok(pages(&collecter(&d)))
+    let mut pages = pages(&collecter(&d));
+    pages.push(crate::classes::page(&d.classes));
+    Ok(pages)
 }
 
 #[cfg(test)]
@@ -1232,6 +1195,11 @@ mod tests {
 })
 "#;
 
+    const JEU: &str = r#"(nom: "Grande épée", classe: "guerrier", armes: ("x", None), competences: [
+        ("balayage", (nom: "Balayage lourd", capacite: "common.abilities.sword.heavy_sweep", recharge: 6.0)),
+    ])"#;
+    const ULTIMES: &str = r#"(ultimes: [("fureur", (nom: "Fureur", capacite: "common.abilities.sword.basic_crescent_slash", recharge: 90.0))])"#;
+
     const FR: &str = "common-abilities-sword-basic_crescent_slash = Coup ascendant basique\n    .desc = Un coup.\n\
                       common-abilities-sword-heavy_sweep = Balayage lourd\n    .desc =\n        Un balayage\n        \
                       { $min_combo } fois.\nveloren-core-pseudo_abilities-sword-heavy_stance = Posture lourde\n    .desc \
@@ -1270,13 +1238,11 @@ mod tests {
                 .map(|(k, v)| (k.to_string(), v.to_string()))
                 .collect(),
             outils_par_defaut: "pub fn default_main_tool(body: &Body) -> Option<&'static str> {\n    golem::Species::StoneGolem => \"common.items.npc_weapons.unique.husk\",\n}\n".into(),
-            classes: "(classes: [(id: \"guerrier\", nom: \"guerrier\", equipement: \"x\",\n competences: \"icebreaker.classes.competences.guerrier\",\n touches: [Sword(HeavySweep)]),])".into(),
-            competences_classes: [(
-                "icebreaker.classes.competences.guerrier".to_string(),
-                "[Group(Weapon(Sword)), Skill((Sword(CrescentSlash), 1)), Skill((Sword(HeavySweep), 1))]".to_string(),
-            )]
-            .into_iter()
-            .collect(),
+            classes: crate::classes::lire(&crate::classes::Sources {
+                jeux: vec![("grande_epee".into(), JEU.into())],
+                ultimes: vec![("guerrier".into(), ULTIMES.into())],
+                ..Default::default()
+            }),
         }
     }
 
@@ -1325,15 +1291,15 @@ mod tests {
         assert_eq!(croissant.touche, "Compétence 1 (touches 1 à 5)");
         assert_eq!(croissant.genre, "Combo de mêlée");
         assert_eq!(croissant.chiffres, "dégâts 12, énergie 5 par coup");
-        assert_eq!(croissant.icebreaker, vec!["Guerrier"]);
+        assert_eq!(croissant.icebreaker, vec!["Guerrier · ultime : Fureur"]);
         let lourd = ligne("common.abilities.sword.heavy_sweep");
         assert_eq!(lourd.condition, "en posture lourde, deux armes pareilles en main");
         assert_eq!(lourd.deblocage, "Balayage lourd");
         assert_eq!(lourd.prerequis, "une de : Coup ascendant basique, Cascade");
         assert_eq!(lourd.effet, "Fait entrer en posture lourde.");
-        assert_eq!(lourd.icebreaker, vec!["Guerrier · touche 1"]);
+        assert_eq!(lourd.icebreaker, vec!["Guerrier · grande épée : Balayage lourd"]);
         assert_eq!(ligne("common.abilities.sword.sweep").condition, "combo ≥ 30");
-        assert_eq!(ligne("common.abilities.sword.basic_guard").icebreaker, vec!["Guerrier"]);
+        assert!(ligne("common.abilities.sword.basic_guard").icebreaker.is_empty()); // la garde n'est pas une compétence
         assert_eq!(r.postures["Épée"], vec![("Posture lourde".to_string(), "Lent.".to_string())]);
 
         let husk = &r.pages[&Categorie::Creatures][0];
@@ -1359,7 +1325,9 @@ mod tests {
         let epee = pages.iter().find(|p| p.url == "competences/epee.html").unwrap();
         let texte = epee.extra.to_string();
         assert!(texte.contains("common.abilities.sword.heavy_crescent_slash"));
-        assert!(texte.contains("Guerrier · touche 1"));
+        assert!(texte.contains("Guerrier · "), "aucune capacité reprise par le guerrier");
+        let classes = pages.iter().find(|p| p.url == "competences/classes.html").unwrap();
+        assert!(classes.extra.to_string().contains("guerrier") || classes.extra.to_string().contains("Guerrier"));
         let creatures = pages.iter().find(|p| p.url == "competences/creatures.html").unwrap().extra.to_string();
         assert!(creatures.contains("Quad Med Jump"));
         for p in &pages {

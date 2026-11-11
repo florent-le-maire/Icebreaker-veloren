@@ -526,7 +526,7 @@ mod tests {
                           creatures: [\"common.entity.wild.aggressive.cave_spider\"],\n            chef: \
                           \"common.entity.wild.aggressive.ogre\",\n        ),\n    },\n)\n";
     const CLASSES: &str = "(\n    classes: [\n        (id: \"guerrier\", nom: \"guerrier\", equipement: \
-                           \"icebreaker.classes.guerrier\",\n            competences: \"x\"),\n    ],\n)\n";
+                           \"icebreaker.classes.guerrier\"),\n    ],\n)\n";
     const COMPLEMENT: &str = "[[pnj]]\nid = \"intendant\"\nnom = \"Intendant\"\nrole = \"Marchand\"\nicone = \
                               \"x.png\"\n\n[notes]\n\"common.entity.dungeon.gnarling.harvester\" = \"Le boss.\"\n";
 

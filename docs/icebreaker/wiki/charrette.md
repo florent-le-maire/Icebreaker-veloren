@@ -41,9 +41,9 @@ Un joueur peut **réserver** quelques personnages pour lui seul. Les autres rest
 guerrier est à l'infirmerie, vous prenez l'archer d'un camarade pour la prochaine sortie. Un personnage mort
 revient au registre (voir la fiche À terre et mort).
 
-Trois **classes** pour l'instant, décrites en données : guerrier (épée, trois postures), mage, archer. Une classe,
-c'est un équipement de départ, les compétences débloquées de son arme, et l'ordre sur les touches 1, 2, 3 ; tout
-le monde a aussi une potion, du fromage et une pioche pour les filons de la grotte.
+Trois **classes** pour l'instant, décrites en données : guerrier, mage, archer. Une recrue d'une classe décrite en
+jeux d'armes tire un petit lot (voir la fiche Classes, armes et compétences) ; tout le monde a aussi une potion, du
+fromage et une pioche pour les filons de la grotte.
 
 ## Pourquoi
 
