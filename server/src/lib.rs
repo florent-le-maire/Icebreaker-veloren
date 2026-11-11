@@ -723,6 +723,8 @@ impl Server {
 
         // Icebreaker : à terre et mort (jalon T).
         state.ecs_mut().insert(sys::icebreaker_mort::IcebreakerATerre::default());
+        // Icebreaker : dernier état des armes en mains par personnage (jalon A.7).
+        state.ecs_mut().insert(sys::icebreaker_armes::IcebreakerArmes::default());
         // Icebreaker : balise lumineuse (jalon J).
         state.ecs_mut().insert(icebreaker_balise::IcebreakerBalises::default());
         // Icebreaker : qui a le plan du village ouvert (jalon N).
