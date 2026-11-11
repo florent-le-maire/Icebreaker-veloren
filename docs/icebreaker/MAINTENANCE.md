@@ -30,8 +30,11 @@ Un serveur qui tourne verrouille son `.exe` : le renommer avant de recompiler.
 cargo build --release -p veloren-voxygen
 ```
 ```sh
-icebreaker-serveur/paquet-client.sh        # Git Bash → target/Icebreaker-client.zip
+icebreaker-serveur/paquet-client.sh        # Git Bash → target/Icebreaker-client.zip (~400 Mo)
 ```
+
+Le lancer dans un terminal Git Bash ouvert à la racine du dépôt, pas par double-clic. La compression dure
+2 à 3 minutes sans rien afficher : attendre le message « zip prêt ».
 
 Le zip contient le jeu, ses assets et `Icebreaker.bat`. Le joueur dézippe, lance `Icebreaker.bat`, clique
 **En ligne** (seul bouton du menu) : il rejoint le VPS, dont l'adresse est dans `assets/icebreaker/lieux.ron`.
