@@ -305,6 +305,15 @@ impl Screen {
         };
 
         let content = match connection_state {
+            // Icebreaker N.6 : en campagne, la partie et les étapes du lancement.
+            ConnectionState::InProgress if crate::icebreaker::en_campagne() => {
+                crate::icebreaker::panneau_lancement(
+                    fonts,
+                    i18n,
+                    &crate::icebreaker::lancement(),
+                    crate::icebreaker::etape_en_cours(init_stage, false),
+                )
+            },
             ConnectionState::InProgress => Space::new(Length::Fill, Length::Fill).into(),
             ConnectionState::AuthTrustPrompt { auth_server } => {
                 let msg = i18n.get_msg_ctx(

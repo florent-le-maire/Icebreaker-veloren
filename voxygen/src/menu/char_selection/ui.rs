@@ -2076,6 +2076,11 @@ pub struct CharSelectionUi {
     enter_pressed: bool,
     select_character: Option<CharacterId>,
     pub error: Option<String>,
+    /// Icebreaker N.6 : en campagne, tant que le serveur n'a pas dit s'il faut entrer
+    /// en fantôme, l'écran montre les étapes du lancement au lieu des personnages.
+    pub attente: bool,
+    /// Si la dernière image préparée était celle de l'attente.
+    pub attente_vue: bool,
 }
 
 impl CharSelectionUi {
@@ -2134,6 +2139,8 @@ impl CharSelectionUi {
             enter_pressed: false,
             select_character: None,
             error: None,
+            attente: false,
+            attente_vue: false,
         }
     }
 
@@ -2193,9 +2200,21 @@ impl CharSelectionUi {
         let mut events = Vec::new();
         let i18n = global_state.i18n.read();
 
-        let (mut messages, _) = self.ui.maintain(
+        // Icebreaker N.6 : l'attente de l'arrivée au village (étapes du lancement).
+        let vue = if self.attente {
+            crate::icebreaker::panneau_lancement(
+                &self.controls.fonts,
+                &i18n,
+                &crate::icebreaker::lancement(),
+                crate::icebreaker::Etape::Village,
+            )
+        } else {
             self.controls
-                .view(&global_state.settings, client, &self.error, &i18n),
+                .view(&global_state.settings, client, &self.error, &i18n)
+        };
+        self.attente_vue = self.attente;
+        let (mut messages, _) = self.ui.maintain(
+            vue,
             global_state.window.renderer_mut(),
             None,
             &mut global_state.clipboard,

@@ -36,6 +36,9 @@ pub struct Lieu {
     /// sur ce PC.
     #[serde(default)]
     pub adresse: Option<String>,
+    /// Icebreaker N.6 : une ligne d'explication sous le bouton du menu.
+    #[serde(default)]
+    pub description: String,
 }
 
 pub fn lieux() -> AssetHandle<Ron<Vec<Lieu>>> {
@@ -63,11 +66,29 @@ pub struct Partie {
 }
 
 /// Le panneau de la campagne ouvert au menu : le lieu cliqué (index dans
-/// `lieux.ron`), les parties lues à l'ouverture et le nom tapé.
+/// `lieux.ron`), les parties lues à l'ouverture, le texte de leur date (fait
+/// une fois, pas à chaque image) et le nom tapé avec son éventuel refus (N.6).
 pub struct MenuParties {
     pub lieu: usize,
     pub parties: Vec<Partie>,
+    /// « jouée le 04/11 à 14:30 », dans le même ordre que `parties`.
+    pub dates: Vec<String>,
     pub nom: String,
+    pub erreur: Option<NomRefuse>,
+}
+
+impl MenuParties {
+    /// `texte_date` fabrique le texte de date d'une partie (traduit par l'appelant).
+    pub fn new(lieu: usize, parties: Vec<Partie>, texte_date: impl Fn(&Partie) -> String) -> Self {
+        let dates = parties.iter().map(texte_date).collect();
+        Self {
+            lieu,
+            parties,
+            dates,
+            nom: String::new(),
+            erreur: None,
+        }
+    }
 }
 
 /// Les parties du dossier `dossier`, de la plus récente à la plus ancienne.
@@ -94,15 +115,17 @@ pub fn parties_dans(dossier: &Path) -> Vec<Partie> {
 /// Les parties de `userdata-icebreaker/parties`.
 pub fn parties() -> Vec<Partie> { parties_dans(Path::new(PARTIES)) }
 
-/// La date d'une partie, pour son bouton (« 04/11 14:30 »).
-pub fn date_partie(partie: &Partie) -> String {
-    chrono::DateTime::<chrono::Local>::from(partie.modifiee)
-        .format("%d/%m %H:%M")
-        .to_string()
+/// Le jour et l'heure où l'on a joué une partie (« 04/11 », « 14:30 »).
+pub fn date_partie(partie: &Partie) -> (String, String) {
+    let date = chrono::DateTime::<chrono::Local>::from(partie.modifiee);
+    (
+        date.format("%d/%m").to_string(),
+        date.format("%H:%M").to_string(),
+    )
 }
 
 /// Pourquoi un nom de nouvelle partie est refusé (clé `.ftl`).
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NomRefuse {
     Caracteres,
     TropLong,
@@ -255,6 +278,42 @@ mod tests {
         assert_eq!(
             nom_partie(&"x".repeat(31), &existantes),
             Err(NomRefuse::TropLong)
+        );
+    }
+
+    #[test]
+    fn menu_parties_prepare_les_dates() {
+        let parties = vec![partie("A"), partie("B")];
+        let appels = std::cell::Cell::new(0);
+        let menu = MenuParties::new(3, parties, |p| {
+            appels.set(appels.get() + 1);
+            format!("jouée {}", p.nom)
+        });
+        assert_eq!(menu.lieu, 3);
+        assert_eq!(menu.dates, ["jouée A", "jouée B"]);
+        assert_eq!(appels.get(), 2);
+        assert!(menu.erreur.is_none() && menu.nom.is_empty());
+    }
+
+    #[test]
+    fn date_de_partie() {
+        let (date, heure) = date_partie(&partie("A"));
+        // Format JJ/MM et HH:MM, quel que soit le fuseau.
+        assert_eq!((date.len(), date.as_bytes()[2]), (5, b'/'));
+        assert_eq!((heure.len(), heure.as_bytes()[2]), (5, b':'));
+    }
+
+    #[test]
+    fn lieux_ron_decrit_les_boutons_du_menu() {
+        let lieux = Ron::<Vec<Lieu>>::load_expect("icebreaker.lieux")
+            .read()
+            .0
+            .clone();
+        assert!(
+            lieux
+                .iter()
+                .filter(|l| l.au_menu)
+                .all(|l| !l.description.is_empty())
         );
     }
 

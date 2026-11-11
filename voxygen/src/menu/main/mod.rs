@@ -84,6 +84,10 @@ pub struct MainMenuState {
     pending_credentials: Option<Credentials>,
     /// Icebreaker: whether `ICEBREAKER_AUTO_CAMPAGNE` was acted on (once).
     icebreaker_auto_tried: bool,
+    /// Icebreaker : essai sans les mains (`ICEBREAKER_AUTO_MENU` = `menu` ou
+    /// `parties`) : le mode, le début du compte à rebours et l'étape atteinte
+    /// (0 attente, 1 choix des parties ouvert, 2 capture prise).
+    icebreaker_auto_menu: Option<(String, Option<std::time::Instant>, u8)>,
 }
 
 impl MainMenuState {
@@ -98,6 +102,9 @@ impl MainMenuState {
             secure_service_tx: None,
             pending_credentials: None,
             icebreaker_auto_tried: false,
+            icebreaker_auto_menu: std::env::var("ICEBREAKER_AUTO_MENU")
+                .ok()
+                .map(|mode| (mode, None, 0)),
         }
     }
 }
@@ -521,6 +528,22 @@ impl PlayState for MainMenuState {
             self.main_menu_ui.icebreaker_campagne_auto()
         })
         .flatten();
+
+        // Icebreaker : essai sans les mains. 3 s après l'affichage du menu, `parties`
+        // ouvre le choix de la partie du premier lieu local ; puis, 2 s plus tard
+        // (`parties`) ou 3 s après l'affichage (`menu`), une seule capture d'écran.
+        if let Some((mode, depart, etape)) = &mut self.icebreaker_auto_menu {
+            let ecoule = depart.get_or_insert_with(std::time::Instant::now).elapsed();
+            let parties = mode == "parties";
+            if *etape == 0 && parties && ecoule >= Duration::from_secs(3) {
+                self.main_menu_ui.icebreaker_ouvrir_premier_lieu();
+                *etape = 1;
+            }
+            if *etape < 2 && ecoule >= Duration::from_secs(if parties { 5 } else { 3 }) {
+                global_state.window.take_screenshot(&global_state.settings);
+                *etape = 2;
+            }
+        }
 
         // Maintain the UI.
         for event in self

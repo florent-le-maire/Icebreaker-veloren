@@ -123,6 +123,11 @@ impl PlayState for CharSelectionState {
                 }
             }
 
+            // Icebreaker N.6 : en attente (liste en chargement ou fantôme annoncé), les
+            // étapes du lancement tiennent lieu d'écran.
+            self.char_selection_ui.attente = crate::icebreaker::en_campagne()
+                && (self.client.borrow().character_list().loading || self.icebreaker_fantome);
+
             // Maintain the UI.
             let events = self
                 .char_selection_ui
@@ -425,10 +430,11 @@ impl PlayState for CharSelectionState {
         // Draw the UI to the screen.
         if let Some(mut ui_drawer) = third_pass.draw_ui() {
             // Icebreaker: coming to the campaign, nothing to choose until the server
-            // says whether to enter as a ghost (X.7): a plain loading screen.
+            // says whether to enter as a ghost (X.7): the steps of the launch (N.6), or
+            // nothing for a frame that was not prepared as such.
             let attente = crate::icebreaker::en_campagne()
                 && (client.character_list().loading || self.icebreaker_fantome);
-            if !attente {
+            if !attente || self.char_selection_ui.attente_vue {
                 self.char_selection_ui.render(&mut ui_drawer);
             }
         };

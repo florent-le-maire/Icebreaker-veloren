@@ -357,6 +357,25 @@ impl LoginBanner {
         button_style: style::button::Style,
         parties: Option<&super::icebreaker::MenuParties>,
     ) -> Element<'_, Message> {
+        // Icebreaker N.6 : le choix de la partie prend la place du reste de la bannière.
+        if let Some(menu) = parties {
+            return Container::new(
+                Column::with_children(vec![choix_partie(
+                    &mut self.parties,
+                    menu,
+                    fonts,
+                    imgs,
+                    button_style,
+                    i18n,
+                )])
+                .width(Length::Fill)
+                .align_items(Align::Center),
+            )
+            .height(Length::Fill)
+            .center_y()
+            .into();
+        }
+
         let input_text_size = fonts.cyri.scale(INPUT_TEXT_SIZE);
 
         let server_field: Element<Message> = if server_field_locked {
@@ -437,12 +456,7 @@ impl LoginBanner {
             .height(Length::Units(200))
             .spacing(8)
             .into(),
-            match parties {
-                Some(menu) => {
-                    choix_partie(&mut self.parties, menu, fonts, imgs, button_style, i18n)
-                },
-                None => campagne(&mut self.campagne_buttons, fonts, button_style, i18n),
-            },
+            campagne(&mut self.campagne_buttons, fonts, button_style, i18n),
         ])
         .width(Length::Fill)
         .align_items(Align::Center);
@@ -454,8 +468,9 @@ impl LoginBanner {
     }
 }
 
-/// Icebreaker : les lieux de la campagne (`assets/icebreaker/lieux.ron`),
-/// grisés s'ils ne sont pas encore faits.
+/// Icebreaker N.6 : le bloc Icebreaker du menu, à part des boutons de Veloren :
+/// un titre, puis pour chaque lieu `au_menu` de `assets/icebreaker/lieux.ron` son
+/// bouton (grisé s'il n'est pas encore fait) et une ligne d'explication.
 fn campagne<'a>(
     buttons: &'a mut Vec<button::State>,
     fonts: &Fonts,
@@ -463,24 +478,27 @@ fn campagne<'a>(
     i18n: &Localization,
 ) -> Element<'a, Message> {
     const BUTTON_HEIGHT: u16 = 40;
-    const SPACING: u16 = 6;
-    let lieux = super::icebreaker::lieux().read().0.clone();
+    const SPACING: u16 = 4;
+    // Pas de copie de la liste : on ne clone que les textes qui partent dans les widgets.
+    let lieux = super::icebreaker::lieux();
+    let lieux = lieux.read();
+    let lieux = &lieux.0;
     buttons.resize_with(lieux.len(), Default::default);
 
     let mut children = vec![
-        Space::new(Length::Fill, Length::Units(12)).into(),
-        Text::new(i18n.get_msg("icebreaker-menu-campagne"))
+        Space::new(Length::Fill, Length::Units(28)).into(),
+        Text::new(i18n.get_msg("icebreaker-menu-titre"))
             .size(fonts.cyri.scale(INPUT_TEXT_SIZE))
             .into(),
+        Space::new(Length::Fill, Length::Units(2)).into(),
     ];
-    children.extend(
-        buttons
-            .iter_mut()
-            .zip(&lieux)
-            .enumerate()
-            // Only the places marked `au_menu` (decision 0016: the campaign).
-            .filter(|(_, (_, lieu))| lieu.au_menu)
-            .map(|(index, (state, lieu))| {
+    for (index, (state, lieu)) in buttons.iter_mut().zip(lieux).enumerate() {
+        // Only the places marked `au_menu` (decision 0016: the campaign).
+        if !lieu.au_menu {
+            continue;
+        }
+        children.push(
+            Container::new(
                 Container::new(neat_button(
                     state,
                     lieu.nom.clone(),
@@ -489,12 +507,27 @@ fn campagne<'a>(
                     lieu.actif.then_some(Message::Campagne(index)),
                 ))
                 .width(Length::Fill)
-                .height(Length::Units(BUTTON_HEIGHT))
-                .into()
-            }),
-    );
+                .max_width(170)
+                .height(Length::Units(BUTTON_HEIGHT)),
+            )
+            .width(Length::Fill)
+            .center_x()
+            .into(),
+        );
+        if !lieu.description.is_empty() {
+            children.push(
+                Text::new(lieu.description.clone())
+                    .size(fonts.cyri.scale(14))
+                    .color(iced::Color::from_rgba(1.0, 1.0, 1.0, 0.6))
+                    .width(Length::Fill)
+                    .horizontal_alignment(iced::HorizontalAlignment::Center)
+                    .into(),
+            );
+        }
+        children.push(Space::new(Length::Fill, Length::Units(6)).into());
+    }
     Column::with_children(children)
-        .max_width(170)
+        .max_width(230)
         .spacing(SPACING)
         .align_items(Align::Center)
         .into()
@@ -504,16 +537,18 @@ fn campagne<'a>(
 #[derive(Default)]
 struct PartiesStates {
     parties: Vec<button::State>,
+    liste: scrollable::State,
     nom: text_input::State,
     nouvelle: button::State,
     retour: button::State,
 }
 
-/// Icebreaker X.10 : au plus tant de parties au menu, les plus récentes.
-const PARTIES_AU_MENU: usize = 4;
+/// Icebreaker N.6 : hauteur de la liste des parties, qui défile au-delà.
+const LISTE_HAUTEUR: u16 = 184;
 
-/// Icebreaker X.10 : le bloc Campagne une fois cliqué : continuer une des
-/// parties les plus récentes, ou en créer une avec le nom tapé.
+/// Icebreaker X.10, N.6 : le bloc Campagne une fois cliqué : toutes les parties
+/// dans une liste qui défile (la plus récente d'abord), puis le champ du nom d'une
+/// nouvelle partie, avec le refus éventuel du nom juste dessous.
 fn choix_partie<'a>(
     states: &'a mut PartiesStates,
     menu: &super::icebreaker::MenuParties,
@@ -524,14 +559,17 @@ fn choix_partie<'a>(
 ) -> Element<'a, Message> {
     const BUTTON_HEIGHT: u16 = 34;
     const SPACING: u16 = 6;
-    let parties: Vec<_> = menu.parties.iter().take(PARTIES_AU_MENU).collect();
-    states.parties.resize_with(parties.len(), Default::default);
+    states
+        .parties
+        .resize_with(menu.parties.len(), Default::default);
     let bouton = |element: Element<'a, Message>| -> Element<'a, Message> {
         Container::new(element)
             .width(Length::Fill)
             .height(Length::Units(BUTTON_HEIGHT))
+            .center_x()
             .into()
     };
+    let pale = iced::Color::from_rgba(1.0, 1.0, 1.0, 0.6);
 
     let mut children = vec![
         Space::new(Length::Fill, Length::Units(12)).into(),
@@ -539,32 +577,85 @@ fn choix_partie<'a>(
             .size(fonts.cyri.scale(INPUT_TEXT_SIZE))
             .into(),
     ];
-    if !parties.is_empty() {
+    if menu.parties.is_empty() {
+        children.push(
+            Text::new(i18n.get_msg("icebreaker-partie-aucune"))
+                .size(fonts.cyri.scale(16))
+                .color(pale)
+                .into(),
+        );
+    } else {
         children.push(
             Text::new(i18n.get_msg("icebreaker-partie-continuer"))
                 .size(fonts.cyri.scale(16))
                 .into(),
         );
-    }
-    children.extend(
-        states
+        // La barre de défilement reste visible (piste) : sans elle, rien ne dit que la
+        // liste continue sous la troisième partie.
+        let mut liste = Scrollable::new(&mut states.liste)
+            .spacing(6)
+            .padding(8)
+            .scrollbar_width(4)
+            .scroller_width(4)
+            .width(Length::Fill)
+            .height(Length::Units(LISTE_HAUTEUR))
+            .align_items(Align::Start)
+            .style(style::scrollable::Style {
+                track: Some(style::scrollable::Track::Color(Rgba::new(42, 48, 51, 255))),
+                scroller: style::scrollable::Scroller::Color(Rgba::new(156, 179, 179, 255)),
+            });
+        for (index, ((state, partie), date)) in states
             .parties
             .iter_mut()
-            .zip(parties)
-            .map(|(state, partie)| {
-                bouton(neat_button(
+            .zip(&menu.parties)
+            .zip(&menu.dates)
+            .enumerate()
+        {
+            // La plus récente (la première) se « continue », les autres se « jouent ».
+            let recente = index == 0;
+            let action = i18n.get_msg(if recente {
+                "icebreaker-partie-continuer-action"
+            } else {
+                "icebreaker-partie-jouer"
+            });
+            let color = if recente { (97, 255, 18) } else { (97, 97, 25) };
+            liste = liste.push(
+                Button::new(
                     state,
-                    format!(
-                        "{}  ({})",
-                        partie.nom,
-                        super::icebreaker::date_partie(partie)
-                    ),
-                    FILL_FRAC_TWO,
-                    button_style,
-                    Some(Message::CampagnePartie(partie.nom.clone())),
-                ))
-            }),
-    );
+                    Row::with_children(vec![
+                        Column::with_children(vec![
+                            Text::new(partie.nom.clone())
+                                .size(fonts.cyri.scale(18))
+                                .into(),
+                            Text::new(date.clone())
+                                .size(fonts.cyri.scale(13))
+                                .color(pale)
+                                .into(),
+                        ])
+                        .width(Length::Fill)
+                        .into(),
+                        Text::new(action.into_owned())
+                            .size(fonts.cyri.scale(16))
+                            .vertical_alignment(iced::VerticalAlignment::Center)
+                            .into(),
+                    ])
+                    .align_items(Align::Center)
+                    .spacing(8),
+                )
+                .style(
+                    style::button::Style::new(imgs.selection)
+                        .hover_image(imgs.selection_hover)
+                        .press_image(imgs.selection_press)
+                        .image_color(Rgba::new(color.0, color.1, color.2, 192)),
+                )
+                .padding(8)
+                .width(Length::Fill)
+                .min_height(52)
+                .on_press(Message::CampagnePartie(partie.nom.clone())),
+            );
+        }
+        children.push(liste.into());
+    }
     children.push(
         BackgroundContainer::new(
             Image::new(imgs.input_bg)
@@ -582,9 +673,19 @@ fn choix_partie<'a>(
         .padding(Padding::new().horizontal(7).vertical(5))
         .into(),
     );
+    // Le refus du nom, en rouge sous le champ ; il s'efface quand on retape.
+    if let Some(refus) = menu.erreur {
+        children.push(
+            Text::new(i18n.get_msg(refus.cle()))
+                .size(fonts.cyri.scale(14))
+                .color(iced::Color::from_rgb(0.95, 0.3, 0.25))
+                .width(Length::Fill)
+                .into(),
+        );
+    }
     children.push(bouton(neat_button(
         &mut states.nouvelle,
-        i18n.get_msg("icebreaker-partie-nouvelle"),
+        i18n.get_msg("icebreaker-partie-creer"),
         FILL_FRAC_TWO,
         button_style,
         Some(Message::CampagneNouvelle),
@@ -597,7 +698,7 @@ fn choix_partie<'a>(
         Some(Message::CampagneRetour),
     )));
     Column::with_children(children)
-        .max_width(INPUT_WIDTH as u32)
+        .width(Length::Units(INPUT_WIDTH + 30))
         .spacing(SPACING)
         .align_items(Align::Center)
         .into()

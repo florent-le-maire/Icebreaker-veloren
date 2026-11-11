@@ -504,8 +504,16 @@ impl Controls {
             return;
         };
         let lieu = icebreaker::lieux().read().0.get(menu.lieu).cloned();
+        let lieu_nom = lieu.as_ref().map(|l| l.nom.clone()).unwrap_or_default();
         match lieu.map(|lieu| icebreaker::lancer(&lieu, partie)) {
-            Some(Ok(server_address)) => events.push(self.icebreaker_connect(ui, server_address)),
+            Some(Ok(server_address)) => {
+                crate::icebreaker::noter_lancement(crate::icebreaker::Lancement {
+                    titre: partie.to_string(),
+                    sous_titre: lieu_nom,
+                    distant: false,
+                });
+                events.push(self.icebreaker_connect(ui, server_address))
+            },
             Some(Err(error)) => {
                 // The panel stays open, to choose another game.
                 self.icebreaker_parties = Some(menu);
@@ -513,6 +521,24 @@ impl Controls {
             },
             None => {},
         }
+    }
+
+    /// Icebreaker N.6 : ouvre le choix de la partie du lieu `lieu` (index dans
+    /// `lieux.ron`), le texte de date de chaque partie étant préparé ici, une fois.
+    fn icebreaker_ouvrir_parties(&mut self, lieu: usize) {
+        let i18n = self.i18n.read();
+        self.icebreaker_parties = Some(icebreaker::MenuParties::new(
+            lieu,
+            icebreaker::parties(),
+            |partie| {
+                let (date, heure) = icebreaker::date_partie(partie);
+                i18n.get_msg_ctx("icebreaker-partie-jouee", &i18n::fluent_args! {
+                    "date" => date,
+                    "heure" => heure,
+                })
+                .into_owned()
+            },
+        ));
     }
 
     fn update(
@@ -611,34 +637,39 @@ impl Controls {
             // distant (le VPS) n'a pas de partie à choisir, on s'y connecte.
             Message::Campagne(lieu) => {
                 let lieux = icebreaker::lieux();
-                let distant = lieux.read().0.get(lieu).and_then(|l| l.adresse.clone());
-                if let Some(adresse) = distant {
+                let distant = lieux
+                    .read()
+                    .0
+                    .get(lieu)
+                    .and_then(|l| Some((l.adresse.clone()?, l.nom.clone())));
+                if let Some((adresse, nom)) = distant {
+                    crate::icebreaker::noter_lancement(crate::icebreaker::Lancement {
+                        titre: nom,
+                        sous_titre: String::new(),
+                        distant: true,
+                    });
                     events.push(self.icebreaker_connect(ui, adresse));
                     return;
                 }
-                self.icebreaker_parties = Some(icebreaker::MenuParties {
-                    lieu,
-                    parties: icebreaker::parties(),
-                    nom: String::new(),
-                });
+                self.icebreaker_ouvrir_parties(lieu);
             },
             Message::CampagneRetour => self.icebreaker_parties = None,
             Message::CampagneNom(nom) => {
                 if let Some(menu) = &mut self.icebreaker_parties {
                     menu.nom = nom;
+                    // Le refus s'efface quand on retape.
+                    menu.erreur = None;
                 }
             },
             Message::CampagnePartie(partie) => self.icebreaker_lancer(ui, &partie, events),
             Message::CampagneNouvelle => {
-                let Some(menu) = &self.icebreaker_parties else {
+                let Some(menu) = &mut self.icebreaker_parties else {
                     return;
                 };
+                // Un nom refusé s'affiche sous le champ, le panneau reste ouvert (N.6).
                 match icebreaker::nom_partie(&menu.nom, &menu.parties) {
                     Ok(partie) => self.icebreaker_lancer(ui, &partie, events),
-                    Err(refus) => {
-                        let message = self.i18n.read().get_msg(refus.cle()).into_owned();
-                        self.connection_error(message);
-                    },
+                    Err(refus) => menu.erreur = Some(refus),
                 }
             },
             Message::UnlockServerField => self.server_field_locked = false,
@@ -681,6 +712,8 @@ impl Controls {
                 }
             },
             Message::CancelConnect => {
+                // Icebreaker N.6 : annuler quitte la campagne (plus de panneau d'étapes).
+                crate::icebreaker::campagne_fini();
                 self.exit_connect_screen();
                 events.push(Event::CancelLoginAttempt);
             },
@@ -936,6 +969,11 @@ impl MainMenuUi {
         // Icebreaker : `ICEBREAKER_AUTO_ADRESSE=hôte:port` va droit à ce serveur, sans rien lancer
         // (essais sur un serveur à part, jalon N).
         if let Ok(adresse) = std::env::var("ICEBREAKER_AUTO_ADRESSE") {
+            crate::icebreaker::noter_lancement(crate::icebreaker::Lancement {
+                titre: adresse.clone(),
+                sous_titre: String::new(),
+                distant: true,
+            });
             return Some(self.controls.icebreaker_connect(&mut self.ui, adresse));
         }
         let lieu = icebreaker::lieux()
@@ -950,11 +988,31 @@ impl MainMenuUi {
             .or_else(|| icebreaker::parties().into_iter().next().map(|p| p.nom))
             .unwrap_or_else(|| "Partie 1".to_string());
         match icebreaker::lancer(&lieu, &partie) {
-            Ok(server_address) => Some(self.controls.icebreaker_connect(&mut self.ui, server_address)),
+            Ok(server_address) => {
+                crate::icebreaker::noter_lancement(crate::icebreaker::Lancement {
+                    titre: partie,
+                    sous_titre: lieu.nom.clone(),
+                    distant: lieu.adresse.is_some(),
+                });
+                Some(self.controls.icebreaker_connect(&mut self.ui, server_address))
+            },
             Err(error) => {
                 self.controls.connection_error(error);
                 None
             },
+        }
+    }
+
+    /// Icebreaker : essai sans les mains (`ICEBREAKER_AUTO_MENU=parties`) : comme un
+    /// clic sur le bouton du premier lieu local, qui ouvre le choix de la partie.
+    pub fn icebreaker_ouvrir_premier_lieu(&mut self) {
+        let lieu = icebreaker::lieux()
+            .read()
+            .0
+            .iter()
+            .position(|lieu| lieu.au_menu && lieu.actif && lieu.adresse.is_none());
+        if let Some(lieu) = lieu {
+            self.controls.icebreaker_ouvrir_parties(lieu);
         }
     }
 

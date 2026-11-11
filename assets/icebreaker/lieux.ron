@@ -7,12 +7,14 @@
 //   ces lieux restent utiles pour tester un donjon.
 // Un port par lieu ; le port suivant (port + 1) est pris par l'interface web du serveur.
 // `actif: false` : lieu pas encore fait.
+// `description` (N.6, facultative) : la ligne d'explication sous le bouton du menu (lue par le client seulement).
 // `adresse` (S.3) : serveur distant ; le bouton s'y connecte sans rien lancer ni choisir de partie (la partie est
 // celle du serveur). Ses `arguments` et son `port` ne servent pas au client.
 [
-    (nom: "Campagne", arguments: ["campagne"], port: 14100, actif: true, au_menu: true),
+    (nom: "Campagne", arguments: ["campagne"], port: 14100, actif: true, au_menu: true,
+        description: "Le serveur tourne sur cet ordinateur."),
     (nom: "En ligne", arguments: ["campagne"], port: 14100, actif: true, au_menu: true,
-        adresse: Some("116.202.107.125:14100")),
+        adresse: Some("116.202.107.125:14100"), description: "Rejoint le serveur de l'équipe et sa partie."),
     (nom: "Donjon", arguments: ["donjon", "-Site", "Gnarling"], port: 14110, actif: true),
     (nom: "Donjon généré", arguments: ["donjon", "-Site", "Genere"], port: 14130, actif: true),
     (nom: "Grotte", arguments: ["donjon", "-Site", "Grotte"], port: 14140, actif: true),
