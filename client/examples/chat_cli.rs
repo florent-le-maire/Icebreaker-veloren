@@ -241,6 +241,26 @@ fn main() {
                         println!("Équipé : {:?}", item.item_definition_id());
                     }
                 }
+            } else if msg == "!competences" {
+                // Icebreaker : ce que le personnage a acquis, tel que le serveur l'envoie (jalon A).
+                use veloren_client::WorldExt;
+                use common::icebreaker_competences::IcebreakerCompetences;
+                let competences = client.state().ecs().read_storage::<IcebreakerCompetences>();
+                match competences.get(client.entity()) {
+                    Some(c) => {
+                        println!("Compétences : classe {}", c.classe);
+                        for (jeu, acquis) in &c.acquis.jeux {
+                            println!(
+                                "Jeu d'armes {jeu} : maîtrise {}, connues {:?}, placées {:?}",
+                                acquis.maitrise, acquis.competences, acquis.placees
+                            );
+                        }
+                        println!("Ultime {:?} parmi {:?}", c.acquis.ultime, c.acquis.ultimes);
+                        println!("Passif {:?} parmi {:?}", c.acquis.passif, c.acquis.passifs);
+                        println!("Recharges : {:?}", c.recharges);
+                    },
+                    None => println!("Compétences : aucune (capacités de Veloren)"),
+                }
             } else if msg == "!voisins" {
                 // Icebreaker : les PNJ à moins de 100 blocs, leur position et leur haut
                 // (couché : le haut n'est plus vertical).

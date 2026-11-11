@@ -75,6 +75,8 @@ macro_rules! synced_components {
             can_build: CanBuild,
             is_interactor: IsInteractor,
             interactors: Interactors,
+            // Icebreaker : compétences du personnage du registre (jalon A).
+            icebreaker_competences: IcebreakerCompetences,
         }
     };
 }
@@ -85,6 +87,8 @@ macro_rules! reexport_comps {
             pub use common::comp::*;
             pub use body::parts::Heads;
             pub use common::{interaction::Interactors, mounting::VolumeRiders};
+            // Icebreaker : compétences du personnage du registre (jalon A).
+            pub use common::icebreaker_competences::IcebreakerCompetences;
             use common::link::Is;
             use common::{
                 mounting::{Mount, Rider, VolumeRider},
@@ -313,5 +317,10 @@ impl NetSync for IsInteractor {
 }
 
 impl NetSync for Interactors {
+    const SYNC_FROM: SyncFrom = SyncFrom::ClientSpectatorEntity;
+}
+
+// Icebreaker : ce que le personnage a acquis et ses recharges, pour celui qui le joue (jalon A).
+impl NetSync for IcebreakerCompetences {
     const SYNC_FROM: SyncFrom = SyncFrom::ClientSpectatorEntity;
 }

@@ -25,6 +25,7 @@ use crate::{
     },
 };
 use serde::{Deserialize, Serialize};
+use specs::{Component, DerefFlaggedStorage};
 use std::{collections::BTreeMap, sync::LazyLock};
 use tracing::error;
 
@@ -558,6 +559,35 @@ impl Acquis {
             .and_then(|passifs| passifs.passifs.first())
             .map(|(id, _)| id.as_str());
         Self::lot(jeu, &competences, ultime, passif)
+    }
+}
+
+/// Composant d'un personnage du registre en jeu : sa classe, ce qu'il a acquis (copie de sa fiche,
+/// réécrite dans la fiche par le serveur) et ses recharges en cours. Envoyé au seul joueur qui le
+/// joue. Un personnage sans ce composant garde les capacités de Veloren.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct IcebreakerCompetences {
+    /// Id de sa classe (`classes.ron`).
+    pub classe: String,
+    pub acquis: Acquis,
+    /// Fin de la recharge par numéro de compétence, en secondes du temps du serveur (`Time`).
+    #[serde(default)]
+    pub recharges: BTreeMap<u16, f64>,
+}
+
+impl Component for IcebreakerCompetences {
+    type Storage = DerefFlaggedStorage<Self, specs::VecStorage<Self>>;
+}
+
+impl IcebreakerCompetences {
+    /// Le composant d'un personnage de `classe` qui a acquis `acquis`, sans recharge en cours ;
+    /// `None` si nos données ne décrivent pas cette classe.
+    pub fn nouveau(classe: &str, acquis: Acquis) -> Option<Self> {
+        registre().classe_geree(classe).then(|| Self {
+            classe: classe.to_string(),
+            acquis,
+            recharges: BTreeMap::new(),
+        })
     }
 }
 

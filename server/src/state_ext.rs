@@ -748,6 +748,12 @@ impl StateExt for State {
             self.write_component_ignore_entity_dead(entity, stats);
             self.write_component_ignore_entity_dead(entity, active_abilities);
             self.write_component_ignore_entity_dead(entity, skill_set);
+            // Icebreaker : un personnage du registre entre en jeu avec ce que dit sa fiche :
+            // jeux d'armes, compétences, ultime, passif (jalon A).
+            let competences = crate::icebreaker_registre::competences_de(self.ecs(), entity);
+            if let Some(competences) = competences {
+                self.write_component_ignore_entity_dead(entity, competences);
+            }
             // Icebreaker : dans un donjon lancé seul, une balise lumineuse (jalon J), avant
             // l'inventaire d'arrivée pour qu'elle ne compte pas dans le bilan.
             let mut inventory = inventory;

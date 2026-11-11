@@ -134,6 +134,7 @@ mod tests {
         let recrue = Recrue {
             nom: "Leif".into(),
             classe: "guerrier".into(),
+            acquis: Default::default(),
         };
         let npc = recruit_npc(&recrue, Vec3::zero()).expect("guerrier exists");
         assert_eq!(npc.stats.name, Content::Plain("Leif".into()));
@@ -145,6 +146,7 @@ mod tests {
         let unknown = Recrue {
             nom: "X".into(),
             classe: "inconnue".into(),
+            acquis: Default::default(),
         };
         assert!(recruit_npc(&unknown, Vec3::zero()).is_none());
     }

@@ -293,6 +293,8 @@ impl State {
         ecs.register::<comp::Stats>();
         ecs.register::<comp::SkillSet>();
         ecs.register::<comp::ActiveAbilities>();
+        // Icebreaker : compétences du personnage du registre (jalon A).
+        ecs.register::<common::icebreaker_competences::IcebreakerCompetences>();
         ecs.register::<comp::Buffs>();
         ecs.register::<comp::Auras>();
         ecs.register::<comp::EnteredAuras>();

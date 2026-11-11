@@ -335,6 +335,9 @@ pub(super) fn persist_entity(state: &mut State, entity: EcsEntity) -> EcsEntity 
                 );
             },
             PresenceKind::Character(char_id) => {
+                // Icebreaker : ce que le personnage a acquis repart dans sa fiche du registre
+                // (jalon A) ; s'il est mort en expédition, la fiche est retirée juste après.
+                crate::icebreaker_registre::sauver_acquis(state.ecs(), entity);
                 let mort = state
                     .read_storage::<comp::Health>()
                     .get(entity)

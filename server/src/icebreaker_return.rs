@@ -178,6 +178,8 @@ pub(crate) fn handle_rentrer(
     if campaign {
         // Icebreaker: new recruits at the cart for whoever has no one (jalon R).
         if crate::icebreaker_registre::active() {
+            // Icebreaker : ce que le personnage a acquis en bas repart dans sa fiche (jalon A).
+            crate::icebreaker_registre::sauver_acquis(server.state.ecs(), client);
             let config = crate::icebreaker_registre::config();
             server
                 .state

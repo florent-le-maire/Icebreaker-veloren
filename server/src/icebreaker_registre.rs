@@ -14,6 +14,7 @@ use common::{
     assets::{AssetExt, Ron},
     character::CharacterId,
     comp::{Player, Presence, PresenceKind},
+    icebreaker_competences::{Acquis, IcebreakerCompetences},
 };
 use rand::prelude::IndexedRandom;
 use serde::{Deserialize, Serialize};
@@ -72,6 +73,9 @@ pub struct Recrue {
     pub nom: String,
     /// Id of its class (`classes.ron`).
     pub classe: String,
+    /// Icebreaker : le lot tiré avec la recrue (jalon A) ; vide : le lot par défaut de sa classe.
+    #[serde(default)]
+    pub acquis: Acquis,
 }
 
 /// A character of the registry.
@@ -84,6 +88,22 @@ pub struct Fiche {
     /// The account (uuid) that reserved it, if any.
     #[serde(default)]
     pub reserve_par: Option<String>,
+    /// Icebreaker : ce que le personnage a acquis (jalon A) : jeux d'armes, compétences et
+    /// niveaux, ultimes, passifs. Vide pour une fiche d'avant le jalon : voir `acquis_ou_defaut`.
+    #[serde(default)]
+    pub acquis: Acquis,
+}
+
+impl Fiche {
+    /// Icebreaker : ce que le personnage a acquis ; pour une fiche d'avant le jalon A, le lot par
+    /// défaut de sa classe.
+    pub fn acquis_ou_defaut(&self) -> Acquis {
+        if self.acquis.est_vide() {
+            Acquis::par_defaut(&self.classe)
+        } else {
+            self.acquis.clone()
+        }
+    }
 }
 
 /// What is saved.
@@ -175,7 +195,11 @@ impl IcebreakerRegistre {
                 .find(|nom| !pris(nom))
                 .unwrap_or_default()
         });
-        Recrue { nom, classe }
+        Recrue {
+            nom,
+            classe,
+            acquis: Acquis::default(),
+        }
     }
 
     /// A new cart on each new day of map time; whether it was renewed.
@@ -254,6 +278,7 @@ impl IcebreakerRegistre {
             nom: recrue.nom,
             classe: recrue.classe,
             reserve_par: None,
+            acquis: recrue.acquis,
         };
         self.etat.personnages.push(fiche.clone());
         self.save();
@@ -337,6 +362,20 @@ impl IcebreakerRegistre {
         Ok(format!("{nom} est de nouveau à tout le monde."))
     }
 
+    /// Icebreaker : ce que le personnage `id` a acquis en jeu repart dans sa fiche (jalon A) ; vrai
+    /// si la fiche a changé.
+    pub fn ecrire_acquis(&mut self, id: CharacterId, acquis: &Acquis) -> bool {
+        let Some(fiche) = self.etat.personnages.iter_mut().find(|fiche| fiche.id == id.0) else {
+            return false;
+        };
+        if fiche.acquis == *acquis {
+            return false;
+        }
+        fiche.acquis = acquis.clone();
+        self.save();
+        true
+    }
+
     /// Icebreaker : le personnage `id`, mort en expédition, quitte le registre pour de bon
     /// (T.6) ; sa fiche, s'il en avait une.
     pub fn retirer(&mut self, id: CharacterId) -> Option<Fiche> {
@@ -344,6 +383,43 @@ impl IcebreakerRegistre {
         let fiche = self.etat.personnages.remove(index);
         self.save();
         Some(fiche)
+    }
+}
+
+/// Icebreaker : le personnage que joue `entity`, s'il en joue un.
+fn personnage_de(ecs: &World, entity: Entity) -> Option<CharacterId> {
+    match ecs.read_storage::<Presence>().get(entity)?.kind {
+        PresenceKind::Character(id) => Some(id),
+        _ => None,
+    }
+}
+
+/// Icebreaker : les compétences avec lesquelles le personnage du registre que joue `entity` entre
+/// en jeu (jalon A) : ce que dit sa fiche. `None` hors registre, ou si nos données ne décrivent pas
+/// sa classe (il garde alors les capacités de Veloren).
+pub fn competences_de(ecs: &World, entity: Entity) -> Option<IcebreakerCompetences> {
+    if !active() {
+        return None;
+    }
+    let id = personnage_de(ecs, entity)?;
+    let registre = ecs.read_resource::<IcebreakerRegistre>();
+    let fiche = registre.fiche(id)?;
+    IcebreakerCompetences::nouveau(&fiche.classe, fiche.acquis_ou_defaut())
+}
+
+/// Icebreaker : ce que le personnage joué par `entity` a acquis repart dans sa fiche (jalon A) :
+/// au retour d'expédition et quand le personnage est sauvé.
+pub fn sauver_acquis(ecs: &World, entity: Entity) {
+    let Some(id) = personnage_de(ecs, entity) else {
+        return;
+    };
+    let acquis = ecs
+        .read_storage::<IcebreakerCompetences>()
+        .get(entity)
+        .map(|competences| competences.acquis.clone());
+    if let Some(acquis) = acquis {
+        ecs.write_resource::<IcebreakerRegistre>()
+            .ecrire_acquis(id, &acquis);
     }
 }
 
@@ -710,6 +786,7 @@ mod tests {
                 nom: format!("P{id}"),
                 classe: "mage".into(),
                 reserve_par: None,
+                acquis: Acquis::default(),
             });
         }
         registre
@@ -776,6 +853,7 @@ mod tests {
         registre.etat.charrette.push(Recrue {
             nom: "Anna".into(),
             classe: "archer".into(),
+            acquis: Acquis::default(),
         });
         registre.etat.personnages[1].reserve_par = Some("b".into());
         let ligne = |lignes: &[Ligne], nom: &str| {
@@ -832,5 +910,39 @@ mod tests {
         assert!(registre.retirer(CharacterId(7)).is_some());
         assert!(registre.fiche(CharacterId(7)).is_none());
         assert!(registre.retirer(CharacterId(7)).is_none(), "already gone");
+    }
+
+    // Jalon A : la fiche porte ce que le personnage a acquis.
+    #[test]
+    fn icebreaker_registre_a_sheet_keeps_what_the_character_learnt() {
+        // Une fiche d'avant le jalon A se relit, et reçoit le lot par défaut de sa classe.
+        let ancien = r#"(charrette: [(nom: "Anna", classe: "guerrier")],
+            personnages: [(id: 7, nom: "Leif", classe: "guerrier", reserve_par: None)], jour: Some(2))"#;
+        let etat: Etat = ron::from_str(ancien).expect("an old registry file");
+        assert!(etat.charrette[0].acquis.est_vide());
+        let fiche = &etat.personnages[0];
+        assert!(fiche.acquis.est_vide());
+        let lot = fiche.acquis_ou_defaut();
+        assert_eq!(lot, Acquis::par_defaut("guerrier"));
+        assert!(lot.jeux.contains_key("grande_epee"), "{lot:?}");
+        // Une classe que nos données ne décrivent pas n'a rien, et pas de composant.
+        assert!(IcebreakerCompetences::nouveau("classe inconnue", Acquis::default()).is_none());
+        assert!(IcebreakerCompetences::nouveau("guerrier", lot.clone()).is_some());
+
+        // Ce qui est acquis en jeu repart dans la fiche, et se relit du fichier.
+        let dir = std::env::temp_dir().join(format!("icebreaker-acquis-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut appris = lot.clone();
+        appris.jeux.get_mut("grande_epee").unwrap().maitrise = 120;
+        {
+            let mut registre = IcebreakerRegistre::new(Some(dir.clone()));
+            registre.etat.personnages.push(etat.personnages[0].clone());
+            assert!(!registre.ecrire_acquis(CharacterId(8), &appris), "not in the registry");
+            assert!(registre.ecrire_acquis(CharacterId(7), &appris));
+            assert!(!registre.ecrire_acquis(CharacterId(7), &appris), "nothing new");
+        }
+        let registre = IcebreakerRegistre::new(Some(dir.clone()));
+        assert_eq!(registre.fiche(CharacterId(7)).map(|f| f.acquis_ou_defaut()), Some(appris));
+        let _ = std::fs::remove_dir_all(dir);
     }
 }
