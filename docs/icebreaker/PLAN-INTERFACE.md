@@ -75,6 +75,7 @@ message (texte, sorte : info, réussite, refus). Le client range chaque bloc tou
 
 - [x] **N.1 Maquettes** — 14 planches sur le canvas ci-dessus, charte, règles, décision `0019` proposée. Le rendu
   n'a pas été relu par l'agent (le canvas ne se capture pas d'ici) : à relire par Flo. Aucun code du jeu touché.
+  `91d04b1f1b`
 - [ ] **N.2 Lecture par l'équipe** — Flo et Sayanel annotent le canvas ; `0019` est tranchée ; Q39 passe dans
   « Tranché ».
 
