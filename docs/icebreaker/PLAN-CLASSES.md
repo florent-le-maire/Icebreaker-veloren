@@ -2,7 +2,7 @@
 
 *Plan validé par Flo le 2026-11-11.* Décision : `decisions/0020-armes-classes-competences.md`. Règles de jeu :
 `design/classes.md` (section « Veloren »). Worktree `Veloren-classes`, branche `icebreaker-classes`. Questions pour
-l'équipe : `QUESTIONS.md`, Q43 à Q46.
+l'équipe : `QUESTIONS.md`, Q43 à Q47.
 
 ## Pourquoi
 
@@ -107,12 +107,17 @@ Un commit par tâche, fusion dans `master` à chaque tâche ; le jeu reste lanç
   compétences, 3 ultimes, inné et 4 passifs, `salle_armes.ron`). Une classe sans jeu d'armes en données (mage, archer)
   garde les compétences de Veloren jusqu'à A.16 et A.17. Testé (5 tests ciblés) ; rien n'est encore branché en jeu.
   — dcc97f21ba
-- [ ] **A.2 Maquettes** — canvas du jalon N : barre (2 + ultime + passif, recharge), fiche d'une recrue, salle
-  d'armes. *Fin* : Flo valide. Sans code, en parallèle de A.3 à A.5.
-- [ ] **A.3 Fiche et composant** — *en cours : Veloren-classes, 2026-11-11* — `acquis`, lot par défaut, composant à
-  l'entrée en jeu, réécriture au retour.
-  *Fin* : un ancien `registre.ron` se relit ; le client reçoit le composant. Tests du registre, client texte.
-- [ ] **A.4 Touches 1 et 2** *(risquée, cœur du jalon)* — variante, crochet, postures neutralisées, cases de la
+- [ ] **A.2 Maquettes** — *publiées le 2026-11-11, en attente de l'avis de Flo (`QUESTIONS.md`, Q47)* : rangée
+  « 4 · Armes, classes et compétences » du canvas du jalon N (<https://claude.ai/artifact/KXR2tEFGXNNdTk8QJMUcdW>) :
+  la barre (1 et 2 pour l'arme, 3 pour l'ultime, passif en case ronde, recharge comme la balise) et dix panneaux
+  (lot des recrues à la charrette, salle d'armes en quatre onglets, maîtrise au retour), tous dans le gabarit de
+  panneau existant. *Fin* : Flo valide.
+- [x] **A.3 Fiche et composant** — la fiche et la recrue portent `acquis` ; composant `IcebreakerCompetences` créé à
+  l'entrée en jeu d'après la fiche, envoyé au seul joueur, réécrit dans la fiche à `/rentrer` et à la sauvegarde ;
+  `!competences` au client texte. Testé (59 tests du serveur, village et client texte : guerrière avec son lot,
+  archère sans composant, fiche réécrite) ; rien à voir dans le vrai client. Le protocole change. — a8c4a0690a
+- [ ] **A.4 Touches 1 et 2** *(risquée, cœur du jalon)* — *en cours : Veloren-classes, 2026-11-11* — variante,
+  crochet, postures neutralisées, cases de la
   barre, `!touche n` dans `chat_cli`. *Fin* : la touche 1 lance la compétence avec son animation.
   `cargo test -p veloren-common-systems icebreaker` (banc `common/systems/tests/character_state.rs`).
 - [ ] **A.5 Recharges** — *Fin* : second appui refusé avant la fin de la recharge (même banc, deux tics).
@@ -124,12 +129,15 @@ Un commit par tâche, fusion dans `master` à chaque tâche ; le jeu reste lanç
   au bilan de retour. *Fin* : des points après une expédition, aucun sur les mannequins.
 - [ ] **A.10 Niveaux et paliers** — `effectif` branché ; grande épée : paliers 3 et 5 de ses 4 compétences.
   *Fin* : le niveau 3 se voit en jeu (autre geste ou effet), le niveau 2 frappe plus fort.
+  *Contenu écrit d'avance (928bc52b1d)* : niveaux 2 à 5 des seize compétences du guerrier, 32 variantes sous
+  `assets/icebreaker/abilities/guerrier/` ; reste à brancher les niveaux et à les voir en jeu.
 - [ ] **A.11 Salle d'armes : le bâtiment** — 7e bâtiment, panneau en lecture (compétences, niveaux, maîtrise, points).
 - [ ] **A.12 Salle d'armes : agir** — placer, débloquer, monter (points) ; apprendre un jeu d'armes, un ultime, un
   passif (or). *Fin* : chaque bouton agit ou dit pourquoi non. Test du constructeur de panneau, client texte.
 - [ ] **A.13 Passifs et inné** *(touche au système de buffs)* — *Fin* : mêmes PV max vus par un coéquipier.
 - [ ] **A.14 Ultimes du guerrier** — touche 3, longue recharge, trois ultimes. À voir avec les 4 jeux d'armes en mains.
-- [ ] **A.15 Paliers des trois autres jeux du guerrier** — contenu seul.
+- [ ] **A.15 Paliers des trois autres jeux du guerrier** — contenu seul, écrit avec celui de A.10 (928bc52b1d) ;
+  reste l'équilibre et le rendu à voir en jeu (vol de vie en mêlée, second coup des balayages, ralentissements).
 - [ ] **A.16 Mage** — bâton, sceptre (copies à écrire), ultimes, passifs, paliers.
 - [ ] **A.17 Archer** — arc, ultimes, passifs, paliers.
 - [ ] **A.18 Wiki et nettoyage** — `icebreaker-wiki/src/competences.rs`, fiche `wiki/`, retrait de `touches` et
