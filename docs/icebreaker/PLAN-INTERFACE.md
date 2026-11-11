@@ -89,7 +89,10 @@ marteau, sceptre, dagues, épée et bouclier pour les classes à venir). Une cla
 Pour voir l'interface dans le vrai client sans y toucher : un village d'essai sur un port à part
 (`icebreaker.ps1 village -Port 14160 -Partie essai`), puis le client avec `ICEBREAKER_AUTO_CAMPAGNE=1`,
 `ICEBREAKER_AUTO_ADRESSE=localhost:14160` et `ICEBREAKER_AUTO_PLAN=charrette,/registre engager 0,depart,/expedition 2`
-(`CLAUDE.md`, commandes). Captures de la première version : `wiki/images/interface-*.png`.
+(`CLAUDE.md`, commandes). Captures de la première version : `wiki/images/interface-*.png`. Pour le donjon sans
+donjon : le joueur d'essai en admin, un second joueur au client texte (`!fantome`, `!panneau charrette`,
+`/registre engager 0`), puis `…,fermer,/explosion 5` (à terre), `/kill` (mort), `regarder` (allié regardé). Pour le
+menu : `ICEBREAKER_AUTO_MENU=menu|parties`.
 
 À savoir pour la suite : dans la version de conrod de Veloren, `Rectangle::outline_styled` est à éviter (les
 contours s'accumulent et prennent tous la couleur du dernier) ; un cadre se dessine avec `BorderedRectangle`.
@@ -105,7 +108,8 @@ Les types partagés, dans `common/src/icebreaker_panneau.rs` (tous sérialisés,
 - `Demande { Ouvrir, Batiment(Vec2<f32>), FermerPanneau, Fermer }` (le client dit ce qu'il fait dans le plan) ;
   `Batiment { nom, emprise, altitude, sorte, etat }` ; `Expedition { destination, depart_dans, membres }`.
 - Messages : `ClientGeneral::IcebreakerPlan(Demande)` ; `ServerGeneral::IcebreakerPanel(Panneau)`,
-  `IcebreakerBuildings(Vec<Batiment>)`, `IcebreakerExpedition(Option<Expedition>)`.
+  `IcebreakerBuildings(Vec<Batiment>)`, `IcebreakerExpedition(Option<Expedition>)`, `IcebreakerBilan(Panneau)`
+  (N.8 : le bilan de retour, montré dans sa fenêtre et fermé par le client).
 
 Les onglets se changent côté client (le serveur envoie les lignes de chaque onglet) : pas d'aller-retour. La réponse
 à une action reste un message de chat du serveur ; le client l'affiche aussi dans la ligne de message du panneau
@@ -118,8 +122,21 @@ tant que la fenêtre est ouverte, et en message à droite sinon.
   sur une grille à gauche, panneau typé à droite, tailles fixes, bandeaux du fantôme et de l'expédition, messages à
   droite. Vu en capture dans le vrai client, pas à la souris : voir « À vérifier en jeu » de `PLAN.md`.
   `3d52bdebab`
-- [ ] **N.6 Menu** — bloc Icebreaker, liste des parties qui défile, erreur sous le champ, étapes du lancement.
-- [ ] **N.7 Donjon** — rappel des touches au verrouillage, couleurs de la balise en pastilles, quantité et recharge
-  ensemble, bloc « à terre », marqueur d'un allié à terre, écran de mort, bandeau de l'allié regardé.
-- [ ] **N.8 Bilan de retour** — fenêtre au retour au village (créatures, coffres, or, ce que chacun rapporte).
-- [ ] **N.9 Coûts par image restants** — cibles du verrouillage, `mort.ron`, alliés à regarder.
+
+N.6 à N.9 ont été réalisés par des agents sur un modèle plus léger (demande de Flo), relus et essayés dans le vrai
+client par l'agent qui pilote.
+
+- [x] **N.6 Menu** — bloc Icebreaker avec une ligne d'explication par lieu, liste des parties qui défile, refus du
+  nom sous le champ, étapes du lancement. Vu en capture (menu, six parties, étapes) ; clics, création et vrai
+  lancement local pas vus. `9d266451d2`
+- [x] **N.7 Donjon** — rappel des touches au verrouillage et « Cible perdue », quantité et recharge de la balise
+  ensemble, jauge de fouille, bloc « à terre », allié à terre en rouge, écran de mort, bandeau de l'allié regardé.
+  Corrige T.4 : le clic « regarder un allié » ne trouvait jamais personne. Vu en capture : couleurs de la balise, à
+  terre, mort, allié regardé ; le reste (verrouillage, fouille, allié à terre) pas vu. `0fd4457c0a`, `7a549b2385`
+- [x] **N.8 Bilan de retour** — fenêtre « Retour d'expédition » pour celui qui rentre (`/rentrer` en campagne) et
+  pour chaque joueur d'une expédition qui a péri : mission, créatures, coffres, or, objets ; le chat garde une ligne.
+  Chacun ne voit que ce qu'il rapporte lui-même. Vu en capture (retour avec or et objets donnés par commande,
+  expédition qui a péri) ; fermeture à la souris et vrai butin pas vus. `5595483051`
+- [x] **N.9 Coûts par image restants** — la cible verrouillée lue seule (plus de parcours de toutes les entités),
+  temps à terre sans ménage ni lecture de `mort.ron` à chaque appel, allié à regarder cherché deux fois par seconde.
+  Tests seulement ; le verrouillage n'a pas été revu en donjon. `207aeab532`

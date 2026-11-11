@@ -79,7 +79,8 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   Avec `ICEBREAKER_AUTO_ADRESSE=localhost:<port>`, il va droit à ce serveur sans rien lancer ; avec
   `ICEBREAKER_AUTO_PLAN=charrette,caisse,/expedition 2`, il ouvre le plan du village 25 s après l'entrée, clique
   chaque bâtiment (ou envoie la commande) et prend une capture à chaque pas (dossier `screenshots_path` de ses
-  réglages ; `fullscreen: (enabled: false)` pour une fenêtre).
+  réglages ; `fullscreen: (enabled: false)` pour une fenêtre) ; `fermer` ferme le plan, `regarder` fait le clic
+  gauche d'un mort. `ICEBREAKER_AUTO_MENU=menu|parties` : une capture du menu ou du choix de la partie.
 - Wiki de l'équipe (jalon W, `docs/icebreaker/PLAN-WIKI.md`) : `cargo run -p icebreaker-wiki` écrit `site/` (ouvrir
   `site/index.html`) depuis `docs/icebreaker/` et `assets/icebreaker/` ; la vulgarisation s'écrit dans
   `docs/icebreaker/wiki/<domaine>.md` (en-tête TOML : design, réglages, tâches, systèmes, chiffres, icone, schema) ;

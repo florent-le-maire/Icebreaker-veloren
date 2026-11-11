@@ -41,14 +41,17 @@ Mourir en expédition laisse un **sac du mort** au sol, avec tout ce que vous po
 équipement porté reste sur le personnage. Un allié fouille le sac en trois secondes et en prend le contenu : rien
 n'est perdu si l'équipe tient le coup, tout est perdu si elle rentre sans.
 
-Une fois mort, deux choix :
+Une fois mort, l'écran de mort le dit sans détour : ce personnage est **perdu pour de bon**, il sort du registre.
+Deux choix, rappelés avec leur touche :
 
-- **R** : rentrer au village en fantôme. Le personnage mort retourne au registre, et vous choisissez un autre
-  personnage de votre réserve, ou vous regardez la suite en spectateur.
-- **Clic gauche** : regarder un allié encore vivant, en passant de l'un à l'autre.
+- **Espace** (la touche de réapparition) : rentrer au village en fantôme, et y choisir un autre personnage de votre
+  réserve.
+- **Clic gauche** : regarder un allié encore vivant, en passant de l'un à l'autre ; un bandeau en haut de l'écran
+  dit qui vous regardez et où en est sa vie. Sans allié en vie, ce choix est grisé.
 
 Si le **dernier joueur vivant tombe**, l'expédition a péri : tout le monde rentre au village en fantôme, et les sacs
-restent en bas jusqu'à ce que l'emplacement du donjon soit remis à neuf.
+restent en bas jusqu'à ce que l'emplacement du donjon soit remis à neuf. Chacun retrouve au village la fenêtre
+« Retour d'expédition », qui le dit : rien de rapporté, un personnage perdu.
 
 ## Pourquoi
 
@@ -57,6 +60,14 @@ coûte un relevé, pas une mort. Elle oblige à rester groupés et donne une vra
 récupérer le sac d'un camarade.
 
 ## En images
+
+![À terre : le temps qui reste, ce qu'on peut attendre, la touche d'abandon](images/interface-a-terre.png)
+
+![L'écran de mort : ce qui est perdu, et les deux choix avec leur touche](images/interface-mort.png)
+
+![Mort, on regarde un allié : son nom, sa vie, les deux touches](images/interface-allie-regarde.png)
+
+![Le bilan d'une expédition qui a péri, retrouvé au village](images/interface-bilan-peri.png)
 
 ![Un allié à terre qui rampe, la barre et le compte à rebours « Mort dans N s » au-dessus de lui](images/mort-a-terre.png)
 
