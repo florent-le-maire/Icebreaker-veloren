@@ -1,0 +1,19 @@
+// Icebreaker : Aura de soin niveau 1 (jalon A) — copie de common.abilities.sceptre.healingaura sans dépendance au combo (scales_with_combo: false).
+BasicAura(
+    buildup_duration: 0.2,
+    cast_duration: 0.4,
+    recover_duration: 0.2,
+    targets: InGroup,
+    auras: [
+        (
+            kind: Regeneration,
+            strength: 0.4,
+            duration: Some(8),
+        ),
+    ],
+    aura_duration: Some(1.0),
+    range: 25.0,
+    energy_cost: 20.0,
+    scales_with_combo: false,
+    specifier: Some(HealingAura),
+)

@@ -1,0 +1,34 @@
+// Icebreaker : Napalm niveau 3 (jalon A) — copie de common.abilities.staff.napalm_strike : douze flaques au lieu de huit, qui durent 10 s au lieu de 8, et brûlent plus fort (0,35, 5 s).
+BasicRanged(
+    energy_cost: 55.0,
+    buildup_duration: 0.5,
+    recover_duration: 0.6,
+    projectile: (
+        kind: Pool(
+            radius: 10.0,
+            tick_dur: 1.0,
+            duration: 10.0,
+            dodgeable: Jump,
+        ),
+        attack: Some((
+            damage: 1.0,
+            without_combo: true,
+            buff: Some((
+                kind: Burning,
+                dur_secs: 5.0,
+                strength: DamageFraction(0.35),
+                chance: 1.0,
+            )),
+            damage_kind: Energy,
+        )),
+    ),
+    projectile_body: Object(NapalmShot),
+    projectile_speed: 25.0,
+    num_projectiles: Value(12),
+    projectile_spread: Some(Increasing(0.04)),
+    vertical_angle_offset: 0.50,
+    movement_modifier: (
+        buildup: Some(0.0),
+        recover: Some(0.0),
+    ),
+)

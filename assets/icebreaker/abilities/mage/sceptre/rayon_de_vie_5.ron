@@ -1,0 +1,16 @@
+// Icebreaker : Rayon de vie niveau 5 (jalon A) — copie de common.abilities.sceptre.lifestealbeam : le rayon dure 1,5 s (au lieu de 1), rend 25 % des dégâts en vie et deux fois plus d'endurance (energy_regen 15).
+BasicBeam(
+    buildup_duration: 0.20,
+    recover_duration: 0.20,
+    beam_duration: 1.5,
+    damage: 4,
+    tick_rate: 3,
+    range: 25.0,
+    max_angle: 1.0,
+    damage_effect: Some(Lifesteal(0.25)),
+    energy_regen: 15.0,
+    energy_drain: 0,
+    move_efficiency: 0.4,
+    ori_rate: 0.4,
+    specifier: LifestealBeam
+)

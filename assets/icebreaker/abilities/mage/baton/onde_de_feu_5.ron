@@ -1,0 +1,27 @@
+// Icebreaker : Onde de feu niveau 5 (jalon A) — copie de common.abilities.staff.fireshockwave : garde la portée et la brûlure du niveau 3 ; l'onde projette plus fort (knockback 45) et le brasier dure 8 s et brûle plus fort (0,2).
+Shockwave(
+    energy_cost: 35.0,
+    buildup_duration: 0.4,
+    swing_duration: 0.1,
+    recover_duration: 0.4,
+    damage: 20,
+    poise_damage: 0,
+    knockback: ( strength: 45, direction: Away),
+    shockwave_angle: 360.0,
+    shockwave_vertical_angle: 90.0,
+    shockwave_speed: 30.0,
+    shockwave_duration: 0.75,
+    dodgeable: Roll,
+    move_efficiency: 0.1,
+    damage_kind: Energy,
+    specifier: Fire,
+    ori_rate: 1.0,
+    damage_effect: Some(Buff((
+        kind: Burning,
+        dur_secs: 8.0,
+        strength: DamageFraction(0.2),
+        chance: 1.0,
+    ))),
+    timing: PostBuildup,
+    emit_outcome: true,
+)

@@ -926,8 +926,16 @@ mod tests {
         }
         assert!(registre.ultimes_de("guerrier").len() >= 3);
         assert!(registre.passifs_de("guerrier").is_some_and(|p| p.passifs.len() >= 3));
+        // Le mage : le bâton et le sceptre, quatre compétences chacun ; trois ultimes ; trois passifs au moins.
+        let jeux_mage: Vec<_> = registre.jeux_de("mage").collect();
+        assert_eq!(jeux_mage.len(), 2, "{:?}", jeux_mage.iter().map(|(id, _)| id).collect::<Vec<_>>());
+        for (id, jeu) in &jeux_mage {
+            assert_eq!(jeu.competences.len(), 4, "{id}");
+        }
+        assert_eq!(registre.ultimes_de("mage").len(), 3);
+        assert!(registre.passifs_de("mage").is_some_and(|p| p.passifs.len() >= 3));
         // Un inné ou un passif ne porte que des réglages permanents des stats.
-        for classe in ["guerrier"] {
+        for classe in ["guerrier", "mage"] {
             let passifs = registre.passifs_de(classe).expect("passifs");
             let effets = passifs
                 .inne
@@ -970,7 +978,7 @@ mod tests {
         }
 
         // Par classe : un seul jeu par défaut, et le lot par défaut ne cite que ce qui existe.
-        for classe in ["guerrier"] {
+        for classe in ["guerrier", "mage"] {
             assert_eq!(registre.jeux_de(classe).filter(|(_, jeu)| jeu.defaut).count(), 1, "{classe}");
             let lot = Acquis::par_defaut(classe);
             assert!(!lot.est_vide(), "{classe}");
@@ -1002,7 +1010,7 @@ mod tests {
                 "{id}"
             );
             // Une autre classe ne tire rien de ces armes.
-            assert!(jeu_en_main("mage", Some(&inventaire)).is_none(), "{id}");
+            assert!(jeu_en_main("classe inconnue", Some(&inventaire)).is_none(), "{id}");
         }
         // Mains vides, pas d'inventaire : pas de jeu d'armes.
         let vide = Inventory::with_loadout_humanoid(LoadoutBuilder::empty().build());
@@ -1315,6 +1323,6 @@ mod tests {
         assert!(jeux_vus.len() >= 2, "toujours le même jeu : {jeux_vus:?}");
         // Pas plus de compétences que le jeu n'en a ; une classe sans données n'a rien.
         assert!(Acquis::tirer("guerrier", 99, &mut rng).jeux.values().all(|j| j.competences.len() >= 4));
-        assert!(Acquis::tirer("mage", 2, &mut rng).est_vide());
+        assert!(Acquis::tirer("classe inconnue", 2, &mut rng).est_vide());
     }
 }

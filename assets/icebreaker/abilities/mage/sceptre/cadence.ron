@@ -1,0 +1,19 @@
+// Icebreaker : Cadence niveau 1 (jalon A) — copie de common.abilities.sceptre.healingaura : l'aura donne la hâte (Hastened 0,2, 8 s) au groupe au lieu de soigner.
+BasicAura(
+    buildup_duration: 0.2,
+    cast_duration: 0.4,
+    recover_duration: 0.2,
+    targets: InGroup,
+    auras: [
+        (
+            kind: Hastened,
+            strength: 0.2,
+            duration: Some(8),
+        ),
+    ],
+    aura_duration: Some(1.0),
+    range: 25.0,
+    energy_cost: 30.0,
+    scales_with_combo: false,
+    specifier: Some(HealingAura),
+)

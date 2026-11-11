@@ -1,0 +1,24 @@
+// Icebreaker : Protection niveau 5 (jalon A) — copie de common.abilities.sceptre.wardingaura : la protection est plus forte (0,35), dure 12 s et soigne davantage (0,4).
+BasicAura(
+    buildup_duration: 0.4,
+    cast_duration: 0.6,
+    recover_duration: 0.2,
+    targets: InGroup,
+    auras: [
+        (
+            kind: ProtectingWard,
+            strength: 0.35,
+            duration: Some(12),
+        ),
+        (
+            kind: Regeneration,
+            strength: 0.4,
+            duration: Some(12),
+        ),
+    ],
+    aura_duration: Some(1.0),
+    range: 25.0,
+    energy_cost: 35.0,
+    scales_with_combo: false,
+    specifier: Some(WardingAura),
+)

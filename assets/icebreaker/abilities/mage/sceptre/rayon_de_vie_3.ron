@@ -1,0 +1,16 @@
+// Icebreaker : Rayon de vie niveau 3 (jalon A) — copie de common.abilities.sceptre.lifestealbeam : le rayon rend trois fois plus de vie (Lifesteal 0,05 -> 0,15).
+BasicBeam(
+    buildup_duration: 0.20,
+    recover_duration: 0.20,
+    beam_duration: 1.0,
+    damage: 4,
+    tick_rate: 3,
+    range: 25.0,
+    max_angle: 1.0,
+    damage_effect: Some(Lifesteal(0.15)),
+    energy_regen: 7.5,
+    energy_drain: 0,
+    move_efficiency: 0.4,
+    ori_rate: 0.4,
+    specifier: LifestealBeam
+)

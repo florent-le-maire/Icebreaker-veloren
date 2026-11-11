@@ -1,0 +1,31 @@
+// Icebreaker : passifs du mage (jalon A, `docs/icebreaker/PLAN-CLASSES.md`). Format et effets possibles : voir
+// `passifs/guerrier.ron`.
+(
+    // Frapper de loin : beaucoup d'endurance pour les sorts, mais fragile.
+    inne: [
+        MaxEnergyModifier(value: 1.3, kind: Multiplicative),
+        MaxHealthModifier(value: 0.9, kind: Multiplicative),
+    ],
+    passifs: [
+        ("puissance_arcanique", (
+            nom: "Puissance arcanique",
+            description: "15 % de dégâts en plus.",
+            effets: [AttackDamage(1.15)],
+        )),
+        ("flux_maitrise", (
+            nom: "Flux maîtrisé",
+            description: "Les compétences coûtent un cinquième d'endurance en moins.",
+            effets: [EnergyEfficiency(1.2)],
+        )),
+        ("voile_de_cendre", (
+            nom: "Voile de cendre",
+            description: "10 % de dégâts reçus en moins.",
+            effets: [DamageReduction(0.1)],
+        )),
+        ("pas_de_brume", (
+            nom: "Pas de brume",
+            description: "10 % de vitesse de déplacement en plus.",
+            effets: [MovementSpeed(1.1)],
+        )),
+    ],
+)

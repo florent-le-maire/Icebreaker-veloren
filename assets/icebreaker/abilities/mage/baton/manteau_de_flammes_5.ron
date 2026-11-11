@@ -1,0 +1,19 @@
+// Icebreaker : Manteau de flammes niveau 5 (jalon A) — copie de common.abilities.staff.flame_cloak : garde la durée du niveau 3 ; le manteau s'étend à 7 m et brûle plus fort (strength 4,5, 8 s).
+BasicAura(
+    buildup_duration: 0.4,
+    cast_duration: 0.6,
+    recover_duration: 0.4,
+    targets: OutOfGroup,
+    auras: [
+        (
+            kind: Burning,
+            strength: 4.5,
+            duration: Some(8),
+        ),
+    ],
+    aura_duration: Some(12.0),
+    range: 7.0,
+    energy_cost: 25.0,
+    scales_with_combo: false,
+    specifier: Some(FieryAura),
+)

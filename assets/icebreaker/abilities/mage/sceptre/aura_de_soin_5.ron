@@ -1,0 +1,24 @@
+// Icebreaker : Aura de soin niveau 5 (jalon A) — copie de common.abilities.sceptre.healingaura : garde la protection du niveau 3, porte à 30 m, soigne plus fort (0,6) et protège davantage (0,25).
+BasicAura(
+    buildup_duration: 0.2,
+    cast_duration: 0.4,
+    recover_duration: 0.2,
+    targets: InGroup,
+    auras: [
+        (
+            kind: Regeneration,
+            strength: 0.6,
+            duration: Some(8),
+        ),
+        (
+            kind: ProtectingWard,
+            strength: 0.25,
+            duration: Some(8),
+        ),
+    ],
+    aura_duration: Some(1.0),
+    range: 30.0,
+    energy_cost: 20.0,
+    scales_with_combo: false,
+    specifier: Some(HealingAura),
+)

@@ -1,0 +1,64 @@
+// Icebreaker : jeu d'armes « sceptre » du mage (jalon A). Format : voir `grande_epee.ron`.
+// Le sceptre est l'arme de soutien du mage : soin, protection, hâte. Veloren n'a que trois capacités de sceptre
+// (sans combo) ; l'aura de soin et la hâte sont des copies sous `abilities/mage/sceptre/`.
+#![enable(implicit_some)]
+(
+    nom: "Sceptre",
+    classe: "mage",
+    icone: "sceptre",
+    main_droite: (arme: Sceptre, mains: Two),
+    armes: ("common.items.weapons.sceptre.starter_sceptre", None),
+    competences: [
+        ("aura_de_soin", (
+            nom: "Aura de soin",
+            description: "Une aura qui soigne tout le groupe alentour pendant quelques secondes.",
+            capacite: "icebreaker.abilities.mage.sceptre.aura_de_soin",
+            animation: "common.abilities.sceptre.healingaura",
+            recharge: 12.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de soin en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.mage.sceptre.aura_de_soin_3", texte: "Les alliés soignés sont aussi protégés : 15 % de dégâts reçus en moins pendant 8 secondes."),
+                (puissance: 1.3, recharge: 0.9, texte: "30 % de soin en plus, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.mage.sceptre.aura_de_soin_5", texte: "50 % de soin en plus ; l'aura porte plus loin (30 mètres), soigne plus fort et protège davantage."),
+            ],
+        )),
+        ("protection", (
+            nom: "Protection",
+            description: "Une aura qui protège tout le groupe : les coups reçus font moins mal pendant 8 secondes.",
+            capacite: "common.abilities.sceptre.wardingaura",
+            recharge: 14.0,
+            niveaux: [
+                (puissance: 1.15, texte: "Protection renforcée de 15 %."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.mage.sceptre.protection_3", texte: "La protection soigne aussi un peu les alliés pendant 8 secondes."),
+                (puissance: 1.3, recharge: 0.9, texte: "Protection renforcée de 30 %, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.mage.sceptre.protection_5", texte: "Protection renforcée de 50 % ; elle dure 12 secondes et soigne davantage."),
+            ],
+        )),
+        ("rayon_de_vie", (
+            nom: "Rayon de vie",
+            description: "Un rayon qui blesse un ennemi et rend au mage une part des dégâts en vie.",
+            capacite: "common.abilities.sceptre.lifestealbeam",
+            recharge: 8.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.mage.sceptre.rayon_de_vie_3", texte: "Le rayon rend trois fois plus de vie (15 % des dégâts)."),
+                (puissance: 1.3, recharge: 0.9, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.mage.sceptre.rayon_de_vie_5", texte: "50 % de dégâts en plus ; le rayon dure 1,5 seconde, rend 25 % des dégâts en vie et de l'endurance."),
+            ],
+        )),
+        ("cadence", (
+            nom: "Cadence",
+            description: "Une aura de hâte : le groupe se déplace et frappe plus vite pendant 8 secondes.",
+            capacite: "icebreaker.abilities.mage.sceptre.cadence",
+            animation: "common.abilities.sceptre.healingaura",
+            icone: "common.abilities.axe.adrenaline_rush",
+            recharge: 15.0,
+            niveaux: [
+                (puissance: 1.15, texte: "Hâte renforcée de 15 %."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.mage.sceptre.cadence_3", texte: "L'aura porte plus loin (40 mètres) et la hâte dure 12 secondes."),
+                (puissance: 1.3, recharge: 0.9, texte: "Hâte renforcée de 30 %, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.mage.sceptre.cadence_5", texte: "Hâte renforcée de 50 % ; le groupe regagne aussi de l'endurance."),
+            ],
+        )),
+    ],
+)

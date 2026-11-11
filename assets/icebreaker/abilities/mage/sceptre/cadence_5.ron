@@ -1,0 +1,24 @@
+// Icebreaker : Cadence niveau 5 (jalon A) — copie de common.abilities.sceptre.healingaura : garde le niveau 3, hâte renforcée (0,3) et le groupe regagne de l'endurance (EnergyRegen 0,1, 12 s).
+BasicAura(
+    buildup_duration: 0.2,
+    cast_duration: 0.4,
+    recover_duration: 0.2,
+    targets: InGroup,
+    auras: [
+        (
+            kind: Hastened,
+            strength: 0.3,
+            duration: Some(12),
+        ),
+        (
+            kind: EnergyRegen,
+            strength: 0.1,
+            duration: Some(12),
+        ),
+    ],
+    aura_duration: Some(1.0),
+    range: 40.0,
+    energy_cost: 30.0,
+    scales_with_combo: false,
+    specifier: Some(HealingAura),
+)

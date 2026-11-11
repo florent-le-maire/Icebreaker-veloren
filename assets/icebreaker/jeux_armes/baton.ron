@@ -1,0 +1,61 @@
+// Icebreaker : jeu d'armes « bâton » du mage (jalon A). Format : voir `grande_epee.ron`.
+// Le mage frappe de loin : zones de feu, gros dégâts, fragile.
+#![enable(implicit_some)]
+(
+    nom: "Bâton",
+    classe: "mage",
+    icone: "baton",
+    defaut: true,
+    main_droite: (arme: Staff, mains: Two),
+    armes: ("common.items.weapons.staff.starter_staff", None),
+    competences: [
+        ("onde_de_feu", (
+            nom: "Onde de feu",
+            description: "Une onde de flammes qui part du mage dans toutes les directions et repousse les ennemis.",
+            capacite: "common.abilities.staff.fireshockwave",
+            recharge: 8.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.mage.baton.onde_de_feu_3", texte: "L'onde porte une fois et demie plus loin et enflamme les ennemis touchés."),
+                (puissance: 1.3, recharge: 0.9, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.mage.baton.onde_de_feu_5", texte: "50 % de dégâts en plus ; l'onde projette plus fort et le brasier brûle plus longtemps."),
+            ],
+        )),
+        ("napalm", (
+            nom: "Napalm",
+            description: "Une pluie de flaques de feu qui brûlent le sol longtemps.",
+            capacite: "common.abilities.staff.napalm_strike",
+            recharge: 14.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.mage.baton.napalm_3", texte: "Douze flaques au lieu de huit, qui durent 10 secondes et brûlent plus fort."),
+                (puissance: 1.3, recharge: 0.9, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.mage.baton.napalm_5", texte: "50 % de dégâts en plus ; seize flaques qui durent 12 secondes et brûlent bien plus fort."),
+            ],
+        )),
+        ("anneau_de_feu", (
+            nom: "Anneau de feu",
+            description: "Un anneau de feu lancé devant soi qui explose en gros dégâts de zone.",
+            capacite: "common.abilities.staff.fire_breath",
+            recharge: 9.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de dégâts en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.mage.baton.anneau_de_feu_3", texte: "L'explosion est plus large et enflamme à coup sûr."),
+                (puissance: 1.3, recharge: 0.9, texte: "30 % de dégâts en plus, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.mage.baton.anneau_de_feu_5", texte: "50 % de dégâts en plus ; l'explosion projette et fait vaciller bien plus, et le brasier brûle plus fort."),
+            ],
+        )),
+        ("manteau_de_flammes", (
+            nom: "Manteau de flammes",
+            description: "Un manteau de feu autour du mage : les ennemis qui s'approchent brûlent.",
+            capacite: "common.abilities.staff.flame_cloak",
+            recharge: 12.0,
+            niveaux: [
+                (puissance: 1.15, texte: "15 % de brûlure en plus."),
+                (puissance: 1.15, capacite: "icebreaker.abilities.mage.baton.manteau_de_flammes_3", texte: "Le manteau s'étend à 5 mètres et dure 12 secondes."),
+                (puissance: 1.3, recharge: 0.9, texte: "30 % de brûlure en plus, recharge plus courte."),
+                (puissance: 1.5, recharge: 0.9, capacite: "icebreaker.abilities.mage.baton.manteau_de_flammes_5", texte: "50 % de brûlure en plus ; le manteau s'étend à 7 mètres et brûle plus fort."),
+            ],
+        )),
+    ],
+)

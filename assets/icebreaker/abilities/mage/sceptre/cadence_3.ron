@@ -1,0 +1,19 @@
+// Icebreaker : Cadence niveau 3 (jalon A) — copie de common.abilities.sceptre.healingaura : l'aura porte à 40 m et la hâte dure 12 s.
+BasicAura(
+    buildup_duration: 0.2,
+    cast_duration: 0.4,
+    recover_duration: 0.2,
+    targets: InGroup,
+    auras: [
+        (
+            kind: Hastened,
+            strength: 0.2,
+            duration: Some(12),
+        ),
+    ],
+    aura_duration: Some(1.0),
+    range: 40.0,
+    energy_cost: 30.0,
+    scales_with_combo: false,
+    specifier: Some(HealingAura),
+)

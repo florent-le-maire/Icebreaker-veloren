@@ -1,0 +1,29 @@
+// Icebreaker : ultimes du mage (jalon A, `docs/icebreaker/PLAN-CLASSES.md`). Format : voir `ultimes/guerrier.ron`.
+// Le mage frappe de loin (Pyroclasme, Fournaise) et soutient le groupe (Bénédiction). Les deux copies sont sous
+// `abilities/mage/ultimes/`.
+#![enable(implicit_some)]
+(
+    ultimes: [
+        ("pyroclasme", (
+            nom: "Pyroclasme",
+            description: "Huit éclairs de feu tombent du ciel et explosent là où le mage vise.",
+            capacite: "common.abilities.staff.pyroclasm",
+            recharge: 90.0,
+        )),
+        ("fournaise", (
+            nom: "Fournaise",
+            description: "Un jet de flammes continu pendant quatre secondes, qui enflamme tout sur son passage.",
+            capacite: "icebreaker.abilities.mage.ultimes.fournaise",
+            animation: "common.abilities.staff.flamethrower",
+            recharge: 75.0,
+        )),
+        ("benediction", (
+            nom: "Bénédiction",
+            description: "Protège et soigne tout le groupe pendant quinze secondes, dans un grand rayon.",
+            capacite: "icebreaker.abilities.mage.ultimes.benediction",
+            animation: "common.abilities.staff.flame_cloak",
+            icone: "common.abilities.sceptre.wardingaura",
+            recharge: 120.0,
+        )),
+    ],
+)

@@ -1,0 +1,24 @@
+// Icebreaker : Bénédiction (ultime du mage, jalon A) — copie de common.abilities.sceptre.wardingaura : une aura de 30 m qui protège (ProtectingWard 0,5) et soigne (Regeneration 1,0) tout le groupe pendant 15 s.
+BasicAura(
+    buildup_duration: 0.4,
+    cast_duration: 0.6,
+    recover_duration: 0.2,
+    targets: InGroup,
+    auras: [
+        (
+            kind: ProtectingWard,
+            strength: 0.5,
+            duration: Some(15),
+        ),
+        (
+            kind: Regeneration,
+            strength: 1.0,
+            duration: Some(15),
+        ),
+    ],
+    aura_duration: Some(1.0),
+    range: 30.0,
+    energy_cost: 40.0,
+    scales_with_combo: false,
+    specifier: Some(WardingAura),
+)
