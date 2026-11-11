@@ -166,6 +166,8 @@ pub(crate) fn handle_rentrer(
                     })
                     .collect(),
                 peri: false,
+                // Icebreaker : la maîtrise d'arme gagnée en bas (jalon A, A.9).
+                maitrise: crate::icebreaker_maitrise::progres_de(ecs, client),
             }
         };
         server.notify_client(

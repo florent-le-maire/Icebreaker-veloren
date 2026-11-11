@@ -632,6 +632,58 @@ impl IcebreakerCompetences {
             .map(|fin| fin - maintenant)
             .filter(|reste| *reste > 0.0)
     }
+
+    /// Le jeu d'armes en mains gagne de la maîtrise pour `experience` points d'expérience reçus
+    /// (un ennemi tué en expédition) : (id du jeu, maîtrise gagnée, points d'arme gagnés). `None`
+    /// si ce qu'on tient n'est pas un jeu d'armes appris : on ne progresse que dans ce qu'on sait
+    /// manier.
+    pub fn gagner_maitrise(
+        &mut self,
+        inventaire: Option<&Inventory>,
+        experience: f32,
+        salle: &SalleArmes,
+    ) -> Option<(&'static str, u32, u32)> {
+        let (jeu, _) = jeu_en_main(&self.classe, inventaire)?;
+        let acquis = self.acquis.jeux.get_mut(jeu)?;
+        let gain = (experience * salle.maitrise_par_experience).ceil().max(0.0) as u32;
+        if gain == 0 {
+            return None;
+        }
+        let avant = salle.points_gagnes(acquis.maitrise);
+        acquis.maitrise = acquis.maitrise.saturating_add(gain);
+        Some((jeu, gain, salle.points_gagnes(acquis.maitrise) - avant))
+    }
+}
+
+/// La maîtrise gagnée dans un jeu d'armes depuis un état antérieur (bilan de retour).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Progres {
+    /// Id du jeu d'armes.
+    pub jeu: String,
+    /// Maîtrise gagnée.
+    pub gain: u32,
+    /// Points d'arme à dépenser dans ce jeu d'armes.
+    pub points: u32,
+}
+
+impl Acquis {
+    /// Ce que chaque jeu d'armes a gagné en maîtrise depuis `avant`, par id ; seuls ceux qui ont
+    /// progressé.
+    pub fn progres_depuis(&self, avant: &Acquis, salle: &SalleArmes) -> Vec<Progres> {
+        self.jeux
+            .iter()
+            .filter_map(|(jeu, acquis)| {
+                let gain = acquis
+                    .maitrise
+                    .saturating_sub(avant.jeux.get(jeu).map_or(0, |a| a.maitrise));
+                (gain > 0).then(|| Progres {
+                    jeu: jeu.clone(),
+                    gain,
+                    points: acquis.points_disponibles(salle),
+                })
+            })
+            .collect()
+    }
 }
 
 /// Id de la capacité de Veloren dont l'interface reprend l'icône pour la compétence `numero`.
@@ -1033,5 +1085,48 @@ mod tests {
         assert_eq!(guerrier.reste_recharge(4, 16.0), None);
         assert_eq!(guerrier.reste_recharge(4, 20.0), None);
         assert_eq!(guerrier.reste_recharge(5, 10.0), None);
+    }
+
+    #[test]
+    fn la_maitrise_va_au_jeu_d_armes_en_mains() {
+        let registre = registre();
+        let armes = |jeu: &str| inventaire(&registre.jeu(jeu).unwrap().armes);
+        let salle = SalleArmes {
+            premier_point: 100,
+            pas_point: 50,
+            maitrise_par_experience: 2.0,
+            ..Default::default()
+        };
+        let depart = Acquis::par_defaut("guerrier");
+        let mut guerrier = IcebreakerCompetences::nouveau("guerrier", depart.clone()).unwrap();
+        let grande_epee = armes("grande_epee");
+
+        // 30 d'expérience, deux de maîtrise par point : 60, pas encore de point d'arme.
+        assert_eq!(
+            guerrier.gagner_maitrise(Some(&grande_epee), 30.0, &salle),
+            Some(("grande_epee", 60, 0))
+        );
+        // 20,2 de plus : arrondi au-dessus (41), le premier point tombe à 100.
+        assert_eq!(
+            guerrier.gagner_maitrise(Some(&grande_epee), 20.2, &salle),
+            Some(("grande_epee", 41, 1))
+        );
+        assert_eq!(guerrier.acquis.jeux["grande_epee"].maitrise, 101);
+        // Rien pour une expérience nulle, une arme non apprise ou des mains vides.
+        assert_eq!(guerrier.gagner_maitrise(Some(&grande_epee), 0.0, &salle), None);
+        assert_eq!(guerrier.gagner_maitrise(Some(&armes("marteau")), 30.0, &salle), None);
+        assert_eq!(guerrier.gagner_maitrise(None, 30.0, &salle), None);
+        assert!(!guerrier.acquis.jeux.contains_key("marteau"));
+
+        // Le bilan : ce qui a été gagné depuis le départ, et les points à dépenser.
+        assert_eq!(guerrier.acquis.progres_depuis(&depart, &salle), vec![Progres {
+            jeu: "grande_epee".into(),
+            gain: 101,
+            points: 1,
+        }]);
+        assert!(depart.progres_depuis(&depart, &salle).is_empty());
+        // Un point déjà dépensé n'est plus à dépenser.
+        guerrier.acquis.jeux.get_mut("grande_epee").unwrap().points_depenses = 1;
+        assert_eq!(guerrier.acquis.progres_depuis(&depart, &salle)[0].points, 0);
     }
 }

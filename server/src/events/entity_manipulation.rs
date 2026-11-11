@@ -572,6 +572,9 @@ pub struct DestroyEventData<'a> {
     icebreaker_mission: Read<'a, crate::icebreaker_mission::IcebreakerMission>,
     // Icebreaker : le sac du mort se pose dans un emplacement d'expédition (T.3).
     icebreaker_slots: Read<'a, crate::icebreaker_slots::IcebreakerSlots>,
+    // Icebreaker : la maîtrise d'arme se gagne avec l'expérience des ennemis tués (jalon A).
+    icebreaker_competences:
+        WriteStorage<'a, common::icebreaker_competences::IcebreakerCompetences>,
     event_buses: DestroyEvents<'a>,
     buffs: ReadStorage<'a, comp::Buffs>,
     orientations: ReadStorage<'a, comp::Ori>,
@@ -591,6 +594,8 @@ impl ServerEvent for DestroyEvent {
         let mut emitters = data.event_buses.get_emitters();
         let mut rng = rand::rng();
         data.entities_died_last_tick.0.clear();
+        // Icebreaker : réglages de la maîtrise d'arme (jalon A).
+        let icebreaker_salle = common::icebreaker_competences::SalleArmes::actuel();
 
         for ev in events {
             // TODO: Investigate duplicate `Destroy` events (but don't remove this).
@@ -1229,6 +1234,30 @@ impl ServerEvent for DestroyEvent {
                             attacker_uid,
                             &mut outcomes,
                         );
+                    }
+                    // Icebreaker : en expédition, cette expérience fait aussi monter la maîtrise
+                    // du jeu d'armes que le personnage tient (jalon A) ; un point d'arme gagné
+                    // s'annonce, il se dépensera à la salle d'armes.
+                    if data
+                        .positions
+                        .get(*attacker)
+                        .is_some_and(|pos| data.icebreaker_slots.at(pos.0.xy()).is_some())
+                        && let Some(mut competences) =
+                            data.icebreaker_competences.get_mut(*attacker)
+                        && let Some((jeu, _, points)) = competences.gagner_maitrise(
+                            data.inventories.get(*attacker),
+                            *exp_reward,
+                            &icebreaker_salle,
+                        )
+                        && points > 0
+                        && let Some(client) = data.clients.get(*attacker)
+                    {
+                        client.send_fallible(ServerGeneral::server_msg(
+                            comp::ChatType::CommandInfo,
+                            common::comp::Content::Plain(
+                                crate::icebreaker_maitrise::annonce_point(jeu, points),
+                            ),
+                        ));
                     }
                 });
             };

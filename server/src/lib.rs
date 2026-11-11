@@ -24,6 +24,8 @@ pub mod icebreaker_charrette;
 pub mod icebreaker_classes;
 pub mod icebreaker_entrainement;
 pub mod icebreaker_expedition;
+// Icebreaker : maîtrise d'arme (jalon A).
+pub mod icebreaker_maitrise;
 pub mod icebreaker_mission;
 pub mod icebreaker_mort;
 pub mod icebreaker_panneaux;

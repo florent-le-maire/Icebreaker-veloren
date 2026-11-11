@@ -12,7 +12,7 @@ use crate::{
 };
 use common::{
     comp::ItemKey,
-    icebreaker_panneau::{Chiffre, Panneau, Sorte, Ton},
+    icebreaker_panneau::{Chiffre, Ligne, Panneau, Sorte, Ton},
 };
 
 /// Ce que le joueur ramène de son expédition.
@@ -28,6 +28,19 @@ pub struct Retour {
     pub objets: Vec<(ItemKey, u32)>,
     /// Le personnage est mort en expédition : il est perdu, son sac reste sur place.
     pub peri: bool,
+    /// Icebreaker : la maîtrise d'arme gagnée pendant l'expédition, par jeu d'armes (jalon A).
+    pub maitrise: Vec<Maitrise>,
+}
+
+/// La maîtrise qu'un jeu d'armes a gagnée pendant l'expédition (jalon A, A.9).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Maitrise {
+    /// Le nom du jeu d'armes (« Grande épée »).
+    pub jeu: String,
+    /// La maîtrise gagnée.
+    pub gain: u32,
+    /// Les points d'arme à dépenser dans ce jeu d'armes.
+    pub points: u32,
 }
 
 /// Ce que la mission du lieu a compté, d'après les traces du monde (`None` : le lieu n'a pas de
@@ -83,12 +96,29 @@ pub fn panneau(retour: &Retour) -> Panneau {
             .push(Chiffre::nouveau("1", "personnage perdu", Ton::Mauvais));
     }
     panneau.objets = retour.objets.clone();
+    // Icebreaker : la maîtrise gagnée par jeu d'armes, et les points à dépenser (jalon A, A.9).
+    // Un personnage perdu n'en a plus l'usage.
+    let maitrise: &[Maitrise] = if retour.peri { &[] } else { &retour.maitrise };
+    for m in maitrise {
+        let mut ligne =
+            Ligne::nouvelle(m.jeu.clone()).sous_titre(format!("+{} de maîtrise", m.gain));
+        if m.points > 0 {
+            let mot = if m.points > 1 { "points" } else { "point" };
+            ligne = ligne.pastille(format!("{} {mot} à dépenser", m.points), Ton::Or);
+        }
+        panneau.lignes.push(ligne);
+    }
     if retour.peri {
         panneau = panneau.message(
             "Mort en expédition : personnage perdu, sac laissé sur place.",
             Sorte::Refus,
         );
-    } else if retour.or == 0 && retour.objets.is_empty() {
+    } else if maitrise.iter().any(|m| m.points > 0) {
+        panneau = panneau.message(
+            "Les points d'arme se dépensent à la salle d'armes.",
+            Sorte::Reussite,
+        );
+    } else if retour.or == 0 && retour.objets.is_empty() && maitrise.is_empty() {
         panneau = panneau.message("Les mains vides.", Sorte::Info);
     }
     panneau
@@ -132,6 +162,7 @@ mod tests {
             or: 96,
             objets: vec![(pomme.clone(), 2)],
             peri: false,
+            maitrise: Vec::new(),
         });
         assert_eq!(panneau.titre, texte("Retour d'expédition"));
         assert_eq!(
@@ -219,5 +250,36 @@ mod tests {
         // Un personnage perdu sans lieu connu : la mission seule.
         let perdu = super::panneau(&Retour { peri: true, ..Default::default() });
         assert_eq!(perdu.description, texte("L'expédition a péri."));
+    }
+
+    // Jalon A, A.9 : la maîtrise d'arme gagnée en expédition.
+    #[test]
+    fn la_maitrise_gagnee_est_dite_avec_les_points_a_depenser() {
+        let grande_epee = Maitrise { jeu: "Grande épée".into(), gain: 85, points: 1 };
+        let marteau = Maitrise { jeu: "Marteau à deux mains".into(), gain: 12, points: 0 };
+        let panneau = panneau(&Retour {
+            lieu: "Donjon".to_string(),
+            maitrise: vec![grande_epee.clone(), marteau.clone()],
+            ..Default::default()
+        });
+        assert_eq!(panneau.lignes.len(), 2);
+        assert_eq!(panneau.lignes[0].titre, texte("Grande épée"));
+        assert_eq!(panneau.lignes[0].sous_titre, texte("+85 de maîtrise"));
+        assert_eq!(panneau.lignes[0].pastille, Some((texte("1 point à dépenser"), Ton::Or)));
+        assert_eq!(panneau.lignes[1].pastille, None);
+        assert_eq!(
+            panneau.message,
+            Some((texte("Les points d'arme se dépensent à la salle d'armes."), Sorte::Reussite))
+        );
+        // De la maîtrise sans point ni butin : ce ne sont pas « les mains vides ».
+        let sans_point = super::panneau(&Retour { maitrise: vec![marteau], ..Default::default() });
+        assert_eq!(sans_point.message, None);
+        // Un personnage perdu ne garde rien.
+        let perdu = super::panneau(&Retour {
+            peri: true,
+            maitrise: vec![grande_epee],
+            ..Default::default()
+        });
+        assert!(perdu.lignes.is_empty());
     }
 }
