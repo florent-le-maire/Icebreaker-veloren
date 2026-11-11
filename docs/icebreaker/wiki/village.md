@@ -59,7 +59,7 @@ au départ), et un point pour le joueur. Un clic sur une case ouvre son panneau 
 actions possibles, et celles qui ne le sont pas, grisées, avec leur raison. C'est de là qu'on commande et qu'on
 part ; le personnage ne bouge pas tant que la fenêtre est ouverte.
 
-![En fantôme : la charrette et ses recrues, le bandeau du fantôme, un message à droite](images/interface-charrette-fantome.png)
+![En fantôme : la charrette et ses recrues, le bandeau du fantôme](images/interface-charrette-fantome.png)
 
 ![Le registre : le personnage qu'on joue, et le refus du serveur écrit dans le panneau](images/interface-charrette-registre.png)
 
