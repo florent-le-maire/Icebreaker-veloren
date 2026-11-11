@@ -12,5 +12,6 @@ dans « Pris en compte » en disant où elle est partie (`→ PLAN.md, X.14`). U
   Mononoké
 - [ ] **2026-11-11 (Flo)** : Rajouter un bouton qui fais la commande /rentrer mais avec une validation
 - [ ] **2026-11-11 (Flo)** : Ajouter la destructibilité
+- [ ] **2026-11-11 (Flo)** : Ajouter des cooldown sur les compétences
 
 ## Pris en compte
