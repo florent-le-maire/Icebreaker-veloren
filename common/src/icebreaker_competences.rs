@@ -567,6 +567,30 @@ impl Acquis {
             .map(|(id, _)| id.as_str());
         Self::lot(jeu, &competences, ultime, passif)
     }
+
+    // Icebreaker A.8 : le tirage du lot d'une recrue.
+    /// Le lot tiré au hasard pour une recrue de `classe` : un jeu d'armes de sa classe, `nombre`
+    /// compétences différentes de ce jeu (les deux premières sont placées), un ultime et un passif.
+    /// Vide si la classe n'est pas décrite par nos données.
+    pub fn tirer(classe: &str, nombre: usize, rng: &mut impl rand::Rng) -> Self {
+        use rand::prelude::IndexedRandom;
+        let registre = registre();
+        let jeux: Vec<_> = registre.jeux_de(classe).collect();
+        let Some((jeu, def)) = jeux.choose(rng) else {
+            return Self::default();
+        };
+        let competences: Vec<&str> = def
+            .competences
+            .sample(rng, nombre)
+            .map(|(id, _)| id.as_str())
+            .collect();
+        let ultime = registre.ultimes_de(classe).choose(rng).map(|(id, _)| id.as_str());
+        let passif = registre
+            .passifs_de(classe)
+            .and_then(|passifs| passifs.passifs.choose(rng))
+            .map(|(id, _)| id.as_str());
+        Self::lot(jeu, &competences, ultime, passif)
+    }
 }
 
 /// Composant d'un personnage du registre en jeu : sa classe, ce qu'il a acquis (copie de sa fiche,
@@ -1237,5 +1261,49 @@ mod tests {
         // Un point déjà dépensé n'est plus à dépenser.
         guerrier.acquis.jeux.get_mut("grande_epee").unwrap().points_depenses = 1;
         assert_eq!(guerrier.acquis.progres_depuis(&depart, &salle)[0].points, 0);
+    }
+
+    // Icebreaker A.8 : le tirage du lot d'une recrue.
+    #[test]
+    fn un_lot_tire_va_ensemble_et_varie() {
+        let registre = registre();
+        let mut rng = rand::rng();
+        let mut jeux_vus = std::collections::BTreeSet::new();
+        for _ in 0..200 {
+            let lot = Acquis::tirer("guerrier", 2, &mut rng);
+            assert_eq!(lot.jeux.len(), 1);
+            let (jeu, acquis) = lot.jeux.iter().next().unwrap();
+            assert!(registre.jeu(jeu).is_some_and(|def| def.classe == "guerrier"), "{jeu}");
+            jeux_vus.insert(jeu.clone());
+            // Deux compétences différentes, de ce jeu, au niveau de départ, placées sur 1 et 2.
+            assert_eq!(acquis.competences.len(), 2, "{acquis:?}");
+            for (id, niveau) in &acquis.competences {
+                assert_eq!(*niveau, NIVEAU_DEPART);
+                assert_eq!(
+                    registre.competence(id).map(|e| &e.sorte),
+                    Some(&Sorte::Arme { jeu: jeu.clone() }),
+                    "{id}"
+                );
+            }
+            assert!(acquis.placees.iter().all(|p| p.is_some()));
+            // L'ultime et le passif sont ceux de la classe.
+            let ultime = lot.ultime.as_deref().expect("un ultime");
+            assert_eq!(lot.ultimes, vec![ultime.to_string()]);
+            assert_eq!(
+                registre.competence(ultime).map(|e| &e.sorte),
+                Some(&Sorte::Ultime { classe: "guerrier".into() })
+            );
+            let passif = lot.passif.as_deref().expect("un passif");
+            assert!(
+                registre.passifs_de("guerrier").unwrap().passifs.iter().any(|(id, _)| id == passif),
+                "{passif}"
+            );
+            // Le lot donne un composant jouable.
+            assert!(IcebreakerCompetences::nouveau("guerrier", lot.clone()).is_some());
+        }
+        assert!(jeux_vus.len() >= 2, "toujours le même jeu : {jeux_vus:?}");
+        // Pas plus de compétences que le jeu n'en a ; une classe sans données n'a rien.
+        assert!(Acquis::tirer("guerrier", 99, &mut rng).jeux.values().all(|j| j.competences.len() >= 4));
+        assert!(Acquis::tirer("mage", 2, &mut rng).est_vide());
     }
 }

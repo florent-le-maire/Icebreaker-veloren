@@ -52,6 +52,9 @@ pub struct RegistreConfig {
     pub places_registre: usize,
     /// Characters an account may reserve.
     pub reservations_par_compte: usize,
+    /// Icebreaker A.8 : compétences d'arme tirées avec chaque recrue d'une classe décrite.
+    #[serde(default = "competences_tirees_par_defaut")]
+    pub competences_tirees: usize,
     /// Names of the recruits.
     pub noms: Vec<String>,
     /// Where the recruits of the day stand, in front of the cart (X.8): offsets
@@ -59,6 +62,8 @@ pub struct RegistreConfig {
     #[serde(default)]
     pub postes_recrues: Vec<(f32, f32)>,
 }
+
+fn competences_tirees_par_defaut() -> usize { 2 }
 
 pub fn config() -> RegistreConfig {
     Ron::<RegistreConfig>::load_expect("icebreaker.registre")
@@ -76,6 +81,18 @@ pub struct Recrue {
     /// Icebreaker : le lot tiré avec la recrue (jalon A) ; vide : le lot par défaut de sa classe.
     #[serde(default)]
     pub acquis: Acquis,
+}
+
+impl Recrue {
+    /// Icebreaker A.8 : le lot de la recrue ; pour une recrue d'avant le jalon A (lot vide), le lot par
+    /// défaut de sa classe.
+    pub fn lot(&self) -> Acquis {
+        if self.acquis.est_vide() {
+            Acquis::par_defaut(&self.classe)
+        } else {
+            self.acquis.clone()
+        }
+    }
 }
 
 /// A character of the registry.
@@ -195,11 +212,9 @@ impl IcebreakerRegistre {
                 .find(|nom| !pris(nom))
                 .unwrap_or_default()
         });
-        Recrue {
-            nom,
-            classe,
-            acquis: Acquis::default(),
-        }
+        // Icebreaker A.8 : le lot tiré avec la recrue (vide si sa classe n'est pas décrite).
+        let acquis = Acquis::tirer(&classe, config.competences_tirees, rng);
+        Recrue { nom, classe, acquis }
     }
 
     /// A new cart on each new day of map time; whether it was renewed.
@@ -447,6 +462,48 @@ pub fn joueurs(presences: &ReadStorage<Presence>, players: &ReadStorage<Player>)
         .collect()
 }
 
+/// Icebreaker A.8 : « guerrier · grande épée » : le nom de la classe, puis le ou les jeux d'armes de
+/// `acquis` en minuscules. Les classes sans données n'ont que leur nom.
+fn sous_titre_classe(classe: &str, acquis: &Acquis) -> String {
+    let jeux: Vec<String> = acquis
+        .jeux
+        .keys()
+        .filter_map(|id| common::icebreaker_competences::registre().jeu(id))
+        .map(|jeu| jeu.nom.to_lowercase())
+        .collect();
+    if jeux.is_empty() {
+        nom_de_classe(classe)
+    } else {
+        format!("{} · {}", nom_de_classe(classe), jeux.join(", "))
+    }
+}
+
+/// Icebreaker A.8 : la seconde ligne d'une recrue d'une classe décrite : ses compétences d'arme, puis
+/// son ultime et son passif. `None` pour une classe sans données.
+fn ligne_du_lot(recrue: &Recrue) -> Option<common::icebreaker_panneau::Ligne> {
+    let registre = common::icebreaker_competences::registre();
+    let lot = recrue.lot();
+    let (_, jeu) = lot.jeux.iter().next()?;
+    let nom_competence = |id: &String| registre.competence(id).map(|e| e.competence.nom.clone());
+    let competences: Vec<String> = jeu.placees.iter().flatten().filter_map(nom_competence).collect();
+    let mut suite = Vec::new();
+    if let Some(nom) = lot.ultime.as_ref().and_then(nom_competence) {
+        suite.push(format!("ultime {nom}"));
+    }
+    if let Some(passif) = &lot.passif
+        && let Some((_, p)) = registre
+            .passifs_de(&recrue.classe)
+            .and_then(|ps| ps.passifs.iter().find(|(id, _)| id == passif))
+    {
+        suite.push(format!("passif {}", p.nom));
+    }
+    Some(
+        common::icebreaker_panneau::Ligne::nouvelle(competences.join(", "))
+            .sous_titre(suite.join(" · "))
+            .estompee(),
+    )
+}
+
 /// Icebreaker : le panneau typé de la charrette (jalon N) pour le compte `uuid`
 /// qui joue `current` (aucun : un fantôme). Les recrues du jour et le registre
 /// sont deux onglets ; chaque personnage est une ligne avec l'icône de sa classe,
@@ -471,15 +528,17 @@ pub fn panneau_pour(
             .charrette()
             .iter()
             .enumerate()
-            .map(|(i, recrue)| {
-                Ligne::nouvelle(recrue.nom.clone())
+            .flat_map(|(i, recrue)| {
+                // La commande garde le rang de la recrue, pas celui de la ligne (A.8).
+                let ligne = Ligne::nouvelle(recrue.nom.clone())
                     .icone(icone(&recrue.classe))
-                    .sous_titre(nom_de_classe(&recrue.classe))
+                    .sous_titre(sous_titre_classe(&recrue.classe, &recrue.lot()))
                     .action(
                         Action::nouvelle("Engager", &["registre", "engager", &i.to_string()])
                             .principale()
                             .permise(current.is_none()),
-                    )
+                    );
+                std::iter::once(ligne).chain(ligne_du_lot(recrue))
             })
             .collect()
     };
@@ -494,7 +553,7 @@ pub fn panneau_pour(
         .iter()
         .map(|fiche| {
             let id = fiche.id.to_string();
-            let classe = nom_de_classe(&fiche.classe);
+            let classe = sous_titre_classe(&fiche.classe, &fiche.acquis_ou_defaut());
             let ligne = Ligne::nouvelle(fiche.nom.clone()).icone(icone(&fiche.classe));
             let jouer = Action::nouvelle("Jouer", &["registre", "jouer", &id]).permise(
                 current.is_none() && registre.peut_jouer_fiche(fiche, uuid, joueurs).is_ok(),
@@ -702,6 +761,7 @@ mod tests {
             minimum_charrette: 2,
             places_registre: 4,
             reservations_par_compte: 2,
+            competences_tirees: 2,
             noms: vec!["Anna".into(), "Bob".into(), "Cleo".into()],
             postes_recrues: Vec::new(),
         }
@@ -897,6 +957,95 @@ mod tests {
             "registre".to_string(),
             "rendre".to_string()
         ]);
+    }
+
+    // Jalon A.8 : le lot tiré, montré sur deux lignes, avec les armes qui vont avec.
+    #[test]
+    fn icebreaker_registre_a_drawn_recruit_shows_its_set_on_two_lines() {
+        use common::icebreaker_panneau::texte;
+        use common::icebreaker_competences::{jeu_en_main, registre as donnees};
+        let mut registre = IcebreakerRegistre::default();
+        let mut rng = rand::rng();
+        // Un guerrier au lot connu (marteau), puis un archer, puis un autre guerrier.
+        registre.etat.charrette = vec![
+            Recrue {
+                nom: "Leif".into(),
+                classe: "guerrier".into(),
+                acquis: Acquis::lot("marteau", &["moulinet"], Some("fureur"), Some("robuste")),
+            },
+            Recrue { nom: "Anna".into(), classe: "archer".into(), acquis: Acquis::default() },
+            Recrue {
+                nom: "Bob".into(),
+                classe: "guerrier".into(),
+                acquis: Acquis::tirer("guerrier", 2, &mut rng),
+            },
+        ];
+        let panneau = panneau_pour(&registre, "a", None, &Joueurs::new());
+        let lignes = &panneau.onglets[0].lignes;
+        // Deux lignes par guerrier, une pour l'archer.
+        assert_eq!(lignes.len(), 5, "{lignes:?}");
+        assert_eq!(lignes[0].titre, texte("Leif"));
+        assert_eq!(lignes[0].sous_titre, texte("guerrier · marteau à deux mains"));
+        assert_eq!(lignes[1].sous_titre, texte("ultime Fureur · passif Robuste"));
+        assert!(lignes[1].estompee && lignes[1].action.is_none());
+        assert_eq!(lignes[2].titre, texte("Anna"));
+        assert_eq!(lignes[2].sous_titre, texte("archer"));
+        assert_eq!(lignes[3].titre, texte("Bob"));
+        assert!(lignes[4].estompee && lignes[4].action.is_none());
+        // Les numéros des commandes sont ceux des recrues, pas des lignes.
+        let rang = |l: &common::icebreaker_panneau::Ligne| {
+            l.action.as_ref().map(|a| a.commande.last().cloned().unwrap())
+        };
+        assert_eq!(
+            [rang(&lignes[0]), rang(&lignes[2]), rang(&lignes[3])],
+            [Some("0".to_string()), Some("1".to_string()), Some("2".to_string())]
+        );
+        // Un personnage d'une classe décrite montre son jeu d'armes dans le registre.
+        registre.etat.personnages.push(Fiche {
+            id: 3,
+            nom: "Mael".into(),
+            classe: "guerrier".into(),
+            reserve_par: None,
+            acquis: Acquis::lot("hache", &[], None, None),
+        });
+        let panneau = panneau_pour(&registre, "a", None, &Joueurs::new());
+        assert_eq!(panneau.onglets[1].lignes[0].sous_titre, texte("guerrier · hache à deux mains"));
+
+        // La recrue engagée a en mains les armes de son jeu ; le PNJ aussi.
+        let class = icebreaker_classes::class("guerrier").unwrap();
+        for _ in 0..20 {
+            let lot = Acquis::tirer("guerrier", 2, &mut rng);
+            let (jeu, _) = lot.jeux.iter().next().unwrap();
+            let inventaire = icebreaker_classes::inventaire_du_lot(&class, &lot);
+            assert_eq!(jeu_en_main("guerrier", Some(&inventaire)).map(|(id, _)| id), Some(jeu.as_str()));
+            assert!(donnees().jeu(jeu).is_some());
+        }
+        // Une recrue tirée par la charrette porte un lot si sa classe est décrite.
+        for _ in 0..20 {
+            let recrue = registre.tirer(&config(), &mut rng);
+            assert_eq!(recrue.acquis.est_vide(), !donnees().classe_geree(&recrue.classe), "{recrue:?}");
+        }
+    }
+
+    #[test]
+    fn icebreaker_registre_an_old_settings_file_is_still_read() {
+        // Sans `competences_tirees`, le réglage par défaut s'applique.
+        let ancien = r#"(recrues_par_jour: 3, minimum_charrette: 2, places_registre: 10,
+            reservations_par_compte: 5, noms: ["Anna"])"#;
+        let config: RegistreConfig = ron::from_str(ancien).expect("an old registre.ron");
+        assert_eq!(config.competences_tirees, 2);
+        // Le fichier du dépôt se lit.
+        assert!(super::config().competences_tirees >= 1);
+    }
+
+    #[test]
+    fn icebreaker_registre_a_recruit_without_a_set_gets_its_default() {
+        // Une recrue d'avant le jalon A (lot vide) montre le jeu par défaut de sa classe.
+        let recrue = Recrue { nom: "X".into(), classe: "guerrier".into(), acquis: Acquis::default() };
+        assert_eq!(recrue.lot(), Acquis::par_defaut("guerrier"));
+        assert!(ligne_du_lot(&recrue).is_some());
+        let archer = Recrue { classe: "archer".into(), ..recrue };
+        assert!(ligne_du_lot(&archer).is_none());
     }
 
     #[test]

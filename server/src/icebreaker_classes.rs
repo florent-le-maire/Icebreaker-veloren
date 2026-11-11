@@ -55,9 +55,10 @@ pub fn class(id: &str) -> Option<Class> { classes().into_iter().find(|class| cla
 
 /// The items drawn as icons for a recruit of `class` (X.8): its weapon in
 /// hand and its chest armour.
-pub fn icones(class: &Class) -> Vec<ItemKey> {
+pub fn icones(class: &Class, acquis: &Acquis) -> Vec<ItemKey> {
     use common::comp::inventory::slot::{ArmorSlot, EquipSlot};
-    let inventory = starting_inventory(class);
+    // Icebreaker A.8 : l'arme est celle du jeu d'armes du lot de la recrue.
+    let inventory = inventaire_du_lot(class, acquis);
     [EquipSlot::ActiveMainhand, EquipSlot::Armor(ArmorSlot::Chest)]
         .into_iter()
         .filter_map(|slot| inventory.equipped(slot))
@@ -254,9 +255,18 @@ mod tests {
                 "{id}"
             );
             // X.8 : deux icônes, l'arme d'abord.
-            let icones = icones(&class);
-            assert_eq!(icones.len(), 2, "{id}");
-            assert_eq!(icones[0], ItemKey::Simple(weapon.to_string()), "{id}");
+            let des_icones = icones(&class, &Acquis::par_defaut(id));
+            assert_eq!(des_icones.len(), 2, "{id}");
+            assert_eq!(des_icones[0], ItemKey::Simple(weapon.to_string()), "{id}");
+            // A.8 : l'icône d'arme suit le lot (le marteau, pas l'épée).
+            if id == "guerrier" {
+                let marteau = Acquis::lot("marteau", &[], None, None);
+                let icones = icones(&class, &marteau);
+                assert_eq!(
+                    icones[0],
+                    ItemKey::Simple("common.items.weapons.hammer.starter_hammer".to_string())
+                );
+            }
         }
         assert_eq!(classes().len(), 3);
     }

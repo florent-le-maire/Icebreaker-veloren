@@ -10,6 +10,8 @@
     minimum_charrette: 2,
     // Personnages au registre, au plus.
     places_registre: 10,
+    // Compétences d'arme tirées avec chaque recrue (jalon A.8), en plus de son ultime et de son passif.
+    competences_tirees: 2,
     // Personnages qu'un compte peut réserver pour lui (seul lui peut alors les jouer).
     reservations_par_compte: 5,
     // Où les recrues du jour attendent, debout devant la charrette (X.8) : décalages en blocs par rapport

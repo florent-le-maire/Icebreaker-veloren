@@ -71,7 +71,8 @@ impl IcebreakerCharrette {
 pub fn recruit_npc(recrue: &Recrue, pos: Vec3<f32>) -> Option<NpcBuilder> {
     let class = icebreaker_classes::class(&recrue.classe)?;
     let body = Body::Humanoid(comp::humanoid::Body::random());
-    let inventory = icebreaker_classes::starting_inventory(&class);
+    // Icebreaker A.8 : les armes de son lot.
+    let inventory = icebreaker_classes::inventaire_du_lot(&class, &recrue.acquis);
     let mut agent = comp::Agent::from_body(&body)
         .with_patrol_origin(pos)
         .with_idle_wander_factor(0.0);
@@ -143,6 +144,23 @@ mod tests {
                 .equipped(common::comp::inventory::slot::EquipSlot::ActiveMainhand)
                 .is_some()
         );
+        // A.8 : le PNJ porte les armes de son lot.
+        for (id, jeu) in common::icebreaker_competences::registre().jeux_de("guerrier") {
+            let recrue = Recrue {
+                nom: "Leif".into(),
+                classe: "guerrier".into(),
+                acquis: common::icebreaker_competences::Acquis::lot(id, &[], None, None),
+            };
+            let npc = recruit_npc(&recrue, Vec3::zero()).expect("guerrier exists");
+            assert_eq!(
+                common::icebreaker_competences::jeu_en_main("guerrier", Some(&npc.inventory))
+                    .map(|(i, _)| i),
+                Some(id),
+                "{} : {:?}",
+                jeu.nom,
+                jeu.armes
+            );
+        }
         let unknown = Recrue {
             nom: "X".into(),
             classe: "inconnue".into(),
