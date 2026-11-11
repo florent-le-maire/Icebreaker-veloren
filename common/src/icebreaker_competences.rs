@@ -24,10 +24,11 @@ use crate::{
             slot::EquipSlot,
         },
     },
+    resources::GameMode,
     states::behavior::JoinData,
 };
 use serde::{Deserialize, Serialize};
-use specs::{Component, DerefFlaggedStorage};
+use specs::{Component, DerefFlaggedStorage, WorldExt};
 use std::{collections::BTreeMap, sync::LazyLock};
 use tracing::error;
 
@@ -702,6 +703,37 @@ fn lancer(
             context_index: Some(ContextualIndex(usize::from(niveau))),
         },
     ))
+}
+
+/// La compétence que vient de lancer `data.entity` part en recharge, pour la durée de son niveau.
+/// Seul le serveur l'arme ; le client lit la valeur qu'il reçoit. S'il l'armait aussi, un lancer que le
+/// serveur refuse lui laisserait une recharge que rien ne viendrait corriger.
+pub fn armer_recharge(data: &JoinData<'_>, lancee: &SpecifiedAbility) {
+    let Ability::Icebreaker(numero) = lancee.ability else {
+        return;
+    };
+    let niveau = lancee
+        .context_index
+        .map_or(NIVEAU_DEPART, |n| u8::try_from(n.0).unwrap_or(u8::MAX));
+    let Some(entree) = registre().par_numero(numero) else {
+        return;
+    };
+    let maintenant = data.time.0;
+    let fin = maintenant + f64::from(entree.competence.effectif(niveau).recharge);
+    let entity = data.entity;
+    data.updater.exec_mut(move |world| {
+        if *world.read_resource::<GameMode>() == GameMode::Client {
+            return;
+        }
+        if let Some(mut competences) = world
+            .write_storage::<IcebreakerCompetences>()
+            .get_mut(entity)
+        {
+            // Les recharges finies n'ont plus à voyager vers le client.
+            competences.recharges.retain(|_, fin| *fin > maintenant);
+            competences.recharges.insert(numero, fin);
+        }
+    });
 }
 
 #[cfg(test)]

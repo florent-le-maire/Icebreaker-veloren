@@ -1518,6 +1518,8 @@ fn handle_ability(
                     .and_then(|ai| ai.input_attr)
                     .and_then(|ia| ia.target_entity);
                 update.character = character_state;
+                // Icebreaker : une de nos compétences lancée part en recharge (jalon A).
+                crate::icebreaker_competences::armer_recharge(data, &spec_ability);
 
                 for init_event in ability
                     .ability_meta()

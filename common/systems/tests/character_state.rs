@@ -266,5 +266,76 @@ mod tests {
             tick(&mut state, Duration::from_secs_f32(0.033));
             assert_eq!(lancee(&state, entity), Some(Ability::Icebreaker(numero("fureur"))));
         }
+
+        /// Le personnage a fini son geste et relâché ses touches : arme en mains, prêt à relancer.
+        fn au_repos(state: &mut State, entity: Entity) {
+            state
+                .ecs()
+                .write_storage::<Controller>()
+                .get_mut(entity)
+                .expect("Controller")
+                .queued_inputs
+                .clear();
+            state
+                .ecs()
+                .write_storage()
+                .insert(
+                    entity,
+                    CharacterState::Wielding(common::states::wielding::Data { is_sneaking: false }),
+                )
+                .unwrap();
+        }
+
+        #[test]
+        fn icebreaker_une_competence_lancee_part_en_recharge() {
+            let mut state = setup();
+            let entity = guerrier(&mut state, "grande_epee");
+            let balayage = numero("balayage_lourd");
+            let recharge = f64::from(
+                registre()
+                    .par_numero(balayage)
+                    .expect("balayage lourd")
+                    .competence
+                    .effectif(1)
+                    .recharge,
+            );
+            let reste = |state: &State| {
+                let maintenant = state.ecs().read_resource::<Time>().0;
+                state
+                    .ecs()
+                    .read_storage::<IcebreakerCompetences>()
+                    .get(entity)
+                    .expect("IcebreakerCompetences")
+                    .reste_recharge(balayage, maintenant)
+            };
+            assert_eq!(reste(&state), None);
+
+            // Lancée : la recharge de son niveau part (armée à la fin du tic, côté serveur).
+            appuyer(&mut state, entity, 0);
+            tick(&mut state, Duration::from_secs_f32(0.033));
+            assert_eq!(lancee(&state, entity), Some(Ability::Icebreaker(balayage)));
+            let apres = reste(&state).expect("en recharge");
+            assert!((apres - recharge).abs() < 0.1, "{apres} pour {recharge}");
+
+            // Un second appui pendant la recharge ne lance rien ; l'ultime, lui, est prêt.
+            au_repos(&mut state, entity);
+            appuyer(&mut state, entity, 0);
+            tick(&mut state, Duration::from_secs_f32(0.033));
+            assert_eq!(lancee(&state, entity), None, "balayage en recharge");
+            au_repos(&mut state, entity);
+            appuyer(&mut state, entity, TOUCHE_ULTIME);
+            tick(&mut state, Duration::from_secs_f32(0.033));
+            assert_eq!(lancee(&state, entity), Some(Ability::Icebreaker(numero("fureur"))));
+            assert!(reste(&state).is_some(), "le balayage attend toujours");
+
+            // Une fois le temps passé, elle repart, et se recharge de nouveau.
+            au_repos(&mut state, entity);
+            state.ecs_mut().write_resource::<Time>().0 += recharge;
+            assert_eq!(reste(&state), None);
+            appuyer(&mut state, entity, 0);
+            tick(&mut state, Duration::from_secs_f32(0.033));
+            assert_eq!(lancee(&state, entity), Some(Ability::Icebreaker(balayage)));
+            assert!(reste(&state).is_some());
+        }
     }
 }
