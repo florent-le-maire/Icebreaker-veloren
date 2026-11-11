@@ -57,3 +57,7 @@ command-balise-desc = Light beacon: poser, or couleur <name>; without argument, 
 icebreaker-mort-village = { $key }: back to the village
 icebreaker-mort-regarder = left click: watch an ally
 icebreaker-mort-definitive = Dead on an expedition, this character is lost for good.
+icebreaker-verrou-rappel = { $key } : unlock      Wheel : next target
+icebreaker-verrou-perdue = Target lost
+icebreaker-fouille-sac = Searching the bag
+icebreaker-balise-recharge = { $secondes } s

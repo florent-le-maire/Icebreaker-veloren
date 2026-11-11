@@ -27,7 +27,17 @@ pub struct Reglages {
     /// Rayon du cercle à l'écran (pixels) ; le halo et les traits en découlent.
     #[serde(default = "rayon_anneau_defaut")]
     pub rayon_anneau: f32,
+    /// Combien de secondes le rappel des touches reste affiché après un verrouillage (N.7).
+    #[serde(default = "duree_rappel_defaut")]
+    pub duree_rappel: f32,
+    /// Combien de secondes « Cible perdue » reste affiché (N.7).
+    #[serde(default = "duree_perdue_defaut")]
+    pub duree_perdue: f32,
 }
+
+fn duree_rappel_defaut() -> f32 { 3.0 }
+
+fn duree_perdue_defaut() -> f32 { 1.5 }
 
 fn ancrage_defaut() -> f32 { 0.5 }
 
@@ -47,6 +57,57 @@ pub struct Verrou {
     pub cible: specs::Entity,
     /// Temps écoulé depuis le dernier changement de cible à la molette.
     pub depuis_molette: f32,
+}
+
+/// Ce que le HUD dit du verrouillage, dans la zone « action en cours » (N.7).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Avis {
+    Rien,
+    /// Le rappel des touches (déverrouiller, cible suivante).
+    Rappel,
+    /// Le verrouillage a sauté tout seul (cible trop loin ou morte).
+    Perdue,
+}
+
+/// Les minuteurs des avis : le rappel part au verrouillage et à chaque changement de cible,
+/// « Cible perdue » quand le verrouillage saute seul. Le dernier événement l'emporte.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Avertissements {
+    rappel: f32,
+    perdue: f32,
+}
+
+impl Avertissements {
+    /// Verrouillage ou changement de cible : le rappel repart pour `duree` secondes.
+    pub fn rappeler(&mut self, duree: f32) {
+        self.rappel = duree;
+        self.perdue = 0.0;
+    }
+
+    /// Le verrouillage a sauté tout seul : « Cible perdue » pour `duree` secondes.
+    pub fn perdre(&mut self, duree: f32) {
+        self.perdue = duree;
+        self.rappel = 0.0;
+    }
+
+    /// Le joueur déverrouille lui-même : plus d'avis.
+    pub fn effacer(&mut self) { *self = Self::default(); }
+
+    pub fn avancer(&mut self, dt: f32) {
+        self.rappel = (self.rappel - dt).max(0.0);
+        self.perdue = (self.perdue - dt).max(0.0);
+    }
+
+    /// `verrouille` : une cible est verrouillée en ce moment (le rappel n'a de sens que là).
+    pub fn avis(&self, verrouille: bool) -> Avis {
+        if self.perdue > 0.0 && !verrouille {
+            Avis::Perdue
+        } else if self.rappel > 0.0 && verrouille {
+            Avis::Rappel
+        } else {
+            Avis::Rien
+        }
+    }
 }
 
 /// Lacet (yaw) de la caméra vers `v`, comme `Camera::forward` : 0 vers +y, croît vers +x.
@@ -141,6 +202,38 @@ mod tests {
         // Au bout à droite, on repart de la gauche.
         assert_eq!(suivante(O, droite, &tous, 20.0, true), Some(3));
         assert_eq!(suivante(O, devant, &[devant], 20.0, true), None);
+    }
+
+    #[test]
+    fn le_rappel_s_affiche_puis_s_efface() {
+        let mut a = Avertissements::default();
+        assert_eq!(a.avis(true), Avis::Rien);
+        a.rappeler(3.0);
+        assert_eq!(a.avis(true), Avis::Rappel);
+        a.avancer(2.0);
+        assert_eq!(a.avis(true), Avis::Rappel);
+        a.avancer(1.5);
+        assert_eq!(a.avis(true), Avis::Rien);
+        // Un changement de cible relance le rappel ; le déverrouillage du joueur l'efface.
+        a.rappeler(3.0);
+        a.effacer();
+        assert_eq!(a.avis(false), Avis::Rien);
+    }
+
+    #[test]
+    fn cible_perdue_seulement_quand_le_verrou_saute() {
+        let mut a = Avertissements::default();
+        a.rappeler(3.0);
+        a.perdre(1.5);
+        // Plus de verrou : « Cible perdue », pas le rappel.
+        assert_eq!(a.avis(false), Avis::Perdue);
+        a.avancer(1.6);
+        assert_eq!(a.avis(false), Avis::Rien);
+        // Un nouveau verrouillage chasse « Cible perdue ».
+        a.perdre(1.5);
+        a.rappeler(3.0);
+        assert_eq!(a.avis(true), Avis::Rappel);
+        assert_eq!(a.avis(false), Avis::Rien);
     }
 
     #[test]

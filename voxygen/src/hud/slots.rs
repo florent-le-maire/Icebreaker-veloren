@@ -235,12 +235,8 @@ impl<'a> SlotKey<HotbarSource<'a>, HotbarImageSource<'a>> for HotbarSlot {
                 hotbar::SlotContents::Ability(_) => None,
             })
             .and_then(|item| {
-                // Icebreaker : les secondes de recharge de la balise lumineuse (jalon J).
-                if common::icebreaker_balise::est_balise(item)
-                    && let Some(reste) = crate::icebreaker_balise::reste()
-                {
-                    return Some(reste);
-                }
+                // Icebreaker : la quantité de balises reste affichée pendant la recharge ; les
+                // secondes restantes se dessinent au centre de l'emplacement (`skillbar.rs`, N.7).
                 Some(item.amount()).filter(|amount| *amount > 1)
             })
     }

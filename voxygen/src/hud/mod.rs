@@ -677,6 +677,8 @@ pub struct HudInfo<'a> {
     /// Icebreaker: the locked enemy (Dark Souls), where on its body the ring
     /// sits (0: feet, 1: head) and the ring's radius in pixels (X.6).
     pub icebreaker_lock_target: Option<(specs::Entity, f32, f32)>,
+    /// Icebreaker : rappel des touches ou « Cible perdue » du verrouillage (N.7).
+    pub icebreaker_lock_avis: crate::session::icebreaker_lock::Avis,
     pub persistence_load_error: Option<SkillsPersistenceError>,
     pub key_state: &'a KeyState,
 }
@@ -2543,7 +2545,12 @@ impl Hud {
                         // group
                         // Note: even if this passes the healthbar can
                         // be hidden in some cases if it is at maximum
-                        let display_overhead_info = !is_me
+                        // Icebreaker : la cible verrouillée garde son nom et sa barre de vie (N.7).
+                        let icebreaker_verrouille = info
+                            .icebreaker_lock_target
+                            .is_some_and(|(cible, ..)| cible == entity);
+                        let display_overhead_info = icebreaker_verrouille
+                            || !is_me
                             && (is_mount.is_none()
                                 || health.is_none_or(overhead::should_show_healthbar))
                             && is_rider
@@ -2589,6 +2596,7 @@ impl Hud {
                                 comp::is_downed(health, icebreaker_etats.get(entity)),
                                 time.0,
                             ),
+                            icebreaker_verrouille,
                         });
                         // Only render bubble if nearby or if its me and setting is on
                         let bubble = if (dist_sqr < SPEECH_BUBBLE_RANGE.powi(2) && !is_me)
@@ -4235,6 +4243,16 @@ impl Hud {
         // (jalon N) : `hud/icebreaker.rs`.
         let icebreaker_fantome = crate::icebreaker_mort::registre()
             && matches!(client.presence(), Some(PresenceKind::Spectator));
+        // La fouille d'un sac de mort : sa part se lit dans l'état du personnage.
+        let icebreaker_en_cours = icebreaker::EnCours {
+            verrou: info.icebreaker_lock_avis,
+            fouille: client
+                .state()
+                .ecs()
+                .read_storage::<comp::CharacterState>()
+                .get(info.viewpoint_entity)
+                .and_then(icebreaker::fouille_de),
+        };
         self.events.extend(self.icebreaker.dessiner(
             ui_widgets,
             &self.imgs,
@@ -4244,6 +4262,7 @@ impl Hud {
             &global_state.settings.controls,
             self.pulse,
             icebreaker_fantome,
+            icebreaker_en_cours,
         ));
 
         // Camera clamp indicator

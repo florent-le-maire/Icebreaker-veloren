@@ -8,7 +8,8 @@
 //! élément qui commence par `/` est une commande (`/expedition 2`), envoyée
 //! comme le ferait un bouton, puis capturée. Les captures vont dans le dossier
 //! de captures du client (`screenshots_path` de ses réglages). `plan` seul : le
-//! plan sans panneau.
+//! plan sans panneau. `fermer` ferme le plan, pour voir ce qui se montre hors
+//! du plan (`/balise`).
 
 use std::{
     collections::VecDeque,
@@ -23,6 +24,8 @@ const ENTRE_DEUX: Duration = Duration::from_secs(3);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Pas {
     Ouvrir,
+    /// Fermer le plan du village.
+    Fermer,
     /// Cliquer le bâtiment de cette sorte.
     Cliquer(String),
     /// Envoyer cette commande (nom, arguments), comme un bouton du panneau.
@@ -55,6 +58,7 @@ impl Auto {
                     let mut mots = commande.split_whitespace().map(str::to_string);
                     Pas::Commande(mots.next().unwrap_or_default(), mots.collect())
                 },
+                None if sorte == "fermer" => Pas::Fermer,
                 None => Pas::Cliquer(sorte.to_string()),
             });
             a_faire.push_back(Pas::Capturer);
@@ -105,7 +109,7 @@ mod tests {
     #[test]
     fn un_element_qui_commence_par_une_barre_est_une_commande() {
         let debut = Instant::now();
-        let mut auto = Auto::de("depart, /expedition 2", debut);
+        let mut auto = Auto::de("depart, /expedition 2, fermer", debut);
         let mut t = debut + ENTREE;
         let mut pas = Vec::new();
         while let Some(p) = auto.pas(t) {
@@ -116,6 +120,8 @@ mod tests {
             Pas::Cliquer("depart".into()),
             Pas::Capturer,
             Pas::Commande("expedition".into(), vec!["2".into()]),
+            Pas::Capturer,
+            Pas::Fermer,
             Pas::Capturer,
         ]);
     }

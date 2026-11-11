@@ -16,4 +16,9 @@
     ancrage: 0.5,
     // Rayon du cercle à l'écran, en pixels ; le halo et les quatre traits en découlent.
     rayon_anneau: 13.0,
+    // Secondes pendant lesquelles le rappel des touches reste affiché après un verrouillage ou un
+    // changement de cible (N.7).
+    duree_rappel: 3.0,
+    // Secondes pendant lesquelles « Cible perdue » reste affiché quand le verrouillage saute seul (N.7).
+    duree_perdue: 1.5,
 )

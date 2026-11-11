@@ -57,3 +57,7 @@ command-balise-desc = Balise lumineuse : poser, ou couleur <nom> ; sans argument
 icebreaker-mort-village = { $key } : retour au village
 icebreaker-mort-regarder = clic gauche : regarder un allié
 icebreaker-mort-definitive = Mort en expédition, ce personnage est perdu pour de bon.
+icebreaker-verrou-rappel = { $key } : déverrouiller      Molette : cible suivante
+icebreaker-verrou-perdue = Cible perdue
+icebreaker-fouille-sac = Fouille du sac
+icebreaker-balise-recharge = { $secondes } s

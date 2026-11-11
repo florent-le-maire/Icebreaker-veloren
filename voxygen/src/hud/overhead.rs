@@ -78,6 +78,8 @@ pub struct Info<'a> {
     pub marked: bool,
     /// Icebreaker : à terre, secondes et part du délai qui restent avant la mort (T.2).
     pub icebreaker_a_terre: Option<(f64, f32)>,
+    /// Icebreaker : la cible verrouillée garde sa barre de vie et son nom, même à pleine vie (N.7).
+    pub icebreaker_verrouille: bool,
 }
 
 /// Determines whether to show the healthbar
@@ -170,6 +172,7 @@ impl Widget for Overhead<'_> {
             stance,
             marked,
             icebreaker_a_terre,
+            icebreaker_verrouille,
         }) = self.info
         {
             // Used to set healthbar colours based on hp_percentage
@@ -182,7 +185,8 @@ impl Widget for Overhead<'_> {
             // Compare levels to decide if a skull is shown
             let health_current = health.map_or(1.0, |h| f64::from(h.current()));
             let health_max = health.map_or(1.0, |h| f64::from(h.maximum()));
-            let name_y = if (health_current - health_max).abs() < 1e-6 {
+            // Icebreaker : la barre forcée d'une cible verrouillée pousse le nom vers le haut (N.7).
+            let name_y = if (health_current - health_max).abs() < 1e-6 && !icebreaker_verrouille {
                 MANA_BAR_Y + 20.0
             } else {
                 MANA_BAR_Y + 32.0
@@ -310,7 +314,9 @@ impl Widget for Overhead<'_> {
 
             match health {
                 Some(health)
-                    if should_show_healthbar(health) || decayed_health_displayed(health) =>
+                    if should_show_healthbar(health)
+                        || decayed_health_displayed(health)
+                        || icebreaker_verrouille =>
                 {
                     // Show HP Bar
                     let hp_ani = (self.pulse * 4.0/* speed factor */).cos() * 0.5 + 1.0; //Animation timer
@@ -533,7 +539,9 @@ impl Widget for Overhead<'_> {
                 let action_input = temp_list.join("\n");
 
                 let anchor_id = self.info.map_or(state.ids.name, |info| {
-                    if info.health.is_some_and(should_show_healthbar) {
+                    if info.health.is_some_and(should_show_healthbar)
+                        || (info.icebreaker_verrouille && info.health.is_some())
+                    {
                         if info.energy.is_some() {
                             state.ids.mana_bar
                         } else {

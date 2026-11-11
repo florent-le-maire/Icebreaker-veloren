@@ -56,6 +56,9 @@ widget_ids! {
         icebreaker_a_terre_fond,
         icebreaker_a_terre_barre,
         icebreaker_a_terre_texte,
+        // Icebreaker : les secondes de recharge de la balise, au centre de son emplacement (N.7)
+        icebreaker_balise_reste,
+        icebreaker_balise_reste_ombre,
         // Skillbar
         frame,
         bg_health,
@@ -1203,6 +1206,39 @@ impl<'a> Skillbar<'a> {
             // if not, just set slot
             } else {
                 slot.set(entry.widget_id, ui);
+            }
+
+            // Icebreaker : la balise lumineuse en recharge garde sa quantité (dessinée par
+            // l'emplacement) et montre les secondes restantes au centre (N.7).
+            if let Some(item) = slot_content(entry.slot)
+                && common::icebreaker_balise::est_balise(item)
+                && let Some(secondes) = crate::icebreaker_balise::emplacement(
+                    item.amount(),
+                    crate::icebreaker_balise::reste(),
+                )
+                .secondes
+            {
+                let texte = crate::icebreaker_balise::texte_secondes(secondes, |n| {
+                    self.localized_strings
+                        .get_msg_ctx("icebreaker-balise-recharge", &i18n::fluent_args! {
+                            "secondes" => n,
+                        })
+                        .into_owned()
+                });
+                Text::new(&texte)
+                    .x_y_relative_to(entry.widget_id, 1.0, -1.0)
+                    .font_size(self.fonts.cyri.scale(16))
+                    .font_id(self.fonts.cyri.conrod_id)
+                    .color(BLACK)
+                    .graphics_for(entry.widget_id)
+                    .set(state.ids.icebreaker_balise_reste_ombre, ui);
+                Text::new(&texte)
+                    .middle_of(entry.widget_id)
+                    .font_size(self.fonts.cyri.scale(16))
+                    .font_id(self.fonts.cyri.conrod_id)
+                    .color(TEXT_COLOR)
+                    .graphics_for(entry.widget_id)
+                    .set(state.ids.icebreaker_balise_reste, ui);
             }
 
             // selection box around current hotbar index

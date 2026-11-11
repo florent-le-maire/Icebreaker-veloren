@@ -1,4 +1,4 @@
-mod icebreaker_lock;
+pub mod icebreaker_lock;
 // Icebreaker : essai du plan du village sans les mains (jalon N).
 mod icebreaker_auto;
 pub mod icebreaker_vue;
@@ -121,6 +121,8 @@ pub struct SessionState {
     /// Icebreaker: the locked enemy (Dark Souls), when on.
     icebreaker_lock: Option<icebreaker_lock::Verrou>,
     icebreaker_lock_settings: icebreaker_lock::Reglages,
+    /// Icebreaker : rappel des touches et « Cible perdue » du verrouillage (N.7).
+    icebreaker_lock_avis: icebreaker_lock::Avertissements,
     icebreaker_vue_settings: icebreaker_vue::Reglages,
     /// Icebreaker : essai du plan du village sans les mains (`ICEBREAKER_AUTO_PLAN`, jalon N).
     icebreaker_auto: Option<icebreaker_auto::Auto>,
@@ -203,6 +205,7 @@ impl SessionState {
             icebreaker_menu_balise: false,
             icebreaker_lock: None,
             icebreaker_lock_settings: icebreaker_lock::Reglages::charger(),
+            icebreaker_lock_avis: icebreaker_lock::Avertissements::default(),
             icebreaker_vue_settings: icebreaker_vue::Reglages::charger(),
             icebreaker_auto: icebreaker_auto::Auto::charger(),
             auto_walk: false,
@@ -1876,12 +1879,18 @@ impl PlayState for SessionState {
                             self.toggle_icebreaker_top_view();
                         }
                     },
+                    icebreaker_auto::Pas::Fermer => self.quitter_icebreaker_top_view(),
                     icebreaker_auto::Pas::Cliquer(sorte) => {
                         if let Some(demande) = self.hud.icebreaker_cliquer(&sorte) {
                             self.client.borrow_mut().request_icebreaker_plan(demande);
                         }
                     },
                     icebreaker_auto::Pas::Commande(nom, arguments) => {
+                        // Icebreaker : comme `/balise` tapé dans le chat, le choix des couleurs
+                        // s'ouvre hors de la vue de dessus (N.7).
+                        if nom == "balise" && arguments.is_empty() {
+                            self.icebreaker_menu_balise = true;
+                        }
                         self.client.borrow_mut().send_command(nom, arguments);
                     },
                     icebreaker_auto::Pas::Capturer => {
@@ -1914,6 +1923,9 @@ impl PlayState for SessionState {
                         let reglages = &self.icebreaker_lock_settings;
                         (lock.cible, reglages.ancrage, reglages.rayon_anneau)
                     }),
+                    icebreaker_lock_avis: self
+                        .icebreaker_lock_avis
+                        .avis(self.icebreaker_lock.is_some()),
                     persistence_load_error: self.metadata.skill_set_persistence_load_error,
                     key_state: &self.key_state,
                 },
@@ -2735,6 +2747,8 @@ impl SessionState {
 
     fn toggle_icebreaker_lock(&mut self) {
         if self.icebreaker_lock.take().is_some() {
+            // Icebreaker : le joueur déverrouille lui-même, pas de « Cible perdue » (N.7).
+            self.icebreaker_lock_avis.effacer();
             return;
         }
         let camera = self.scene.camera();
@@ -2748,6 +2762,11 @@ impl SessionState {
             cible,
             depuis_molette: f32::INFINITY,
         });
+        // Icebreaker : le rappel des touches s'affiche au verrouillage (N.7).
+        if self.icebreaker_lock.is_some() {
+            self.icebreaker_lock_avis
+                .rappeler(self.icebreaker_lock_settings.duree_rappel);
+        }
     }
 
     /// The wheel up locks the enemy on the right, down the one on the left.
@@ -2769,6 +2788,8 @@ impl SessionState {
         {
             lock.cible = next;
             lock.depuis_molette = 0.0;
+            // Icebreaker : le rappel repart à chaque changement de cible (N.7).
+            self.icebreaker_lock_avis.rappeler(settings.duree_rappel);
         }
     }
 
@@ -2799,6 +2820,7 @@ impl SessionState {
 
     /// Turns the camera toward the locked enemy; the lock drops when it dies or is too far.
     fn update_icebreaker_lock(&mut self, dt: f32) {
+        self.icebreaker_lock_avis.avancer(dt);
         let Some(target) = self.icebreaker_lock.as_ref().map(|lock| lock.cible) else {
             return;
         };
@@ -2819,7 +2841,14 @@ impl SessionState {
                     lock.depuis_molette += dt;
                 }
             },
-            _ => self.icebreaker_lock = None,
+            _ => {
+                self.icebreaker_lock = None;
+                // Icebreaker : le verrouillage a sauté tout seul (N.7).
+                if self.icebreaker_top_view.is_none() {
+                    self.icebreaker_lock_avis
+                        .perdre(self.icebreaker_lock_settings.duree_perdue);
+                }
+            },
         }
     }
 }

@@ -25,12 +25,16 @@ use super::{
     item_imgs::{ItemImgs, animate_by_pulse},
 };
 use crate::{
-    game_input::GameInput, session::icebreaker_vue::Reglages, settings::ControlSettings,
+    game_input::GameInput,
+    session::{icebreaker_lock::Avis, icebreaker_vue::Reglages},
+    settings::ControlSettings,
     ui::fonts::Fonts,
 };
 use common::{
     comp::{self, ChatType, Content, ItemKey},
     icebreaker_panneau::{Action, Batiment, Demande, Expedition, Ligne, Panneau, Sorte, Ton},
+    interaction::InteractionKind,
+    states::{interact::InteractKind, utils::StageSection},
 };
 use conrod_core::{
     Borderable, Color, Colorable, Labelable, Positionable, Sizeable, UiCell, Widget, color, image,
@@ -215,7 +219,77 @@ widget_ids! {
         annonces_fond[],
         annonces_mot[],
         annonces_texte[],
+        action_fond,
+        action_texte,
+        action_jauge_fond,
+        action_jauge_part,
     }
+}
+
+// La zone « action en cours », en bas au centre, au-dessus de la barre de raccourcis.
+const ACTION_BAS: f64 = 180.0;
+const ACTION_W: f64 = 540.0;
+const ACTION_BANDEAU_H: f64 = 38.0;
+const ACTION_JAUGE_W: f64 = 300.0;
+/// Hauteur du panneau libre (balise), qui occupe le même bas d'écran.
+const LIBRE_H: f64 = 150.0;
+
+/// Ce que le joueur est en train de faire, pour la zone « action en cours ».
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct EnCours {
+    /// Le verrouillage de cible : rappel des touches, ou « Cible perdue ».
+    pub verrou: Avis,
+    /// La part de la fouille d'un sac de mort faite (0 à 1), si le joueur fouille.
+    pub fouille: Option<f32>,
+}
+
+/// Ce que la zone montre : une seule chose à la fois, la fouille d'abord.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Zone {
+    Fouille(f32),
+    Perdue,
+    Rappel,
+}
+
+impl EnCours {
+    fn zone(&self) -> Option<Zone> {
+        if let Some(part) = self.fouille {
+            return Some(Zone::Fouille(part.clamp(0.0, 1.0)));
+        }
+        match self.verrou {
+            Avis::Perdue => Some(Zone::Perdue),
+            Avis::Rappel => Some(Zone::Rappel),
+            Avis::Rien => None,
+        }
+    }
+}
+
+/// La part de fouille faite, `timer` écoulé sur `duree`.
+pub fn part_fouille(timer: std::time::Duration, duree: std::time::Duration) -> f32 {
+    if duree.is_zero() {
+        1.0
+    } else {
+        (timer.as_secs_f32() / duree.as_secs_f32()).clamp(0.0, 1.0)
+    }
+}
+
+/// La part de fouille faite, si l'état du personnage est la fouille d'un sac de mort.
+pub fn fouille_de(etat: &comp::CharacterState) -> Option<f32> {
+    let comp::CharacterState::Interact(interaction) = etat else {
+        return None;
+    };
+    let donnees = &interaction.static_data;
+    if !matches!(donnees.interact, InteractKind::Entity {
+        kind: InteractionKind::IcebreakerFouillerSac,
+        ..
+    }) {
+        return None;
+    }
+    Some(match (interaction.stage_section, donnees.use_duration) {
+        (StageSection::Buildup, _) => 0.0,
+        (StageSection::Action, Some(duree)) => part_fouille(interaction.timer, duree),
+        _ => 1.0,
+    })
 }
 
 /// L'icône du HUD appelée `nom` dans les données (`vue_village.ron`, `classes.ron`).
@@ -547,6 +621,9 @@ pub struct Interface {
     annonces: Vec<Annonce>,
     /// Les mots des annonces (village, refus, info), préparés une fois.
     mots: Option<[String; 3]>,
+    /// Les textes de la zone « action en cours » (rappel des touches, cible perdue, fouille),
+    /// préparés une fois.
+    textes_action: Option<[String; 3]>,
 }
 
 impl Interface {
@@ -570,6 +647,7 @@ impl Interface {
             annonces_recues: Vec::new(),
             annonces: Vec::new(),
             mots: None,
+            textes_action: None,
         }
     }
 
@@ -745,6 +823,7 @@ impl Interface {
         controls: &ControlSettings,
         pulse: f32,
         fantome: bool,
+        en_cours: EnCours,
     ) -> Vec<Event> {
         let mut evenements = Vec::new();
         if let Some((contenu, sorte)) = self.reponse_recue.take() {
@@ -773,6 +852,7 @@ impl Interface {
         }
         self.bandeau_expedition(ui, imgs, fonts, i18n, haut);
         self.messages(ui, fonts, i18n);
+        self.action_en_cours(ui, fonts, i18n, controls, en_cours);
 
         if self.ouvert {
             self.fenetre(ui, imgs, item_imgs, fonts, i18n, controls, pulse, &mut evenements);
@@ -981,6 +1061,73 @@ impl Interface {
         }
     }
 
+    /// La zone « action en cours », en bas au centre au-dessus de la barre de raccourcis : la
+    /// fouille d'un sac (libellé et jauge), « Cible perdue », ou le rappel des touches du
+    /// verrouillage. Une seule chose à la fois.
+    fn action_en_cours(
+        &mut self,
+        ui: &mut UiCell,
+        fonts: &Fonts,
+        i18n: &Localization,
+        controls: &ControlSettings,
+        en_cours: EnCours,
+    ) {
+        let Some(zone) = en_cours.zone() else {
+            return;
+        };
+        let [rappel, perdue, fouille] = self.textes_action.get_or_insert_with(|| {
+            let touche = controls
+                .get_binding(GameInput::IcebreakerLockTarget)
+                .map_or_else(String::new, |touche| touche.display_string());
+            [
+                i18n.get_msg_ctx("icebreaker-verrou-rappel", &i18n::fluent_args! {
+                    "key" => touche,
+                })
+                .into_owned(),
+                i18n.get_msg("icebreaker-verrou-perdue").into_owned(),
+                i18n.get_msg("icebreaker-fouille-sac").into_owned(),
+            ]
+        });
+        // Le panneau libre de la balise occupe le même bas d'écran : la zone passe au-dessus.
+        let bas = if self.panneau.as_ref().is_some_and(|p| p.libre) {
+            ACTION_BAS + LIBRE_H + 10.0
+        } else {
+            ACTION_BAS
+        };
+        let fond = self.ids.action_fond;
+        let (dimensions, bord, texte, couleur) = match zone {
+            Zone::Fouille(_) => ([ACTION_JAUGE_W + 40.0, 64.0], BORDURE, &*fouille, TEXTE),
+            Zone::Perdue => ([220.0, ACTION_BANDEAU_H], MAUVAIS, &*perdue, MAUVAIS),
+            Zone::Rappel => ([ACTION_W, ACTION_BANDEAU_H], BORDURE, &*rappel, CLAIR),
+        };
+        cadre(dimensions, FOND, bord, 2.0)
+            .mid_bottom_with_margin_on(ui.window, bas)
+            .set(fond, ui);
+        let texte = Text::new(texte)
+            .font_id(fonts.cyri.conrod_id)
+            .font_size(fonts.cyri.scale(if matches!(zone, Zone::Fouille(_)) { 20 } else { 18 }))
+            .color(couleur)
+            .graphics_for(fond);
+        if let Zone::Fouille(part) = zone {
+            texte
+                .mid_top_with_margin_on(fond, 8.0)
+                .set(self.ids.action_texte, ui);
+            cadre([ACTION_JAUGE_W, 16.0], CASE, BORDURE, 2.0)
+                .mid_bottom_with_margin_on(fond, 10.0)
+                .graphics_for(fond)
+                .set(self.ids.action_jauge_fond, ui);
+            let rempli = (ACTION_JAUGE_W - 4.0) * f64::from(part);
+            if rempli >= 1.0 {
+                Rectangle::fill_with([rempli, 12.0], remplissage(Ton::Info))
+                    .top_left_with_margins_on(self.ids.action_jauge_fond, 2.0, 2.0)
+                    .graphics_for(fond)
+                    .set(self.ids.action_jauge_part, ui);
+            }
+        } else {
+            texte.middle_of(fond).set(self.ids.action_texte, ui);
+        }
+    }
+
     /// La fenêtre du village : bandeau de titre, plan à gauche, panneau à droite.
     fn fenetre(
         &mut self,
@@ -1175,7 +1322,8 @@ impl Interface {
         };
         const COTE: f64 = 48.0;
         let n = panneau.actions.len();
-        let largeur = (n as f64 * (COTE + 8.0) - 8.0 + 2.0 * MARGE).max(420.0);
+        // Assez large pour le titre et la couleur actuelle sur une ligne, et pour le message.
+        let largeur = (n as f64 * (COTE + 8.0) - 8.0 + 2.0 * MARGE).max(600.0);
         let fond = self.ids.libre_fond;
         cadre([largeur, 150.0], FOND, BORDURE, 2.0)
             .mid_bottom_with_margin_on(ui.window, 180.0)
@@ -1696,6 +1844,29 @@ mod tests {
         let caisse = places(false, true, true, 0, false, 2);
         assert_eq!(caisse.liste, None);
         assert!(caisse.actions.unwrap() >= caisse.jauge.unwrap() + JAUGE_H);
+    }
+
+    #[test]
+    fn la_zone_action_montre_une_seule_chose() {
+        let rien = EnCours { verrou: Avis::Rien, fouille: None };
+        assert_eq!(rien.zone(), None);
+        let rappel = EnCours { verrou: Avis::Rappel, fouille: None };
+        assert_eq!(rappel.zone(), Some(Zone::Rappel));
+        let perdue = EnCours { verrou: Avis::Perdue, fouille: None };
+        assert_eq!(perdue.zone(), Some(Zone::Perdue));
+        // La fouille l'emporte sur le verrouillage, et sa part reste dans [0, 1].
+        let fouille = EnCours { verrou: Avis::Rappel, fouille: Some(1.4) };
+        assert_eq!(fouille.zone(), Some(Zone::Fouille(1.0)));
+    }
+
+    #[test]
+    fn la_part_de_fouille() {
+        use std::time::Duration;
+        let trois = Duration::from_secs(3);
+        assert_eq!(part_fouille(Duration::ZERO, trois), 0.0);
+        assert!((part_fouille(Duration::from_millis(1500), trois) - 0.5).abs() < 1e-6);
+        assert_eq!(part_fouille(Duration::from_secs(5), trois), 1.0);
+        assert_eq!(part_fouille(Duration::ZERO, Duration::ZERO), 1.0);
     }
 
     #[test]
