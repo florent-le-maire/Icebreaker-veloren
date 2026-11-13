@@ -198,6 +198,8 @@ tombe, tous rentrent. Le personnage mort est perdu : il quitte le registre et il
   texte : registre à 0/10 après la mort, plus dans la base ; texte de mort du vrai client pas vu. 186c82f80d
 - [x] **T.7 Plantage du client au passage en fantôme** — caméra libre sans touche enfoncée : NaN dans la caméra
   avant le point de départ du serveur, le son plantait (build debug). Vu en jeu (Flo, 2026-11-08). 4d205f18b0
+- [x] **T.8 Écran noir puis plantage en regardant un allié** — l'allié regarde à la verticale (le sac à ses pieds) :
+  tangage NaN, gardé par la caméra, plantage des ombres. Tangage borné, NaN refusé ; tests, pas revu en jeu. 00c6f0101c
 
 ## Jalon A — Armes, classes et compétences (Flo, 2026-11-11)
 
@@ -320,6 +322,7 @@ tâche pour ce qui casse.
 - T.2 : barre « Mort dans N s » au-dessus du corps d'un allié (position, lisibilité), à deux joueurs.
 - T.3 : modèle du sac au sol, libellé « Fouiller le sac », fouille interrompue si on bouge.
 - T.4 : à trois joueurs ou plus, le clic passe d'un allié regardé au suivant (corrigé en N.7, vu avec un seul allié).
+- T.8 : mort, regarder un allié qui fouille le sac en visant droit vers le bas : plus d'écran noir ni de plantage.
 
 **Habitants (jalon H)**
 - H.1 à H.4 : un donjon généré et une grotte d'une seule race (corps, noms, armes des trois rôles), le chef humanoïde
