@@ -201,6 +201,20 @@ Le jeu d'armes en mains donne 2 compétences d'arme, la classe un ultime et un p
 rapporte des points d'arme, dépensés à la salle d'armes ; recrues tirées avec un lot au hasard. Règles :
 `design/classes.md` (section Veloren) ; tâches A.0 à A.18 : `PLAN-CLASSES.md`.
 
+## Jalon H — Habitants : races ennemies et monstres solitaires (Flo, 2026-11-13)
+
+Les ennemis sont des humanoïdes d'une des six races (humain, orc, nain, elfe, draugr, danari), une seule par donjon
+ou grotte (tirée par la graine du lieu), dans les rôles des classes (guerrier, archer, mage, équipement de
+`classes/`) ; des monstres solitaires, sans race (araignées dans la grotte) ; un chef de la race avec les capacités du
+chef gnarling, aussi dans la salle du boss. Pas de comportement de race pour l'instant. Worktree `Veloren-races`.
+
+- [ ] **H.1 Les ennemis par rôle** : `assets/icebreaker/ennemis/` (guerrier, archer, mage, chef) et
+  `world/src/icebreaker/races.rs` (espèce du lieu, entité de la race). — *en cours : Veloren-races, 2026-11-13*
+- [ ] **H.2 Une race par donjon généré** : faction `races` par défaut, espèces dans `generation.ron`.
+- [ ] **H.3 Les monstres solitaires** : les nids du donjon tirés d'une liste commune, pas de la faction.
+- [ ] **H.4 La grotte peuplée d'une race** : race + solitaires de l'ambiance (araignées), chef de la race au fond.
+- [ ] **H.5 La campagne sans le fort gnarling** : 4 donjons générés, docs et wiki à jour.
+
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
 Ce qui rend l'enchaînement village → donjon → village intéressant (risque, butin, besoins du village) : règles et

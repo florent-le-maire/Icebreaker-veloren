@@ -1,0 +1,20 @@
+// Icebreaker H.1 : le chef d'une race (antre du chef, salle du boss, fond de la grotte). Il tient le bâton du chef
+// gnarling : mêmes capacités (frappe et barrage de feu, onde de choc, totems) et même tactique de l'IA, qui
+// viennent de l'arme et pas du corps. L'espèce est imposée par le lieu, comme pour guerrier.ron.
+#![enable(implicit_some)]
+(
+    name: Automatic,
+    body: RandomWith("humanoid"),
+    alignment: Alignment(Enemy),
+    loot: Nothing,
+    inventory: (
+        loadout: Inline((
+            inherit: Asset("icebreaker.classes.guerrier"),
+            active_hands: InHands((Item("common.items.npc_weapons.biped_small.gnarling.chieftain"), None)),
+            inactive_hands: InHands((None, None)),
+        )),
+    ),
+    meta: [
+        SkillSetAsset("common.skillset.preset.rank5.fullskill"),
+    ],
+)

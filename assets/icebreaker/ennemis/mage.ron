@@ -1,0 +1,20 @@
+// Icebreaker H.1 : un ennemi mage d'une race (donjons générés, grottes). L'espèce est imposée par le lieu (une race
+// par donjon ou grotte, generation.ron et grotte.ron) ; « humanoid » n'est que le repli. Équipement repris de la
+// classe mage des joueurs (classes/mage.ron), sans ses compétences Icebreaker ; le butin vient de butin.ron.
+#![enable(implicit_some)]
+(
+    name: Automatic,
+    body: RandomWith("humanoid"),
+    alignment: Alignment(Enemy),
+    loot: Nothing,
+    inventory: (
+        loadout: Inline((
+            inherit: Asset("icebreaker.classes.mage"),
+            active_hands: InHands((Item("common.items.weapons.staff.starter_staff"), None)),
+            inactive_hands: InHands((None, None)),
+        )),
+    ),
+    meta: [
+        SkillSetAsset("common.skillset.preset.rank1.staff"),
+    ],
+)

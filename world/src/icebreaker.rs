@@ -5,6 +5,7 @@
 pub mod butin;
 pub mod dungeon;
 pub mod grotte;
+pub mod races;
 
 use crate::site::{
     Site, SiteKind,
