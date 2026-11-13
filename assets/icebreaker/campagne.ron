@@ -3,8 +3,8 @@
 // une expédition prend un emplacement libre de sa destination. Nom de site comme `icebreaker.ps1 -Site`.
 (
     emplacements: [
-        ("Gnarling", 2),
-        ("Genere", 2),
+        // Icebreaker H.5 : plus de fort gnarling, quatre donjons générés peuplés d'une race.
+        ("Genere", 4),
         ("Grotte", 1),
     ],
 )

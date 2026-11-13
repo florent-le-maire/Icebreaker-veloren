@@ -78,6 +78,13 @@ Autres familles déjà prêtes, si Sayanel en veut plus : **Danari** (petite rac
 Pour les humanoïdes (humain, nain, orc, elfe, draugr), « à faire » veut dire une fiche d'entité (`assets/common/entity`)
 avec une arme existante : quelques minutes chacune.
 
+**Dans le prototype (jalon H, 2026-11-13, Flo)** : donjons générés et grottes sont peuplés d'**une seule race**
+humanoïde (humain, orc, nain, elfe, draugr, danari ; tirée par la graine du lieu), en guerrier, archer et mage avec
+l'équipement des classes des joueurs (`assets/icebreaker/ennemis/`) ; le chef (et le boss) est un membre de la race qui
+a les capacités du chef gnarling. Les **monstres solitaires** (araignées, mandragores…) n'ont pas de race : nids du
+donjon (`solitaires` de `generation.ron`), poches et culs-de-sac de la grotte (`solitaires` des ambiances). Pas encore
+de comportement propre à une race. Le fort gnarling ne sert plus en campagne.
+
 ## Les stats dans Veloren
 
 **À retenir d'abord** : Veloren n'a **pas de stats par race** (toutes les espèces humanoïdes ont 100 PV, 100

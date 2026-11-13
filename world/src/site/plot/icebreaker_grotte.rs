@@ -297,8 +297,10 @@ impl IcebreakerGrotte {
         let mut plot = None;
         for seed in seed..seed + FIT_TRIES {
             let mut grotte = grotte::generate(settings, seed, mouth, ambiance.as_deref(), &|xy| land.get_alt_approx(xy) as i32);
-            if race.is_some() {
-                grotte.species = race.clone();
+            if let Some(race) = &race {
+                let drawn = format!("race {}", grotte.species.as_deref().unwrap_or("des fichiers"));
+                grotte.summary = grotte.summary.replacen(&drawn, &format!("race {race}"), 1);
+                grotte.species = Some(race.clone());
             }
             let tried = Self::new(grotte);
             let b = tried.bounds();

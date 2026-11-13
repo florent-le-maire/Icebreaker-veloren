@@ -213,8 +213,9 @@ chef gnarling, aussi dans la salle du boss. Pas de comportement de race pour l'i
 - [x] **H.2 et H.3 Une race par donjon généré, monstres solitaires** (un seul commit, code commun) : faction
   `races` par défaut, `especes` et `solitaires` dans `generation.ron`, `-Race` au lanceur. Testé ; pas vu en jeu. `a62bc950be`
 - [x] **H.4 La grotte peuplée d'une race** : `habitants`, `chef`, `especes` et `part_solitaires` dans `grotte.ron`, les
-  ambiances n'ont plus que leurs `solitaires` (araignée partout) ; wiki des créatures à jour. Testé ; pas vu en jeu.
-- [ ] **H.5 La campagne sans le fort gnarling** : 4 donjons générés, docs et wiki à jour.
+  ambiances n'ont plus que leurs `solitaires` (araignée partout) ; wiki des créatures à jour. Testé ; pas vu en jeu. `745a871e9d`
+- [x] **H.5 La campagne sans le fort gnarling** : 4 donjons générés + la grotte (`campagne.ron`), plus de lieu
+  « Donjon » (fort gnarling, lançable seul) ; `design/ames.md`. Campagne lancée : 4 donjons de races différentes.
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
@@ -313,6 +314,12 @@ tâche pour ce qui casse.
 - T.3 : modèle du sac au sol, libellé « Fouiller le sac », fouille interrompue si on bouge.
 - T.4 : à trois joueurs ou plus, le clic passe d'un allié regardé au suivant (corrigé en N.7, vu avec un seul allié).
 
+**Habitants (jalon H)**
+- H.1 à H.4 : un donjon généré et une grotte d'une seule race (corps, noms, armes des trois rôles), le chef humanoïde
+  qui lance les attaques de feu et les totems du chef gnarling (animations d'un corps humanoïde ?), sa force face à
+  un groupe ; araignées et autres solitaires dans les nids et les poches.
+- H.5 : la campagne à quatre donjons générés, sans fort gnarling ; le départ ne propose plus « Donjon ».
+
 **Divers**
 - M.1 : téléchargement du plugin par le vrai client.
 - S.2 / S.3 : le zip du client chez un pote (autre réseau, PC sans outils de dev) ; un départ en expédition sur le VPS.
@@ -323,6 +330,8 @@ tâche pour ce qui casse.
 
 - Passage automatique du client d'une instance à l'autre.
 - Biome imposé pour terracotta, myrmidons et sahagins.
+- Races ennemies au-delà du jalon H : un comportement par race, les compétences Icebreaker des classes pour les
+  ennemis, un boss distinct du chef, des totems aux couleurs de la race (ce sont encore ceux du chef gnarling).
 - Classes au-delà du jalon A (`decisions/0010-classes-et-combos.md`, Q36) : les six autres classes, les combos de zones.
 - Recrues, traits, blessures, rang (`design/village.md`, `PLAN-BOUCLES.md` B.10).
 - Carte stratégique façon Mount & Blade sur un grand monde Veloren, rencontres qui lancent les instances.
