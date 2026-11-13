@@ -215,7 +215,10 @@ chef gnarling, aussi dans la salle du boss. Pas de comportement de race pour l'i
 - [x] **H.4 La grotte peuplée d'une race** : `habitants`, `chef`, `especes` et `part_solitaires` dans `grotte.ron`, les
   ambiances n'ont plus que leurs `solitaires` (araignée partout) ; wiki des créatures à jour. Testé ; pas vu en jeu. `745a871e9d`
 - [x] **H.5 La campagne sans le fort gnarling** : 4 donjons générés + la grotte (`campagne.ron`), plus de lieu
-  « Donjon » (fort gnarling, lançable seul) ; `design/ames.md`. Campagne lancée : 4 donjons de races différentes.
+  « Donjon » (fort gnarling, lançable seul) ; `design/ames.md`. Campagne lancée : 4 donjons de races différentes. `b5c25349d5`
+  Vu en jeu (Flo, 2026-11-13) : ça marche, mais « extrêmement dur ».
+- [x] **H.6 Ennemis des races moins durs** : `icebreaker_pv` dans les fiches (guerrier 50, archer et mage 40, chef
+  150 ; un humanoïde a 100), plastron et jambières seulement, plus de survie à 1 PV pour un ennemi. Testé ; à rejouer.
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
@@ -319,6 +322,7 @@ tâche pour ce qui casse.
   qui lance les attaques de feu et les totems du chef gnarling (animations d'un corps humanoïde ?), sa force face à
   un groupe ; araignées et autres solitaires dans les nids et les poches.
 - H.5 : la campagne à quatre donjons générés, sans fort gnarling ; le départ ne propose plus « Donjon ».
+- H.6 : difficulté des ennemis des races (PV, armure, plus de survie à 1 PV) ; si trop dur encore : moins de tireurs.
 
 **Divers**
 - M.1 : téléchargement du plugin par le vrai client.

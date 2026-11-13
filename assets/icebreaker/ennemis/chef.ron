@@ -1,12 +1,14 @@
 // Icebreaker H.1 : le chef d'une race (antre du chef, salle du boss, fond de la grotte). Il tient le bâton du chef
 // gnarling : mêmes capacités (frappe et barrage de feu, onde de choc, totems) et même tactique de l'IA, qui
 // viennent de l'arme et pas du corps. L'espèce est imposée par le lieu, comme pour guerrier.ron.
+// H.6 : icebreaker_pv = PV de base, ceux du chef gnarling (150).
 #![enable(implicit_some)]
 (
     name: Automatic,
     body: RandomWith("humanoid"),
     alignment: Alignment(Enemy),
     loot: Nothing,
+    icebreaker_pv: 150.0,
     inventory: (
         loadout: Inline((
             inherit: Asset("icebreaker.classes.guerrier"),

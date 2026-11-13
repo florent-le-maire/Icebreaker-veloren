@@ -78,6 +78,20 @@ mod tests {
         );
     }
 
+    // Icebreaker H.6: the health of the file, no staying at 1 HP.
+    #[test]
+    fn enemies_have_the_health_of_their_file() {
+        let mut rng = ChaCha8Rng::seed_from_u64(3);
+        for (asset, pv) in [("icebreaker.ennemis.guerrier", 50.0), ("icebreaker.ennemis.chef", 150.0)] {
+            let info = entity(asset, Some("elf"), Vec3::zero(), &mut rng);
+            assert_eq!(info.icebreaker_pv, Some(pv), "{asset}");
+            let mut health = common::comp::Health::new(info.body);
+            health.icebreaker_ennemi(info.icebreaker_pv);
+            assert_eq!((health.maximum(), health.current()), (pv, pv));
+            assert!(!health.death_protection && !health.can_have_death_protection);
+        }
+    }
+
     #[test]
     fn other_creatures_keep_their_body() {
         let mut rng = ChaCha8Rng::seed_from_u64(2);

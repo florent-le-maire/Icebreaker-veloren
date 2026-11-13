@@ -559,6 +559,7 @@ impl SpawnEntityData {
             rider,
             death_effects,
             rider_effects,
+            icebreaker_pv,
         } = entity;
 
         if let Some(special) = special_entity {
@@ -603,7 +604,13 @@ impl SpawnEntityData {
             inventory
         };
 
-        let health = Some(comp::Health::new(body));
+        let mut health = comp::Health::new(body);
+        // Icebreaker H.6: an enemy has the health of its file, and does not stay at
+        // 1 HP once like a humanoid.
+        if alignment == comp::Alignment::Enemy {
+            health.icebreaker_ennemi(icebreaker_pv);
+        }
+        let health = Some(health);
         let poise = comp::Poise::new(body);
 
         // Allow Humanoid, BirdMedium, and Parrot to speak

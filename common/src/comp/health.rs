@@ -155,6 +155,19 @@ impl Health {
     }
 
     /// Returns a boolean if the delta was not zero.
+    /// Icebreaker H.6: an enemy with `pv` base health, instead of its body's,
+    /// full; and without the protection that keeps a humanoid at 1 HP once.
+    pub fn icebreaker_ennemi(&mut self, pv: Option<f32>) {
+        if let Some(pv) = pv {
+            let scaled = (pv.max(1.0) * Self::SCALING_FACTOR_FLOAT) as u32;
+            self.base_max = scaled;
+            self.maximum = scaled;
+            self.current = scaled;
+        }
+        self.can_have_death_protection = false;
+        self.death_protection = false;
+    }
+
     pub fn change_by(&mut self, change: HealthChange) -> bool {
         let prev_health = i64::from(self.current);
         self.current = (((self.current() + change.amount).clamp(0.0, f32::from(Self::MAX_HEALTH))

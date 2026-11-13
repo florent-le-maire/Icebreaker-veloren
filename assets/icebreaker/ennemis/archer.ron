@@ -1,17 +1,21 @@
 // Icebreaker H.1 : un ennemi archer d'une race (donjons générés, grottes). L'espèce est imposée par le lieu (une race
-// par donjon ou grotte, generation.ron et grotte.ron) ; « humanoid » n'est que le repli. Équipement repris de la
-// classe archer des joueurs (classes/archer.ron), sans ses compétences Icebreaker ; le butin vient de butin.ron.
+// par donjon ou grotte, generation.ron et grotte.ron) ; « humanoid » n'est que le repli. Tenue et arme de la classe
+// archer des joueurs (classes/archer.ron), sans ses compétences Icebreaker ; le butin vient de butin.ron.
+// H.6 (difficulté) : icebreaker_pv = PV de base (un humanoïde en a 100, un gnarling 50) ; seulement le plastron et
+// les jambières de la classe (moins d'armure) ; un ennemi ne reste pas à 1 PV comme un humanoïde (server/src/sys/terrain.rs).
 #![enable(implicit_some)]
 (
     name: Automatic,
     body: RandomWith("humanoid"),
     alignment: Alignment(Enemy),
     loot: Nothing,
+    icebreaker_pv: 40.0,
     inventory: (
         loadout: Inline((
-            inherit: Asset("icebreaker.classes.archer"),
+            inherit: Asset("common.loadout.default"),
+            chest: Item("common.items.armor.hide.leather.chest"),
+            legs: Item("common.items.armor.hide.leather.pants"),
             active_hands: InHands((Item("common.items.weapons.bow.starter"), None)),
-            inactive_hands: InHands((None, None)),
         )),
     ),
     meta: [

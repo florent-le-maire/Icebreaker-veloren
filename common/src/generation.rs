@@ -165,6 +165,11 @@ pub struct EntityConfig {
     #[serde(default)]
     pub death_effects: Vec<StatEffect>,
 
+    /// Icebreaker H.6: its base health, instead of its body's (`None`: the
+    /// body's).
+    #[serde(default)]
+    pub icebreaker_pv: Option<f32>,
+
     /// Meta Info for optional fields
     /// Possible fields:
     /// SkillSetAsset(String) with asset_specifier for skillset
@@ -248,6 +253,9 @@ pub struct EntityInfo {
     pub trading_information: Option<SiteInformation>,
     //Option<hashbrown::HashMap<crate::trade::Good, (f32, f32)>>, /* price and available amount */
 
+    /// Icebreaker H.6: its base health, instead of its body's.
+    pub icebreaker_pv: Option<f32>,
+
     // Edge cases, override everything else
     pub special_entity: Option<SpecialEntity>,
 }
@@ -278,6 +286,7 @@ impl EntityInfo {
             rider: None,
             trading_information: None,
             special_entity: None,
+            icebreaker_pv: None,
         }
     }
 
@@ -323,7 +332,9 @@ impl EntityInfo {
             rider,
             death_effects,
             rider_effects,
+            icebreaker_pv,
         } = config;
+        self.icebreaker_pv = icebreaker_pv;
 
         match body {
             BodyBuilder::RandomWith(string) => {
