@@ -1,5 +1,6 @@
-; Antre du chef : salle haute, archers sur la mezzanine du fond (escalier à gauche).
+; Antre du chef : salle haute, archers sur la mezzanine du fond (escalier à gauche), un feu et des trophées au sol.
 @roles: chiefLair
+@theme: bestial, militaire
 [étage 1]
 ###########
 #a.......a+
@@ -14,6 +15,6 @@
 +.........#
 #.........#
 #^........#
-#....c....#
-#.........#
+#.1..c..1.#
+#4.......4#
 #####+#####

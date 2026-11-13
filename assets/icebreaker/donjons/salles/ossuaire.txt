@@ -1,0 +1,10 @@
+; Ossuaire : pierres tombales et ossements ; deux piliers au milieu.
+@roles: sanctum
+@theme: culte
+#####+#####
+#9.-...-.9#
+#.........#
++.O.-.-.O.+
+#.........#
+#9.-...-.9#
+#####+#####

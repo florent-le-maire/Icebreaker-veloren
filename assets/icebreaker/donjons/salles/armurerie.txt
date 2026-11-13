@@ -1,0 +1,10 @@
+; Armurerie : râteliers, heaumes, outils et un établi ; un garde veille. Trois portes.
+@roles: guardRoom, barracks
+@theme: militaire
+####+####
+#5?5.5?5#
+#.......#
++...b...+
+#.......#
+#{.=./.{#
+#########

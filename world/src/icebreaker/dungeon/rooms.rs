@@ -101,6 +101,10 @@ pub struct RoomTemplate {
     pub id: String,
     pub roles: Vec<RoomRole>,
     pub bosses: Vec<String>,
+    /// Icebreaker : the styles of dungeon the room fits (`@theme:`, none = any) and its weight in the draw
+    /// (`@poids:`, 1 by default).
+    pub themes: Vec<String>,
+    pub weight: f64,
     pub plan: Plan,
     pub connectors: Vec<Connector>,
 }
@@ -115,6 +119,8 @@ impl RoomTemplate {
         let mut errors = Vec::new();
         let mut roles = Vec::new();
         let mut bosses = Vec::new();
+        let mut themes = Vec::new();
+        let mut weight = 1.0;
         for (i, line) in text.lines().enumerate() {
             let Some(setting) = line.strip_prefix('@') else {
                 continue;
@@ -131,6 +137,11 @@ impl RoomTemplate {
                     }
                 },
                 "boss" => bosses.extend(names.map(String::from)),
+                "theme" => themes.extend(names.map(|n| n.to_lowercase())),
+                "poids" => match value.trim().parse::<f64>() {
+                    Ok(w) if w > 0.0 => weight = w,
+                    _ => errors.push(format!("ligne {} : « @poids » doit être un nombre positif", i + 1)),
+                },
                 key => errors.push(format!("ligne {} : réglage inconnu « @{key} »", i + 1)),
             }
         }
@@ -146,7 +157,7 @@ impl RoomTemplate {
         }
 
         let plan = Plan::parse(text).map_err(|e| format!("salle « {id} » : {e}"))?;
-        Self::from_plan(id, roles, bosses, errors, plan)
+        Self::from_plan(id, roles, bosses, errors, plan).map(|room| Self { themes, weight, ..room })
     }
 
     /// Checks a plan and finds its connectors (`errors`: those of the header,
@@ -248,6 +259,8 @@ impl RoomTemplate {
             id: id.to_string(),
             roles,
             bosses,
+            themes: Vec::new(),
+            weight: 1.0,
             plan,
             connectors,
         })
@@ -301,7 +314,11 @@ impl RoomTemplate {
         let plan = Plan {
             cells: cells.into_iter().collect(),
         };
-        Self::from_plan(&format!("{}:{orientation}", self.id), self.roles.clone(), self.bosses.clone(), Vec::new(), plan)
+        Self::from_plan(&format!("{}:{orientation}", self.id), self.roles.clone(), self.bosses.clone(), Vec::new(), plan).map(|room| Self {
+            themes: self.themes.clone(),
+            weight: self.weight,
+            ..room
+        })
     }
 }
 
@@ -353,6 +370,11 @@ impl RoomCatalog {
         Self::parse(files)
     }
 
+    /// Icebreaker : the themes the rooms name (sorted, so a seed draws the same one whatever the files).
+    pub fn themes(&self) -> BTreeSet<String> {
+        self.rooms.iter().flat_map(|r| r.themes.iter().cloned()).collect()
+    }
+
     pub fn with_role(&self, role: RoomRole) -> Vec<&RoomTemplate> {
         self.rooms.iter().filter(|r| r.roles.contains(&role)).collect()
     }
@@ -389,7 +411,7 @@ mod tests {
     #[test]
     fn all_rooms_are_valid() {
         let catalog = RoomCatalog::load().unwrap_or_else(|e| panic!("{e}"));
-        assert_eq!(catalog.rooms.len(), 20);
+        assert_eq!(catalog.rooms.len(), 30);
         // Every role of a branch or of the main path has a room.
         for role in RoomRole::ALL {
             assert!(!catalog.with_role(role).is_empty(), "aucune salle pour {}", role.name());
@@ -427,5 +449,62 @@ mod tests {
         }
         let nest = catalog.get("nid").unwrap();
         assert!(nest.connectors.iter().any(|c| c.kind == ConnectorKind::Pit));
+    }
+
+    /// Icebreaker : the themes and the weight of a room are read, and survive its turns.
+    #[test]
+    fn themes_and_weights_are_read() {
+        let room = RoomTemplate::parse("x", "@roles: hall\n@theme: Culte, militaire\n@poids: 2.5\n###\n+.+\n###\n").unwrap();
+        assert_eq!(room.themes, ["culte", "militaire"]);
+        assert_eq!(room.weight, 2.5);
+        assert_eq!(room.oriented(1).unwrap().themes, room.themes);
+        let e = RoomTemplate::parse("x", "@roles: hall\n@poids: lourd\n###\n+.+\n###\n").unwrap_err();
+        assert!(e.contains("@poids"), "{e}");
+        let catalog = RoomCatalog::load().unwrap();
+        assert!(catalog.themes().len() >= 3, "{:?}", catalog.themes());
+    }
+
+    /// Icebreaker : the decor drawn in the rooms never blocks a door or stairs, and a wall piece has its wall.
+    #[test]
+    fn drawn_decor_stays_out_of_the_way() {
+        let catalog = RoomCatalog::load().unwrap();
+        let settings = super::super::settings::Settings::load().unwrap();
+        let mut drawn = 0;
+        for room in &catalog.rooms {
+            for (&cell, &symbol) in &room.plan.cells {
+                if !plan::is_decor_symbol(symbol) {
+                    continue;
+                }
+                drawn += 1;
+                let item = settings
+                    .decor
+                    .symbols
+                    .get(&symbol)
+                    .unwrap_or_else(|| panic!("salle « {} » : symbole de décor « {symbol} » sans sprite", room.id));
+                for connector in &room.connectors {
+                    assert_ne!(connector.inside, cell, "salle « {} » : décor devant une porte", room.id);
+                }
+                for (dx, dy) in plan::DIRECTIONS {
+                    let next = room.plan.get(cell.offset(dx, dy, 0));
+                    assert!(
+                        plan::stairs_direction(next).is_none(),
+                        "salle « {} » : décor contre un escalier ({}, {})",
+                        room.id,
+                        cell.x,
+                        cell.y
+                    );
+                }
+                if item.at == super::super::settings::DecorPlace::Wall {
+                    assert!(
+                        plan::DIRECTIONS.into_iter().any(|(dx, dy)| room.plan.get(cell.offset(dx, dy, 0)) == '#'),
+                        "salle « {} » : « {symbol} » veut un mur ({}, {})",
+                        room.id,
+                        cell.x,
+                        cell.y
+                    );
+                }
+            }
+        }
+        assert!(drawn > 100, "{drawn} décors dessinés seulement");
     }
 }

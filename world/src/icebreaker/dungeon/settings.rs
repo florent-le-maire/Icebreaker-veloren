@@ -666,6 +666,9 @@ pub struct Resolved {
 pub struct DecorSettings {
     pub roles: BTreeMap<String, Vec<DecorItem>>,
     pub corridors: Vec<DecorItem>,
+    /// Icebreaker : the decor drawn in the plan of a room, one symbol (`plan::DECOR_SYMBOLS`) per sprite.
+    #[serde(default)]
+    pub symbols: BTreeMap<char, DecorItem>,
 }
 
 /// Where a piece of decor goes: against a wall (facing the room), in the
@@ -716,6 +719,19 @@ impl DecorSettings {
             }
             if item.at == DecorPlace::Scatter && !(0.0..=1.0).contains(&item.chance) {
                 errors.push(format!("{role} : chance de « {} » entre 0 et 1", item.sprite));
+            }
+        }
+        for (symbol, item) in &self.symbols {
+            if !super::plan::is_decor_symbol(*symbol) {
+                errors.push(format!("symbole de décor « {symbol} » non réservé (plan::DECOR_SYMBOLS)"));
+            }
+            if item.at == DecorPlace::Scatter {
+                errors.push(format!("symbole « {symbol} » : « scatter » n'a pas de sens pour un symbole"));
+            }
+            for name in std::iter::once(&item.sprite).chain(&item.around) {
+                if sprite_kind(name).is_none() {
+                    errors.push(format!("symbole « {symbol} » : sprite inconnu « {name} »"));
+                }
             }
         }
         for role in self.roles.keys() {

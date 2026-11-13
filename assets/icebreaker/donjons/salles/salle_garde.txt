@@ -1,8 +1,10 @@
-; Salle de garde : les gardes surveillent le passage.
+; Salle de garde : les gardes surveillent le passage ; heaumes, outils, une table.
 @roles: guardRoom
+@theme: militaire
 ###+###
-#.....#
+#5...5#
 #.b.b.#
 +.....+
 #.....#
+#{...=#
 ###+###

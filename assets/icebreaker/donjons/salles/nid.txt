@@ -1,9 +1,10 @@
-; Nid de créatures, avec une fosse possible vers les profondeurs.
+; Nid de créatures, avec une fosse possible vers les profondeurs ; toiles, champignons et ossements.
 ; *  fosse possible (reste du sol si le générateur ne s'en sert pas)
 @roles: nest
+@theme: bestial
 ####+####
-#.......#
-#..*....#
+#`.....`#
+#..*.-..#
 +.......+
-#....b..#
+#,...b-.#
 #########

@@ -1,12 +1,13 @@
-; Sanctuaire : un puits au centre descend vers une crypte (échelle pour remonter).
+; Sanctuaire : un puits au centre descend vers une crypte (échelle pour remonter) ; bougies et pierres tombales.
 @roles: sanctum
+@theme: culte
 [étage 0]
 ####+####
-#O.....O#
-#.......#
+#O!...!O#
+#9.....9#
 #..._...#
-#.......#
-#O.....O#
+#9.....9#
+#O!...!O#
 ####+####
 
 [étage -1]

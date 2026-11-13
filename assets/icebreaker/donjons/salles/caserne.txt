@@ -1,9 +1,10 @@
-; Caserne : des lits (piliers) et des brutes qui dorment. Deux portes.
+; Caserne : des couchages le long des murs, des heaumes, des brutes qui dorment. Deux portes.
 @roles: barracks
+@theme: militaire
 #######+#
-#.O.O.O.#
-#.......#
+#&.&.&..#
+#......5#
 +..b.b..+
-#.......#
-#.O.O.O.#
+#......5#
+#..&.&..#
 #+#######

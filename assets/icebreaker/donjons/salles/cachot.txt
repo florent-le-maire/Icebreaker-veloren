@@ -1,0 +1,11 @@
+; Cachots : cinq cellules derrière des portes (chaînes, paille, ossements), des barreaux dans la salle des gardes.
+@roles: prison
+@theme: militaire, culte
+###########
+#.#.#.#.#.#
+#7#:#-#7#:#
+#D#D#D#D#D#
++.........+
+#.........#
+#6.......6#
+#####+#####

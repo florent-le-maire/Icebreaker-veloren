@@ -140,3 +140,15 @@ au-dessus de trous, salle haute = murs sur deux étages.
 Contraintes de conception : passages d’au moins 2 m (les personnages font 1 m de large et la navigation
 retire leur rayon) ; tout le sol doit être accessible depuis les `S` (vérifié par les tests unitaires).
 Option de lancement `--bot` : le client suit la navigation de marqueur en marqueur, pratique pour tester un plan.
+
+## Décor des salles (Veloren, tâche F.9)
+
+Dans un plan de salle, des symboles de décor (sol avec un objet dessus ; liste dans `plan.rs`, `DECOR_SYMBOLS`) :
+`=` table et chaises, `&` couchage, `!` bougie, `?` étagère, `|` tonneau, `"` caisse, `'` sac, `-` ossements,
+`:` paille, `1` feu, `2` marmite, `3` chaudron, `4` trophée, `5` heaume, `6` barreaux, `7` chaînes, `8` sceau,
+`9` tombe, `0` orbe, `` ` `` toile, `,` champignons, `/` enclume, `\` tonneau d'eau, `(` applique, `)` cloche,
+`{` outils, `}` tenture. Chacun est un sprite réglé dans `generation.ron` (`decor.symbols`) : contre le mur voisin
+(`wall`) ou au milieu de la case (`center`). Ne jamais en mettre devant une porte ni contre un escalier (test).
+En-têtes : `@theme: militaire, culte…` (style de donjon ; aucun = va partout) et `@poids: 2` (tirage, 1 par défaut).
+Chaque donjon tire un thème dominant de sa graine ; ses salles pèsent `assembly.theme_bias` fois plus.
+Le tableur `docs/icebreaker/salles.xlsx` liste les salles et leur plan : `cargo run -p icebreaker-salles`.

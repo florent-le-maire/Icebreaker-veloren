@@ -1,0 +1,10 @@
+; Réfectoire : quatre rangées de tables, des marmites et des tonneaux contre le mur.
+@roles: kitchen, barracks
+@theme: militaire, artisan
+#####+#####
+#|\.2.2.\|#
+#.=.=.=.=.#
++.........+
+#.=.=.=.=.#
+#.........#
+###+#######

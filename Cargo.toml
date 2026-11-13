@@ -28,6 +28,7 @@ members = [
     "world",
     # Icebreaker : générateur du wiki de l'équipe (docs/icebreaker/PLAN-WIKI.md)
     "icebreaker-wiki",
+    "icebreaker-salles",
 ]
 
 ### PACKAGE ###

@@ -195,6 +195,21 @@ fn place_decor(
     };
     let corridors: Vec<Cell> = plan.cells.keys().filter(|c| !in_room.contains(c)).copied().collect();
     let mut placed = Vec::new();
+    // Icebreaker : the decor drawn in the rooms (symbols of the plan), where it was drawn; against the wall when
+    // the symbol says so and there is one, in the middle of the cell otherwise.
+    for (cell, symbol) in &plan.cells {
+        let Some(item) = decor.symbols.get(symbol) else { continue };
+        let wall = plan::DIRECTIONS.into_iter().find(|(dx, dy)| plan.get(cell.offset(*dx, *dy, 0)) == '#');
+        let place = match wall {
+            Some(wall) if item.at == settings::DecorPlace::Wall => DecorPlacement::Wall(wall),
+            _ => DecorPlacement::Center { around: item.around.clone() },
+        };
+        placed.push(Decor {
+            cell: *cell,
+            sprite: item.sprite.clone(),
+            place,
+        });
+    }
     let empty = Vec::new();
     let sets = rooms
         .iter()

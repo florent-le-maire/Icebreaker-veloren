@@ -51,13 +51,21 @@ pub fn is_creature_marker(symbol: char) -> bool {
     "bagcxefijklnpqrtuwyz".contains(symbol.to_ascii_lowercase())
 }
 
+/// Icebreaker : the symbols of the decor drawn in a room (table, bed, brazier...). The sprite of each is in
+/// `generation.ron` (`decor.symbols`). Such a cell is floor with a piece of decor on it.
+pub const DECOR_SYMBOLS: &str = "=&!?|\"'-:1234567890`,/\\(){}";
+
+pub fn is_decor_symbol(symbol: char) -> bool { DECOR_SYMBOLS.contains(symbol) }
+
 /// A cell one can stand on.
 pub fn is_walkable(symbol: char) -> bool {
-    matches!(symbol, '.' | 'S' | '$' | 'm' | 'D' | 'O' | '*' | 'H' | '~') || is_creature_marker(symbol)
+    matches!(symbol, '.' | 'S' | '$' | 'm' | 'D' | 'O' | '*' | 'H' | '~')
+        || is_creature_marker(symbol)
+        || is_decor_symbol(symbol)
 }
 
 /// A cell one can stand on without an obstacle (pillars are obstacles).
-pub fn is_open_floor(symbol: char) -> bool { is_walkable(symbol) && symbol != 'O' }
+pub fn is_open_floor(symbol: char) -> bool { is_walkable(symbol) && symbol != 'O' && !is_decor_symbol(symbol) }
 
 /// A multi-level plan. Cells absent from the map are empty (the rock around).
 #[derive(Clone, Debug, Default)]

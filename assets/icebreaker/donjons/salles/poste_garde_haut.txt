@@ -1,5 +1,6 @@
-; Poste de garde à balcon : un archer tient le balcon, on y monte par l'échelle du fond.
+; Poste de garde à balcon : un archer tient le balcon, on y monte par l'échelle du fond ; heaumes, outils, une table.
 @roles: guardRoom, hall
+@theme: militaire
 [étage 1]
 #########
 #a......#
@@ -8,6 +9,6 @@
 
 [étage 0]
 #########
-+.......+
-#...b..H#
++.5...5.+
+#{.=b..H#
 ####+####

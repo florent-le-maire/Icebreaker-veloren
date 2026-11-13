@@ -1,0 +1,10 @@
+; Bibliothèque : des étagères sur trois murs, des bougies, deux tables de lecture et un coffre. Une seule entrée.
+@roles: treasure, vault
+@theme: culte, artisan
+###+#####
+#?!.?.!?#
+#.......#
+#?.=.=.?#
+#.......#
+#?!.$.!?#
+#########

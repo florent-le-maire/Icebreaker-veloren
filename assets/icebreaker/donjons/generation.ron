@@ -111,6 +111,9 @@
         spacing: (1, 3),        // cases entre une porte et la salle suivante (F.2 : couloirs courts)
         search_limit: 3000,     // cases examinées par recherche de couloir
         margin: 6,              // marge autour du donjon où un couloir peut passer
+        // Icebreaker : chaque donjon a un thème dominant (tiré de sa graine : militaire, culte, bestial…, ceux que
+        // nomment les salles `@theme:`) ; une salle de ce thème pèse autant de fois plus dans le tirage (1 = sans effet).
+        theme_bias: 4.0,
     ),
     // Habitants et butin selon le rôle de la salle (tâche G.5). creatures : nombre par sorte (brute, archer, lookout,
     // chief, boss, beast) ; chests : coffres ; awake : éveillées (false : endormies, voir `sleep`).
@@ -259,6 +262,39 @@
     // (semé sur les blocs de sol, chance par bloc) ; count : nombre par salle (wall, center). Jamais sur une case
     // occupée (créature, coffre, clé, lumière), ni à côté d'une porte, d'un escalier ou d'un trou.
     decor: (
+        // Icebreaker : le décor dessiné dans le plan des salles (`docs/icebreaker/design/donjon.md`, « Décor des
+        // salles »). Un symbole = un sprite, posé là où il est dessiné, sur un sol libre : wall = contre le mur voisin
+        // (au milieu de la case s'il n'y en a pas), center = au milieu de la case (around : un sprite sur les quatre
+        // blocs autour). Les symboles possibles : plan.rs, DECOR_SYMBOLS.
+        symbols: {
+            '=': (sprite: "DiningtableWoodWoodlandRound", at: center, around: Some("ChairWoodWoodland")), // table et chaises
+            '&': (sprite: "Bedroll", at: wall),                // couchage
+            '!': (sprite: "Candle", at: wall),                 // bougie
+            '?': (sprite: "Shelf", at: wall),                  // étagère
+            '|': (sprite: "Barrel", at: wall),                 // tonneau
+            '"': (sprite: "CrateBlock", at: wall),             // caisse
+            '\'': (sprite: "SackLeatherM", at: wall),          // sac
+            '-': (sprite: "Bones", at: center),                // ossements
+            ':': (sprite: "Hay", at: center),                  // paille
+            '1': (sprite: "BonfireMLit", at: center),          // feu de camp
+            '2': (sprite: "CookingPot", at: center),           // marmite
+            '3': (sprite: "Cauldron", at: wall),               // chaudron
+            '4': (sprite: "TrophyframeWoodDeer", at: wall),    // trophée
+            '5': (sprite: "Helm", at: wall),                   // heaume
+            '6': (sprite: "DoorBars", at: wall),               // barreaux
+            '7': (sprite: "MetalChain", at: wall),             // chaînes
+            '8': (sprite: "MagicalSeal", at: center),          // sceau magique
+            '9': (sprite: "Gravestone", at: wall),             // pierre tombale
+            '0': (sprite: "Orb", at: center),                  // orbe
+            '`': (sprite: "EnsnaringWeb", at: center),         // toile
+            ',': (sprite: "CaveMushroom", at: center),         // champignons
+            '/': (sprite: "Anvil", at: center),                // enclume
+            '\\': (sprite: "BarrelWoodWater", at: wall),       // tonneau d'eau
+            '(': (sprite: "WallSconce", at: wall),             // applique
+            ')': (sprite: "Bell", at: center),                 // cloche
+            '{': (sprite: "CarpenterToolsWall", at: wall),     // outils
+            '}': (sprite: "DungeonWallDecor", at: wall),       // tenture
+        },
         roles: {
             "entrance": [(sprite: "Crate", at: wall, count: (1, 2)), (sprite: "Barrel", at: wall, count: (0, 1))],
             "hall": [

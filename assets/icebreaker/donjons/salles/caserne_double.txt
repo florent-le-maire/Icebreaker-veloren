@@ -1,9 +1,10 @@
-; Caserne double (F.5) : deux dortoirs séparés par une cloison percée.
+; Caserne double (F.5) : deux dortoirs séparés par une cloison percée, un couchage près de chaque dormeur.
 @roles: barracks
+@theme: militaire
 ##+###+##
 #B.B#B.B#
-#...#...#
+#&.&#&.&#
 +.......+
-#...#...#
+#&.&#&.&#
 #B.B#B.B#
 ##+###+##

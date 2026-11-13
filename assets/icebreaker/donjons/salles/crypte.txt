@@ -1,0 +1,9 @@
+; Crypte : des tombes, des bougies et un sceau magique au centre. Une seule entrée.
+@roles: sanctum
+@theme: culte
+#######
+#9!.!9#
+#.....#
+#9.8.9#
+#.....#
+###+###

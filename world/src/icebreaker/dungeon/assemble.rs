@@ -45,6 +45,22 @@ pub struct AssemblySettings {
     pub search_limit: usize,
     /// Margin around the dungeon where a corridor may go.
     pub margin: i32,
+    /// Icebreaker : each dungeon has a dominant theme (drawn from its seed); a room of that theme weighs this
+    /// many times more than one without (1 = no theme).
+    #[serde(default = "default_theme_bias")]
+    pub theme_bias: f64,
+}
+
+fn default_theme_bias() -> f64 { 1.0 }
+
+/// Icebreaker : the dominant theme of the dungeon of `seed` (none if no room names a theme).
+pub fn dominant_theme(catalog: &RoomCatalog, seed: u64) -> Option<String> {
+    let themes: Vec<String> = catalog.themes().into_iter().collect();
+    if themes.is_empty() {
+        return None;
+    }
+    let mut rng = ChaCha8Rng::seed_from_u64(seed.wrapping_mul(0x9E37_79B9_7F4A_7C15).wrapping_add(29));
+    Some(themes[rng.random_range(0..themes.len())].clone())
 }
 
 /// A room of the graph placed in the dungeon: cell (0, 0, 0) of its template
@@ -160,8 +176,9 @@ pub fn assemble(
     mut log: impl FnMut(String),
 ) -> Option<Assembled> {
     let mut rng = ChaCha8Rng::seed_from_u64(seed);
+    let theme = dominant_theme(catalog, seed);
     for attempt in 1..=settings.attempts {
-        let mut state = Attempt::new(graph, catalog, &mut rng, settings, tunnel_cells);
+        let mut state = Attempt::new(graph, catalog, &mut rng, settings, tunnel_cells, theme.clone());
         match state.run() {
             Err(failure) => log(format!("tentative {attempt} : {failure}")),
             Ok(()) => {
@@ -191,6 +208,7 @@ struct Attempt<'a> {
     tree_degree: Vec<usize>,
     degree: Vec<usize>,
     tunnel: Option<Tunnel>,
+    theme: Option<String>,
     placement_failure: String,
 }
 
@@ -209,8 +227,10 @@ impl<'a> Attempt<'a> {
         rng: &'a mut ChaCha8Rng,
         settings: &'a AssemblySettings,
         tunnel_cells: i32,
+        theme: Option<String>,
     ) -> Self {
         Self {
+            theme,
             graph,
             catalog,
             rng,
@@ -229,6 +249,27 @@ impl<'a> Attempt<'a> {
     }
 
     fn pick<T: Clone>(&mut self, items: &[T]) -> T { items[self.rng.random_range(0..items.len())].clone() }
+
+    /// Icebreaker : a template drawn by weight (`@poids`), the rooms of the dominant theme of the dungeon
+    /// weighing `theme_bias` times more.
+    fn pick_template(&mut self, items: &[&'a RoomTemplate]) -> &'a RoomTemplate {
+        let weight = |t: &RoomTemplate| {
+            let themed = self.theme.as_ref().is_some_and(|theme| t.themes.contains(theme));
+            t.weight * if themed { self.settings.theme_bias.max(0.0) } else { 1.0 }
+        };
+        let total: f64 = items.iter().map(|t| weight(t)).sum();
+        if total <= 0.0 {
+            return self.pick(items);
+        }
+        let mut roll = self.rng.random_range(0.0..total);
+        for t in items {
+            roll -= weight(t);
+            if roll < 0.0 {
+                return t;
+            }
+        }
+        items[items.len() - 1]
+    }
 
     /// Templates of the role with enough doors for the passages of the tree
     /// (otherwise those with the most), and preferably for the loops and
@@ -263,7 +304,7 @@ impl<'a> Attempt<'a> {
         if templates.is_empty() {
             return Err("aucune salle d'entrée".into());
         }
-        let template = self.pick(&templates);
+        let template = self.pick_template(&templates);
         self.write(PlacedRoom {
             graph_room: 0,
             template: template.clone(),
@@ -360,7 +401,7 @@ impl<'a> Attempt<'a> {
             // then lies just beyond it, and turned rooms nearly always have one), and
             // among those, one at the parent's level when there is one: a flat
             // corridor, the stairs of the room do the descent.
-            let template = self.pick(&templates);
+            let template = self.pick_template(&templates);
             let doors: Vec<_> = template.doors().copied().collect();
             let facing: Vec<_> = doors.iter().copied().filter(|c| c.direction() == (-dx, -dy)).collect();
             let candidates = if facing.is_empty() { doors } else { facing };

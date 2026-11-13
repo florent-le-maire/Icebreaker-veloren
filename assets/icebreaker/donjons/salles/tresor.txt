@@ -1,7 +1,7 @@
-; Petite salle au trésor, une seule entrée.
+; Petite salle au trésor, une seule entrée ; une bougie et un orbe.
 @roles: treasure
 #####
-#$.$#
-#...#
+#$!$#
+#.0.#
 #$.$#
 ##+##

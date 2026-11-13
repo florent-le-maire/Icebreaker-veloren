@@ -2,9 +2,9 @@
 ; +  porte possible (reste un mur si le générateur ne s'en sert pas)
 @roles: entrance
 #####+#####
-#.........#
+#.(.....(.#
 #..SSSSS..#
 +..SSSSS..+
 #.........#
-#.........#
+#"|.....|"#
 #####+#####

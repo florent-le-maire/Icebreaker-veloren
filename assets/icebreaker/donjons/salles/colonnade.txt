@@ -1,10 +1,11 @@
-; Colonnade (F.5) : un long hall à deux rangées de piliers.
+; Colonnade (F.5) : un long hall à deux rangées de piliers, des appliques entre les colonnes.
 ; +  porte possible (reste un mur si le générateur ne s'en sert pas)
 @roles: hall, guardRoom
+@theme: militaire
 #####+#####
-#.........#
+#.(.....(.#
 #.O.O.O.O.#
 +.........+
 #.O.O.O.O.#
-#.........#
+#.(.....(.#
 #####+#####

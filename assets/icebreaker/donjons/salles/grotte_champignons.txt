@@ -1,0 +1,10 @@
+; Grotte aux champignons : toiles, champignons et ossements, des bêtes qui rôdent.
+@roles: nest
+@theme: bestial
+#####+#####
+#,..`..-.,#
+#.........#
++...b.b...+
+#.,.....-.#
+#`..,..b.`#
+#####+#####

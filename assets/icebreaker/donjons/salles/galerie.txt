@@ -1,9 +1,10 @@
 ; Galerie (F.5) : une grande salle sur deux étages, une galerie fait le tour en haut ;
-; on y monte par l'escalier du coin, on en redescend en sautant.
+; on y monte par l'escalier du coin, on en redescend en sautant. Appliques, heaumes et bougies.
 @roles: hall, guardRoom
+@theme: militaire, culte
 [étage 1]
 ###########
-#.........+
+#.!.....!.+
 #._______.#
 #._______.#
 +._______.#
@@ -14,11 +15,11 @@
 
 [étage 0]
 #####+#####
-#.........#
+#.(.....(.#
 #.........#
 #.........#
 +.........+
 #.........#
-#.........#
+#5.......5#
 #.......>.#
 #####+#####

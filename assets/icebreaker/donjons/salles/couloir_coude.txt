@@ -1,7 +1,7 @@
-; Couloir en coude.
+; Couloir en coude, un tonneau et une bougie.
 @roles: hall
 ###+###
-#.....#
+#|...!#
 #.....+
 #..####
 #..#

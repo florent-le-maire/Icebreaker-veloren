@@ -1,9 +1,10 @@
-; Salle de passage à piliers, quatre portes possibles.
+; Salle de passage à piliers, quatre portes possibles ; des appliques.
 @roles: hall
+@theme: culte
 ####+####
-#.......#
+#.(...(.#
 #.O...O.#
 +.......+
 #.O...O.#
-#.......#
+#.(...(.#
 ####+####
