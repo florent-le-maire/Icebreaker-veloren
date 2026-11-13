@@ -68,6 +68,53 @@ fn clamp_and_modulate(ori: Vec3<f32>) -> Vec3<f32> {
     }
 }
 
+/// Icebreaker : l'orientation de caméra (lacet, tangage, 0) d'une direction de regard, pour
+/// voir par les yeux d'un autre (mort qui regarde un allié, T.4). Un regard à la verticale peut
+/// avoir un `z` qui dépasse 1 d'un cheveu après normalisation : sans la borne, `asin` rend NaN,
+/// la caméra le garde pour de bon (écran noir) et le calcul des ombres plante.
+pub fn orientation_du_regard(d: Vec3<f32>) -> Vec3<f32> {
+    let pitch = (-d.z).clamp(-1.0, 1.0).asin();
+    let yaw = d.x.atan2(d.y);
+    Vec3::new(yaw, pitch, 0.0)
+}
+
+#[cfg(test)]
+mod icebreaker_tests {
+    use super::*;
+
+    #[test]
+    fn regard_a_la_verticale_sans_nan() {
+        // Un cheveu au-delà de 1 : ce que donne une direction normalisée en f32.
+        for z in [-1.000_000_1_f32, 1.000_000_1, -1.0, 1.0, 0.3] {
+            let ori = orientation_du_regard(Vec3::new(0.0, 1.0e-4, z));
+            assert!(ori.iter().all(|e| e.is_finite()), "z = {z} donne {ori:?}");
+        }
+        // Vers le bas : tangage positif, au plus un quart de tour.
+        let bas = orientation_du_regard(Vec3::new(0.0, 0.0, -1.000_000_1));
+        assert!((bas.y - PI / 2.0).abs() < 1.0e-3);
+    }
+
+    #[test]
+    fn orientation_nan_refusee() {
+        let avant = clamp_and_modulate(Vec3::new(1.0, 0.5, 0.0));
+        assert_eq!(orientation_sure(Vec3::new(f32::NAN, 0.2, 0.0), avant), avant);
+        assert_eq!(
+            orientation_sure(Vec3::new(2.0, 0.2, 0.0), avant),
+            clamp_and_modulate(Vec3::new(2.0, 0.2, 0.0))
+        );
+    }
+}
+
+/// Icebreaker : l'orientation demandée, bornée, ou l'ancienne si la demande n'est pas un nombre
+/// (un NaN ne sortirait plus jamais de la caméra).
+fn orientation_sure(demande: Vec3<f32>, avant: Vec3<f32>) -> Vec3<f32> {
+    if demande.iter().all(|e| e.is_finite()) {
+        clamp_and_modulate(demande)
+    } else {
+        avant
+    }
+}
+
 /// Generalized method to construct a perspective projection with `x ∈ [-1,1], y
 /// ∈ [-1,1], z ∈ [0,1]` given fov_y_radians, aspect_ratio, 1/n, and 1/f.  Note
 /// that you pass in *1/n* and *1/f*, not n and f like you normally would for a
@@ -525,7 +572,10 @@ impl Camera {
     }
 
     /// Set the orientation of the camera about its focus.
-    pub fn set_orientation(&mut self, ori: Vec3<f32>) { self.tgt_ori = clamp_and_modulate(ori); }
+    pub fn set_orientation(&mut self, ori: Vec3<f32>) {
+        // Icebreaker : une orientation NaN est ignorée.
+        self.tgt_ori = orientation_sure(ori, self.tgt_ori);
+    }
 
     /// Set the orientation of the camera about its focus without lerping.
     pub fn set_orientation_instant(&mut self, ori: Vec3<f32>) {

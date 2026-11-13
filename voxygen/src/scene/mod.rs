@@ -569,14 +569,8 @@ impl Scene {
             .read_storage::<comp::CharacterActivity>()
             .get(scene_data.viewpoint_entity)
             .and_then(|activity| activity.look_dir)
-            .map(|dir| {
-                let d = dir.to_vec();
-
-                let pitch = (-d.z).asin();
-                let yaw = d.x.atan2(d.y);
-
-                Vec3::new(yaw, pitch, 0.0)
-            })
+            // Icebreaker : tangage borné, un regard à la verticale donnait NaN (plantage).
+            .map(|dir| camera::orientation_du_regard(dir.to_vec()))
             .unwrap_or_else(|| {
                 let q = viewpoint_ori;
                 let sinr_cosp = 2.0 * (q.w * q.x + q.y * q.z);
