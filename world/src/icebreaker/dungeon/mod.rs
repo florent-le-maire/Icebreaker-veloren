@@ -47,6 +47,8 @@ pub struct Dungeon {
     pub summary: String,
     /// Who lives there.
     pub faction: settings::Faction,
+    /// Icebreaker H.2: the species of its humanoids (none: their own bodies).
+    pub species: Option<String>,
     /// Locked doors (door cells), and the cells where their keys lie, with
     /// the key of each.
     pub locks: Vec<(Cell, settings::KeySettings)>,
@@ -306,11 +308,14 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
         plan,
         tunnel,
         summary: format!("salle seule : {}", room.id),
-        faction: settings
-            .factions
-            .get(&settings.default_faction)
-            .cloned()
-            .ok_or("faction par défaut inconnue")?,
+        faction: settings.with_solitaires(
+            settings
+                .factions
+                .get(&settings.default_faction)
+                .cloned()
+                .ok_or("faction par défaut inconnue")?,
+        ),
+        species: None,
         locks: Vec::new(),
         keys: Vec::new(),
         sleep: settings.sleep.clone(),
@@ -399,17 +404,19 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 plan: assembled.plan,
                 tunnel: assembled.tunnel,
                 summary: format!(
-                    "{} {} ({}), graine {seed} ({} tentative(s)), {creatures} créature(s), {chests} \
+                    "{} {} ({}), race {}, graine {seed} ({} tentative(s)), {creatures} créature(s), {chests} \
                      coffre(s) ({} par palier) ; salles : {}\n{}",
                     mission.size,
                     mission.objective,
                     resolved.modifiers.join(", "),
+                    resolved.species.as_deref().unwrap_or("des fichiers"),
                     assembled.attempts,
                     chests_by_tier.join(" / "),
                     rooms.join(", "),
                     graph.describe()
                 ),
                 faction: resolved.faction.clone(),
+                species: resolved.species.clone(),
                 locks: with_keys(&assembled.locks)?,
                 keys,
                 sleep: settings.sleep.clone(),
@@ -484,11 +491,47 @@ mod tests {
     fn faction_creatures_exist() {
         let settings = Settings::load().unwrap();
         for (name, faction) in &settings.factions {
-            for asset in faction.creatures.values().flatten() {
+            for asset in faction.creatures.values().flatten().chain(&settings.solitaires) {
                 let path = common::assets::ASSETS_PATH.join(asset.replace('.', "/") + ".ron");
                 assert!(path.exists(), "faction {name} : {asset} introuvable");
             }
         }
+    }
+
+    // Icebreaker H.2: one race per dungeon, drawn from its seed or asked.
+    #[test]
+    fn one_race_per_dungeon() {
+        let settings = Settings::load().unwrap();
+        let especes = &settings.factions[&settings.default_faction].especes;
+        assert_eq!(especes.len(), 6);
+        let mut seen = BTreeSet::new();
+        for seed in 0..12 {
+            let mission = Mission { seed, ..Mission::default() };
+            let race = settings.resolve(&mission).unwrap().species.unwrap();
+            assert!(especes.contains(&race));
+            assert_eq!(Some(&race), settings.resolve(&mission).unwrap().species.as_ref());
+            seen.insert(race);
+        }
+        assert!(seen.len() >= 3, "races tirées : {seen:?}");
+        let asked = Mission { race: Some("draugr".into()), ..Mission::default() };
+        let dungeon = generate(&settings, &asked).unwrap();
+        assert_eq!(dungeon.species.as_deref(), Some("draugr"));
+        assert!(dungeon.summary.contains("race draugr"));
+        // A faction of Veloren keeps its own bodies.
+        let gnarlings = Mission { faction: Some("gnarling".into()), ..Mission::default() };
+        assert_eq!(settings.resolve(&gnarlings).unwrap().species, None);
+    }
+
+    // Icebreaker H.3: the nests of the races hold the lone monsters.
+    #[test]
+    fn nests_hold_the_lone_monsters() {
+        let settings = Settings::load().unwrap();
+        assert!(!settings.solitaires.is_empty());
+        let resolved = settings.resolve(&Mission::default()).unwrap();
+        assert_eq!(resolved.faction.creatures["beast"], settings.solitaires);
+        let gnarlings = Mission { faction: Some("gnarling".into()), ..Mission::default() };
+        let resolved = settings.resolve(&gnarlings).unwrap();
+        assert_eq!(resolved.faction.creatures["beast"], ["common.entity.dungeon.gnarling.mandragora"]);
     }
 
     #[test]

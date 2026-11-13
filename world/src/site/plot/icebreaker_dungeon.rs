@@ -11,7 +11,6 @@ use crate::{
 };
 use common::{
     comp::item::ItemDefinitionIdOwned,
-    generation::EntityInfo,
     lottery::LootSpec,
     terrain::{Block, BlockKind, SpriteCfg, SpriteKind, TerrainChunkSize, UnlockKind},
 };
@@ -580,8 +579,8 @@ impl Structure for IcebreakerDungeon {
                 let palier = self.dungeon.paliers.get(cell).copied().unwrap_or(1);
                 let loot = self.dungeon.butin.creature(kind, palier).to_string();
                 painter.spawn(
-                    EntityInfo::at(self.spawn_pos(*cell))
-                        .with_asset_expect(asset, &mut rng, None)
+                    // Icebreaker H.2: a humanoid of the race of the dungeon.
+                    crate::icebreaker::races::entity(asset, self.dungeon.species.as_deref(), self.spawn_pos(*cell), &mut rng)
                         .with_loot_drop(common::lottery::LootSpec::LootTable(loot)),
                 );
             }

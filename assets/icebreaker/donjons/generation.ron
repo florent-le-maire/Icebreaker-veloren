@@ -136,8 +136,28 @@
     corridors: (creatures: {"lookout": (1, 1)}, per_cells: 10),
     // Qui habite le donjon : pour chaque sorte des plans, des créatures de Veloren (tirées au hasard dans la liste) ;
     // chest : le sprite du coffre (DungeonChest0 = gnarlings, 1 = adlets, 5 = cultistes) ; son butin vient de butin.ron (B.5).
-    default_faction: "gnarling",
+    // H.2 : la faction « races » (par défaut) = des humanoïdes d'une race, une seule par donjon, tirée par la graine
+    // parmi especes (ou -Race du lanceur) ; rôles des classes des joueurs (icebreaker/ennemis/). Les autres factions
+    // restent pour -Faction.
+    default_faction: "races",
+    // H.3 : les monstres solitaires, sans race : ils habitent les nids (sorte beast) d'une faction qui n'a pas les siens.
+    solitaires: [
+        "common.entity.wild.aggressive.cave_spider",
+        "common.entity.dungeon.gnarling.mandragora",
+        "common.entity.wild.aggressive.frostfang",
+    ],
     factions: {
+        "races": (
+            creatures: {
+                "brute": ["icebreaker.ennemis.guerrier"],
+                "archer": ["icebreaker.ennemis.archer", "icebreaker.ennemis.mage"],
+                "lookout": ["icebreaker.ennemis.guerrier", "icebreaker.ennemis.archer", "icebreaker.ennemis.mage"],
+                "chief": ["icebreaker.ennemis.chef"],
+                "boss": ["icebreaker.ennemis.chef"],
+            },
+            especes: ["human", "orc", "dwarf", "elf", "draugr", "danari"],
+            chest: "DungeonChest0",
+        ),
         "gnarling": (
             creatures: {
                 "brute": ["common.entity.dungeon.gnarling.logger"],

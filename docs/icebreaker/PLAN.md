@@ -208,10 +208,10 @@ ou grotte (tirée par la graine du lieu), dans les rôles des classes (guerrier,
 `classes/`) ; des monstres solitaires, sans race (araignées dans la grotte) ; un chef de la race avec les capacités du
 chef gnarling, aussi dans la salle du boss. Pas de comportement de race pour l'instant. Worktree `Veloren-races`.
 
-- [ ] **H.1 Les ennemis par rôle** : `assets/icebreaker/ennemis/` (guerrier, archer, mage, chef) et
-  `world/src/icebreaker/races.rs` (espèce du lieu, entité de la race). — *en cours : Veloren-races, 2026-11-13*
-- [ ] **H.2 Une race par donjon généré** : faction `races` par défaut, espèces dans `generation.ron`.
-- [ ] **H.3 Les monstres solitaires** : les nids du donjon tirés d'une liste commune, pas de la faction.
+- [x] **H.1 Les ennemis par rôle** : `assets/icebreaker/ennemis/` (guerrier, archer, mage, chef au bâton du chef
+  gnarling), `world/src/icebreaker/races.rs`. Testé ; pas vu en jeu. `584586c8b3`
+- [x] **H.2 et H.3 Une race par donjon généré, monstres solitaires** (un seul commit, code commun) : faction
+  `races` par défaut, `especes` et `solitaires` dans `generation.ron`, `-Race` au lanceur. Testé ; pas vu en jeu.
 - [ ] **H.4 La grotte peuplée d'une race** : race + solitaires de l'ambiance (araignées), chef de la race au fond.
 - [ ] **H.5 La campagne sans le fort gnarling** : 4 donjons générés, docs et wiki à jour.
 

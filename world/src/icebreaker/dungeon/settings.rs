@@ -87,6 +87,10 @@ pub struct Settings {
     /// Who lives in the dungeon: Veloren creatures for each kind of the plans.
     pub factions: BTreeMap<String, Faction>,
     pub default_faction: String,
+    /// Icebreaker H.3: the lone monsters, of no race: they live in the nests
+    /// (kind `beast`) of a faction that has none of its own.
+    #[serde(default)]
+    pub solitaires: Vec<String>,
     /// What region, season, threat, enemies and objective change.
     pub parameters: Parameters,
     /// The keys of the locked doors, one for each lock of a dungeon (in the
@@ -200,6 +204,10 @@ pub struct CorridorPopulation {
 pub struct Faction {
     pub creatures: BTreeMap<String, Vec<String>>,
     pub chest: String,
+    /// Icebreaker H.2: the species its humanoids may be (one per dungeon,
+    /// drawn from the seed); empty: the bodies of the entity files.
+    #[serde(default)]
+    pub especes: Vec<String>,
 }
 
 fn role(name: &str, errors: &mut Vec<String>) -> RoomRole {
@@ -286,8 +294,15 @@ impl Settings {
         }
         for (name, faction) in &settings.factions {
             for (kind, _) in super::populate::KINDS {
-                if faction.creatures.get(kind).is_none_or(Vec::is_empty) {
+                // Icebreaker H.3: no beast of its own, the lone monsters.
+                let shared = kind == "beast" && !settings.solitaires.is_empty();
+                if !shared && faction.creatures.get(kind).is_none_or(Vec::is_empty) {
                     errors.push(format!("factions.{name} : aucune créature « {kind} »"));
+                }
+            }
+            for espece in &faction.especes {
+                if espece.parse::<common::npc::NpcBody>().is_err() {
+                    errors.push(format!("factions.{name}.especes : espèce inconnue « {espece} »"));
                 }
             }
         }
@@ -331,6 +346,15 @@ impl Settings {
     }
 
     pub fn load() -> Result<Self, String> { Self::parse(&super::read_data("generation.ron")?) }
+
+    /// Icebreaker H.3: `faction`, its nests peopled by the lone monsters if it
+    /// has no beast of its own.
+    pub fn with_solitaires(&self, mut faction: Faction) -> Faction {
+        if faction.creatures.get("beast").is_none_or(Vec::is_empty) {
+            faction.creatures.insert("beast".into(), self.solitaires.clone());
+        }
+        faction
+    }
 
     /// The rooms a dungeon of `seed` is built from: the drawn ones in every
     /// orientation, and the generated ones of this seed (Icebreaker F.2, F.5).
@@ -470,6 +494,12 @@ impl Settings {
                 self.factions.keys().cloned().collect::<Vec<_>>().join(", ")
             )
         })?;
+        let faction = self.with_solitaires(faction);
+        // Icebreaker H.2: one race for the whole dungeon.
+        let species = mission
+            .race
+            .clone()
+            .or_else(|| crate::icebreaker::races::species_of(&faction.especes, mission.seed).cloned());
         if !errors.is_empty() {
             return Err(errors.join(" ; "));
         }
@@ -483,6 +513,7 @@ impl Settings {
             population,
             corridors,
             faction,
+            species,
             modifiers: names,
         })
     }
@@ -546,6 +577,8 @@ pub struct Mission {
     pub objective: String,
     /// Who lives there (`factions` of `generation.ron`; none: the default one).
     pub faction: Option<String>,
+    /// Icebreaker H.2: the species of its humanoids (none: drawn from the seed).
+    pub race: Option<String>,
     /// `forest`, `mountain`, `swamp` (none: no effect).
     pub region: Option<String>,
     /// `spring`, `summer`, `autumn`, `winter` (none: no effect).
@@ -563,6 +596,7 @@ impl Default for Mission {
             size: "medium".into(),
             objective: "killChief".into(),
             faction: None,
+            race: None,
             region: None,
             season: None,
             threat: None,
@@ -591,6 +625,7 @@ impl Mission {
             size: var("TAILLE").unwrap_or(default.size),
             objective: var("OBJECTIF").unwrap_or(default.objective),
             faction: var("FACTION"),
+            race: var("RACE"),
             region: var("REGION"),
             season: var("SAISON"),
             threat,
@@ -619,6 +654,8 @@ pub struct Resolved {
     pub population: BTreeMap<RoomRole, RoomPopulation>,
     pub corridors: CorridorPopulation,
     pub faction: Faction,
+    /// Icebreaker H.2: the species of its humanoids (none: their own bodies).
+    pub species: Option<String>,
     /// Names of the parameters applied, for the summary.
     pub modifiers: Vec<String>,
 }

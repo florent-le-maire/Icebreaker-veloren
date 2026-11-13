@@ -4,7 +4,7 @@
 #                                             village et des emplacements de donjon, assets\icebreaker\campagne.ron)
 #   .\icebreaker.ps1 donjon -Site Gnarling   (port 14110)
 #   .\icebreaker.ps1 donjon -Site Genere     (port 14110 ; donjon de notre générateur, jalon G ; mission :
-#                                             -Taille -Objectif -Region -Saison -Menace -Ennemis -Faction)
+#                                             -Taille -Objectif -Region -Saison -Menace -Ennemis -Faction -Race)
 #   .\icebreaker.ps1 donjon -Site Grotte     (port 14140 ; grotte façon Deep Rock Galactic, jalon K)
 #   .\icebreaker.ps1 route                   (port 14120, pas encore fait : P.1)
 #   .\icebreaker.ps1 village                 (port 14100 ; -Site Town, CliffTown, DesertCity,
@@ -40,7 +40,9 @@ param(
     [ValidateSet("", "spring", "summer", "autumn", "winter")] [string]$Saison = "",
     [ValidateSet("", "1", "2", "3", "4", "5")] [string]$Menace = "",
     [ValidateSet("", "low", "medium", "high")] [string]$Ennemis = "",
-    [ValidateSet("", "gnarling", "adlet", "cultist")] [string]$Faction = "",
+    [ValidateSet("", "races", "gnarling", "adlet", "cultist")] [string]$Faction = "",
+    # Race des ennemis (H.2, donjon généré et grotte) : au hasard par la graine sinon.
+    [ValidateSet("", "human", "orc", "dwarf", "elf", "draugr", "danari")] [string]$Race = "",
     # Ambiance de la grotte (K.3) : champignons, cristaux ou ossuaire ; au hasard sinon.
     [string]$Ambiance = "",
     # Icebreaker X.10 : la partie (dossier userdata-icebreaker\parties\<nom>) ; par défaut ICEBREAKER_PARTIE
@@ -149,6 +151,7 @@ $env:ICEBREAKER_DONJON_SAISON = $Saison
 $env:ICEBREAKER_DONJON_MENACE = $Menace
 $env:ICEBREAKER_DONJON_ENNEMIS = $Ennemis
 $env:ICEBREAKER_DONJON_FACTION = $Faction
+$env:ICEBREAKER_DONJON_RACE = $Race
 $env:ICEBREAKER_GROTTE_AMBIANCE = $Ambiance
 Write-Host "Icebreaker : $Lieu ($Site), partie « $Partie », graine $Seed, port $port"
 Set-Location $repo
