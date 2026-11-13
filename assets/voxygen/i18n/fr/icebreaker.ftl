@@ -20,6 +20,7 @@ icebreaker-partie-nom-caracteres = Le nom d'une partie ne peut avoir que des let
 icebreaker-partie-nom-long = Le nom d'une partie fait au plus 30 caractères.
 icebreaker-partie-nom-existe = Une partie porte déjà ce nom : la choisir dans la liste pour la continuer.
 icebreaker-menu-titre = Icebreaker
+icebreaker-menu-pseudo = Ton pseudo
 icebreaker-partie-aucune = Aucune partie pour l'instant : en créer une ci-dessous.
 icebreaker-partie-continuer-action = Continuer
 icebreaker-partie-jouer = Jouer

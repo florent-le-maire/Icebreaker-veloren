@@ -438,6 +438,7 @@ impl Controls {
                 &language_metadatas,
                 button_style,
                 self.icebreaker_parties.as_ref(),
+                &self.login_info.username,
             ),
             Screen::Servers { screen } => screen.view(
                 &self.fonts,
@@ -815,10 +816,12 @@ impl Controls {
         } = &mut self.screen
         {
             // Icebreaker: a place of the campaign (no authentication server) takes
-            // the username as it is, without a prompt (X.7).
+            // the username as it is, without a prompt (X.7); S.4: an empty one would
+            // make every player the same account, so it gets the prompt.
             let username = self.login_info.username.trim().to_string();
             if std::mem::take(&mut self.icebreaker_auto_credentials)
                 && auth_server.is_none()
+                && !username.is_empty()
                 && validate_username(&username, &self.i18n).is_ok()
             {
                 *connection_state = ConnectionState::InProgress;

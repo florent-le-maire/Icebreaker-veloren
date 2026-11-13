@@ -20,6 +20,7 @@ icebreaker-partie-nom-caracteres = A game name may only hold letters, digits, sp
 icebreaker-partie-nom-long = A game name is at most 30 characters long.
 icebreaker-partie-nom-existe = A game already has this name: pick it in the list to continue it.
 icebreaker-menu-titre = Icebreaker
+icebreaker-menu-pseudo = Your name
 icebreaker-partie-aucune = No game yet: create one below.
 icebreaker-partie-continuer-action = Continue
 icebreaker-partie-jouer = Play

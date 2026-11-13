@@ -242,6 +242,9 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
 - [x] **S.3 Client pour les potes** — bouton « En ligne » (`adresse` dans `lieux.ron`), zip par
   `icebreaker-serveur/paquet-client.sh`. Zip décompressé à part : le vrai client entre dans le monde du VPS ; pas
   encore lancé chez un pote. `b3e3f64e8c`
+- [x] **S.4 Pseudo au menu** — champ « Ton pseudo » au-dessus des lieux ; sans pseudo, l'écran de saisie au lieu
+  d'un pseudo vide (vu sur le VPS : deux joueurs `username=""`, le même compte, l'un éjectait l'autre). Champ vu en
+  capture du menu ; connexion à deux au VPS pas encore vérifiée.
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
   avec Sayanel (`0015`). Contenu à confirmer (`QUESTIONS.md`, Q1).
 

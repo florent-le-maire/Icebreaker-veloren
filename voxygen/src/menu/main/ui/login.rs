@@ -52,6 +52,8 @@ impl Screen {
         button_style: style::button::Style,
         // Icebreaker X.10 : le choix de la partie, s'il est ouvert.
         parties: Option<&super::icebreaker::MenuParties>,
+        // Icebreaker S.4 : le pseudo, modifiable au menu.
+        username: &str,
     ) -> Element<'_, Message> {
         let mut buttons = Vec::new();
         // If the server field is locked, we don't want to show the server selection
@@ -169,6 +171,7 @@ impl Screen {
                     i18n,
                     button_style,
                     parties,
+                    username,
                 ),
                 Showing::Languages => self.language_selection.view(
                     fonts,
@@ -344,6 +347,8 @@ pub struct LoginBanner {
     // Icebreaker : un bouton par lieu de la campagne, puis le choix de la partie (X.10).
     campagne_buttons: Vec<button::State>,
     parties: PartiesStates,
+    // Icebreaker S.4 : le champ du pseudo, au-dessus des lieux.
+    pseudo: text_input::State,
 }
 
 impl LoginBanner {
@@ -356,6 +361,7 @@ impl LoginBanner {
         i18n: &Localization,
         button_style: style::button::Style,
         parties: Option<&super::icebreaker::MenuParties>,
+        username: &str,
     ) -> Element<'_, Message> {
         // Icebreaker N.6 : le choix de la partie prend la place du reste de la bannière.
         if let Some(menu) = parties {
@@ -456,7 +462,15 @@ impl LoginBanner {
             .height(Length::Units(200))
             .spacing(8)
             .into(),
-            campagne(&mut self.campagne_buttons, fonts, button_style, i18n),
+            campagne(
+                &mut self.campagne_buttons,
+                &mut self.pseudo,
+                username,
+                fonts,
+                imgs,
+                button_style,
+                i18n,
+            ),
         ])
         .width(Length::Fill)
         .align_items(Align::Center);
@@ -470,10 +484,15 @@ impl LoginBanner {
 
 /// Icebreaker N.6 : le bloc Icebreaker du menu, à part des boutons de Veloren :
 /// un titre, puis pour chaque lieu `au_menu` de `assets/icebreaker/lieux.ron` son
-/// bouton (grisé s'il n'est pas encore fait) et une ligne d'explication.
+/// bouton (grisé s'il n'est pas encore fait) et une ligne d'explication. S.4 : le
+/// champ du pseudo d'abord (sans pseudo, tout le monde serait le même joueur).
+#[allow(clippy::too_many_arguments)]
 fn campagne<'a>(
     buttons: &'a mut Vec<button::State>,
+    pseudo: &'a mut text_input::State,
+    username: &str,
     fonts: &Fonts,
+    imgs: &Imgs,
     button_style: style::button::Style,
     i18n: &Localization,
 ) -> Element<'a, Message> {
@@ -491,6 +510,21 @@ fn campagne<'a>(
             .size(fonts.cyri.scale(INPUT_TEXT_SIZE))
             .into(),
         Space::new(Length::Fill, Length::Units(2)).into(),
+        BackgroundContainer::new(
+            Image::new(imgs.input_bg)
+                .width(Length::Units(INPUT_WIDTH))
+                .fix_aspect_ratio(),
+            TextInput::new(
+                pseudo,
+                &i18n.get_msg("icebreaker-menu-pseudo"),
+                username,
+                Message::Username,
+            )
+            .size(fonts.cyri.scale(INPUT_TEXT_SIZE)),
+        )
+        .padding(Padding::new().horizontal(7).vertical(5))
+        .into(),
+        Space::new(Length::Fill, Length::Units(4)).into(),
     ];
     for (index, (state, lieu)) in buttons.iter_mut().zip(lieux).enumerate() {
         // Only the places marked `au_menu` (decision 0016: the campaign).
