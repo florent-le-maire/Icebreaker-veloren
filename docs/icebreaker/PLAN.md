@@ -211,8 +211,9 @@ chef gnarling, aussi dans la salle du boss. Pas de comportement de race pour l'i
 - [x] **H.1 Les ennemis par rôle** : `assets/icebreaker/ennemis/` (guerrier, archer, mage, chef au bâton du chef
   gnarling), `world/src/icebreaker/races.rs`. Testé ; pas vu en jeu. `584586c8b3`
 - [x] **H.2 et H.3 Une race par donjon généré, monstres solitaires** (un seul commit, code commun) : faction
-  `races` par défaut, `especes` et `solitaires` dans `generation.ron`, `-Race` au lanceur. Testé ; pas vu en jeu.
-- [ ] **H.4 La grotte peuplée d'une race** : race + solitaires de l'ambiance (araignées), chef de la race au fond.
+  `races` par défaut, `especes` et `solitaires` dans `generation.ron`, `-Race` au lanceur. Testé ; pas vu en jeu. `a62bc950be`
+- [x] **H.4 La grotte peuplée d'une race** : `habitants`, `chef`, `especes` et `part_solitaires` dans `grotte.ron`, les
+  ambiances n'ont plus que leurs `solitaires` (araignée partout) ; wiki des créatures à jour. Testé ; pas vu en jeu.
 - [ ] **H.5 La campagne sans le fort gnarling** : 4 donjons générés, docs et wiki à jour.
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)

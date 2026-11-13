@@ -29,6 +29,11 @@ pub struct Settings {
     pub population: PopulationSettings,
     /// The moods of the cave (Icebreaker K.3), by name; one is drawn per cave.
     pub ambiances: BTreeMap<String, Ambiance>,
+    /// Icebreaker H.4: the people of a race (one per cave, drawn from the
+    /// seed among `especes`), and their chief at the bottom.
+    pub habitants: Vec<String>,
+    pub chef: String,
+    pub especes: Vec<String>,
     /// Icebreaker B.5: the loot by depth (`butin.ron`), read by `load`.
     #[serde(skip)]
     pub butin: Option<super::butin::Butin>,
@@ -139,6 +144,9 @@ pub struct PopulationSettings {
     pub coffres: f32,
     /// The chest sprite.
     pub coffre: String,
+    /// Icebreaker H.4: share of the lone monsters among the creatures of the
+    /// pockets (the dead ends hold only lone monsters).
+    pub part_solitaires: f32,
 }
 
 /// A mood of the cave (Icebreaker K.3): what its floors, walls, concretions
@@ -158,9 +166,9 @@ pub struct Ambiance {
     pub stalagmites: (i32, i32),
     pub stalactites: (i32, i32),
     pub cristaux: (i32, i32),
-    /// The creatures living here (entities of Veloren), and their chief (K.5).
-    pub creatures: Vec<String>,
-    pub chef: String,
+    /// Icebreaker H.4: the lone monsters living here (entities of Veloren, of
+    /// no race).
+    pub solitaires: Vec<String>,
 }
 
 impl Settings {
@@ -239,6 +247,7 @@ impl Settings {
             || pop.par_niveau < 0
             || !(0.0..=1.0).contains(&pop.trous)
             || !(0.0..=1.0).contains(&pop.coffres)
+            || !(0.0..=1.0).contains(&pop.part_solitaires)
         {
             errors.push("population : par_poche (min, max) avec 0 ≤ min ≤ max, par_niveau ≥ 0, trous et coffres entre 0 et 1".into());
         }
@@ -246,8 +255,16 @@ impl Settings {
             errors.push(format!("population : coffre inconnu « {} »", pop.coffre));
         }
         for (name, ambiance) in &settings.ambiances {
-            if ambiance.creatures.is_empty() || ambiance.chef.is_empty() {
-                errors.push(format!("ambiances.{name} : creatures (au moins une) et chef"));
+            if ambiance.solitaires.is_empty() {
+                errors.push(format!("ambiances.{name} : solitaires (au moins un)"));
+            }
+        }
+        if settings.habitants.is_empty() || settings.chef.is_empty() {
+            errors.push("habitants (au moins un) et chef".into());
+        }
+        for espece in &settings.especes {
+            if espece.parse::<common::npc::NpcBody>().is_err() {
+                errors.push(format!("especes : espèce inconnue « {espece} »"));
             }
         }
         if errors.is_empty() { Ok(settings) } else { Err(errors.join(" ; ")) }
@@ -364,6 +381,8 @@ pub struct Grotte {
     pub filons: VeinSettings,
     /// The inhabitants (Icebreaker K.5), the chief among them.
     pub inhabitants: Vec<Inhabitant>,
+    /// Icebreaker H.4: the species of its people (none: their own bodies).
+    pub species: Option<String>,
     /// Where the chests lie, and their sprite.
     pub chests: Vec<Vec3<i32>>,
     /// Icebreaker B.5: the tier of each chest (same order), by the level of
@@ -720,7 +739,16 @@ pub fn generate(
     let mut inhabitants: Vec<Inhabitant> = Vec::new();
     let mut chests = Vec::new();
     let mut chest_levels = Vec::new();
-    let pick = |rng: &mut ChaCha8Rng| look.creatures[rng.random_range(0..look.creatures.len())].clone();
+    // Icebreaker H.4: the people of the race, and lone monsters (only them in
+    // the dead ends).
+    let lone = |rng: &mut ChaCha8Rng| look.solitaires[rng.random_range(0..look.solitaires.len())].clone();
+    let pick = |rng: &mut ChaCha8Rng| {
+        if rng.random_bool(pop.part_solitaires as f64) {
+            lone(rng)
+        } else {
+            settings.habitants[rng.random_range(0..settings.habitants.len())].clone()
+        }
+    };
     for pocket in &pockets {
         let count = roll(&mut rng, pop.par_poche).max(0) + pocket.level * pop.par_niveau;
         for _ in 0..count {
@@ -766,7 +794,7 @@ pub fn generate(
             .min_by_key(|p| (p.center.xy() - bore.a.xy()).map(|e| e as i64 * e as i64).sum())
             .map_or(0, |p| p.level);
         if rng.random_bool(pop.trous as f64) {
-            let asset = pick(&mut rng);
+            let asset = lone(&mut rng);
             inhabitants.push(Inhabitant { pos: stand(3.0), asset, chief: false, level, loot: None });
         }
         if rng.random_bool(pop.coffres as f64) {
@@ -777,7 +805,7 @@ pub fn generate(
     if let Some(deep) = pockets.iter().min_by_key(|p| p.center.z) {
         inhabitants.push(Inhabitant {
             pos: deep.center.xy().with_z(deep.floor_z(deep.center.xy(), relief.bosses) + 1),
-            asset: look.chef.clone(),
+            asset: settings.chef.clone(),
             chief: true,
             level: deep.level,
             loot: None,
@@ -785,6 +813,7 @@ pub fn generate(
     }
 
     let levels = pockets.iter().map(|p| p.level).max().unwrap_or(0) + 1;
+    let species = crate::icebreaker::races::species_of(&settings.especes, seed).cloned();
     let butin = settings.butin.clone();
     let chest_tiers: Vec<usize> = chest_levels
         .iter()
@@ -804,8 +833,9 @@ pub fn generate(
         mouth,
         dir,
         summary: format!(
-            "grotte {ambiance}, graine {seed} : {} poche(s) sur {levels} niveau(x), {} boyau(x) dont {loops} boucle(s), {} \
+            "grotte {ambiance}, race {}, graine {seed} : {} poche(s) sur {levels} niveau(x), {} boyau(x) dont {loops} boucle(s), {} \
              cul(s)-de-sac, {} concrétion(s), {} habitant(s), {} coffre(s) ({} par palier), fond en {:?}",
+            species.as_deref().unwrap_or("des fichiers"),
             pockets.len(),
             bores.len(),
             dead_ends.len(),
@@ -824,6 +854,7 @@ pub fn generate(
         relief: relief.clone(),
         filons: settings.filons.clone(),
         inhabitants,
+        species,
         chests,
         chest_tiers,
         butin,
@@ -994,10 +1025,32 @@ mod tests {
         let mean = total as f32 / 20.0;
         assert!((25.0..=40.0).contains(&mean), "{mean} habitants par grotte en moyenne");
         // Every creature named in the data is an entity of Veloren.
-        for ambiance in settings.ambiances.values() {
-            for asset in ambiance.creatures.iter().chain(std::iter::once(&ambiance.chef)) {
-                common::assets::Ron::<common::generation::EntityConfig>::load(asset).unwrap_or_else(|e| panic!("{asset} : {e}"));
-            }
+        let people = settings.habitants.iter().chain(std::iter::once(&settings.chef));
+        for asset in settings.ambiances.values().flat_map(|a| &a.solitaires).chain(people) {
+            common::assets::Ron::<common::generation::EntityConfig>::load(asset).unwrap_or_else(|e| panic!("{asset} : {e}"));
+        }
+    }
+
+    // Icebreaker H.4: one race per cave, its chief at the bottom, lone monsters too.
+    #[test]
+    fn one_race_per_cave() {
+        let settings = Settings::load().unwrap();
+        let mouth = Vec3::new(1000, 1000, 200);
+        for seed in 1..=10 {
+            let grotte = generate(&settings, seed, mouth, None, &|_| mouth.z);
+            let species = grotte.species.clone().expect("une race");
+            assert!(settings.especes.contains(&species));
+            assert!(grotte.summary.contains(&format!("race {species}")));
+            let chief = grotte.inhabitants.iter().find(|i| i.chief).unwrap();
+            assert_eq!(chief.asset, settings.chef);
+            let people = grotte.inhabitants.iter().filter(|i| settings.habitants.contains(&i.asset)).count();
+            let lone = grotte.inhabitants.iter().filter(|i| grotte.look.solitaires.contains(&i.asset)).count();
+            assert!(people > 0 && lone > 0, "graine {seed} : {people} de la race, {lone} solitaire(s)");
+            assert_eq!(people + lone + 1, grotte.inhabitants.len());
+        }
+        // Spiders live in every mood.
+        for (name, ambiance) in &settings.ambiances {
+            assert!(ambiance.solitaires.iter().any(|s| s.ends_with("cave_spider")), "{name} : pas d'araignée");
         }
     }
 }

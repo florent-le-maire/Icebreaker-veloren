@@ -174,6 +174,8 @@ fn nom_de_faction(faction: &str) -> String {
         "gnarling" => "gnarlings".into(),
         "adlet" => "adlets".into(),
         "cultist" => "cultistes".into(),
+        // Icebreaker H.2 : une race par donjon.
+        "races" => "une race".into(),
         f => f.into(),
     }
 }
@@ -256,6 +258,12 @@ pub fn collecter(d: &Donnees) -> Result<Vec<Creature>> {
     let note = |entite: &str, defaut: &str| complement.notes.get(entite).cloned().unwrap_or_else(|| defaut.to_string());
     let nom = |entite: &str| {
         let repli = entite.rsplit('.').next().unwrap_or(entite);
+        // Les ennemis des races (H.1) : leur corps est celui de la race du lieu.
+        if entite.starts_with("icebreaker.ennemis.") {
+            let mut lettres = repli.chars();
+            let role: String = lettres.next().map(|c| c.to_uppercase().chain(lettres).collect()).unwrap_or_default();
+            return format!("{role} de la race");
+        }
         match (d.entite)(entite) {
             Some(texte) => nom_d_entite(&texte, d.noms, repli),
             None => {
@@ -297,17 +305,41 @@ pub fn collecter(d: &Donnees) -> Result<Vec<Creature>> {
         }
     }
 
-    // Grotte : le chef de chaque ambiance, puis ses créatures.
-    let ambiances = fichier("grottes/grotte.ron")
+    // Les monstres solitaires des nids (H.3), sans race.
+    let solitaires = fichier("donjons/generation.ron").and_then(|f| chercher(&f.entrees, "solitaires"));
+    for entite in solitaires.map(|e| chaines(&e.valeur)).unwrap_or_default() {
+        let (_, phrase, icone_role) = role_de_donjon("beast");
+        let lieu = "Donjon : solitaires".to_string();
+        ajouter(&mut liste, Creature {
+            id: id_d_entite(&entite),
+            nom: nom(&entite),
+            categorie: Categorie::Base,
+            groupe: lieu.clone(),
+            lieux: vec![lieu],
+            role: "Solitaire".into(),
+            note: note(&entite, phrase),
+            icone: icone_de_faction("").into(),
+            icone_role: icone_role.into(),
+            entite,
+        });
+    }
+
+    // Grotte : le chef de la race (H.4), puis les habitants de la race et les solitaires de chaque ambiance.
+    let grotte = fichier("grottes/grotte.ron");
+    let race = |cle: &str| -> Vec<(String, String)> {
+        grotte.and_then(|f| chercher(&f.entrees, cle)).map(|e| ("Grotte".to_string(), e.valeur.clone())).into_iter().collect()
+    };
+    let ambiances: Vec<(String, String)> = grotte
         .and_then(|f| chercher(&f.entrees, "ambiances"))
         .map(|e| e.enfants.as_slice())
-        .unwrap_or_default();
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|a| chercher(&a.enfants, "solitaires").map(|s| (format!("Grotte : {}", a.cle), s.valeur.clone())))
+        .collect();
     for chefs in [true, false] {
-        for ambiance in ambiances {
-            let lieu = format!("Grotte : {}", ambiance.cle);
-            let cle = if chefs { "chef" } else { "creatures" };
-            let Some(entree) = chercher(&ambiance.enfants, cle) else { continue };
-            for entite in chaines(&entree.valeur) {
+        let groupes = if chefs { race("chef") } else { race("habitants").into_iter().chain(ambiances.clone()).collect() };
+        for (lieu, valeur) in groupes {
+            for entite in chaines(&valeur) {
                 let paisible = entite.contains(".peaceful.");
                 let (role, phrase, icone_role) = if chefs {
                     ("Chef de grotte", "Le chef de la grotte, à affronter au fond.", "voxygen/element/ui/generic/icons/skull_2.png")
@@ -480,8 +512,9 @@ pub fn pages_du_depot(racine: &Path, reglages: &[Fichier]) -> Result<Vec<crate::
     let classes = lire("assets/icebreaker/classes.ron")?;
     let complement = lire("docs/icebreaker/wiki/creatures.toml")?;
     let entite = |chemin: &str| {
-        let relatif = chemin.trim_start_matches("common.entity.").replace('.', "/");
-        std::fs::read_to_string(racine.join("assets/common/entity").join(format!("{relatif}.ron"))).ok()
+        // Icebreaker H.1 : les ennemis des races sont sous assets/icebreaker/ennemis/.
+        let relatif = chemin.replace('.', "/");
+        std::fs::read_to_string(racine.join("assets").join(format!("{relatif}.ron"))).ok()
     };
     let creatures = collecter(&Donnees {
         reglages,
@@ -520,11 +553,11 @@ mod tests {
                               [\"common.entity.dungeon.gnarling.chieftain\"],\n                \"boss\": \
                               [\"common.entity.dungeon.gnarling.harvester\"],\n            },\n            chest: \
                               \"DungeonChest0\",\n        ),\n    },\n)\n";
-    const GROTTE: &str = "(\n    ambiances: {\n        \"cristaux\": (\n            creatures: \
-                          [\"common.entity.wild.aggressive.cave_spider\", \"common.entity.wild.peaceful.bat\"],\n            \
-                          chef: \"common.entity.wild.aggressive.basilisk\",\n        ),\n        \"ossuaire\": (\n            \
-                          creatures: [\"common.entity.wild.aggressive.cave_spider\"],\n            chef: \
-                          \"common.entity.wild.aggressive.ogre\",\n        ),\n    },\n)\n";
+    const GROTTE: &str = "(\n    ambiances: {\n        \"cristaux\": (\n            solitaires: \
+                          [\"common.entity.wild.aggressive.cave_spider\", \"common.entity.wild.peaceful.bat\"],\n        \
+                          ),\n        \"ossuaire\": (\n            solitaires: \
+                          [\"common.entity.wild.aggressive.cave_spider\"],\n        ),\n    },\n    habitants: \
+                          [\"icebreaker.ennemis.guerrier\"],\n    chef: \"common.entity.wild.aggressive.basilisk\",\n)\n";
     const CLASSES: &str = "(\n    classes: [\n        (id: \"guerrier\", nom: \"guerrier\", equipement: \
                            \"icebreaker.classes.guerrier\"),\n    ],\n)\n";
     const COMPLEMENT: &str = "[[pnj]]\nid = \"intendant\"\nnom = \"Intendant\"\nrole = \"Marchand\"\nicone = \
@@ -563,6 +596,8 @@ mod tests {
         assert_eq!(c("dungeon-gnarling-logger").lieux, vec!["Donjon : gnarlings"]);
         assert_eq!(c("wild-aggressive-basilisk").categorie, Categorie::Boss);
         assert_eq!(c("wild-peaceful-bat").role, "Paisible");
+        assert_eq!(c("icebreaker-ennemis-guerrier").nom, "Guerrier de la race");
+        assert_eq!(c("icebreaker-ennemis-guerrier").lieux, vec!["Grotte"]);
         // L'araignée est dans deux ambiances : une carte, deux lieux.
         assert_eq!(liste.iter().filter(|c| c.id == "wild-aggressive-cave_spider").count(), 1);
         assert_eq!(c("wild-aggressive-cave_spider").lieux, vec!["Grotte : cristaux", "Grotte : ossuaire"]);

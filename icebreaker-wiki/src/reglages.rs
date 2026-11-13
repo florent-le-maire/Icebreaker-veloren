@@ -441,7 +441,7 @@ mod tests {
         let ambiances = grotte.entrees.iter().find(|e| e.cle == "ambiances").unwrap();
         assert_eq!(ambiances.enfants.len(), 3);
         assert_eq!(ambiances.enfants[0].cle, "champignons");
-        assert!(ambiances.enfants[0].enfants.iter().any(|e| e.cle == "chef"));
+        assert!(ambiances.enfants[0].enfants.iter().any(|e| e.cle == "solitaires"));
         let registre = fichiers.iter().find(|f| f.chemin == "registre.ron").unwrap();
         let noms = registre.entrees.iter().find(|e| e.cle == "noms").unwrap();
         assert!(noms.enfants.is_empty() && noms.valeur.contains("\"Ulric\""));

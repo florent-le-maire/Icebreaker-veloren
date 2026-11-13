@@ -11,10 +11,7 @@ use crate::{
     site::namegen::NameGen,
     util::{FastNoise, RandomField, Sampler},
 };
-use common::{
-    generation::EntityInfo,
-    terrain::{Block, BlockKind, SpriteCfg},
-};
+use common::terrain::{Block, BlockKind, SpriteCfg};
 use rand_chacha::ChaCha8Rng;
 use rand::prelude::*;
 use std::sync::Arc;
@@ -208,8 +205,9 @@ impl Structure for IcebreakerGrotte {
                 continue;
             }
             let mut rng = ChaCha8Rng::seed_from_u64(i as u64);
-            let mut info =
-                EntityInfo::at(pos.as_::<f32>() + Vec3::new(0.5, 0.5, 0.0)).with_asset_expect(&inhabitant.asset, &mut rng, None);
+            // Icebreaker H.4: a humanoid of the race of the cave.
+            let at = pos.as_::<f32>() + Vec3::new(0.5, 0.5, 0.0);
+            let mut info = crate::icebreaker::races::entity(&inhabitant.asset, grotte.species.as_deref(), at, &mut rng);
             // Icebreaker B.14: it drops the loot of its tier (butin.ron).
             if let Some(loot) = &inhabitant.loot {
                 info = info.with_loot_drop(common::lottery::LootSpec::LootTable(loot.clone()));
@@ -293,10 +291,15 @@ impl IcebreakerGrotte {
         let mouth = origin.with_z(land.get_alt_approx(origin) as i32);
         // The mood asked for (`-Ambiance` of the launcher), or one drawn by the seed.
         let ambiance = std::env::var("ICEBREAKER_GROTTE_AMBIANCE").ok().filter(|a| !a.is_empty());
+        // Icebreaker H.4: the race asked for (`-Race`), or one drawn by the seed.
+        let race = std::env::var("ICEBREAKER_DONJON_RACE").ok().filter(|r| !r.is_empty());
         let kept = Self::emprise(settings, origin);
         let mut plot = None;
         for seed in seed..seed + FIT_TRIES {
-            let grotte = grotte::generate(settings, seed, mouth, ambiance.as_deref(), &|xy| land.get_alt_approx(xy) as i32);
+            let mut grotte = grotte::generate(settings, seed, mouth, ambiance.as_deref(), &|xy| land.get_alt_approx(xy) as i32);
+            if race.is_some() {
+                grotte.species = race.clone();
+            }
             let tried = Self::new(grotte);
             let b = tried.bounds();
             if kept.contains_point(b.min) && kept.contains_point(b.max) {
