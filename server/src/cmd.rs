@@ -181,6 +181,7 @@ fn do_command(
         ServerChatCommand::DropAll => handle_drop_all,
         ServerChatCommand::Dummy => handle_spawn_training_dummy,
         ServerChatCommand::Echanger => crate::icebreaker_buildings::handle_echanger,
+        ServerChatCommand::Entrainement => crate::icebreaker_arene::handle_entrainement,
         ServerChatCommand::Expedition => crate::icebreaker_expedition::handle_expedition,
         ServerChatCommand::Explosion => handle_explosion,
         ServerChatCommand::Faction => handle_faction,

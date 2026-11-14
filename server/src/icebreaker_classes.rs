@@ -73,9 +73,16 @@ pub fn starting_inventory(class: &Class) -> Inventory {
 /// équipement (armure, pioche en mains secondaires…) où les armes actives sont remplacées par celles
 /// du jeu d'armes `jeu` (main gauche vidée s'il n'en a pas).
 pub fn inventaire_avec_jeu(class: &Class, jeu: &JeuArmes) -> Inventory {
+    let mut inventory = starting_inventory(class);
+    prendre_jeu(&mut inventory, jeu);
+    inventory
+}
+
+/// Icebreaker : met en mains les armes du jeu d'armes `jeu`, à la place de celles qu'on tenait
+/// (jalon O : le changement d'arme du lieu d'entraînement).
+pub fn prendre_jeu(inventory: &mut Inventory, jeu: &JeuArmes) {
     use common::comp::{Item, inventory::slot::EquipSlot};
     use common::resources::Time;
-    let mut inventory = starting_inventory(class);
     let (droite, gauche) = &jeu.armes;
     // Les mains d'abord vidées : une arme à deux mains ne tient pas avec un bouclier déjà là.
     inventory.replace_loadout_item(EquipSlot::ActiveOffhand, None, Time(0.0));
@@ -90,7 +97,6 @@ pub fn inventaire_avec_jeu(class: &Class, jeu: &JeuArmes) -> Inventory {
         gauche.as_deref().map(Item::new_from_asset_expect),
         Time(0.0),
     );
-    inventory
 }
 
 /// Icebreaker : l'inventaire de départ d'une recrue de `class` qui porte le lot `acquis` : les armes

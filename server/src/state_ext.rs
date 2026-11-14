@@ -750,7 +750,11 @@ impl StateExt for State {
             self.write_component_ignore_entity_dead(entity, skill_set);
             // Icebreaker : un personnage du registre entre en jeu avec ce que dit sa fiche :
             // jeux d'armes, compétences, ultime, passif (jalon A).
-            let competences = crate::icebreaker_registre::competences_de(self.ecs(), entity);
+            let mut inventory = inventory;
+            // Icebreaker O : au lieu d'entraînement, pas de fiche : tout est connu, et
+            // l'équipement est celui de la classe.
+            let competences = crate::icebreaker_registre::competences_de(self.ecs(), entity)
+                .or_else(|| crate::icebreaker_arene::arrivee(&mut inventory));
             if let Some(competences) = competences {
                 // L'inné de la classe et le passif actif ; il entre avec tous ses PV, ceux que
                 // ces effets ajoutent compris.
@@ -767,7 +771,6 @@ impl StateExt for State {
             }
             // Icebreaker : dans un donjon lancé seul, une balise lumineuse (jalon J), avant
             // l'inventaire d'arrivée pour qu'elle ne compte pas dans le bilan.
-            let mut inventory = inventory;
             if world::icebreaker::is_instance() && !world::icebreaker::is_village() {
                 crate::icebreaker_balise::donner_si_absente(&mut inventory);
             }

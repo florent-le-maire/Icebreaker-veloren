@@ -568,6 +568,46 @@ impl Acquis {
         Self::lot(jeu, &competences, ultime, passif)
     }
 
+    // Icebreaker O : la fiche du lieu d'entraînement.
+    /// Tout ce que `classe` peut apprendre, acquis : tous ses jeux d'armes avec toutes leurs
+    /// compétences au niveau `niveau` (ramené entre 1 et le plus haut niveau de chacune, les deux
+    /// premières placées), tous ses ultimes et ses passifs, le premier de chaque en place. Vide si
+    /// la classe n'est pas décrite par nos données.
+    pub fn complet(classe: &str, niveau: u8) -> Self {
+        let registre = registre();
+        let jeux = registre
+            .jeux_de(classe)
+            .map(|(jeu, def)| {
+                let mut placees: [Option<String>; PLACES_ARME] = Default::default();
+                for (place, (id, _)) in placees.iter_mut().zip(&def.competences) {
+                    *place = Some(id.clone());
+                }
+                (jeu.to_string(), AcquisJeu {
+                    competences: def
+                        .competences
+                        .iter()
+                        .map(|(id, c)| (id.clone(), niveau.clamp(NIVEAU_DEPART, c.niveau_max())))
+                        .collect(),
+                    placees,
+                    ..Default::default()
+                })
+            })
+            .collect();
+        let ultimes: Vec<String> =
+            registre.ultimes_de(classe).iter().map(|(id, _)| id.clone()).collect();
+        let passifs: Vec<String> = registre
+            .passifs_de(classe)
+            .map(|passifs| passifs.passifs.iter().map(|(id, _)| id.clone()).collect())
+            .unwrap_or_default();
+        Self {
+            jeux,
+            ultime: ultimes.first().cloned(),
+            ultimes,
+            passif: passifs.first().cloned(),
+            passifs,
+        }
+    }
+
     // Icebreaker A.8 : le tirage du lot d'une recrue.
     /// Le lot tiré au hasard pour une recrue de `classe` : un jeu d'armes de sa classe, `nombre`
     /// compétences différentes de ce jeu (les deux premières sont placées), un ultime et un passif.
@@ -913,6 +953,33 @@ mod tests {
             recharge: 10.0,
             niveaux,
         }
+    }
+
+    #[test]
+    fn complet_connait_tout() {
+        // Icebreaker O : la fiche du lieu d'entraînement.
+        let registre = registre();
+        for classe in ["guerrier", "mage", "archer"] {
+            let acquis = Acquis::complet(classe, 99);
+            assert_eq!(acquis.jeux.len(), registre.jeux_de(classe).count(), "{classe}");
+            for (id, jeu) in registre.jeux_de(classe) {
+                let a = &acquis.jeux[id];
+                assert_eq!(a.competences.len(), jeu.competences.len(), "{id}");
+                for (c, def) in &jeu.competences {
+                    assert_eq!(a.competences[c], def.niveau_max(), "{c}");
+                }
+                assert!(a.placees.iter().all(Option::is_some), "{id}");
+            }
+            assert_eq!(acquis.ultimes.len(), registre.ultimes_de(classe).len());
+            assert!(acquis.ultime.is_some() && acquis.passif.is_some(), "{classe}");
+            // Le composant se construit, et le passif actif est pris en compte.
+            let competences = IcebreakerCompetences::nouveau(classe, acquis).unwrap();
+            assert!(!IcebreakerPassif::de(&competences).effets.is_empty(), "{classe}");
+        }
+        // Niveau de départ : tout au niveau 1 ; classe inconnue : rien.
+        let depart = Acquis::complet("guerrier", 0);
+        assert!(depart.jeux.values().all(|j| j.competences.values().all(|n| *n == NIVEAU_DEPART)));
+        assert!(Acquis::complet("inconnue", 3).est_vide());
     }
 
     #[test]

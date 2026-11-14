@@ -11,6 +11,7 @@ command-expedition-desc = Prepare an expedition: <destination number>, rejoindre
 command-echanger-desc = Trade with the village warehouse or intendance, from afar
 command-registre-desc = The cart and the registry: engager <rank>, jouer <number>, rendre, reserver <number>, liberer <number>
 command-salle-desc = The weapons hall: debloquer <id>, monter <id>, placer <1|2>, apprendre <jeu|ultime|passif> <id>, activer <ultime|passif> <id>
+command-entrainement-desc = The training ground: classe <id>, arme <jeu>, placer <1|2> [id], niveau <id|tout> <1-5>, ultime <id>, passif <id>, ennemi <race> [role] [nombre], allie <id> [nombre], nettoyer, soin, entree
 icebreaker-vue-hors-village = No village here: the top view closes.
 icebreaker-menu-campagne = Campaign
 icebreaker-partie-continuer = Continue a game

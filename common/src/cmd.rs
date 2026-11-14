@@ -397,6 +397,8 @@ pub enum ServerChatCommand {
     Dummy,
     /// Icebreaker: trade with the village warehouse or intendance from afar (V.12).
     Echanger,
+    /// Icebreaker : tout régler au lieu d'entraînement (jalon O).
+    Entrainement,
     /// Icebreaker: prepare an expedition at the village (V.11).
     Expedition,
     Explosion,
@@ -699,6 +701,16 @@ impl ServerChatCommand {
                     Required,
                 )],
                 Content::localized("command-echanger-desc"),
+                None,
+            ),
+            ServerChatCommand::Entrainement => cmd(
+                vec![
+                    Any("action", Required),
+                    Any("cible", Optional),
+                    Any("valeur", Optional),
+                    Any("nombre", Optional),
+                ],
+                Content::localized("command-entrainement-desc"),
                 None,
             ),
             ServerChatCommand::Expedition => cmd(
@@ -1264,6 +1276,7 @@ impl ServerChatCommand {
             ServerChatCommand::DropAll => "dropall",
             ServerChatCommand::Dummy => "dummy",
             ServerChatCommand::Echanger => "echanger",
+            ServerChatCommand::Entrainement => "entrainement",
             ServerChatCommand::Expedition => "expedition",
             ServerChatCommand::Explosion => "explosion",
             ServerChatCommand::Faction => "faction",

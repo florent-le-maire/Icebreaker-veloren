@@ -85,7 +85,7 @@ fn jeu_appris<'a>(acquis: &'a mut Acquis, jeu: &str) -> Result<&'a mut AcquisJeu
 }
 
 /// La compétence `id`, qui doit être une compétence d'arme du jeu d'armes `jeu`.
-fn competence_du_jeu(jeu: &str, id: &str) -> Result<&'static Competence, String> {
+pub(crate) fn competence_du_jeu(jeu: &str, id: &str) -> Result<&'static Competence, String> {
     let entree = registre()
         .competence(id)
         .ok_or_else(|| format!("Compétence inconnue : {id}."))?;

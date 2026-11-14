@@ -11,6 +11,7 @@ command-expedition-desc = Préparer une expédition : <numéro de destination>, 
 command-echanger-desc = Échanger avec l'entrepôt ou l'intendance du village, de loin
 command-registre-desc = La charrette et le registre : engager <rang>, jouer <numéro>, rendre, reserver <numéro>, liberer <numéro>
 command-salle-desc = La salle d'armes : debloquer <id>, monter <id>, placer <1|2>, apprendre <jeu|ultime|passif> <id>, activer <ultime|passif> <id>
+command-entrainement-desc = Le lieu d'entraînement : classe <id>, arme <jeu>, placer <1|2> [id], niveau <id|tout> <1-5>, ultime <id>, passif <id>, ennemi <race> [role] [nombre], allie <id> [nombre], nettoyer, soin, entree
 icebreaker-vue-hors-village = Pas de village ici : la vue de dessus se ferme.
 icebreaker-menu-campagne = Campagne
 icebreaker-partie-continuer = Continuer une partie

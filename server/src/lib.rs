@@ -17,6 +17,8 @@ pub mod connection_handler;
 mod data_dir;
 pub mod error;
 pub mod events;
+// Icebreaker : le lieu d'entraînement (jalon O).
+pub mod icebreaker_arene;
 pub mod icebreaker_balise;
 pub mod icebreaker_bilan;
 pub mod icebreaker_buildings;
