@@ -24,6 +24,8 @@ pub mod icebreaker_balise;
 pub mod icebreaker_panneau;
 // Icebreaker : jeux d'armes, compétences, ultimes et passifs (jalon A).
 pub mod icebreaker_competences;
+// Icebreaker : comportement de chaque race ennemie (jalon Y).
+pub mod icebreaker_races;
 pub mod comp;
 pub mod consts;
 pub mod resources;

@@ -29,6 +29,10 @@ pub struct MissionTargets {
     /// Where the asleep creatures appear (Icebreaker G.9), and how they wake.
     pub sleepers: Vec<Vec3<i32>>,
     pub sleep: dungeon::settings::SleepSettings,
+    /// Icebreaker Y.3: the rounds (stops, then where their members appear),
+    /// and how they go.
+    pub rondes: Vec<(Vec<Vec3<i32>>, Vec<Vec3<i32>>)>,
+    pub ronde: Option<common::icebreaker_races::Ronde>,
 }
 
 pub struct IcebreakerDungeon {
@@ -142,6 +146,21 @@ impl IcebreakerDungeon {
             chests: Vec::new(),
             sleepers: Vec::new(),
             sleep: self.dungeon.sleep.clone(),
+            rondes: self
+                .dungeon
+                .rondes
+                .iter()
+                .map(|r| {
+                    let spots = |cells: &[plan::Cell]| cells.iter().map(|c| self.spot(*c)).collect();
+                    (spots(&r.route), spots(&r.members))
+                })
+                .collect(),
+            ronde: self
+                .dungeon
+                .species
+                .as_deref()
+                .and_then(|s| common::icebreaker_races::IcebreakerRaces::actuel().races.get(s).cloned())
+                .and_then(|c| c.ronde),
         };
         for (cell, symbol) in &self.dungeon.plan.cells {
             let spot = self.spot(*cell);

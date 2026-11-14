@@ -82,8 +82,15 @@ avec une arme existante : quelques minutes chacune.
 humanoïde (humain, orc, nain, elfe, draugr, danari ; tirée par la graine du lieu), en guerrier, archer et mage avec
 l'équipement des classes des joueurs (`assets/icebreaker/ennemis/`) ; le chef (et le boss) est un membre de la race qui
 a les capacités du chef gnarling. Les **monstres solitaires** (araignées, mandragores…) n'ont pas de race : nids du
-donjon (`solitaires` de `generation.ron`), poches et culs-de-sac de la grotte (`solitaires` des ambiances). Pas encore
-de comportement propre à une race. Le fort gnarling ne sert plus en campagne.
+donjon (`solitaires` de `generation.ron`), poches et culs-de-sac de la grotte (`solitaires` des ambiances). Le fort
+gnarling ne sert plus en campagne.
+
+**Comportement par race (jalon Y, 2026-11-14, Flo ; à valider, `QUESTIONS.md` Q50)** : réglages dans
+`assets/icebreaker/ennemis/races.ron`. Faits : les **danari** sont fourbes : un joueur à terre à moins de 20 blocs passe
+en tête de leurs cibles (ils l'achèvent), sauf si quelqu'un vient de les frapper (3 s) ; ils choisissent leur cible
+toutes les 2 s et fuient sous 30 % de leurs PV. Les **humains** font des rondes : jusqu'à deux groupes de trois
+guerriers vont de salle en salle (trois salles, sans clé ni chute, jamais celle du chef), s'arrêtent 5 s, puis
+reviennent. Prévus : orcs en rage, nains qui tiennent leur salle, elfes tireurs, draugr endormis.
 
 ## Les stats dans Veloren
 

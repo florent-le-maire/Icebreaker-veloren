@@ -968,8 +968,14 @@ fn do_combat(bdata: &mut BehaviorData) -> bool {
                 agent.target = None;
                 agent_data.idle(agent, controller, read_data, emitters, rng);
             } else {
-                let is_time_to_retarget =
-                    read_data.time.0 - selected_at > RETARGETING_THRESHOLD_SECONDS;
+                // Icebreaker Y.2: a race may choose its target more often (races.ron →
+                // reciblage), to see a player fall or a hit coming.
+                let retargeting = matches!(agent_data.alignment, Some(Alignment::Enemy))
+                    .then(|| common::icebreaker_races::comportement(agent_data.body))
+                    .flatten()
+                    .and_then(|c| c.reciblage)
+                    .unwrap_or(RETARGETING_THRESHOLD_SECONDS);
+                let is_time_to_retarget = read_data.time.0 - selected_at > retargeting;
 
                 if (!agent.psyche.should_stop_pursuing || !in_aggro_range) && is_time_to_retarget {
                     agent_data.choose_target(agent, controller, read_data, AgentData::is_enemy);

@@ -228,6 +228,22 @@ chef gnarling, aussi dans la salle du boss. Pas de comportement de race pour l'i
 - [x] **H.6 Ennemis des races moins durs** : `icebreaker_pv` dans les fiches (guerrier 50, archer et mage 40, chef
   150 ; un humanoïde a 100), plastron et jambières seulement, plus de survie à 1 PV pour un ennemi. Testé ; à rejouer.
 
+## Jalon Y — Une identité par race ennemie (Flo, 2026-11-14)
+
+Chaque race a un trait de comportement lisible et contrable (`design/ames.md`, identités à valider : `QUESTIONS.md`,
+Q50). Réglages : `assets/icebreaker/ennemis/races.ron` ; code : `common/src/icebreaker_races.rs`. Worktree
+`Veloren-races-ia`.
+
+- [x] **Y.1 à Y.3 Réglages par race, danari qui achèvent, humains en ronde** (un commit, code commun) : danari :
+  joueur à terre à 20 blocs en tête des cibles, sauf celui qui vient de les frapper ; fuite à 30 %. Humains : rondes
+  de 3 guerriers sur 3 salles, aller et retour. Testé (tests ciblés ; client texte : une ronde humaine fait 0→1→2→1→0
+  dans le journal, donjon danari sans erreur) ; achèvement et rondes pas vus dans le vrai client.
+- [ ] **Y.4 Orcs en rage** — sous la moitié des PV, une fois : dégâts et vitesse en plus.
+- [ ] **Y.5 Nains tenaces** — ils tiennent leur salle (poursuite bornée), plus d'armure.
+- [ ] **Y.6 Elfes tireurs** — plus d'archers à la composition, voient de plus loin.
+- [ ] **Y.7 Draugr dormeurs** — presque tous endormis (réveil au bruit), lents.
+- [ ] **Y.8 Wiki** — rubrique Créatures : le comportement de chaque race.
+
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
 Ce qui rend l'enchaînement village → donjon → village intéressant (risque, butin, besoins du village) : règles et
@@ -337,6 +353,9 @@ tâche pour ce qui casse.
   un groupe ; araignées et autres solitaires dans les nids et les poches.
 - H.5 : la campagne à quatre donjons générés, sans fort gnarling ; le départ ne propose plus « Donjon ».
 - H.6 : difficulté des ennemis des races (PV, armure, plus de survie à 1 PV) ; si trop dur encore : moins de tireurs.
+- Y.2 (`-Race danari`, à deux) : un danari laisse son adversaire pour achever le joueur à terre ; le frapper ou le
+  repousser le détourne ; il fuit blessé. Y.3 (`-Race human`) : des groupes de guerriers passent de salle en salle et
+  reviennent (bloqués dans un escalier ou une porte ?).
 
 **Divers**
 - M.1 : téléchargement du plugin par le vrai client.
@@ -348,8 +367,7 @@ tâche pour ce qui casse.
 
 - Passage automatique du client d'une instance à l'autre.
 - Biome imposé pour terracotta, myrmidons et sahagins.
-- Races ennemies au-delà du jalon H : un comportement par race, les compétences Icebreaker des classes pour les
-  ennemis, un boss distinct du chef, des totems aux couleurs de la race (ce sont encore ceux du chef gnarling).
+- Races ennemies au-delà des jalons H et Y : les compétences Icebreaker des classes pour les ennemis, un boss distinct du chef, des totems aux couleurs de la race (ce sont encore ceux du chef gnarling).
 - Classes au-delà du jalon A (`decisions/0010-classes-et-combos.md`, Q36) : les six autres classes, les combos de zones.
 - Recrues, traits, blessures, rang (`design/village.md`, `PLAN-BOUCLES.md` B.10).
 - Carte stratégique façon Mount & Blade sur un grand monde Veloren, rencontres qui lancent les instances.

@@ -6,6 +6,8 @@ pub mod assemble;
 pub mod graph;
 pub mod plan;
 pub mod populate;
+// Icebreaker Y.3: the rounds of a race.
+pub mod rondes;
 pub mod rooms;
 pub mod settings;
 pub mod shapes;
@@ -64,6 +66,8 @@ pub struct Dungeon {
     /// creature of the plan.
     pub butin: Butin,
     pub paliers: BTreeMap<Cell, usize>,
+    /// Icebreaker Y.3: the rounds of its race, if it makes some.
+    pub rondes: Vec<rondes::PlannedRound>,
 }
 
 /// Icebreaker B.5: the tier of each chest and creature of `plan` by its
@@ -338,6 +342,7 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
         decor,
         butin: Butin::load()?,
         paliers: BTreeMap::new(),
+        rondes: Vec::new(),
     })
 }
 
@@ -390,6 +395,13 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
         );
         if let Some(mut assembled) = assembled {
             let (creatures, chests) = populate::populate(&mut assembled, &graph, &resolved, seed);
+            // Icebreaker Y.3: the rounds of the race (races.ron → ronde).
+            let rondes = resolved
+                .species
+                .as_deref()
+                .and_then(|s| common::icebreaker_races::IcebreakerRaces::actuel().races.get(s).cloned())
+                .and_then(|c| c.ronde)
+                .map_or_else(Vec::new, |r| rondes::place_rounds(&assembled, &graph, &r));
             let rooms: Vec<String> = assembled
                 .rooms
                 .iter()
@@ -439,6 +451,7 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 decor,
                 butin,
                 paliers,
+                rondes,
             });
         }
     }

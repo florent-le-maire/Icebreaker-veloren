@@ -1163,6 +1163,27 @@ impl AgentData<'_> {
             self.detects_other(agent, controller, entity, e_pos, e_scale, read_data)
         };
 
+        // Icebreaker Y.2: an enemy of a race may rank its targets (races.ron):
+        // the danari finish off downed players, unless someone just hit them.
+        let icebreaker_race = matches!(self.alignment, Some(Alignment::Enemy))
+            .then(|| common::icebreaker_races::comportement(self.body))
+            .flatten();
+        let icebreaker_rang = |entity: EcsEntity, e_pos: &Pos| -> u8 {
+            let Some(race) = &icebreaker_race else {
+                return 2;
+            };
+            let a_terre = comp::is_downed(
+                read_data.healths.get(entity),
+                read_data.char_states.get(entity),
+            );
+            let l_a_frappe_depuis = self.health.and_then(|h| {
+                let by = h.last_change.damage_by()?;
+                (Some(&by.uid()) == read_data.uids.get(entity))
+                    .then(|| read_data.time.0 - h.last_change.time.0)
+            });
+            race.rang(e_pos.0.distance(self.pos.0), a_terre, l_a_frappe_depuis)
+        };
+
         let target = entities_nearby
             .iter()
             .filter_map(|e| is_valid_target(*e))
@@ -1171,9 +1192,10 @@ impl AgentData<'_> {
                 get_pos(entity).map(|pos| (entity, pos, attack_target))
             })
             .filter(|(entity, e_pos, _)| is_detected(entity, e_pos, read_data.scales.get(*entity)))
-            .min_by_key(|(_, e_pos, attack_target)| {
+            .min_by_key(|(entity, e_pos, attack_target)| {
                 (
                     *attack_target,
+                    icebreaker_rang(*entity, e_pos),
                     (e_pos.0.distance_squared(self.pos.0) * 100.0) as i32,
                 )
             })

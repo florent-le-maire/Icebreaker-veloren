@@ -28,6 +28,9 @@ impl IcebreakerMission {
 
     pub fn len(&self) -> usize { self.0.len() }
 
+    /// Icebreaker Y.3: every dungeon's mission, with its site.
+    pub fn iter(&self) -> impl Iterator<Item = (Id<Site>, &Mission)> { self.0.iter().map(|(s, m)| (*s, m)) }
+
     /// Icebreaker : la mission du donjon de `site`, s'il en a une.
     pub fn of(&self, site: Id<Site>) -> Option<&Mission> {
         self.0.iter().find(|(s, _)| *s == site).map(|(_, m)| m)
@@ -49,7 +52,12 @@ pub fn set_dungeon(missions: &mut IcebreakerMission, sleep: &mut IcebreakerSleep
         };
     }
     sleep.set(id, targets.iter().flat_map(|t| t.sleepers.iter().copied()).collect());
-    missions.set(id, targets.map(|t| Mission::new(t.leader, t.creatures, t.chests)));
+    missions.set(id, targets.map(|t| Mission {
+        // Icebreaker Y.3: and its rounds.
+        rondes: t.rondes,
+        ronde: t.ronde,
+        ..Mission::new(t.leader, t.creatures, t.chests)
+    }));
 }
 
 /// Icebreaker : ce qui a été fait dans un donjon (le bilan de retour).
@@ -71,6 +79,10 @@ pub struct Mission {
     leader: Option<(Vec3<i32>, String)>,
     creatures: Vec<Vec3<i32>>,
     chests: Vec<Vec3<i32>>,
+    /// Icebreaker Y.3: the rounds of the dungeon (stops, then where their
+    /// members appear) and how they go (sys/icebreaker_rondes.rs).
+    pub rondes: Vec<(Vec<Vec3<i32>>, Vec<Vec3<i32>>)>,
+    pub ronde: Option<common::icebreaker_races::Ronde>,
 }
 
 impl Mission {
@@ -79,6 +91,7 @@ impl Mission {
             leader,
             creatures,
             chests,
+            ..Self::default()
         }
     }
 

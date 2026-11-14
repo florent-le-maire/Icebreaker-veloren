@@ -136,6 +136,13 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   2026-11-11 (459192) a donné une ville sans maison de Veloren : les sept bâtiments sont posés sur la place, à
   quelques blocs les uns des autres, et il n'y a aucun terrain à bâtir (jalon C). *Proposé* : à la création d'une
   partie, retirer une graine tant que la ville n'a pas assez de maisons. *Qui* : Flo.
+- **Q50 Une identité par race ennemie (jalon Y).** Proposé (Flo, 2026-11-14, `PLAN.md`, jalon Y) : danari fourbes
+  (achèvent les joueurs à terre, fuient blessés ; contre : les frapper ou les repousser), humains organisés (rondes
+  entre les salles), orcs brutaux (rage sous la moitié des PV), nains tenaces (tiennent leur salle, plus d'armure),
+  elfes tireurs (plus d'archers, voient de loin), draugr qui dorment (réveil au bruit, lents). Ces identités
+  conviennent-elles à Sayanel (âmes, `design/ames.md`) ? Les danari tiennent le rôle des gobelins, alors que les
+  gnarlings le tenaient jusqu'ici : à confirmer. Pas de vraie provocation en Veloren (le « revers méprisant » du
+  marteau protège le guerrier, il n'attire pas) : en faut-il une ? *Qui* : Flo, Sayanel.
 
 ## Tranché
 

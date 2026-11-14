@@ -1,0 +1,42 @@
+// Icebreaker Y : le comportement de chaque race ennemie (common/src/icebreaker_races.rs, design/ames.md).
+// Seuls les ennemis humanoïdes en tiennent compte ; un champ absent = comme dans Veloren.
+// acheve : rayon (blocs) où un joueur à terre passe en tête des cibles ;
+// provoque_par_coup : secondes pendant lesquelles celui qui vient de le frapper passe avant (contre : frapper,
+//   repousser) ;
+// reciblage : secondes entre deux choix de cible en combat (Veloren : 10) ;
+// fuite : part des PV sous laquelle il fuit (absent = ne fuit pas) ;
+// ronde : des rondes entre les salles (voir les humains).
+#![enable(implicit_some)]
+(
+    races: {
+        // Fourbes : achèvent les blessés, filent quand ça tourne mal.
+        "danari": (
+            acheve: 20.0,
+            provoque_par_coup: 3.0,
+            reciblage: 2.0,
+            fuite: 0.3,
+        ),
+        // Organisés : des rondes entre les salles du donjon généré (Y.3) : les guerriers éveillés d'une salle
+        // (membres au plus, groupes salles au plus, jamais celle du chef) vont de salle en salle (etapes, la leur
+        // comprise, sans clé ni chute), s'arrêtent pause secondes à chaque salle (atteinte à arrivee blocs du
+        // milieu), puis reviennent ; vitesse : allure (1 = la course).
+        "human": (
+            ronde: (
+                groupes: 2,
+                membres: 3,
+                etapes: 3,
+                vitesse: 0.5,
+                pause: 5.0,
+                arrivee: 3.0,
+            ),
+        ),
+        // Brutaux : rage sous la moitié des PV (Y.4).
+        "orc": (),
+        // Tenaces : tiennent leur salle (Y.5).
+        "dwarf": (),
+        // Tireurs : plus d'archers, voient de loin (Y.6).
+        "elf": (),
+        // Morts qui dorment : presque tous endormis (Y.7).
+        "draugr": (),
+    },
+)

@@ -58,6 +58,9 @@ impl IcebreakerGrotte {
                 alert_radius: 0.0,
                 zzz_interval: 1.0e9,
             },
+            // Icebreaker Y.3: no rounds in the cave (no rooms).
+            rondes: Vec::new(),
+            ronde: None,
         }
     }
 }

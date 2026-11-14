@@ -763,6 +763,8 @@ impl Server {
         }
         state.ecs_mut().insert(mission);
         state.ecs_mut().insert(sleep);
+        // Icebreaker Y.3: the rounds going on.
+        state.ecs_mut().insert(sys::icebreaker_rondes::IcebreakerRondes::default());
 
         // Icebreaker: players can't leave the area of an encounter instance; in
         // the campaign, of the village or of the dungeon slot they are in.
