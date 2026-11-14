@@ -145,6 +145,18 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   marteau protège le guerrier, il n'attire pas) : en faut-il une ? Choix de cible (Y.9) : un danari seul
   n'achève pas (il vise d'abord un joueur debout), seuls des danari à plusieurs achèvent : est-ce bien l'idée ? *Qui* : Flo, Sayanel.
 
+## 7. Lieu d'entraînement (`PLAN-ENTRAINEMENT.md`, jalon O)
+
+- **Q51 Une menace par ennemi ?** Au lieu d'entraînement, un ennemi se choisit par race, rôle et nombre. La
+  « menace » d'un donjon ne change aujourd'hui que le nombre de créatures, jamais leurs PV ni leurs dégâts.
+  Faut-il une vraie menace par ennemi (PV, dégâts), ici et dans les donjons ? *Proposé* : non pour l'instant.
+  *Qui* : Flo, Sayanel.
+- **Q52 Garder ses réglages d'entraînement ?** Niveaux et touches repartent des défauts à chaque connexion (la
+  classe et l'arme reviennent par l'inventaire). *Proposé* : ne rien garder. *Qui* : Flo.
+- **Q53 Quels alliés à l'entraînement ?** Des créatures de Veloren dans le camp du joueur (garde de village,
+  loup… liste dans `assets/icebreaker/arene.ron`), qui le suivent. Quelles créatures proposer, et faut-il un jour des
+  alliés qui jouent nos classes (une IA pour nos compétences, un jalon à lui seul) ? *Qui* : Flo.
+
 ## Tranché
 
 Petites décisions, par date ; les règles qui en sortent sont dans le fichier indiqué.
