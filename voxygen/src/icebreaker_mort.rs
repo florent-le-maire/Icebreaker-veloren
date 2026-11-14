@@ -156,6 +156,10 @@ mod tests {
 /// au village et regarder un allié (T.4). Noté par l'écran de personnages.
 static REGISTRE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
+/// Icebreaker O.8 : le bloc « À terre » de `hud/icebreaker.rs` (décompte avant la mort) remplace
+/// partout le message de Veloren : le serveur tue partout passé le délai de `mort.ron`.
+pub const BLOC_A_TERRE: bool = true;
+
 pub fn set_registre(actif: bool) { REGISTRE.store(actif, std::sync::atomic::Ordering::Relaxed); }
 
 pub fn registre() -> bool { REGISTRE.load(std::sync::atomic::Ordering::Relaxed) }

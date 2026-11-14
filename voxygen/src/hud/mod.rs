@@ -4271,7 +4271,8 @@ impl Hud {
             let propre = client.entity();
             let registre = crate::icebreaker_mort::registre();
             let a_terre = match client.uid() {
-                Some(uid) if registre && info.viewpoint_entity == propre => {
+                // Icebreaker O.8 : à terre, le décompte s'affiche aussi hors campagne.
+                Some(uid) if info.viewpoint_entity == propre => {
                     let healths = ecs.read_storage::<comp::Health>();
                     let etats = ecs.read_storage::<comp::CharacterState>();
                     let a_terre = comp::is_downed(healths.get(propre), etats.get(propre));

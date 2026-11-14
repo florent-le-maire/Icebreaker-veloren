@@ -420,10 +420,6 @@ impl<'a> Skillbar<'a> {
     }
 
     fn show_give_up_message(&self, state: &State, ui: &mut UiCell) {
-        // Icebreaker : en campagne, le bloc « À terre » est dessiné par `hud/icebreaker.rs`.
-        if crate::icebreaker_mort::registre() {
-            return;
-        }
         let localized_strings = self.localized_strings;
         let hardcore = self.client.current::<Hardcore>().is_some();
 
@@ -1621,7 +1617,10 @@ impl Widget for Skillbar<'_> {
             self.show_death_message(state, ui);
         }
         // Give up message
-        else if comp::is_downed(Some(self.health), self.client.current().as_ref()) {
+        // Icebreaker O.8 : le bloc « À terre » est dessiné partout par `hud/icebreaker.rs`.
+        else if comp::is_downed(Some(self.health), self.client.current().as_ref())
+            && !crate::icebreaker_mort::BLOC_A_TERRE
+        {
             self.show_give_up_message(state, ui);
         }
 

@@ -39,6 +39,10 @@ pub struct Lieu {
     /// Icebreaker N.6 : une ligne d'explication sous le bouton du menu.
     #[serde(default)]
     pub description: String,
+    /// Icebreaker O : un lieu sans partie à choisir (le lieu d'entraînement a la sienne) : le
+    /// bouton lance son serveur et s'y connecte.
+    #[serde(default)]
+    pub sans_partie: bool,
 }
 
 pub fn lieux() -> AssetHandle<Ron<Vec<Lieu>>> {
@@ -180,7 +184,12 @@ pub fn lancer(lieu: &Lieu, partie: &str) -> Result<String, String> {
     let adresse = format!("localhost:{}", lieu.port);
     let local = SocketAddr::from((Ipv4Addr::LOCALHOST, lieu.port));
     if TcpStream::connect_timeout(&local, Duration::from_millis(300)).is_ok() {
-        let en_cours = std::fs::read_to_string(PARTIE_DU_SERVEUR).unwrap_or_default();
+        // Icebreaker O : un lieu sans partie n'a rien à comparer.
+        let en_cours = if lieu.sans_partie {
+            String::new()
+        } else {
+            std::fs::read_to_string(PARTIE_DU_SERVEUR).unwrap_or_default()
+        };
         let en_cours = en_cours.trim();
         if !en_cours.is_empty() && en_cours != partie {
             return Err(format!(
@@ -208,8 +217,10 @@ pub fn lancer(lieu: &Lieu, partie: &str) -> Result<String, String> {
         .args(["-NoExit", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File"])
         .arg(&script)
         .args(&lieu.arguments)
-        .args(["-Port", &lieu.port.to_string()])
-        .args(["-Partie", partie]);
+        .args(["-Port", &lieu.port.to_string()]);
+    if !lieu.sans_partie {
+        commande.args(["-Partie", partie]);
+    }
     // Une console à lui : on voit le journal du serveur et on le ferme en fermant
     // la fenêtre.
     #[cfg(windows)]
@@ -239,6 +250,12 @@ mod tests {
             .0
             .clone();
         assert!(lieux.iter().any(|l| l.au_menu && l.actif));
+        // Icebreaker O : le lieu d'entraînement est au menu, sans partie à choisir.
+        assert!(
+            lieux
+                .iter()
+                .any(|l| l.au_menu && l.sans_partie && l.arguments == ["entrainement"])
+        );
         let mut ports: Vec<u16> = lieux
             .iter()
             .filter(|l| l.adresse.is_none())

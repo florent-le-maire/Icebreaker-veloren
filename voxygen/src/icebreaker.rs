@@ -88,6 +88,28 @@ pub fn campagne_fini() { CAMPAGNE.store(false, Ordering::Relaxed); }
 
 pub fn en_campagne() -> bool { CAMPAGNE.load(Ordering::Relaxed) }
 
+/// Icebreaker O : au lieu d'entraînement, on entre dans le monde sans passer par l'écran des
+/// personnages (la classe se choisit sur place) : avec le premier personnage du compte, créé s'il
+/// n'y en a pas. Demandé par le bouton d'un lieu `sans_partie`, ou par `ICEBREAKER_AUTO_PERSONNAGE=1`
+/// (essai sans les mains d'un lieu sans registre).
+static ENTREE_DIRECTE: AtomicBool = AtomicBool::new(false);
+static ENTREE_DIRECTE_ENV: AtomicBool = AtomicBool::new(true);
+
+pub fn set_entree_directe(directe: bool) { ENTREE_DIRECTE.store(directe, Ordering::Relaxed); }
+
+/// L'entrée directe est-elle demandée ? (sans la consommer)
+pub fn entree_directe() -> bool {
+    ENTREE_DIRECTE.load(Ordering::Relaxed)
+        || (ENTREE_DIRECTE_ENV.load(Ordering::Relaxed)
+            && std::env::var_os("ICEBREAKER_AUTO_PERSONNAGE").is_some())
+}
+
+/// L'entrée directe est faite : l'écran des personnages redevient celui de Veloren.
+pub fn entree_directe_faite() {
+    ENTREE_DIRECTE.store(false, Ordering::Relaxed);
+    ENTREE_DIRECTE_ENV.store(false, Ordering::Relaxed);
+}
+
 // Icebreaker N.6 : les étapes du lancement, affichées sur l'écran de connexion et
 // sur l'écran d'attente des personnages.
 

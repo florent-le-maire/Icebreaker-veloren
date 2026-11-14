@@ -300,7 +300,8 @@ const ROUGE_BORD: Color = Color::Rgba(0.79, 0.19, 0.17, 1.0);
 const FOND_CARTE: Color = Color::Rgba(0.353, 0.165, 0.102, 1.0);
 const FOND_TOUCHE: Color = Color::Rgba(0.047, 0.055, 0.063, 1.0);
 
-/// Ce que le HUD montre du joueur à terre ou mort (en campagne seulement).
+/// Ce que le HUD montre du joueur à terre (partout : le serveur tue partout passé le délai,
+/// jalon O.8) ou mort (en campagne seulement : ailleurs, l'écran de mort de Veloren).
 #[derive(Clone, Debug, PartialEq)]
 pub enum Etat {
     Rien,
@@ -323,10 +324,10 @@ pub fn etat_joueur(
     allie: impl FnOnce() -> Option<String>,
     regarde_de: impl FnOnce() -> (String, u32, u32),
 ) -> Etat {
-    if !registre {
-        return Etat::Rien;
-    }
     if mort {
+        if !registre {
+            return Etat::Rien;
+        }
         return if regarde {
             let (nom, vie, max) = regarde_de();
             Etat::Regarde { nom, vie, max }
@@ -2649,9 +2650,14 @@ mod tests {
 
     #[test]
     fn l_etat_du_joueur_selon_la_situation() {
-        // Vivant, ou hors campagne : rien.
+        // Vivant, ou mort hors campagne : rien.
         assert_eq!(etat(true, false, false, None, true), Etat::Rien);
         assert_eq!(etat(false, true, false, Some((10.0, 0.5)), true), Etat::Rien);
+        // O.8 : à terre hors campagne (lieu d'entraînement, donjon seul), le décompte aussi.
+        assert_eq!(
+            etat(false, false, false, Some((10.0, 0.5)), true),
+            Etat::ATerre { secondes: 10, part: 0.5 }
+        );
         // À terre : les secondes arrondies au-dessus, la part bornée.
         assert_eq!(
             etat(true, false, false, Some((17.2, 1.3)), false),

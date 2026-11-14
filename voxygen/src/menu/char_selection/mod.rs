@@ -29,6 +29,8 @@ pub struct CharSelectionState {
     scene: Scene,
     /// Icebreaker: the server said to enter as a ghost, not acted on yet (X.7).
     icebreaker_fantome: bool,
+    /// Icebreaker O : le personnage de l'entrée directe a été demandé au serveur.
+    icebreaker_cree: bool,
 }
 
 impl CharSelectionState {
@@ -53,6 +55,7 @@ impl CharSelectionState {
             persisted_state,
             scene,
             icebreaker_fantome: false,
+            icebreaker_cree: false,
         }
     }
 
@@ -352,6 +355,43 @@ impl PlayState for CharSelectionState {
                     // usual screen (X.7).
                     if !fantome && !self.client.borrow().character_list().loading {
                         crate::icebreaker::campagne_fini();
+                    }
+                    // Icebreaker O : au lieu d'entraînement, on entre tout de suite avec le premier
+                    // personnage du compte, créé s'il n'y en a pas.
+                    if !fantome
+                        && crate::icebreaker::entree_directe()
+                        && !self.client.borrow().character_list().loading
+                    {
+                        let premier = self
+                            .client
+                            .borrow()
+                            .character_list()
+                            .characters
+                            .first()
+                            .and_then(|c| c.character.id);
+                        let mut client = self.client.borrow_mut();
+                        match premier {
+                            Some(id) => {
+                                crate::icebreaker::entree_directe_faite();
+                                client.request_character(
+                                    id,
+                                    global_state.settings.graphics.view_distances(),
+                                );
+                            },
+                            None if !self.icebreaker_cree => {
+                                self.icebreaker_cree = true;
+                                client.create_character(
+                                    global_state.settings.networking.username.clone(),
+                                    Some("common.items.weapons.sword.starter".to_string()),
+                                    None,
+                                    common::comp::body::humanoid::Body::random().into(),
+                                    false,
+                                    None,
+                                );
+                                client.load_character_list();
+                            },
+                            None => {},
+                        }
                     }
                     if fantome && let Some(id) = crate::icebreaker::take_jouer() {
                         // A character of the registry: the server loads it.

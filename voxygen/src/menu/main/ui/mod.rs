@@ -652,6 +652,24 @@ impl Controls {
                     events.push(self.icebreaker_connect(ui, adresse));
                     return;
                 }
+                // Icebreaker O : un lieu sans partie (le lieu d'entraînement) se lance tout de suite.
+                let sans_partie = lieux.read().0.get(lieu).filter(|l| l.sans_partie).cloned();
+                if let Some(seul) = sans_partie {
+                    match icebreaker::lancer(&seul, "") {
+                        Ok(adresse) => {
+                            crate::icebreaker::set_entree_directe(true);
+                            crate::icebreaker::noter_lancement(crate::icebreaker::Lancement {
+                                titre: seul.nom.clone(),
+                                sous_titre: String::new(),
+                                distant: false,
+                            });
+                            events.push(self.icebreaker_connect(ui, adresse));
+                        },
+                        Err(erreur) => self.connection_error(erreur),
+                    }
+                    return;
+                }
+                crate::icebreaker::set_entree_directe(false);
                 self.icebreaker_ouvrir_parties(lieu);
             },
             Message::CampagneRetour => self.icebreaker_parties = None,
