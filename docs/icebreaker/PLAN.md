@@ -237,7 +237,7 @@ Q50). Réglages : `assets/icebreaker/ennemis/races.ron` ; code : `common/src/ice
 - [x] **Y.1 à Y.3 Réglages par race, danari qui achèvent, humains en ronde** (un commit, code commun) : danari :
   joueur à terre à 20 blocs en tête des cibles, sauf celui qui vient de les frapper ; fuite à 30 %. Humains : rondes
   de 3 guerriers sur 3 salles, aller et retour. Testé (tests ciblés ; client texte : une ronde humaine fait 0→1→2→1→0
-  dans le journal, donjon danari sans erreur) ; achèvement et rondes pas vus dans le vrai client.
+  dans le journal, donjon danari sans erreur) ; achèvement et rondes pas vus dans le vrai client. ed852019b5
 - [ ] **Y.4 Orcs en rage** — sous la moitié des PV, une fois : dégâts et vitesse en plus.
 - [ ] **Y.5 Nains tenaces** — ils tiennent leur salle (poursuite bornée), plus d'armure.
 - [ ] **Y.6 Elfes tireurs** — plus d'archers à la composition, voient de plus loin.
