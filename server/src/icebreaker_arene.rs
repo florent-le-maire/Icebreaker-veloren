@@ -5,11 +5,12 @@
 
 use crate::{
     icebreaker_classes::{self, Class},
-    icebreaker_salle::{activer_passif, activer_ultime, competence_du_jeu},
+    icebreaker_salle::{activer_passif, activer_ultime, competence_du_jeu, secondes},
 };
 use common::{
     comp::Inventory,
     icebreaker_arene::AreneConfig,
+    icebreaker_panneau::{Action, Ligne, Onglet, Panneau, Sorte, Ton, texte},
     icebreaker_competences::{
         Acquis, IcebreakerCompetences, IcebreakerPassif, JeuArmes, NIVEAU_DEPART, PLACES_ARME,
         jeu_en_main, registre,
@@ -238,6 +239,233 @@ fn faire_venir(ecs: &World, infos: Vec<common::generation::EntityInfo>) -> Resul
     Ok(())
 }
 
+// ---------------------------------------------------------------------------------------------
+// O.6 : les deux panneaux du plan (touche U). Chaque bouton est une commande `/entrainement`.
+// ---------------------------------------------------------------------------------------------
+
+const ICONE_PERSONNAGE: &str = "armure";
+const ICONE_ARENE: &str = "epees";
+
+/// Une ligne à choisir : celle qui est en place porte `pastille` et un cadre doré, les autres le
+/// bouton `verbe` qui envoie `commande`.
+fn ligne_a_choisir(ligne: Ligne, en_place: bool, pastille: &str, verbe: &str, commande: &[&str]) -> Ligne {
+    if en_place {
+        ligne.pastille(pastille, Ton::Bon).choisie()
+    } else {
+        ligne.action(Action::nouvelle(verbe, commande).principale())
+    }
+}
+
+/// Le panneau « Personnage » : classe, armes, compétences et niveaux, ultime, passif, sans prix.
+pub fn panneau_personnage(
+    competences: Option<&IcebreakerCompetences>,
+    inventaire: Option<&Inventory>,
+    classes: &[Class],
+    message: Option<(String, Sorte)>,
+) -> Panneau {
+    let Some(competences) = competences else {
+        return Panneau::nouveau(ICONE_PERSONNAGE, "Personnage", "")
+            .message("Il faut jouer un personnage.", Sorte::Refus);
+    };
+    let registre = registre();
+    let (classe, acquis) = (competences.classe.as_str(), &competences.acquis);
+    let tenu = jeu_en_main(classe, inventaire);
+    let nom_classe = classes.iter().find(|c| c.id == classe).map_or(classe, |c| c.nom.as_str());
+    let description = match tenu {
+        Some((_, jeu)) => format!("{nom_classe} · {} en mains", jeu.nom),
+        None => format!("{nom_classe} · aucune arme de la classe en mains"),
+    };
+    let mut panneau = Panneau::nouveau(ICONE_PERSONNAGE, "Personnage", description);
+
+    let onglet_classes = classes
+        .iter()
+        .map(|c| {
+            let ligne = Ligne::nouvelle(c.nom.clone()).icone(c.icone.clone());
+            ligne_a_choisir(ligne, c.id == classe, "la vôtre", "Devenir", &["entrainement", "classe", &c.id])
+        })
+        .collect();
+    let onglet_armes = registre
+        .jeux_de(classe)
+        .map(|(id, jeu)| {
+            let noms: Vec<&str> = jeu.competences.iter().map(|(_, c)| c.nom.as_str()).collect();
+            let ligne = Ligne::nouvelle(jeu.nom.clone()).icone(jeu.icone.clone()).sous_titre(noms.join(", "));
+            let en_mains = tenu.is_some_and(|(tenu, _)| tenu == id);
+            ligne_a_choisir(ligne, en_mains, "en mains", "Prendre", &["entrainement", "arme", id])
+        })
+        .collect();
+    let en_mains = tenu.and_then(|(id, jeu)| acquis.jeux.get(id).map(|appris| (jeu, appris)));
+    let onglet_competences = match en_mains {
+        None => vec![Ligne::nouvelle("Prenez en mains une arme de votre classe (onglet Armes).").estompee()],
+        Some((jeu, appris)) => jeu
+            .competences
+            .iter()
+            .map(|(id, competence)| {
+                let niveau = appris.competences.get(id).copied().unwrap_or(NIVEAU_DEPART);
+                let max = competence.niveau_max();
+                // Après le plus haut niveau, le bouton revient au premier.
+                let suivant = if niveau >= max { NIVEAU_DEPART } else { niveau + 1 };
+                let ligne = Ligne::nouvelle(competence.nom.clone())
+                    .sous_titre(format!(
+                        "Niveau {niveau} sur {max} · recharge {} · {}",
+                        secondes(competence.recharge),
+                        competence.description
+                    ))
+                    .action(Action::nouvelle(format!("Niveau {suivant}"), &[
+                        "entrainement",
+                        "niveau",
+                        id,
+                        &suivant.to_string(),
+                    ]));
+                match appris.placees.iter().position(|placee| placee.as_deref() == Some(id.as_str())) {
+                    Some(touche) => ligne.pastille(format!("touche {}", touche + 1), Ton::Or).choisie(),
+                    None => ligne,
+                }
+            })
+            .collect(),
+    };
+    let onglet_ultimes = registre
+        .ultimes_de(classe)
+        .iter()
+        .map(|(id, ultime)| {
+            let ligne = Ligne::nouvelle(ultime.nom.clone()).sous_titre(format!(
+                "recharge {} · {}",
+                secondes(ultime.recharge),
+                ultime.description
+            ));
+            let actif = acquis.ultime.as_deref() == Some(id.as_str());
+            ligne_a_choisir(ligne, actif, "touche 3", "Placer", &["entrainement", "ultime", id])
+        })
+        .collect();
+    let onglet_passifs = registre
+        .passifs_de(classe)
+        .map(|passifs| {
+            passifs
+                .passifs
+                .iter()
+                .map(|(id, passif)| {
+                    let ligne = Ligne::nouvelle(passif.nom.clone()).sous_titre(passif.description.clone());
+                    let actif = acquis.passif.as_deref() == Some(id.as_str());
+                    ligne_a_choisir(ligne, actif, "actif", "Activer", &["entrainement", "passif", id])
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let onglet = |libelle: &str, lignes: Vec<Ligne>| Onglet {
+        libelle: texte(libelle),
+        lignes,
+    };
+    panneau.onglets = vec![
+        onglet("Classe", onglet_classes),
+        onglet("Armes", onglet_armes),
+        onglet("Compétences", onglet_competences),
+        onglet("Ultimes", onglet_ultimes),
+        onglet("Passifs", onglet_passifs),
+    ];
+    // On arrive sur les compétences : c'est là qu'on règle le plus.
+    panneau.onglet = 2;
+    panneau.colonnes = 2;
+    let arme = en_mains.is_some();
+    panneau.actions = vec![
+        Action::nouvelle("Touche 1 : changer", &["entrainement", "placer", "1"]).permise(arme),
+        Action::nouvelle("Touche 2 : changer", &["entrainement", "placer", "2"]).permise(arme),
+        Action::nouvelle("Tout au niveau 1", &["entrainement", "niveau", "tout", "1"]).permise(arme),
+        Action::nouvelle("Tout au niveau 5", &["entrainement", "niveau", "tout", "5"]).permise(arme),
+    ];
+    match message {
+        Some((message, sorte)) => panneau.message(message, sorte),
+        None => panneau,
+    }
+}
+
+/// Le rôle et le nombre choisis dans le panneau « Arène » (`choix` : leurs rangs dans
+/// `arene.ron`, ramenés dans les listes).
+pub fn choix_arene(config: &AreneConfig, choix: (usize, usize)) -> (&(String, String), u32) {
+    static AUCUN: std::sync::LazyLock<(String, String)> =
+        std::sync::LazyLock::new(|| ("guerrier".to_string(), "Guerrier".to_string()));
+    let role = config.roles.get(choix.0 % config.roles.len().max(1)).unwrap_or(&AUCUN);
+    let nombre = config.nombres.get(choix.1 % config.nombres.len().max(1)).copied().unwrap_or(1);
+    (role, nombre)
+}
+
+/// Le panneau « Arène » : faire venir des ennemis (une ligne par race, du rôle et en nombre
+/// choisis en bas) ou des alliés, nettoyer, se soigner, revenir à l'entrée.
+pub fn panneau_arene(
+    config: &AreneConfig,
+    (ennemis, allies): (u32, u32),
+    choix: (usize, usize),
+    message: Option<(String, Sorte)>,
+) -> Panneau {
+    let pluriel = |n: u32, mot: &str| format!("{n} {mot}{}", if n > 1 { "s" } else { "" });
+    let ((role, role_nom), nombre) = choix_arene(config, choix);
+    let nombre_texte = nombre.to_string();
+    let place = ennemis + allies + nombre <= config.max_en_piste;
+    let mut panneau = Panneau::nouveau(
+        ICONE_ARENE,
+        "Arène",
+        format!("{}, {} en piste", pluriel(ennemis, "ennemi"), pluriel(allies, "allié")),
+    );
+    let onglet_ennemis = config
+        .races
+        .iter()
+        .map(|(race, nom)| {
+            Ligne::nouvelle(nom.clone()).sous_titre(format!("{nombre} x {role_nom}")).action(
+                Action::nouvelle("Faire venir", &["entrainement", "ennemi", race, role, &nombre_texte])
+                    .principale()
+                    .permise(place),
+            )
+        })
+        .collect();
+    let onglet_allies = config
+        .allies
+        .iter()
+        .map(|(id, nom, _)| {
+            Ligne::nouvelle(nom.clone()).sous_titre(format!("{nombre} à vos côtés")).action(
+                Action::nouvelle("Appeler", &["entrainement", "allie", id, &nombre_texte])
+                    .principale()
+                    .permise(place),
+            )
+        })
+        .collect();
+    panneau.onglets = vec![
+        Onglet {
+            libelle: texte("Ennemis"),
+            lignes: onglet_ennemis,
+        },
+        Onglet {
+            libelle: texte("Alliés"),
+            lignes: onglet_allies,
+        },
+    ];
+    panneau.colonnes = 2;
+    panneau.actions = vec![
+        Action::nouvelle(format!("Rôle : {role_nom}"), &["entrainement", "choix", "role"]),
+        Action::nouvelle(format!("Nombre : {nombre}"), &["entrainement", "choix", "nombre"]),
+        Action::nouvelle("Nettoyer l'arène", &["entrainement", "nettoyer"]).permise(ennemis + allies > 0),
+        Action::nouvelle("Soin", &["entrainement", "soin"]),
+        Action::nouvelle("Retour à l'entrée", &["entrainement", "entree"]),
+    ];
+    match message {
+        Some((message, sorte)) => panneau.message(message, sorte),
+        None if !place => panneau.message(
+            format!("L'arène est pleine ({} au plus) : nettoyez-la.", config.max_en_piste),
+            Sorte::Info,
+        ),
+        None => panneau,
+    }
+}
+
+/// Ce que la dernière commande a fait, montré dans le panneau ouvert du joueur (le chat le dit
+/// aussi).
+fn dire_au_panneau(ecs: &World, client: Entity, message: &str, sorte: Sorte) {
+    if let Some(ouvert) = ecs
+        .write_resource::<crate::icebreaker_panneaux::IcebreakerPanneaux>()
+        .ouverts
+        .get_mut(&client)
+    {
+        ouvert.salle_message = Some((message.to_string(), sorte));
+    }
+}
+
 const AIDE: &str = "/entrainement classe <id>, arme <jeu>, placer <1|2> [id], niveau <id|tout> \
                     <1-5>, ultime <id>, passif <id>, ennemi <race> [role] [nombre], allie <id> \
                     [nombre], nettoyer, soin, entree";
@@ -273,6 +501,7 @@ pub(crate) fn handle_entrainement(
         for entite in &partis {
             let _ = server.state.delete_entity_recorded(*entite);
         }
+        dire_au_panneau(server.state.ecs(), client, &format!("Arène nettoyée ({} en moins).", partis.len()), Sorte::Reussite);
         server.notify_client(
             client,
             ServerGeneral::server_msg(
@@ -399,6 +628,21 @@ pub(crate) fn handle_entrainement(
             faire_venir(ecs, infos)?;
             Ok(format!("{nombre} x {nom} à vos côtés."))
         })(),
+        // Les boutons « Rôle » et « Nombre » du panneau de l'arène : le choix suivant.
+        ["choix", quoi @ ("role" | "nombre")] => (|| {
+            let mut panneaux = ecs.write_resource::<crate::icebreaker_panneaux::IcebreakerPanneaux>();
+            let ouvert = panneaux
+                .ouverts
+                .get_mut(&client)
+                .ok_or_else(|| "Ouvrez le plan (touche U) et le panneau de l'arène.".to_string())?;
+            if *quoi == "role" {
+                ouvert.arene_choix.0 = (ouvert.arene_choix.0 + 1) % config.roles.len().max(1);
+            } else {
+                ouvert.arene_choix.1 = (ouvert.arene_choix.1 + 1) % config.nombres.len().max(1);
+            }
+            let ((_, role), nombre) = choix_arene(&config, ouvert.arene_choix);
+            Ok(format!("{nombre} x {role}."))
+        })(),
         ["soin"] => (|| {
             let mut pvs = ecs.write_storage::<Health>();
             let mut pv = pvs.get_mut(client).ok_or_else(|| "Il faut jouer un personnage.".to_string())?;
@@ -432,7 +676,11 @@ pub(crate) fn handle_entrainement(
         })(),
         _ => Err(AIDE.to_string()),
     };
-    let message = message.map_err(Content::Plain)?;
+    let message = message.map_err(|refus| {
+        dire_au_panneau(ecs, client, &refus, Sorte::Refus);
+        Content::Plain(refus)
+    })?;
+    dire_au_panneau(ecs, client, &message, Sorte::Reussite);
     server.notify_client(
         client,
         ServerGeneral::server_msg(ChatType::Meta, Content::Plain(message)),
@@ -548,6 +796,97 @@ mod tests {
         for (id, _, fichier) in &config.allies {
             assert!(common::assets::Ron::<EntityConfig>::load(fichier).is_ok(), "{id} : {fichier}");
         }
+    }
+
+    /// Toutes les commandes des boutons d'un panneau.
+    fn commandes(panneau: &Panneau) -> Vec<Vec<String>> {
+        panneau
+            .onglets
+            .iter()
+            .flat_map(|onglet| &onglet.lignes)
+            .filter_map(|ligne| ligne.action.as_ref())
+            .chain(&panneau.actions)
+            .map(|action| action.commande.clone())
+            .collect()
+    }
+
+    #[test]
+    fn panneau_personnage_onglets_et_boutons() {
+        let classes = icebreaker_classes::classes();
+        let class = classes.iter().find(|c| c.id == "guerrier").unwrap();
+        let (jeu_id, jeu) = registre().jeu_par_defaut("guerrier").unwrap();
+        let (competences, inventaire) = fiche(class, jeu, 1).unwrap();
+        let panneau = panneau_personnage(Some(&competences), Some(&inventaire), &classes, None);
+        let libelles: Vec<_> = panneau.onglets.iter().map(|o| o.libelle.clone()).collect();
+        assert_eq!(libelles, ["Classe", "Armes", "Compétences", "Ultimes", "Passifs"].map(texte));
+        // Une ligne par classe, par jeu d'armes, par compétence du jeu en mains.
+        assert_eq!(panneau.onglets[0].lignes.len(), classes.len());
+        assert_eq!(panneau.onglets[1].lignes.len(), registre().jeux_de("guerrier").count());
+        assert_eq!(panneau.onglets[2].lignes.len(), jeu.competences.len());
+        // Ce qui est en place n'a pas de bouton : la classe, l'arme en mains, l'ultime, le passif.
+        for onglet in [0, 1, 3, 4] {
+            let lignes = &panneau.onglets[onglet].lignes;
+            assert_eq!(lignes.iter().filter(|l| l.choisie && l.action.is_none()).count(), 1, "{onglet}");
+        }
+        // Deux compétences sont sur une touche ; chaque compétence a son bouton de niveau.
+        let lignes = &panneau.onglets[2].lignes;
+        assert_eq!(lignes.iter().filter(|l| l.choisie).count(), 2);
+        let id = &jeu.competences[0].0;
+        assert_eq!(lignes[0].action.as_ref().unwrap().commande, ["entrainement", "niveau", id, "2"]);
+        // Chaque bouton envoie une commande que les règles acceptent.
+        for commande in commandes(&panneau) {
+            assert_eq!(commande[0], "entrainement", "{commande:?}");
+            let mut acquis = competences.acquis.clone();
+            let mots: Vec<&str> = commande[1..].iter().map(String::as_str).collect();
+            let resultat = match mots.as_slice() {
+                ["classe", id] => icebreaker_classes::class(id).map(|_| String::new()).ok_or_else(String::new),
+                ["arme", id] => registre().jeu(id).map(|_| String::new()).ok_or_else(String::new),
+                ["niveau", cible, niveau] => regler_niveau(&mut acquis, jeu_id, cible, niveau.parse().unwrap()),
+                ["placer", touche] => crate::icebreaker_salle::placer(&mut acquis, jeu_id, touche.parse().unwrap()),
+                ["ultime", id] => activer_ultime(&mut acquis, "guerrier", id),
+                ["passif", id] => activer_passif(&mut acquis, "guerrier", id),
+                _ => Err(format!("commande inattendue : {commande:?}")),
+            };
+            assert!(resultat.is_ok(), "{commande:?} : {resultat:?}");
+        }
+        // Au plus haut niveau, le bouton revient au niveau 1.
+        let (competences, _) = fiche(class, jeu, 99).unwrap();
+        let panneau = panneau_personnage(Some(&competences), Some(&inventaire), &classes, None);
+        assert_eq!(panneau.onglets[2].lignes[0].action.as_ref().unwrap().commande[3], "1");
+        // Sans arme de la classe : pas de compétence à régler, boutons du bas grisés.
+        let panneau = panneau_personnage(Some(&competences), Some(&Inventory::with_empty()), &classes, None);
+        assert!(panneau.onglets[2].lignes[0].estompee);
+        assert!(panneau.actions.iter().all(|action| !action.permise));
+    }
+
+    #[test]
+    fn panneau_arene_onglets_et_boutons() {
+        let config = config();
+        let panneau = panneau_arene(&config, (2, 1), (1, 1), None);
+        assert_eq!(panneau.description, texte("2 ennemis, 1 allié en piste"));
+        assert_eq!(panneau.onglets[0].lignes.len(), config.races.len());
+        assert_eq!(panneau.onglets[1].lignes.len(), config.allies.len());
+        // Le rôle et le nombre choisis sont dans la commande de chaque race.
+        let (role, nombre) = (&config.roles[1].0, config.nombres[1].to_string());
+        for (ligne, (race, _)) in panneau.onglets[0].lignes.iter().zip(&config.races) {
+            let action = ligne.action.as_ref().unwrap();
+            assert_eq!(action.commande, ["entrainement", "ennemi", race, role, &nombre]);
+            assert!(action.permise);
+            // La commande passe les règles.
+            assert!(ennemi_demande(&config, race, Some(role)).is_ok());
+            assert!(nombre_demande(Some(&nombre), 3, &config).is_ok());
+        }
+        // Les rangs tournent : au-delà de la liste, on revient au début.
+        let (premier, _) = choix_arene(&config, (config.roles.len(), config.nombres.len()));
+        assert_eq!(premier, &config.roles[0]);
+        // Arène pleine : boutons grisés et message.
+        let plein = panneau_arene(&config, (config.max_en_piste, 0), (0, 0), None);
+        assert!(plein.onglets[0].lignes.iter().all(|l| !l.action.as_ref().unwrap().permise));
+        assert!(plein.message.is_some());
+        // Arène vide : rien à nettoyer.
+        let vide = panneau_arene(&config, (0, 0), (0, 0), None);
+        let nettoyer = vide.actions.iter().find(|a| a.commande == ["entrainement", "nettoyer"]).unwrap();
+        assert!(!nettoyer.permise);
     }
 
     #[test]

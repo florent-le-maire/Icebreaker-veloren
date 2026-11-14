@@ -34,6 +34,9 @@ pub struct Ouvert {
     /// Icebreaker A.12 : ce que la dernière commande `/salle` a fait, montré dans le panneau de la
     /// salle d'armes.
     pub salle_message: Option<(String, Sorte)>,
+    /// Icebreaker O : le rôle et le nombre choisis dans le panneau de l'arène (rangs dans
+    /// `arene.ron`).
+    pub arene_choix: (usize, usize),
 }
 
 /// Qui a le plan du village ouvert.

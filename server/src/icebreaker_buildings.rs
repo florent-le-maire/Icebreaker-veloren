@@ -80,6 +80,17 @@ impl Building {
 pub enum Place {
     Building(Building),
     Plot(usize),
+    /// Icebreaker O : une case du lieu d'entraînement.
+    Arene(Poste),
+}
+
+/// Icebreaker O : les deux cases du plan du lieu d'entraînement (`icebreaker_arene`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Poste {
+    /// À l'entrée : classe, armes, compétences.
+    Personnage,
+    /// L'arène : ennemis, alliés.
+    Arene,
 }
 
 /// Where each building is (none outside the village); the plots to build on
@@ -107,6 +118,22 @@ impl IcebreakerBuildings {
                 })
                 .map(|(building, (bounds, alt))| (Place::Building(building), bounds, alt))
                 .collect(),
+            zone: None,
+        }
+    }
+
+    /// Icebreaker O : les deux cases du lieu d'entraînement, l'arène (centre `centre`, sol à
+    /// `alt`) et l'entrée.
+    pub fn arene(centre: Vec2<i32>, alt: i32, config: &common::icebreaker_arene::AreneConfig) -> Self {
+        let carre = |milieu: Vec2<i32>, demi: i32| Aabr {
+            min: milieu - demi,
+            max: milieu + demi,
+        };
+        Self {
+            places: vec![
+                (Place::Arene(Poste::Arene), carre(centre, (config.rayon * 0.7) as i32), alt),
+                (Place::Arene(Poste::Personnage), carre(centre + config.entree().as_::<i32>(), 5), alt),
+            ],
             zone: None,
         }
     }
@@ -185,6 +212,8 @@ pub fn liste(
                     };
                     (building.name(), building.id(), etat)
                 },
+                Place::Arene(Poste::Personnage) => ("Personnage", "entrainement_perso", String::new()),
+                Place::Arene(Poste::Arene) => ("Arène", "entrainement_arene", String::new()),
                 // A plot's kind tells its look (X.4): "terrain", or "chantier"
                 // while a house is being built.
                 Place::Plot(rank) => match village.chantier(*rank) {

@@ -26,6 +26,8 @@
     // Combien d'ennemis ou d'alliés une commande fait venir au plus, et combien l'arène en porte en tout.
     max_par_appel: 10,
     max_en_piste: 40,
+    // Les nombres que propose le bouton « Nombre » du panneau de l'arène (touche U).
+    nombres: [1, 3, 5, 10],
     // Les races d'ennemis (jalon Y) : (espèce de Veloren, nom affiché).
     races: [
         ("human", "Humains"),

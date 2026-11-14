@@ -1,6 +1,6 @@
 use crate::{
     client::Client,
-    icebreaker_buildings::{self, Building, IcebreakerBuildings, Place},
+    icebreaker_buildings::{self, Building, IcebreakerBuildings, Place, Poste},
     icebreaker_expedition,
     icebreaker_panneaux::{self, IcebreakerPanneaux, PERIODE},
     icebreaker_registre::IcebreakerRegistre,
@@ -47,6 +47,9 @@ impl<'a> System<'a> for Sys {
         ReadStorage<'a, Inventory>,
         ReadStorage<'a, Health>,
         ReadStorage<'a, IcebreakerCompetences>,
+        // Icebreaker O : ce qui est en piste au lieu d'entraînement.
+        ReadStorage<'a, common::comp::Agent>,
+        ReadStorage<'a, common::comp::Alignment>,
     );
 
     const NAME: &'static str = "icebreaker_panneaux";
@@ -74,6 +77,8 @@ impl<'a> System<'a> for Sys {
             inventories,
             healths,
             competences,
+            agents,
+            alignements,
         ): Self::SystemData,
     ) {
         if panneaux.ouverts.is_empty() {
@@ -183,6 +188,29 @@ impl<'a> System<'a> for Sys {
                     &presences,
                     &players,
                 ),
+                // Icebreaker O : les deux panneaux du lieu d'entraînement.
+                Place::Arene(Poste::Personnage) => crate::icebreaker_arene::panneau_personnage(
+                    competences.get(entity),
+                    inventories.get(entity),
+                    &crate::icebreaker_classes::classes(),
+                    ouvert.salle_message.clone(),
+                ),
+                Place::Arene(Poste::Arene) => {
+                    use specs::{Join, LendJoin};
+                    let en_piste = (&agents, (&alignements).maybe()).join().fold(
+                        (0, 0),
+                        |(ennemis, allies), (_, alignement)| match alignement {
+                            Some(common::comp::Alignment::Owned(_)) => (ennemis, allies + 1),
+                            _ => (ennemis + 1, allies),
+                        },
+                    );
+                    crate::icebreaker_arene::panneau_arene(
+                        &common::icebreaker_arene::config(),
+                        en_piste,
+                        ouvert.arene_choix,
+                        ouvert.salle_message.clone(),
+                    )
+                },
                 Place::Building(Building::SalleArmes) => icebreaker_salle::panneau(
                     competences.get(entity),
                     inventories.get(entity),

@@ -30,7 +30,7 @@ const ICONE: &str = "epees";
 fn points(n: u32) -> String { format!("{n} point{}", if n > 1 { "s" } else { "" }) }
 
 /// Des secondes de recharge, sans décimale inutile : « 10 s », « 7,5 s ».
-fn secondes(s: f32) -> String {
+pub(crate) fn secondes(s: f32) -> String {
     if (s - s.round()).abs() < 0.05 {
         format!("{:.0} s", s)
     } else {

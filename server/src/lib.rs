@@ -656,6 +656,17 @@ impl Server {
             .with_zone(village_zone),
         );
         state.ecs_mut().insert(village);
+        // Icebreaker O : au lieu d'entraînement, le plan montre l'arène et l'entrée.
+        #[cfg(feature = "worldgen")]
+        if let Some(arene) =
+            world::icebreaker::arene::place(world.sim()).filter(|_| world::icebreaker::is_entrainement())
+        {
+            state.ecs_mut().insert(icebreaker_buildings::IcebreakerBuildings::arene(
+                arene.centre,
+                arene.alt,
+                &common::icebreaker_arene::config(),
+            ));
+        }
         let campaign_dir = std::env::var_os("ICEBREAKER_CAMPAIGN_DIR").map(std::path::PathBuf::from);
         // Icebreaker: the cart and the common registry (jalon R).
         state
