@@ -59,7 +59,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | N | Interface Icebreaker | `HISTORIQUE.md` (charte et règles : `PLAN-INTERFACE.md`) | fait, vu en jeu | — (supprimé) |
 | Y | Une identité par race ennemie | `PLAN.md` | Y.1 à Y.3 et Y.9 codés (2026-11-14) ; Y.4 à Y.8 restent | — (supprimé) |
 | A | Armes, classes et compétences | `PLAN-CLASSES.md` | codé le 2026-11-11 pour les trois classes ; reste l'avis sur les maquettes (A.2) et l'essai dans le vrai client | `Veloren-classes` |
-| O | Lieu d'entraînement et de playtest | `PLAN-ENTRAINEMENT.md` | validé le 2026-11-14 ; O.1 à O.8 à faire | `Veloren-entrainement` |
+| O | Lieu d'entraînement et de playtest | `PLAN-ENTRAINEMENT.md` | O.1 à O.8 codés le 2026-11-14 ; reste l'essai à la main dans le vrai client | `Veloren-entrainement` |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 

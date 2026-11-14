@@ -276,6 +276,12 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 `PLAN-GROTTE.md`). À parcourir dans le vrai client, en campagne, à deux si possible ; barrer ce qui est vu, ouvrir une
 tâche pour ce qui casse.
 
+**Lieu d'entraînement (jalon O, `PLAN-ENTRAINEMENT.md`)**
+- O.7 : le bouton « Entraînement » du menu lance le serveur et entre dans le monde sans écran des personnages.
+- O.4, O.5, O.8 : tomber à terre sous les coups des ennemis, être relevé, mourir, réapparaître à l'entrée ; les
+  alliés suivent et ne frappent pas le joueur ; les tirs ennemis vers l'entrée ; le bilan des mannequins.
+- O.3 : chaque compétence du mage et de l'archer sur de vrais ennemis, aux niveaux 1, 3 et 5.
+
 **Campagne et village**
 - I.2 zone fermée : sortie à pied, au planeur, à la nage ; montures non gérées.
 - I.8 / V.9 / V.11 : départ groupé décidé par le chef, à deux joueurs, depuis la vue U ; `/rentrer` ; emplacement
