@@ -816,6 +816,8 @@ impl StateExt for State {
                 );
                 let mut rng = rand::rng();
 
+                // Icebreaker O : les alliés du lieu d'entraînement ne sont pas gardés.
+                let pets = if world::icebreaker::is_entrainement() { Vec::new() } else { pets };
                 for (pet, body, stats) in pets {
                     let ori = comp::Ori::from(Dir::random_2d(&mut rng));
                     let pet_entity = self

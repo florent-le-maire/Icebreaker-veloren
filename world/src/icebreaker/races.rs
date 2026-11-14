@@ -34,6 +34,11 @@ pub fn entity(asset: &str, species: Option<&str>, pos: Vec3<f32>, rng: &mut ChaC
     EntityInfo::at(pos).with_entity_config(config, Some(asset), rng, None)
 }
 
+/// Icebreaker O : un ennemi à la demande (lieu d'entraînement), tiré au hasard.
+pub fn entity_au_hasard(asset: &str, species: Option<&str>, pos: Vec3<f32>) -> EntityInfo {
+    entity(asset, species, pos, &mut ChaCha8Rng::from_seed(rand::rng().random()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

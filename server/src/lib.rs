@@ -726,6 +726,12 @@ impl Server {
                     world.find_accessible_pos(index.as_index_ref(), near, false)
                 });
             icebreaker_entrainement::postes(first, &config)
+        } else if let Some(arene) = world::icebreaker::arene::place(world.sim())
+            .filter(|_| world::icebreaker::is_entrainement())
+        {
+            // Icebreaker O : les mannequins du lieu d'entraînement, sur le plateau.
+            let premier = arene.centre.as_::<f32>() + Vec2::from(common::icebreaker_arene::config().mannequins);
+            icebreaker_entrainement::postes(premier.with_z(arene.alt as f32), &icebreaker_entrainement::config())
         } else {
             Vec::new()
         };
@@ -737,6 +743,16 @@ impl Server {
 
         // Icebreaker : à terre et mort (jalon T).
         state.ecs_mut().insert(sys::icebreaker_mort::IcebreakerATerre::default());
+        // Icebreaker O : les morts du lieu d'entraînement, qui réapparaissent à l'entrée.
+        #[cfg(feature = "worldgen")]
+        state.ecs_mut().insert(sys::icebreaker_arene::IcebreakerArene {
+            centre: world::icebreaker::arene::place(world.sim())
+                .filter(|_| world::icebreaker::is_entrainement())
+                .map(|arene| arene.centre.as_()),
+            ..Default::default()
+        });
+        #[cfg(not(feature = "worldgen"))]
+        state.ecs_mut().insert(sys::icebreaker_arene::IcebreakerArene::default());
         // Icebreaker : dernier état des armes en mains par personnage (jalon A.7).
         state.ecs_mut().insert(sys::icebreaker_armes::IcebreakerArmes::default());
         // Icebreaker : balise lumineuse (jalon J).

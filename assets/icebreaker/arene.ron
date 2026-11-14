@@ -21,4 +21,36 @@
     classe_par_defaut: "guerrier",
     // Le niveau de toutes les compétences à l'arrivée et après un changement de classe (1 à 5).
     niveau: 1,
+    // Où les ennemis viennent : sur un cercle de ce rayon autour du centre de l'arène (en blocs).
+    rayon_apparition: 6.0,
+    // Combien d'ennemis ou d'alliés une commande fait venir au plus, et combien l'arène en porte en tout.
+    max_par_appel: 10,
+    max_en_piste: 40,
+    // Les races d'ennemis (jalon Y) : (espèce de Veloren, nom affiché).
+    races: [
+        ("human", "Humains"),
+        ("orc", "Orcs"),
+        ("dwarf", "Nains"),
+        ("elf", "Elfes"),
+        ("draugr", "Draugr"),
+        ("danari", "Danari"),
+    ],
+    // Les rôles d'ennemis : (id, nom affiché) ; le fichier est assets/icebreaker/ennemis/<id>.ron.
+    roles: [
+        ("guerrier", "Guerrier"),
+        ("archer", "Archer"),
+        ("mage", "Mage"),
+        ("chef", "Chef"),
+    ],
+    // Les alliés (Q53) : (id, nom affiché, fichier d'entité de Veloren). Ils sont du camp de celui qui les appelle.
+    allies: [
+        ("garde", "Garde", "common.entity.village.guard"),
+        ("capitaine", "Capitaine", "common.entity.village.captain"),
+        ("archer", "Archer", "common.entity.village.bowman"),
+        ("loup", "Loup", "common.entity.wild.aggressive.wolf"),
+    ],
+    // Le premier mannequin de la rangée (`entrainement.ron` : ils s'alignent vers l'est), depuis le centre de l'arène.
+    mannequins: (-6.0, 34.0),
+    // Secondes avant qu'un joueur mort réapparaisse à l'entrée.
+    delai_reapparition: 4.0,
 )

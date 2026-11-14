@@ -29,6 +29,21 @@ pub struct AreneConfig {
     pub classe_par_defaut: String,
     /// Le niveau de toutes les compétences à l'arrivée et après un changement de classe.
     pub niveau: u8,
+    /// Où les ennemis viennent : sur un cercle de ce rayon autour du centre de l'arène.
+    pub rayon_apparition: f32,
+    /// Combien d'ennemis ou d'alliés une commande fait venir au plus, et combien l'arène en porte.
+    pub max_par_appel: u32,
+    pub max_en_piste: u32,
+    /// Les races d'ennemis : (espèce de Veloren, nom affiché).
+    pub races: Vec<(String, String)>,
+    /// Les rôles d'ennemis : (id, nom affiché) ; le fichier est `icebreaker.ennemis.<id>`.
+    pub roles: Vec<(String, String)>,
+    /// Les alliés : (id, nom affiché, fichier d'entité de Veloren).
+    pub allies: Vec<(String, String, String)>,
+    /// Le premier mannequin de la rangée, depuis le centre de l'arène.
+    pub mannequins: (f32, f32),
+    /// Secondes avant qu'un joueur mort réapparaisse à l'entrée.
+    pub delai_reapparition: f64,
 }
 
 impl AreneConfig {
@@ -46,6 +61,11 @@ mod tests {
         let c = config();
         assert!(c.rayon > 5.0 && c.rayon_terrain > c.rayon);
         assert!(c.recherche > 0 && c.hauteur_libre > 0 && c.profondeur > 0);
+        assert!(c.max_par_appel > 0 && c.max_en_piste >= c.max_par_appel);
+        assert!(!c.races.is_empty() && !c.roles.is_empty() && !c.allies.is_empty());
+        assert!(c.rayon_apparition < c.rayon && c.delai_reapparition >= 0.0);
+        let mannequins = Vec2::<f32>::from(c.mannequins).magnitude();
+        assert!(mannequins > c.rayon + 2.0 && mannequins < c.rayon_terrain - 12.0);
     }
 
     #[test]

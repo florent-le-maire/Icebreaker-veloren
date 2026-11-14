@@ -144,8 +144,103 @@ fn modifier(
     Ok(message)
 }
 
+// ---------------------------------------------------------------------------------------------
+// O.4 : ennemis, alliés, nettoyage.
+// ---------------------------------------------------------------------------------------------
+
+/// `nombre` points répartis sur un cercle de rayon `rayon` autour de `centre` (un seul : au centre).
+pub fn positions(centre: vek::Vec3<f32>, rayon: f32, nombre: u32) -> Vec<vek::Vec3<f32>> {
+    if nombre <= 1 {
+        return vec![centre; nombre as usize];
+    }
+    (0..nombre)
+        .map(|i| {
+            let angle = i as f32 / nombre as f32 * std::f32::consts::TAU;
+            centre + vek::Vec3::new(angle.cos(), angle.sin(), 0.0) * rayon
+        })
+        .collect()
+}
+
+/// Combien en faire venir : `texte` (1 par défaut), borné par ce qu'une commande et l'arène
+/// acceptent (`en_piste` : ce qui s'y trouve déjà).
+pub fn nombre_demande(texte: Option<&str>, en_piste: u32, config: &AreneConfig) -> Result<u32, String> {
+    let nombre = match texte {
+        Some(texte) => texte
+            .parse::<u32>()
+            .ok()
+            .filter(|n| *n >= 1)
+            .ok_or_else(|| format!("Un nombre de 1 à {}, pas « {texte} ».", config.max_par_appel))?,
+        None => 1,
+    };
+    if nombre > config.max_par_appel {
+        return Err(format!("{} à la fois au plus.", config.max_par_appel));
+    }
+    if en_piste + nombre > config.max_en_piste {
+        return Err(format!(
+            "L'arène est pleine ({en_piste} en piste, {} au plus) : /entrainement nettoyer.",
+            config.max_en_piste
+        ));
+    }
+    Ok(nombre)
+}
+
+/// L'ennemi demandé : (fichier d'entité, nom de la race, nom du rôle). Sans rôle : le premier.
+pub fn ennemi_demande<'a>(
+    config: &'a AreneConfig,
+    race: &str,
+    role: Option<&str>,
+) -> Result<(String, &'a str, &'a str), String> {
+    let (_, race_nom) = config.races.iter().find(|(id, _)| id == race).ok_or_else(|| {
+        format!("Race inconnue : {race} ({}).", liste(config.races.iter().map(|(id, _)| id.as_str())))
+    })?;
+    let (role, role_nom) = match role {
+        Some(role) => config.roles.iter().find(|(id, _)| id == role).ok_or_else(|| {
+            format!("Rôle inconnu : {role} ({}).", liste(config.roles.iter().map(|(id, _)| id.as_str())))
+        })?,
+        None => config.roles.first().ok_or_else(|| "Aucun rôle dans arene.ron.".to_string())?,
+    };
+    Ok((format!("icebreaker.ennemis.{role}"), race_nom, role_nom))
+}
+
+/// Ce qui est en piste : (ennemis, alliés). Tout ce qui a une IA vient de `/entrainement` (le
+/// monde de ce lieu n'a ni site ni faune ; les mannequins n'ont pas d'IA).
+pub fn en_piste(ecs: &World) -> (u32, u32) {
+    use common::comp::{Agent, Alignment};
+    use specs::{Join, LendJoin};
+    let (agents, alignements) = (ecs.read_storage::<Agent>(), ecs.read_storage::<Alignment>());
+    (&agents, (&alignements).maybe())
+        .join()
+        .fold((0, 0), |(ennemis, allies), (_, alignement)| match alignement {
+            Some(Alignment::Owned(_)) => (ennemis, allies + 1),
+            _ => (ennemis + 1, allies),
+        })
+}
+
+/// Fait apparaître ces entités, comme `/make_npc`.
+fn faire_venir(ecs: &World, infos: Vec<common::generation::EntityInfo>) -> Result<(), String> {
+    use crate::sys::terrain::SpawnEntityData;
+    use common::event::{CreateNpcEvent, EventBus};
+    let bus = ecs.read_resource::<EventBus<CreateNpcEvent>>();
+    for info in infos {
+        let pos = common::comp::Pos(info.pos);
+        match SpawnEntityData::from_entity_info(info) {
+            SpawnEntityData::Npc(data) => {
+                let (npc, _) = data.to_npc_builder();
+                bus.emit_now(CreateNpcEvent {
+                    pos,
+                    ori: common::comp::Ori::default(),
+                    npc,
+                });
+            },
+            SpawnEntityData::Special(..) => return Err("Cette entité ne se fait pas venir.".to_string()),
+        }
+    }
+    Ok(())
+}
+
 const AIDE: &str = "/entrainement classe <id>, arme <jeu>, placer <1|2> [id], niveau <id|tout> \
-                    <1-5>, ultime <id>, passif <id>, soin, entree";
+                    <1-5>, ultime <id>, passif <id>, ennemi <race> [role] [nombre], allie <id> \
+                    [nombre], nettoyer, soin, entree";
 
 /// `/entrainement …` : tout régler au lieu d'entraînement (les boutons de ses panneaux). Sans rôle
 /// requis, refusée ailleurs.
@@ -165,6 +260,30 @@ pub(crate) fn handle_entrainement(
         ));
     }
     let config = common::icebreaker_arene::config();
+    if args.len() == 1 && args[0] == "nettoyer" {
+        use crate::state_ext::StateExt;
+        use specs::Join;
+        let partis: Vec<Entity> = {
+            let ecs = server.state.ecs();
+            (&ecs.entities(), &ecs.read_storage::<common::comp::Agent>())
+                .join()
+                .map(|(entite, _)| entite)
+                .collect()
+        };
+        for entite in &partis {
+            let _ = server.state.delete_entity_recorded(*entite);
+        }
+        server.notify_client(
+            client,
+            ServerGeneral::server_msg(
+                ChatType::Meta,
+                Content::Plain(format!("Arène nettoyée ({} en moins).", partis.len())),
+            ),
+        );
+        return Ok(());
+    }
+    let arene = world::icebreaker::arene::place(server.world.sim())
+        .map(|arene| arene.centre.as_::<f32>().with_z(arene.alt as f32));
     let ecs = server.state.ecs();
     let en_mains = |jeu: Option<&str>| {
         jeu.map(str::to_string)
@@ -221,6 +340,65 @@ pub(crate) fn handle_entrainement(
         }),
         ["ultime", id] => modifier(ecs, client, |acquis, classe, _| activer_ultime(acquis, classe, id)),
         ["passif", id] => modifier(ecs, client, |acquis, classe, _| activer_passif(acquis, classe, id)),
+        ["ennemi", race, reste @ ..] if reste.len() <= 2 => (|| {
+            // `ennemi orc 3` : le nombre sans le rôle.
+            let (role, nombre) = match reste {
+                [nombre] if nombre.parse::<u32>().is_ok() => (None, Some(*nombre)),
+                _ => (reste.first().copied(), reste.get(1).copied()),
+            };
+            let (fichier, race_nom, role_nom) = ennemi_demande(&config, race, role)?;
+            let (ennemis, allies) = en_piste(ecs);
+            let nombre = nombre_demande(nombre, ennemis + allies, &config)?;
+            let centre = arene.ok_or_else(|| "Pas d'arène dans ce monde.".to_string())?;
+            let infos = positions(centre, config.rayon_apparition, nombre)
+                .into_iter()
+                .map(|pos| world::icebreaker::races::entity_au_hasard(&fichier, Some(race), pos))
+                .collect();
+            faire_venir(ecs, infos)?;
+            Ok(format!("{race_nom} : {nombre} x {role_nom} dans l'arène."))
+        })(),
+        ["allie", id, reste @ ..] if reste.len() <= 1 => (|| {
+            use common::{
+                comp::Alignment,
+                generation::{EntityConfig, EntityInfo},
+                uid::Uid,
+            };
+            let sans_personnage = || "Il faut jouer un personnage.".to_string();
+            let (_, nom, fichier) =
+                config.allies.iter().find(|(allie, ..)| allie == id).ok_or_else(|| {
+                    format!(
+                        "Allié inconnu : {id} ({}).",
+                        liste(config.allies.iter().map(|(id, ..)| id.as_str()))
+                    )
+                })?;
+            let (ennemis, allies) = en_piste(ecs);
+            let nombre = nombre_demande(reste.first().copied(), ennemis + allies, &config)?;
+            let uid = *ecs.read_storage::<Uid>().get(client).ok_or_else(sans_personnage)?;
+            let pres = ecs
+                .read_storage::<Pos>()
+                .get(client)
+                .map(|pos| pos.0)
+                .ok_or_else(sans_personnage)?;
+            let mut rng = rand::rng();
+            let infos = positions(pres, 2.5, nombre.max(2))
+                .into_iter()
+                .take(nombre as usize)
+                .map(|pos| {
+                    // Du camp de celui qui l'appelle : il le suit, et les ennemis le frappent.
+                    EntityInfo::at(pos)
+                        .with_entity_config(
+                            EntityConfig::from_asset_expect_owned(fichier),
+                            Some(fichier),
+                            &mut rng,
+                            None,
+                        )
+                        .with_alignment(Alignment::Owned(uid))
+                        .with_no_flee()
+                })
+                .collect();
+            faire_venir(ecs, infos)?;
+            Ok(format!("{nombre} x {nom} à vos côtés."))
+        })(),
         ["soin"] => (|| {
             let mut pvs = ecs.write_storage::<Health>();
             let mut pv = pvs.get_mut(client).ok_or_else(|| "Il faut jouer un personnage.".to_string())?;
@@ -312,6 +490,64 @@ mod tests {
     fn jeu_d_essai() -> (&'static str, Vec<&'static str>) {
         let (id, jeu) = registre().jeu_par_defaut("guerrier").unwrap();
         (id, jeu.competences.iter().map(|(id, _)| id.as_str()).collect())
+    }
+
+    #[test]
+    fn positions_dans_l_arene() {
+        let config = config();
+        let centre = vek::Vec3::new(100.0, 200.0, 30.0);
+        assert!(positions(centre, config.rayon_apparition, 0).is_empty());
+        assert_eq!(positions(centre, config.rayon_apparition, 1), vec![centre]);
+        let points = positions(centre, config.rayon_apparition, config.max_par_appel);
+        assert_eq!(points.len(), config.max_par_appel as usize);
+        for (i, point) in points.iter().enumerate() {
+            assert!(point.xy().distance(centre.xy()) < config.rayon, "{point:?}");
+            assert_eq!(point.z, centre.z);
+            // Pas deux au même endroit.
+            assert!(points.iter().skip(i + 1).all(|autre| autre.distance(*point) > 0.5));
+        }
+    }
+
+    #[test]
+    fn nombre_demande_borne() {
+        let config = config();
+        assert_eq!(nombre_demande(None, 0, &config), Ok(1));
+        assert_eq!(nombre_demande(Some("3"), 0, &config), Ok(3));
+        assert!(nombre_demande(Some("0"), 0, &config).is_err());
+        assert!(nombre_demande(Some("trois"), 0, &config).is_err());
+        let trop = (config.max_par_appel + 1).to_string();
+        assert!(nombre_demande(Some(&trop), 0, &config).is_err());
+        // L'arène pleine refuse.
+        assert!(nombre_demande(Some("2"), config.max_en_piste - 1, &config).is_err());
+        assert_eq!(nombre_demande(Some("1"), config.max_en_piste - 1, &config), Ok(1));
+    }
+
+    #[test]
+    fn ennemis_et_allies_des_donnees_se_chargent() {
+        use common::{assets::AssetExt, generation::EntityConfig};
+        let config = config();
+        assert!(ennemi_demande(&config, "gobelin", None).is_err());
+        assert!(ennemi_demande(&config, "orc", Some("barde")).is_err());
+        assert_eq!(
+            ennemi_demande(&config, "orc", None).unwrap().0,
+            format!("icebreaker.ennemis.{}", config.roles[0].0)
+        );
+        for (race, _) in &config.races {
+            for (role, _) in &config.roles {
+                let (fichier, ..) = ennemi_demande(&config, race, Some(role)).unwrap();
+                let info =
+                    world::icebreaker::races::entity_au_hasard(&fichier, Some(race), vek::Vec3::zero());
+                // Un humanoïde de la race demandée.
+                assert!(
+                    matches!(info.body, common::comp::Body::Humanoid(_)),
+                    "{fichier} en {race} : {:?}",
+                    info.body
+                );
+            }
+        }
+        for (id, _, fichier) in &config.allies {
+            assert!(common::assets::Ron::<EntityConfig>::load(fichier).is_ok(), "{id} : {fichier}");
+        }
     }
 
     #[test]
