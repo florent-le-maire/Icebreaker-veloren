@@ -200,8 +200,8 @@ tombe, tous rentrent. Le personnage mort est perdu : il quitte le registre et il
   avant le point de départ du serveur, le son plantait (build debug). Vu en jeu (Flo, 2026-11-08). 4d205f18b0
 - [x] **T.8 Écran noir puis plantage en regardant un allié** — l'allié regarde à la verticale (le sac à ses pieds) :
   tangage NaN, gardé par la caméra, plantage des ombres. Tangage borné, NaN refusé ; tests, pas revu en jeu. 00c6f0101c
-- [ ] **T.9 Une barre de vie à terre** — à terre avec 90 % des PV max (`pv_a_terre`, ~3 coups) au lieu de 1 PV ;
-  le décompte s'arrête pendant la relève. — *en cours : Veloren-mort, 2026-11-14*
+- [x] **T.9 Une barre de vie à terre** — à terre avec 90 % des PV max (`pv_a_terre`, ~3 coups) au lieu de 1 PV ;
+  le décompte s'arrête pendant la relève. Client texte à deux ; coups réels et barre pas vus en jeu. c988dcc9f8
 
 ## Jalon A — Armes, classes et compétences (Flo, 2026-11-11)
 
