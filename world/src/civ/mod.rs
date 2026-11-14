@@ -250,7 +250,9 @@ impl Civs {
 
         // Icebreaker: the village instance holds one town only, placed below.
         let instance_site = crate::icebreaker::instance_site();
-        let initial_civ_count = if instance_site.is_some_and(crate::icebreaker::is_town) {
+        // Icebreaker O : le lieu d'entraînement n'a ni civilisation ni site.
+        let entrainement = crate::icebreaker::is_entrainement();
+        let initial_civ_count = if entrainement || instance_site.is_some_and(crate::icebreaker::is_town) {
             0
         } else {
             initial_civ_count(sim.map_size_lg())
@@ -356,7 +358,7 @@ impl Civs {
                 }
             }
         }
-        let random_site_attempts = if instance_site.is_some() {
+        let random_site_attempts = if entrainement || instance_site.is_some() {
             0
         } else {
             initial_civ_count * 3

@@ -110,7 +110,10 @@ pub fn destinations() -> Vec<(usize, Lieu)> {
     lieux()
         .into_iter()
         .enumerate()
-        .filter(|(_, lieu)| !lieu.is_home())
+        // Icebreaker O : le lieu d'entraînement se lance seul, on n'y part pas en expédition.
+        .filter(|(_, lieu)| {
+            !lieu.is_home() && lieu.arguments.first().is_none_or(|lieu| lieu != "entrainement")
+        })
         .collect()
 }
 

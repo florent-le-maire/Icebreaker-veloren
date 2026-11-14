@@ -19,5 +19,7 @@
         adresse: Some("116.202.107.125:14100"), description: "Rejoint le serveur de l'équipe et sa partie."),
     (nom: "Donjon généré", arguments: ["donjon", "-Site", "Genere"], port: 14130, actif: true),
     (nom: "Grotte", arguments: ["donjon", "-Site", "Grotte"], port: 14140, actif: true),
+    // Icebreaker O : lieu d'entraînement (`docs/icebreaker/PLAN-ENTRAINEMENT.md`), pas une destination d'expédition.
+    (nom: "Entraînement", arguments: ["entrainement"], port: 14150, actif: true),
     (nom: "Route", arguments: ["route"], port: 14120, actif: false),
 ]

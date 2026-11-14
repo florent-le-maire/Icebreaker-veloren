@@ -26,6 +26,8 @@ pub mod icebreaker_panneau;
 pub mod icebreaker_competences;
 // Icebreaker : comportement de chaque race ennemie (jalon Y).
 pub mod icebreaker_races;
+// Icebreaker : le lieu d'entraînement (jalon O).
+pub mod icebreaker_arene;
 pub mod comp;
 pub mod consts;
 pub mod resources;

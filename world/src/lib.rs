@@ -573,6 +573,14 @@ impl World {
         };
         drop(canvas);
 
+        // Icebreaker O : le plateau du lieu d'entraînement, par-dessus tout le reste.
+        if icebreaker::is_entrainement()
+            && let Some(arene) = icebreaker::arene::place(&self.sim)
+        {
+            let wpos = chunk_pos * TerrainChunkSize::RECT_SIZE.map(|e| e as i32);
+            icebreaker::arene::niveler(&mut chunk, wpos, &arene, &common::icebreaker_arene::config());
+        }
+
         let gen_entity_pos = |dynamic_rng: &mut ChaCha8Rng| {
             let lpos2d = TerrainChunkSize::RECT_SIZE
                 .map(|sz| dynamic_rng.random::<u32>().rem_euclid(sz) as i32);

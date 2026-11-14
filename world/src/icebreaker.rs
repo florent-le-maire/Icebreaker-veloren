@@ -2,6 +2,8 @@
 //! `ICEBREAKER_INSTANCE_SITE` set generates a small world around one chosen
 //! site, without the wildlife and roaming monsters of a whole living world.
 
+// Icebreaker O : le plateau du lieu d'entraînement.
+pub mod arene;
 pub mod butin;
 pub mod dungeon;
 pub mod grotte;
@@ -22,6 +24,8 @@ use tracing::{info, warn};
 const INSTANCE_SITE_VAR: &str = "ICEBREAKER_INSTANCE_SITE";
 const TOWN_SIZE_VAR: &str = "ICEBREAKER_TOWN_SIZE";
 const CAMPAIGN_VAR: &str = "ICEBREAKER_CAMPAGNE";
+/// Icebreaker O : le nom de site du lieu d'entraînement, un monde sans site (`arene`).
+const ENTRAINEMENT: &str = "Entrainement";
 
 /// How far apart (in chunks) the village and the dungeon slots of the
 /// campaign are placed, so that their zones and views stay apart.
@@ -40,10 +44,16 @@ pub fn is_instance() -> bool { std::env::var_os(INSTANCE_SITE_VAR).is_some() }
 pub fn instance_site() -> Option<SiteKind> {
     let name = std::env::var(INSTANCE_SITE_VAR).ok()?;
     let kind = site_kind(&name);
-    if kind.is_none() {
+    if kind.is_none() && name != ENTRAINEMENT {
         warn!(?name, "Unknown {INSTANCE_SITE_VAR}, no site placed");
     }
     kind
+}
+
+/// Icebreaker O : ce serveur est le lieu d'entraînement (`icebreaker.ps1 entrainement`) : aucun
+/// site, un plateau nivelé (`arene`).
+pub fn is_entrainement() -> bool {
+    std::env::var(INSTANCE_SITE_VAR).is_ok_and(|name| name == ENTRAINEMENT)
 }
 
 /// Whether this server runs the whole campaign (decision 0016): the village

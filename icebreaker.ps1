@@ -9,6 +9,8 @@
 #   .\icebreaker.ps1 route                   (port 14120, pas encore fait : P.1)
 #   .\icebreaker.ps1 village                 (port 14100 ; -Site Town, CliffTown, DesertCity,
 #                                             SavannahTown ou CoastalTown, Town par défaut)
+#   .\icebreaker.ps1 entrainement            (port 14150 ; lieu d'entraînement, jalon O : un plateau, sa propre
+#                                             partie, tout se règle par /entrainement)
 #   .\icebreaker.ps1 mod                     (construit le mod dans assets\plugins ; le serveur
 #                                             doit être compilé avec --features plugins)
 #
@@ -18,7 +20,7 @@
 # Dans le jeu : Multijoueur, serveur « localhost:<port> », n'importe quel pseudo.
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("campagne", "village", "donjon", "route", "mod")]
+    [ValidateSet("campagne", "village", "donjon", "route", "entrainement", "mod")]
     [string]$Lieu,
     # Site autour duquel le lieu est généré (par défaut : Gnarling au donjon, Town au village).
     [string]$Site,
@@ -67,12 +69,12 @@ if ($Lieu -eq "mod") {
     exit 0
 }
 
-$ports = @{ campagne = 14100; village = 14100; donjon = 14110; route = 14120 }
+$ports = @{ campagne = 14100; village = 14100; donjon = 14110; route = 14120; entrainement = 14150 }
 if ($Lieu -eq "route") {
     Write-Host "Le lieu « $Lieu » n'est pas encore fait (voir docs/icebreaker/PLAN.md)."
     exit 1
 }
-if (-not $Site) { $Site = @{ campagne = "Town"; village = "Town"; donjon = "Gnarling" }[$Lieu] }
+if (-not $Site) { $Site = @{ campagne = "Town"; village = "Town"; donjon = "Gnarling"; entrainement = "Entrainement" }[$Lieu] }
 if (-not $Lg) { $Lg = if ($Lieu -eq "campagne") { 7 } else { 6 } }
 
 $root = "$repo\userdata-icebreaker"
@@ -94,6 +96,9 @@ if (-not $Partie -and (Test-Path "$parties\derniere.txt")) {
 }
 if (-not $Partie) { $Partie = "Partie 1" }
 $campagne = "$parties\$Partie"
+# Icebreaker O : le lieu d'entraînement a sa partie à lui, hors des parties de la campagne.
+$entrainement = $Lieu -eq "entrainement"
+if ($entrainement) { $Partie = "Entrainement"; $campagne = "$ud\partie" }
 
 # Monde neuf à chaque lancement ; les personnages restent dans la partie.
 Remove-Item -Recurse -Force "$ud\server\rtsim" -ErrorAction SilentlyContinue
@@ -102,13 +107,13 @@ New-Item -ItemType Directory -Force "$ud\server\server_config", "$ud\server-cli"
 # Les lecteurs RON refusent le BOM : UTF-8 sans BOM. Les champs absents prennent leur valeur par défaut.
 $utf8 = New-Object Text.UTF8Encoding($false)
 # La dernière partie jouée, et celle de ce serveur (le menu refuse d'y envoyer pour une autre partie).
-[IO.File]::WriteAllText("$parties\derniere.txt", $Partie, $utf8)
+if (-not $entrainement) { [IO.File]::WriteAllText("$parties\derniere.txt", $Partie, $utf8) }
 [IO.File]::WriteAllText("$ud\partie.txt", $Partie, $utf8)
 
 # Le village (seul ou dans la campagne) garde sa graine pour toute la partie : ses maisons (bâties ou à bâtir)
 # restent à leur place.
 $graineVillage = "$campagne\$Lieu-graine.txt"
-if ($Lieu -in "village", "campagne" -and -not $PSBoundParameters.ContainsKey("Seed")) {
+if ($Lieu -in "village", "campagne", "entrainement" -and -not $PSBoundParameters.ContainsKey("Seed")) {
     if (Test-Path $graineVillage) { $Seed = [int](Get-Content $graineVillage -TotalCount 1) }
     else { Set-Content -Path $graineVillage -Value $Seed -Encoding ascii }
 }

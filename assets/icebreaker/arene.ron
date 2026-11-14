@@ -1,0 +1,24 @@
+// Icebreaker : le lieu d'entraînement (jalon O, `common/src/icebreaker_arene.rs`,
+// `docs/icebreaker/PLAN-ENTRAINEMENT.md`). Un plateau nivelé dans un monde sans site : l'arène est un disque au
+// milieu, marqué par un anneau au sol ; l'entrée est sur le plateau, hors du disque.
+(
+    // Rayon de l'arène (en blocs) : le disque où viennent les ennemis.
+    rayon: 24.0,
+    // Rayon du plateau nivelé ; les joueurs ne le quittent pas.
+    rayon_terrain: 48.0,
+    // Jusqu'où chercher le plateau depuis le centre de la carte (en tronçons de 32 blocs) : le plus plat est pris.
+    recherche: 10,
+    // Blocs d'air au-dessus du plateau (arbres et reliefs coupés).
+    hauteur_libre: 60,
+    // Blocs de terre posés sous le plateau, là où le terrain est plus bas.
+    profondeur: 12,
+    // Couleur du sol du plateau, et de l'anneau qui marque le bord de l'arène (rouge, vert, bleu).
+    couleur_sol: (96, 124, 62),
+    couleur_bord: (176, 150, 96),
+    // L'entrée (apparition et réapparition), depuis le centre de l'arène (x vers l'est, y vers le nord).
+    entree: (0.0, -36.0),
+    // La classe d'un personnage qui arrive sans arme d'une de nos classes en mains (`classes.ron`).
+    classe_par_defaut: "guerrier",
+    // Le niveau de toutes les compétences à l'arrivée et après un changement de classe (1 à 5).
+    niveau: 1,
+)

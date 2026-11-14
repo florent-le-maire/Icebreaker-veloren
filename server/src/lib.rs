@@ -550,6 +550,14 @@ impl Server {
                     spawn
                 })
             });
+            // Icebreaker O : au lieu d'entraînement, l'entrée du plateau (apparition et réapparition).
+            let instance_spawn = instance_spawn.or_else(|| {
+                let arene = world::icebreaker::arene::place(world.sim())
+                    .filter(|_| world::icebreaker::is_entrainement())?;
+                let entree = arene.centre.as_::<f32>() + common::icebreaker_arene::config().entree();
+                info!(?entree, "Icebreaker : entrée du lieu d'entraînement");
+                Some(entree.as_::<i32>())
+            });
             let spawn_wpos = instance_spawn.unwrap_or_else(|| {
                 let spawn_chunk = world
                     .civs()
@@ -779,6 +787,15 @@ impl Server {
                 center,
                 radius: radius + settings.icebreaker.zone_margin,
             })
+            // Icebreaker O : au lieu d'entraînement, on ne quitte pas le plateau.
+            .chain(
+                world::icebreaker::arene::place(world.sim())
+                    .filter(|_| world::icebreaker::is_entrainement())
+                    .map(|arene| sys::icebreaker_zone::Zone {
+                        center: arene.centre.as_(),
+                        radius: common::icebreaker_arene::config().rayon_terrain - 1.0,
+                    }),
+            )
             .collect();
         #[cfg(not(feature = "worldgen"))]
         let zones = Vec::new();
