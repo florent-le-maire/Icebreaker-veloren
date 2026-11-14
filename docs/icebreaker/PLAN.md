@@ -232,7 +232,7 @@ chef gnarling, aussi dans la salle du boss. Pas de comportement de race pour l'i
 
 Chaque race a un trait de comportement lisible et contrable (`design/ames.md`, identités à valider : `QUESTIONS.md`,
 Q50). Réglages : `assets/icebreaker/ennemis/races.ron` ; code : `common/src/icebreaker_races.rs`. Worktree
-`Veloren-races-ia`.
+`Veloren-races-ia` (supprimé, à recréer pour la suite).
 
 - [x] **Y.1 à Y.3 Réglages par race, danari qui achèvent, humains en ronde** (un commit, code commun) : danari :
   joueur à terre à 20 blocs en tête des cibles, sauf celui qui vient de les frapper ; fuite à 30 %. Humains : rondes
