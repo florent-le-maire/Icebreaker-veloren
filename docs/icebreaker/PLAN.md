@@ -246,7 +246,7 @@ Q50). Réglages : `assets/icebreaker/ennemis/races.ron` ; code : `common/src/ice
 - [x] **Y.9 Choix de cible** (Flo, 2026-11-14) : parmi les joueurs repérés, un joueur debout passe avant un joueur à
   terre (tous à terre : achevés), les ennemis se répartissent (`commun` de `races.ron`) ; les danari n'achèvent qu'à
   plusieurs. Corrige Y.2 : un ennemi ne rechoisissait jamais sa cible en combat. Testé (tests ciblés ; client texte à
-  deux, orcs et danari, journal des cibles) ; pas vu dans le vrai client.
+  deux, orcs et danari, journal des cibles) ; pas vu dans le vrai client. 5b39c1b941
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
