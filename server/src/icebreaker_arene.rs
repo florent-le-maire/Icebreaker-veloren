@@ -203,18 +203,29 @@ pub fn ennemi_demande<'a>(
     Ok((format!("icebreaker.ennemis.{role}"), race_nom, role_nom))
 }
 
-/// Ce qui est en piste : (ennemis, alliés). Tout ce qui a une IA vient de `/entrainement` (le
-/// monde de ce lieu n'a ni site ni faune ; les mannequins n'ont pas d'IA).
+/// Ce qu'une entité est pour l'arène : un ennemi (`Enemy`), un allié (`Owned`), ou rien qui nous
+/// regarde (un mannequin, une bête de passage).
+pub fn camp(alignement: &common::comp::Alignment) -> Option<bool> {
+    match alignement {
+        common::comp::Alignment::Enemy => Some(false),
+        common::comp::Alignment::Owned(_) => Some(true),
+        _ => None,
+    }
+}
+
+/// Ce qui est en piste parmi ces alignements d'entités à IA : (ennemis, alliés).
+pub fn compter<'a>(alignements: impl IntoIterator<Item = &'a common::comp::Alignment>) -> (u32, u32) {
+    alignements.into_iter().filter_map(camp).fold((0, 0), |(ennemis, allies), allie| {
+        if allie { (ennemis, allies + 1) } else { (ennemis + 1, allies) }
+    })
+}
+
+/// Ce qui est en piste : (ennemis, alliés).
 pub fn en_piste(ecs: &World) -> (u32, u32) {
     use common::comp::{Agent, Alignment};
-    use specs::{Join, LendJoin};
+    use specs::Join;
     let (agents, alignements) = (ecs.read_storage::<Agent>(), ecs.read_storage::<Alignment>());
-    (&agents, (&alignements).maybe())
-        .join()
-        .fold((0, 0), |(ennemis, allies), (_, alignement)| match alignement {
-            Some(Alignment::Owned(_)) => (ennemis, allies + 1),
-            _ => (ennemis + 1, allies),
-        })
+    compter((&agents, &alignements).join().map(|(_, alignement)| alignement))
 }
 
 /// Fait apparaître ces entités, comme `/make_npc`.
@@ -357,7 +368,7 @@ pub fn panneau_personnage(
     panneau.onglets = vec![
         onglet("Classe", onglet_classes),
         onglet("Armes", onglet_armes),
-        onglet("Compétences", onglet_competences),
+        onglet("Sorts", onglet_competences),
         onglet("Ultimes", onglet_ultimes),
         onglet("Passifs", onglet_passifs),
     ];
@@ -409,7 +420,7 @@ pub fn panneau_arene(
         .iter()
         .map(|(race, nom)| {
             Ligne::nouvelle(nom.clone()).sous_titre(format!("{nombre} x {role_nom}")).action(
-                Action::nouvelle("Faire venir", &["entrainement", "ennemi", race, role, &nombre_texte])
+                Action::nouvelle("Appeler", &["entrainement", "ennemi", race, role, &nombre_texte])
                     .principale()
                     .permise(place),
             )
@@ -493,9 +504,14 @@ pub(crate) fn handle_entrainement(
         use specs::Join;
         let partis: Vec<Entity> = {
             let ecs = server.state.ecs();
-            (&ecs.entities(), &ecs.read_storage::<common::comp::Agent>())
+            (
+                &ecs.entities(),
+                &ecs.read_storage::<common::comp::Agent>(),
+                &ecs.read_storage::<common::comp::Alignment>(),
+            )
                 .join()
-                .map(|(entite, _)| entite)
+                .filter(|(_, _, alignement)| camp(alignement).is_some())
+                .map(|(entite, ..)| entite)
                 .collect()
         };
         for entite in &partis {
@@ -757,6 +773,14 @@ mod tests {
     }
 
     #[test]
+    fn seuls_ennemis_et_allies_comptent() {
+        use common::comp::Alignment;
+        let uid = common::uid::Uid(std::num::NonZeroU64::new(7).unwrap());
+        let en_piste = [Alignment::Enemy, Alignment::Owned(uid), Alignment::Enemy, Alignment::Wild, Alignment::Passive, Alignment::Npc];
+        assert_eq!(compter(&en_piste), (2, 1));
+    }
+
+    #[test]
     fn nombre_demande_borne() {
         let config = config();
         assert_eq!(nombre_demande(None, 0, &config), Ok(1));
@@ -818,7 +842,7 @@ mod tests {
         let (competences, inventaire) = fiche(class, jeu, 1).unwrap();
         let panneau = panneau_personnage(Some(&competences), Some(&inventaire), &classes, None);
         let libelles: Vec<_> = panneau.onglets.iter().map(|o| o.libelle.clone()).collect();
-        assert_eq!(libelles, ["Classe", "Armes", "Compétences", "Ultimes", "Passifs"].map(texte));
+        assert_eq!(libelles, ["Classe", "Armes", "Sorts", "Ultimes", "Passifs"].map(texte));
         // Une ligne par classe, par jeu d'armes, par compétence du jeu en mains.
         assert_eq!(panneau.onglets[0].lignes.len(), classes.len());
         assert_eq!(panneau.onglets[1].lignes.len(), registre().jeux_de("guerrier").count());

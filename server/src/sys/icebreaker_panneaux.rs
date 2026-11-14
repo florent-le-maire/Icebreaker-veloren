@@ -196,13 +196,9 @@ impl<'a> System<'a> for Sys {
                     ouvert.salle_message.clone(),
                 ),
                 Place::Arene(Poste::Arene) => {
-                    use specs::{Join, LendJoin};
-                    let en_piste = (&agents, (&alignements).maybe()).join().fold(
-                        (0, 0),
-                        |(ennemis, allies), (_, alignement)| match alignement {
-                            Some(common::comp::Alignment::Owned(_)) => (ennemis, allies + 1),
-                            _ => (ennemis + 1, allies),
-                        },
+                    use specs::Join;
+                    let en_piste = crate::icebreaker_arene::compter(
+                        (&agents, &alignements).join().map(|(_, alignement)| alignement),
                     );
                     crate::icebreaker_arene::panneau_arene(
                         &common::icebreaker_arene::config(),

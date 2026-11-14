@@ -555,7 +555,9 @@ impl World {
         if index.features.paths {
             layer::apply_paths_to(&mut canvas);
         }
-        if index.features.spots {
+        // Icebreaker O : pas de camps ni de bêtes au lieu d'entraînement (leurs ennemis compteraient
+        // dans l'arène).
+        if index.features.spots && !icebreaker::is_entrainement() {
             layer::apply_spots_to(&mut canvas, &mut dynamic_rng);
         }
         // layer::apply_coral_to(&mut canvas);
