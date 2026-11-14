@@ -25,6 +25,7 @@ impl Vues {
         uid: Uid,
         a_terre: bool,
         maintenant: f64,
+        releve: bool,
         regles: impl FnOnce() -> &'a IcebreakerMort,
     ) -> Option<(f64, f32)> {
         if !a_terre {
@@ -43,6 +44,9 @@ impl Vues {
         // Entrée périmée pas encore balayée : l'entité repart de zéro.
         if maintenant - *vu >= OUBLI {
             *depuis = maintenant;
+        } else if releve {
+            // T.9 : un allié relève : le décompte s'arrête (comme au serveur).
+            *depuis += maintenant - *vu;
         }
         *vu = maintenant;
         let regles = regles();
@@ -58,12 +62,14 @@ static REGLES: OnceLock<IcebreakerMort> = OnceLock::new();
 
 /// Secondes qui restent à `uid` avant de mourir s'il est à terre, et la part du délai qui reste
 /// (1 à 0). À appeler à chaque image pour les entités affichées ; `maintenant` est le temps du
-/// client.
-pub fn reste(uid: Uid, a_terre: bool, maintenant: f64) -> Option<(f64, f32)> {
+/// client ; `releve` : un allié est en train de le relever, le décompte s'arrête (T.9).
+pub fn reste(uid: Uid, a_terre: bool, maintenant: f64, releve: bool) -> Option<(f64, f32)> {
     let mut garde = A_TERRE.lock().unwrap_or_else(|e| e.into_inner());
     garde
         .get_or_insert_with(Vues::default)
-        .reste(uid, a_terre, maintenant, || REGLES.get_or_init(IcebreakerMort::actuel))
+        .reste(uid, a_terre, maintenant, releve, || {
+            REGLES.get_or_init(IcebreakerMort::actuel)
+        })
 }
 
 #[cfg(test)]
@@ -76,33 +82,47 @@ mod tests {
     fn tombe_a_terre_puis_se_releve() {
         let regles = IcebreakerMort::default();
         let mut v = Vues::default();
-        assert_eq!(v.reste(uid(1), false, 0.0, || &regles), None);
-        assert!(v.reste(uid(1), true, 1.0, || &regles).is_some());
-        assert_eq!(v.reste(uid(1), false, 2.0, || &regles), None);
+        assert_eq!(v.reste(uid(1), false, 0.0, false, || &regles), None);
+        assert!(v.reste(uid(1), true, 1.0, false, || &regles).is_some());
+        assert_eq!(v.reste(uid(1), false, 2.0, false, || &regles), None);
         assert!(v.table.is_empty());
         // Retombé : le compte à rebours repart.
-        let (reste, part) = v.reste(uid(1), true, 5.0, || &regles).unwrap();
+        let (reste, part) = v.reste(uid(1), true, 5.0, false, || &regles).unwrap();
         assert_eq!(reste, regles.delai_a_terre);
         assert_eq!(part, 1.0);
+    }
+
+    #[test]
+    fn decompte_arrete_pendant_la_releve() {
+        let regles = IcebreakerMort::default();
+        let mut v = Vues::default();
+        v.reste(uid(1), true, 10.0, false, || &regles);
+        v.reste(uid(1), true, 10.5, false, || &regles);
+        // Relevé de 10,5 à 12 s : ces 1,5 s ne comptent pas.
+        v.reste(uid(1), true, 11.0, true, || &regles);
+        v.reste(uid(1), true, 11.5, true, || &regles);
+        v.reste(uid(1), true, 12.0, true, || &regles);
+        let (reste, _) = v.reste(uid(1), true, 12.5, false, || &regles).unwrap();
+        assert_eq!(reste, regles.delai_a_terre - 1.0);
     }
 
     #[test]
     fn compte_a_rebours_depuis_le_premier_instant_vu() {
         let regles = IcebreakerMort::default();
         let mut v = Vues::default();
-        v.reste(uid(1), true, 10.0, || &regles);
+        v.reste(uid(1), true, 10.0, false, || &regles);
         let mut t = 10.0;
         while t < 17.0 {
             t += 0.5;
-            v.reste(uid(1), true, t, || &regles);
+            v.reste(uid(1), true, t, false, || &regles);
         }
-        let (reste, _) = v.reste(uid(1), true, 17.0, || &regles).unwrap();
+        let (reste, _) = v.reste(uid(1), true, 17.0, false, || &regles).unwrap();
         assert_eq!(reste, regles.delai_a_terre - 7.0);
         while t < 45.0 {
             t += 0.5;
-            v.reste(uid(1), true, t, || &regles);
+            v.reste(uid(1), true, t, false, || &regles);
         }
-        let (reste, part) = v.reste(uid(1), true, 45.0, || &regles).unwrap();
+        let (reste, part) = v.reste(uid(1), true, 45.0, false, || &regles).unwrap();
         assert_eq!((reste, part), (0.0, 0.0));
     }
 
@@ -110,15 +130,15 @@ mod tests {
     fn entite_plus_affichee_oubliee() {
         let regles = IcebreakerMort::default();
         let mut v = Vues::default();
-        v.reste(uid(1), true, 10.0, || &regles);
-        v.reste(uid(2), true, 10.0, || &regles);
+        v.reste(uid(1), true, 10.0, false, || &regles);
+        v.reste(uid(2), true, 10.0, false, || &regles);
         // Seule l'entité 2 continue d'être affichée.
-        v.reste(uid(2), true, 11.5, || &regles);
-        v.reste(uid(2), true, 12.6, || &regles);
+        v.reste(uid(2), true, 11.5, false, || &regles);
+        v.reste(uid(2), true, 12.6, false, || &regles);
         assert!(!v.table.contains_key(&uid(1)));
         assert!(v.table.contains_key(&uid(2)));
         // Revenue plus tard, l'entité 1 repart de zéro.
-        let (reste, _) = v.reste(uid(1), true, 20.0, || &regles).unwrap();
+        let (reste, _) = v.reste(uid(1), true, 20.0, false, || &regles).unwrap();
         assert_eq!(reste, regles.delai_a_terre);
     }
 
@@ -126,8 +146,8 @@ mod tests {
     fn entree_perimee_sans_menage_repart_de_zero() {
         let regles = IcebreakerMort::default();
         let mut v = Vues::default();
-        v.reste(uid(1), true, 10.0, || &regles);
-        let (reste, _) = v.reste(uid(1), true, 10.5 + 1.0, || &regles).unwrap();
+        v.reste(uid(1), true, 10.0, false, || &regles);
+        let (reste, _) = v.reste(uid(1), true, 10.5 + 1.0, false, || &regles).unwrap();
         assert_eq!(reste, regles.delai_a_terre);
     }
 }

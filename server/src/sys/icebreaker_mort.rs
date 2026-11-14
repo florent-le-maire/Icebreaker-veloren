@@ -1,15 +1,17 @@
 //! Icebreaker : à terre et mort (jalon T, `assets/icebreaker/mort.ron`).
 //! - À terre, on meurt passé `delai_a_terre` secondes si personne ne relève (T.1) : Veloren garde
 //!   à terre sans limite ; ici on tue après le délai, et la mort suit son chemin habituel (la
-//!   santé à zéro sans protection donne `DestroyEvent`).
+//!   santé à zéro sans protection donne `DestroyEvent`). Le décompte s'arrête tant qu'un allié
+//!   est en train de relever (T.9).
 //! - Quand tous les joueurs d'un emplacement d'expédition sont morts, tous rentrent au village en
 //!   fantôme (T.5), comme « Rendre au registre ».
 
 use crate::{client::Client, icebreaker_slots::IcebreakerSlots};
 use common::{
     comp::{CharacterState, ChatType, Content, Health, Player, Pos, is_downed},
-    icebreaker_mort::IcebreakerMort,
-    resources::Time,
+    icebreaker_mort::{IcebreakerMort, en_releve},
+    resources::{DeltaTime, Time},
+    uid::Uid,
 };
 use common_ecs::{Job, Origin, Phase, System};
 use common_net::msg::ServerGeneral;
@@ -55,6 +57,9 @@ impl<'a> System<'a> for Sys {
         // Icebreaker : le décompte de la mission, pour le bilan de ceux qu'on renvoie (N.8).
         Read<'a, crate::icebreaker_mission::IcebreakerMission>,
         ReadExpect<'a, crate::rtsim::RtSim>,
+        // Icebreaker T.9 : le décompte s'arrête pendant la relève.
+        Read<'a, DeltaTime>,
+        ReadStorage<'a, Uid>,
     );
 
     const NAME: &'static str = "icebreaker_mort";
@@ -75,6 +80,8 @@ impl<'a> System<'a> for Sys {
             clients,
             missions,
             rtsim,
+            dt,
+            uids,
         ): Self::SystemData,
     ) {
         let regles = IcebreakerMort::actuel();
@@ -87,7 +94,14 @@ impl<'a> System<'a> for Sys {
             if !is_downed(Some(health), Some(character_state)) {
                 continue;
             }
-            let depuis = etat.a_terre.get(&entity).copied().unwrap_or(maintenant);
+            let mut depuis = etat.a_terre.get(&entity).copied().unwrap_or(maintenant);
+            // T.9 : un allié relève : le temps passé ne compte pas.
+            if uids
+                .get(entity)
+                .is_some_and(|uid| en_releve(*uid, character_states.join()))
+            {
+                depuis += f64::from(dt.0);
+            }
             if regles.doit_mourir(depuis, maintenant) {
                 a_tuer.push(entity);
             } else {

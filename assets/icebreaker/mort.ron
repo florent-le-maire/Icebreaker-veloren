@@ -2,8 +2,12 @@
 // À 0 PV on tombe à terre (on rampe) ; un allié qui interagit (E) relève avec `pv_releve` des PV maximum.
 // Passé `delai_a_terre` secondes à terre, on meurt. Mort en expédition, on laisse un sac (tout l'inventaire
 // hors équipement porté) qu'un allié fouille en `duree_fouille` secondes pour en prendre le contenu.
+// T.9 : en tombant à terre on garde `pv_a_terre` des PV maximum (part des PV max : suit l'inné, le passif et
+// les bonus de PV) ; 0,9 = ~3 coups moyens de gnarling (3,25 × degats_contre_joueurs de combat.ron sur 100 PV).
+// Le décompte s'arrête tant qu'un allié est en train de relever.
 (
     delai_a_terre: 30.0,
+    pv_a_terre: 0.9,
     pv_releve: 0.25,
     duree_fouille: 3.0,
 )

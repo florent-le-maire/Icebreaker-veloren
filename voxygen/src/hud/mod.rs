@@ -2592,12 +2592,21 @@ impl Hud {
                             hardcore: hardcore.contains(entity),
                             stance,
                             marked: is_marked,
-                            // Icebreaker : temps qui reste à terre (T.2).
-                            icebreaker_a_terre: crate::icebreaker_mort::reste(
-                                *uid,
-                                comp::is_downed(health, char_states.get(entity)),
-                                time.0,
-                            ),
+                            // Icebreaker : temps qui reste à terre (T.2), arrêté pendant la
+                            // relève (T.9).
+                            icebreaker_a_terre: {
+                                let a_terre = comp::is_downed(health, char_states.get(entity));
+                                crate::icebreaker_mort::reste(
+                                    *uid,
+                                    a_terre,
+                                    time.0,
+                                    a_terre
+                                        && common::icebreaker_mort::en_releve(
+                                            *uid,
+                                            (&char_states).join(),
+                                        ),
+                                )
+                            },
                             icebreaker_verrouille,
                         });
                         // Only render bubble if nearby or if its me and setting is on
@@ -4266,7 +4275,10 @@ impl Hud {
                     let healths = ecs.read_storage::<comp::Health>();
                     let etats = ecs.read_storage::<comp::CharacterState>();
                     let a_terre = comp::is_downed(healths.get(propre), etats.get(propre));
-                    crate::icebreaker_mort::reste(uid, a_terre, client.state().get_time())
+                    // T.9 : arrêté pendant la relève.
+                    let releve =
+                        a_terre && common::icebreaker_mort::en_releve(uid, (&etats).join());
+                    crate::icebreaker_mort::reste(uid, a_terre, client.state().get_time(), releve)
                 },
                 _ => None,
             };

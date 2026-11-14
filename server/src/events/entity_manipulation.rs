@@ -409,7 +409,9 @@ impl ServerEvent for DownedEvent {
         let mut buff_emitter = buff_event.emitter();
         for ev in events {
             if let Some(mut health) = healths.get_mut(ev.entity) {
-                health.consume_death_protection()
+                health.consume_death_protection();
+                // Icebreaker : à terre avec une part de ses PV max, pas 1 PV (T.9, `mort.ron`).
+                health.set_fraction(common::icebreaker_mort::IcebreakerMort::actuel().pv_a_terre);
             }
 
             if let Some(mut character_state) = character_states.get_mut(ev.entity) {

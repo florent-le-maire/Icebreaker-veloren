@@ -434,6 +434,7 @@ mod tests {
         let mort = fichiers.iter().find(|f| f.chemin == "mort.ron").unwrap();
         assert_eq!(chiffres_cles(mort).iter().map(|e| e.cle.as_str()).collect::<Vec<_>>(), vec![
             "delai_a_terre",
+            "pv_a_terre",
             "pv_releve",
             "duree_fouille"
         ]);

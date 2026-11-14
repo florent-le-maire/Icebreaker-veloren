@@ -179,9 +179,8 @@ impl Widget for Overhead<'_> {
             let hp_percentage = health.map_or(100.0, |h| {
                 f64::from(h.current() / h.base_max().max(h.maximum()) * 100.0)
             });
-            // Icebreaker : à terre, la barre montre le temps qui reste avant la mort (T.2).
-            let hp_percentage =
-                icebreaker_a_terre.map_or(hp_percentage, |(_, part)| f64::from(part) * 100.0);
+            // Icebreaker : à terre, la barre (rouge) montre les PV gardés à terre (T.9) ; le texte,
+            // le temps qui reste avant la mort (T.2).
             // Compare levels to decide if a skull is shown
             let health_current = health.map_or(1.0, |h| f64::from(h.current()));
             let health_max = health.map_or(1.0, |h| f64::from(h.maximum()));
@@ -347,8 +346,7 @@ impl Widget for Overhead<'_> {
                         .w_h(w, h)
                         .x_y(x, MANA_BAR_Y + 8.0)
                         .color(if icebreaker_a_terre.is_some() {
-                            // Icebreaker : à terre, la barre est rouge : c'est le temps restant,
-                            // pas la vie.
+                            // Icebreaker : à terre, la barre est rouge (les PV gardés à terre).
                             Some(Color::Rgba(0.79, 0.19, 0.17, 1.0))
                         } else if self.in_group {
                             // Different HP bar colors only for group members

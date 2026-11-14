@@ -825,6 +825,7 @@ pub mod tests {
             rider_effects: _,
             scale,
             agent: _,
+            icebreaker_pv: _, // Icebreaker H.6
         } = EntityConfig::from_asset_expect_owned(config_asset);
 
         assert!(

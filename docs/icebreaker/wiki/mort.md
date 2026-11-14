@@ -20,6 +20,11 @@ nom = "À terre avant de mourir"
 unite = "s"
 
 [[chiffre]]
+cle = "pv_a_terre"
+nom = "PV gardés à terre"
+pourcent = true
+
+[[chiffre]]
 cle = "pv_releve"
 nom = "PV rendus à la relève"
 pourcent = true
@@ -34,8 +39,10 @@ unite = "s"
 
 Quand vos points de vie tombent à zéro, vous ne mourez pas tout de suite : vous **tombez à terre** et vous rampez.
 Une barre et un compte à rebours s'affichent (« Mort dans N s »), pour vous et au-dessus de votre corps pour vos
-alliés. Un allié qui vient vous relever (touche d'interaction, E) vous remet debout avec un quart de vos points de
-vie. Personne ne vient dans les trente secondes : vous mourez.
+alliés. À terre, vous gardez presque toute votre barre de vie (90 % de vos PV maximum, qui suivent votre classe et
+vos bonus) : il faut encore environ trois coups pour vous achever. Un allié qui vient vous relever (touche
+d'interaction, E) vous remet debout avec un quart de vos points de vie ; tant qu'il vous relève, le compte à rebours
+s'arrête. Personne ne vient dans les trente secondes : vous mourez.
 
 Mourir en expédition laisse un **sac du mort** au sol, avec tout ce que vous portiez dans l'inventaire ; votre
 équipement porté reste sur le personnage. Un allié fouille le sac en trois secondes et en prend le contenu : rien

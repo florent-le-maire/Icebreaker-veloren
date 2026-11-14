@@ -9,6 +9,10 @@ use serde::Deserialize;
 pub struct IcebreakerMort {
     /// Secondes à terre avant de mourir.
     pub delai_a_terre: f64,
+    /// Part des PV maximum gardée en tombant à terre (T.9 : plusieurs coups pour achever, au lieu
+    /// du 1 PV de Veloren).
+    #[serde(default = "pv_a_terre_defaut")]
+    pub pv_a_terre: f32,
     /// Part des PV maximum rendue à la relève (0 à 1).
     pub pv_releve: f32,
     /// Secondes pour fouiller le sac d'un mort.
@@ -19,10 +23,28 @@ impl Default for IcebreakerMort {
     fn default() -> Self {
         Self {
             delai_a_terre: 30.0,
+            pv_a_terre: pv_a_terre_defaut(),
             pv_releve: 0.25,
             duree_fouille: 3.0,
         }
     }
+}
+
+fn pv_a_terre_defaut() -> f32 { 0.9 }
+
+/// T.9 : un allié est en train de relever `cible` (état « interagir » de Veloren, relève) : son
+/// décompte à terre s'arrête.
+pub fn en_releve<'a>(
+    cible: crate::uid::Uid,
+    etats: impl IntoIterator<Item = &'a crate::comp::CharacterState>,
+) -> bool {
+    use crate::{comp::CharacterState, interaction::InteractionKind, states::interact::InteractKind};
+    etats.into_iter().any(|etat| {
+        matches!(etat, CharacterState::Interact(c) if matches!(
+            c.static_data.interact,
+            InteractKind::Entity { target, kind: InteractionKind::HelpDowned } if target == cible
+        ))
+    })
 }
 
 /// L'objet « sac du mort » posé au sol à la mort d'un joueur en expédition (T.3).
@@ -72,5 +94,56 @@ mod tests {
         assert!(m.delai_a_terre > 0.0);
         assert!((0.0..=1.0).contains(&m.pv_releve));
         assert!(m.duree_fouille > 0.0);
+        assert!((0.0..=1.0).contains(&m.pv_a_terre));
+    }
+
+    #[test]
+    fn trois_coups_pour_achever_un_joueur_a_terre() {
+        // T.9 : un coup moyen de gnarling (2,5 à 4 dégâts, × degats_contre_joueurs) contre un
+        // joueur de 100 PV tombé à terre avec `pv_a_terre` de ses PV.
+        let m = Ron::<IcebreakerMort>::load_expect("icebreaker.mort").read().0.clone();
+        let c = Ron::<crate::icebreaker_combat::IcebreakerCombat>::load_expect("icebreaker.combat")
+            .read()
+            .0
+            .clone();
+        let coups = 100.0 * m.pv_a_terre / (3.25 * c.degats_contre_joueurs);
+        assert!((2.5..=3.5).contains(&coups), "{coups}");
+    }
+
+    #[test]
+    fn decompte_arrete_pendant_la_releve() {
+        use crate::{
+            comp::CharacterState,
+            interaction::InteractionKind,
+            states::{
+                interact::{Data, InteractKind, StaticData},
+                utils::StageSection,
+            },
+        };
+        use std::time::Duration;
+        let uid = |n| crate::uid::Uid(std::num::NonZeroU64::new(n).unwrap());
+        let interagir = |target, kind| {
+            CharacterState::Interact(Data {
+                static_data: StaticData {
+                    buildup_duration: Duration::ZERO,
+                    use_duration: None,
+                    recover_duration: Duration::ZERO,
+                    interact: InteractKind::Entity { target, kind },
+                    was_wielded: false,
+                    was_sneak: false,
+                    required_item: None,
+                },
+                timer: Duration::ZERO,
+                stage_section: StageSection::Buildup,
+            })
+        };
+        let etats = [
+            CharacterState::Idle(Default::default()),
+            interagir(uid(2), InteractionKind::HelpDowned),
+            interagir(uid(3), InteractionKind::Pet),
+        ];
+        assert!(en_releve(uid(2), &etats));
+        assert!(!en_releve(uid(1), &etats));
+        assert!(!en_releve(uid(3), &etats));
     }
 }
