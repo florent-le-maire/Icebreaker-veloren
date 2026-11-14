@@ -114,7 +114,7 @@ impl<'a> System<'a> for Sys {
                 let before = tour.etape;
                 tour.avance(ronde, route.len(), stop, &walking, time.0);
                 if tour.etape != before {
-                    tracing::info!(?first, etape = tour.etape, "Icebreaker : la ronde repart vers la salle suivante");
+                    tracing::debug!(?first, etape = tour.etape, "Icebreaker : la ronde repart vers la salle suivante");
                 }
                 let stop = route[tour.etape.min(route.len() - 1)].as_::<f32>() + Vec3::new(0.5, 0.5, 0.0);
                 for (i, entity) in present.iter().enumerate() {

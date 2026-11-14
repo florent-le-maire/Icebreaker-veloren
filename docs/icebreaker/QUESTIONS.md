@@ -142,7 +142,8 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   elfes tireurs (plus d'archers, voient de loin), draugr qui dorment (réveil au bruit, lents). Ces identités
   conviennent-elles à Sayanel (âmes, `design/ames.md`) ? Les danari tiennent le rôle des gobelins, alors que les
   gnarlings le tenaient jusqu'ici : à confirmer. Pas de vraie provocation en Veloren (le « revers méprisant » du
-  marteau protège le guerrier, il n'attire pas) : en faut-il une ? *Qui* : Flo, Sayanel.
+  marteau protège le guerrier, il n'attire pas) : en faut-il une ? Choix de cible (Y.9) : un danari seul
+  n'achève pas (il vise d'abord un joueur debout), seuls des danari à plusieurs achèvent : est-ce bien l'idée ? *Qui* : Flo, Sayanel.
 
 ## Tranché
 

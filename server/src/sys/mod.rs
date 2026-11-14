@@ -8,6 +8,7 @@ pub mod icebreaker_charrette;
 pub mod icebreaker_clock;
 pub mod icebreaker_entrainement;
 pub mod icebreaker_expedition;
+pub mod icebreaker_focus;
 pub mod icebreaker_mort;
 pub mod icebreaker_panneaux;
 pub mod icebreaker_rondes;
@@ -61,6 +62,8 @@ pub fn add_server_systems(dispatch_builder: &mut DispatcherBuilder) {
     dispatch::<icebreaker_panneaux::Sys>(dispatch_builder, &[]);
     // Icebreaker Y.3: the rounds of a race.
     dispatch::<icebreaker_rondes::Sys>(dispatch_builder, &[]);
+    // Icebreaker Y.9: who aims at whom, for the enemies to spread.
+    dispatch::<icebreaker_focus::Sys>(dispatch_builder, &[]);
     // Icebreaker: after the movements, so that sleepers keep lying.
     dispatch::<icebreaker_sleep::Sys>(dispatch_builder, &[
         &phys::Sys::sys_name(),

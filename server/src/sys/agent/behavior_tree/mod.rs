@@ -968,16 +968,31 @@ fn do_combat(bdata: &mut BehaviorData) -> bool {
                 agent.target = None;
                 agent_data.idle(agent, controller, read_data, emitters, rng);
             } else {
-                // Icebreaker Y.2: a race may choose its target more often (races.ron →
-                // reciblage), to see a player fall or a hit coming.
-                let retargeting = matches!(agent_data.alignment, Some(Alignment::Enemy))
-                    .then(|| common::icebreaker_races::comportement(agent_data.body))
-                    .flatten()
-                    .and_then(|c| c.reciblage)
+                // Icebreaker Y.2, Y.9: a humanoid enemy chooses its target again while
+                // fighting (Veloren never does for those that stop pursuing), more often
+                // (races.ron → reciblage, not all at the same tick), and at once when
+                // its target falls downed: to spread, to leave or finish off the downed.
+                let icebreaker_regles = matches!(agent_data.alignment, Some(Alignment::Enemy))
+                    .then(|| common::icebreaker_races::regles(agent_data.body))
+                    .flatten();
+                let retargeting = icebreaker_regles
+                    .as_ref()
+                    .and_then(|r| r.reciblage(agent_data.entity.id()))
                     .unwrap_or(RETARGETING_THRESHOLD_SECONDS);
-                let is_time_to_retarget = read_data.time.0 - selected_at > retargeting;
+                let since_selected = read_data.time.0 - selected_at;
+                let target_fell = icebreaker_regles.is_some()
+                    && since_selected > 0.5
+                    && common::comp::is_downed(
+                        read_data.healths.get(target),
+                        read_data.char_states.get(target),
+                    );
+                let is_time_to_retarget = since_selected > retargeting || target_fell;
 
-                if (!agent.psyche.should_stop_pursuing || !in_aggro_range) && is_time_to_retarget {
+                if (icebreaker_regles.is_some()
+                    || !agent.psyche.should_stop_pursuing
+                    || !in_aggro_range)
+                    && is_time_to_retarget
+                {
                     agent_data.choose_target(agent, controller, read_data, AgentData::is_enemy);
                 }
 

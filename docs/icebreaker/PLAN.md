@@ -243,6 +243,10 @@ Q50). Réglages : `assets/icebreaker/ennemis/races.ron` ; code : `common/src/ice
 - [ ] **Y.6 Elfes tireurs** — plus d'archers à la composition, voient de plus loin.
 - [ ] **Y.7 Draugr dormeurs** — presque tous endormis (réveil au bruit), lents.
 - [ ] **Y.8 Wiki** — rubrique Créatures : le comportement de chaque race.
+- [x] **Y.9 Choix de cible** (Flo, 2026-11-14) : parmi les joueurs repérés, un joueur debout passe avant un joueur à
+  terre (tous à terre : achevés), les ennemis se répartissent (`commun` de `races.ron`) ; les danari n'achèvent qu'à
+  plusieurs. Corrige Y.2 : un ennemi ne rechoisissait jamais sa cible en combat. Testé (tests ciblés ; client texte à
+  deux, orcs et danari, journal des cibles) ; pas vu dans le vrai client.
 
 ## Jalon B — Boucles de jeu (proposition du 2026-11-02, à valider)
 
@@ -353,8 +357,9 @@ tâche pour ce qui casse.
   un groupe ; araignées et autres solitaires dans les nids et les poches.
 - H.5 : la campagne à quatre donjons générés, sans fort gnarling ; le départ ne propose plus « Donjon ».
 - H.6 : difficulté des ennemis des races (PV, armure, plus de survie à 1 PV) ; si trop dur encore : moins de tireurs.
-- Y.2 (`-Race danari`, à deux) : un danari laisse son adversaire pour achever le joueur à terre ; le frapper ou le
-  repousser le détourne ; il fuit blessé. Y.3 (`-Race human`) : des groupes de guerriers passent de salle en salle et
+- Y.2, Y.9 (à deux ou plus) : les ennemis se répartissent entre les joueurs et laissent un joueur à terre tant qu'un
+  autre est debout (trop dur, trop mou ?) ; des danari à plusieurs vont achever le joueur à terre, les frapper ou les
+  repousser les détourne ; ils fuient blessés. Y.3 (`-Race human`) : des groupes de guerriers passent de salle en salle et
   reviennent (bloqués dans un escalier ou une porte ?).
 
 **Divers**

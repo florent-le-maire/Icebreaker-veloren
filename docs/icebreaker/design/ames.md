@@ -86,9 +86,12 @@ donjon (`solitaires` de `generation.ron`), poches et culs-de-sac de la grotte (`
 gnarling ne sert plus en campagne.
 
 **Comportement par race (jalon Y, 2026-11-14, Flo ; à valider, `QUESTIONS.md` Q50)** : réglages dans
-`assets/icebreaker/ennemis/races.ron`. Faits : les **danari** sont fourbes : un joueur à terre à moins de 20 blocs passe
-en tête de leurs cibles (ils l'achèvent), sauf si quelqu'un vient de les frapper (3 s) ; ils choisissent leur cible
-toutes les 2 s et fuient sous 30 % de leurs PV. Les **humains** font des rondes : jusqu'à deux groupes de trois
+`assets/icebreaker/ennemis/races.ron`. Faits : **tous** choisissent leur cible parmi les joueurs qu'ils ont
+repérés (Y.9) : un joueur debout passe avant un joueur à terre ; si tous sont à terre, ils sont achevés ; entre joueurs
+debout ils se répartissent (un joueur déjà visé par un allié compte comme 8 blocs plus loin) ; ils rechoisissent toutes
+les 3 s environ, et tout de suite quand leur cible tombe. Les **danari** sont fourbes : à deux ou plus (à 20 blocs), un
+joueur à terre à moins de 20 blocs passe en tête (ils l'achèvent), sauf si quelqu'un vient de les frapper (3 s) ; un
+danari seul fait comme les autres ; ils fuient sous 30 % de leurs PV. Les **humains** font des rondes : jusqu'à deux groupes de trois
 guerriers vont de salle en salle (trois salles, sans clé ni chute, jamais celle du chef), s'arrêtent 5 s, puis
 reviennent. Prévus : orcs en rage, nains qui tiennent leur salle, elfes tireurs, draugr endormis.
 
