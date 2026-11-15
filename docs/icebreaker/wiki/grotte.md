@@ -55,8 +55,13 @@ l'entrée, or et gemmes au fond. Coffres et créatures donnent le butin de leur 
 ## Régler la forme
 
 `.\icebreaker.ps1 caverne` ouvre l'**atelier** : une page avec un curseur par réglage et la grotte en 3D, qui se
-refait à chaque changement. C'est le même générateur que le jeu. « Copier les réglages » donne le bloc à coller dans
-un profil de `formes.ron`.
+refait à chaque changement. C'est le même générateur que le jeu. Trois curseurs « Étendue sur X / Y / Z » donnent
+la forme d'ensemble : ronde à 1 partout, en boyau ou en galette quand on en resserre un.
+
+Des réglages qui plaisent s'enregistrent en **preset** (un nom, un poids) : « Enregistrer le preset » l'écrit dans
+`formes.ron`, avec un commit. Au village, une expédition vers la Grotte choisit sa forme au panneau Départ : « au
+hasard » ou l'un des presets. En arrivant, l'équipe lit le nom du preset et la graine de sa grotte ; les mêmes dans
+l'atelier montrent sa forme (au terrain près : en jeu la grotte se cale sous le sol réel).
 
 ## Pourquoi
 

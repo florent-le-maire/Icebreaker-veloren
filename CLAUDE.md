@@ -69,8 +69,9 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   sur `localhost:<port>`. Une partie (personnages, caisse, village…) = `userdata-icebreaker\parties\<nom>`, choisie
   par `-Partie <nom>` (défaut : la dernière jouée) ; au menu, `ICEBREAKER_AUTO_PARTIE=<nom>` avec l'auto-clic.
 - Atelier des grottes (jalon U, `docs/icebreaker/PLAN-CAVERNE.md`) : `.\icebreaker.ps1 caverne` compile le générateur
-  `icebreaker-caverne` pour le navigateur (`rustup target add wasm32-unknown-unknown` une fois) et ouvre la page à
-  curseurs ; les profils sont dans `assets/icebreaker/grottes/formes.ron`. En jeu : `donjon -Site Grotte -Profil gouffre`.
+  `icebreaker-caverne` pour le navigateur (`rustup target add wasm32-unknown-unknown` une fois) et sert la page à
+  curseurs sur http://localhost:8096 ; « Enregistrer le preset » écrit le profil dans
+  `assets/icebreaker/grottes/formes.ron` et committe ; en campagne : `/expedition 3 <preset>`. En jeu : `donjon -Site Grotte -Profil gouffre`.
   Sans la page : `cargo run --release -p icebreaker-caverne --example coupes -- <profil> <graine> <dossier>`.
 - Lieu d'entraînement (jalon O, `docs/icebreaker/PLAN-ENTRAINEMENT.md`) : `.icebreaker.ps1 entrainement` (port
   14150) ; tout s'y règle par `/entrainement` (classe, arme, niveau, ennemi, allie, nettoyer, soin…) ou par les deux

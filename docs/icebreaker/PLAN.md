@@ -34,7 +34,8 @@ Le jeu doit rester lançable après chaque tâche.
   bloc 1 des boucles (B.1 à B.4) (à plusieurs sur le VPS, `QUESTIONS.md`, Q7).
 - **Jalon U (2026-11-15)** : la grotte prend sa forme d'un nouveau générateur (`PLAN-CAVERNE.md`) : gouffre, plaine,
   chaos ou mixte selon la graine, zones plates à stalactites, zones pleines de bosses et de trous, puits, et un
-  sentier toujours praticable à pied. Atelier web pour régler les profils : `.\icebreaker.ps1 caverne`. Vérifié en
+  sentier toujours praticable à pied. Atelier web (`.\icebreaker.ps1 caverne`) pour régler les formes et
+  les enregistrer en presets, que l'équipe choisit au panneau Départ (U.9 à U.11). Vérifié en
   test et par l'exemple de contrôle (12 mondes générés) ; pas vu en jeu, profils à régler par Flo.
 - **Jalon A (2026-11-11)** : armes, classes et compétences (`PLAN-CLASSES.md`, `decisions/0020`) codé pour les trois
   classes : jeux d'armes, 2 compétences d'arme + ultime + passif, recharges, niveaux 1 à 5, lot tiré à la charrette,
@@ -369,6 +370,10 @@ tâche pour ce qui casse.
   le sentier se suit-il à l'aller et au retour, les puits et leurs lacets, la caméra sous les plafonds bas, la
   lumière, la densité des sprites et des créatures dans les très grandes zones ; atelier : glisser les curseurs,
   « Copier les réglages ».
+- U.10 : dans l'atelier (`.\icebreaker.ps1 caverne`), régler, « Enregistrer le preset », le retrouver dans la
+  liste, le supprimer ; les curseurs « Étendue sur X / Y / Z » (U.9).
+- U.11 : au panneau Départ, choisir Grotte puis une forme (le bouton, la pastille « choisie », le bandeau
+  « Grotte — … ») ; à l'arrivée, la ligne « Grotte « … », graine … » et une grotte de cette forme.
 - U.7, U.8 : on arrive dans la salle sûre de la grotte, sous terre (lieu seul et expédition en campagne), sans
   créature autour ; le chef est loin ; `/rentrer` ramène au village depuis le fond.
 - K.3 : les trois ambiances se reconnaissent-elles, la roche luisante suffit-elle sans lanterne (`QUESTIONS.md`, Q22) ;

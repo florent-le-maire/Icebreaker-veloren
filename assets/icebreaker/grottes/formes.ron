@@ -2,7 +2,8 @@
 // du générateur (icebreaker-caverne) ; la graine d'une grotte en tire un selon les poids (ICEBREAKER_GROTTE_PROFIL
 // pour en demander un). Les réglages absents gardent leur valeur par défaut (icebreaker-caverne/src/lib.rs,
 // `forme!` : nom, défaut, bornes, libellé).
-// Pour régler : `.\icebreaker.ps1 caverne` ouvre l'atelier ; « Copier les réglages » donne le bloc `forme` à coller ici.
+// Pour régler : `.\icebreaker.ps1 caverne` ouvre l'atelier ; « Enregistrer le preset » écrit ici le profil (U.10).
+// En campagne, l'équipe choisit l'un de ces profils au panneau Départ (U.11) ; poids 0 : jamais tiré, seulement choisi.
 (
     profils: {
         // Très vertical : des zones empilées, reliées par des pentes en lacets ou, quand la place manque, par des puits.

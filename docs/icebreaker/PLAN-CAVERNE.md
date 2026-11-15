@@ -86,6 +86,18 @@ images (dessus, côté) ; `-- stats` compte les grottes réussies au premier ess
   10 tests de `veloren-world`, exemple sur 12 mondes (0 problème, le contrôle part de la salle sûre), serveur lancé
   (apparition à z = 60 sous un sol vers 200). Pas vérifié : un vrai joueur qui arrive, en lieu seul et en campagne ;
   le retour par `/rentrer` depuis le fond. — 0ba4c2865f
+- [x] **U.9 Forme d'ensemble** (demande de Flo, 2026-11-15) — `etendue_x`, `etendue_y`, `etendue_z` (0,2 à 1) : les
+  zones tiennent dans une ellipse autour de l'origine (plus dans un carré), la profondeur se resserre d'autant ;
+  à 1 partout la grotte est ronde, 1 / 0,3 / 1 donne un boyau le long de X. Testé : profils resserrés sur chaque
+  axe, 160 grottes sans sentier coupé. — 2a79cf2751
+- [x] **U.10 Presets enregistrés** — `.\icebreaker.ps1 caverne` sert l'atelier sur http://localhost:8096 (bin
+  `atelier`) : « Enregistrer le preset » (nom, poids) écrit le profil dans `formes.ron` et committe ce fichier,
+  « Supprimer » le retire ; le preset et la graine sont en clair sous la grotte. Essayé au curl et par une capture
+  de la page servie ; pas essayé : les clics dans la page, la commande `caverne` elle-même. — d63ca3924f
+- [x] **U.11 Preset choisi au départ** — au panneau Départ, une expédition vers la Grotte propose « au hasard » et
+  chaque preset (`/expedition forme <preset>`, ou `/expedition 3 gouffre`) ; au départ l'emplacement est refait
+  avec cette forme et une graine neuve (32 bits), et l'équipe lit « Grotte « gouffre », graine … » en arrivant.
+  Essayé au client texte en campagne ; pas vu dans le vrai client : les lignes de forme du panneau. — e32595d713
 
 ## Reste
 
