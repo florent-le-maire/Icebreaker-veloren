@@ -94,6 +94,9 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
   recul annulé pas vu dans le vrai client. — b3e8769
 - [x] **X.16 Clavier AZERTY ou QWERTY** — deux boutons dans Réglages > Contrôles : touches de base (AZERTY) ou
   QWERTY (WASD, 1 à 0, cible sur Z). Testé (3 tests, boutons vus au vrai client) ; clic pas fait en jeu. — ced08d6028
+- [x] **X.17 Supprimer une partie** — bouton « Supprimer » sur chaque ligne du choix de la partie, confirmé par
+  « Oui / Non » ; efface le dossier de la partie (et `derniere.txt` s'il la désignait), refusé si son serveur tourne.
+  Testé (test ciblé, lignes et confirmation vues au vrai client) ; clic réel sur « Oui » pas fait. — 964b6d6a59
 
 ## Jalon L — Combat, suite (Flo, 2026-11-07)
 
@@ -313,6 +316,7 @@ tâche pour ce qui casse.
   panneau, icônes, Échap, fermeture pour de bon ; X.4 couleurs et icônes des bâtiments ; X.5 E et T sur les PNJ dans
   leur maison ; X.8 recrues devant la charrette (posées 8 blocs trop haut sur le village d'essai ? `QUESTIONS.md`, Q30).
 - X.10 : panneau « Campagne » (continuer, nouvelle partie), passage de l'ancienne campagne en « Partie 1 ».
+- X.17 : « Supprimer » puis « Oui » efface la partie de la liste ; refus si son serveur tourne.
 - R.6 à R.8 : barre de compétences du vrai client ; mage en jeu ; tourbillon, fendeur et les trois postures du
   guerrier ; les recrues créées avant R.6 n'ont pas de compétences. *Remplacé par le jalon A pour les trois classes.*
 
