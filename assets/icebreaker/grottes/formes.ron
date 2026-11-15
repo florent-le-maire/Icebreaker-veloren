@@ -5,21 +5,21 @@
 // Pour régler : `.\icebreaker.ps1 caverne` ouvre l'atelier ; « Copier les réglages » donne le bloc `forme` à coller ici.
 (
     profils: {
-        // Très vertical : des zones empilées, reliées par des puits où le sentier descend en lacets.
+        // Très vertical : des zones empilées, reliées par des pentes en lacets ou, quand la place manque, par des puits.
         "gouffre": (
             poids: 1.0,
             forme: (
-                zones: 6.0, verticalite: 0.95, part_plaine: 0.3, profondeur: 280.0, emprise: 160.0, boucles: 0.0,
-                plaine_rayon: 32.0, chaos_rayon: 26.0, chaos_hauteur: 44.0, puits_rayon: 16.0, puits_longueur: 40.0,
+                zones: 6.0, verticalite: 0.95, part_plaine: 0.3, entree_longueur: 60.0, profondeur: 280.0, emprise: 220.0, boucles: 0.0,
+                plaine_rayon: 32.0, chaos_rayon: 26.0, chaos_hauteur: 64.0, puits_rayon: 16.0, puits_longueur: 40.0,
             ),
         ),
         // Très étalé : d'immenses salles basses, des forêts de stalactites, presque pas de dénivelé.
         "plaine": (
             poids: 1.0,
             forme: (
-                zones: 6.0, verticalite: 0.05, part_plaine: 0.9, ecart: -0.15, profondeur: 80.0, boucles: 2.0,
-                plaine_rayon: 62.0, plaine_hauteur: 13.0, plaine_stalactites: 0.8, plaine_stalagmites: 0.3,
-                plaine_piliers: 0.35, stalactite_longueur: 9.0,
+                zones: 6.0, verticalite: 0.05, part_plaine: 0.9, ecart: -0.15, profondeur: 110.0, boucles: 2.0,
+                plaine_rayon: 62.0, plaine_hauteur: 34.0, plaine_stalactites: 0.8, plaine_stalagmites: 0.3,
+                plaine_piliers: 0.35, stalactite_longueur: 18.0,
             ),
         ),
         // Des salles pleines de bosses, de trous et de ponts de roche, sur plusieurs hauteurs.
@@ -27,7 +27,7 @@
             poids: 1.0,
             forme: (
                 zones: 8.0, verticalite: 0.2, part_plaine: 0.1, ecart: -0.2, boucles: 2.0,
-                chaos_rayon: 34.0, chaos_hauteur: 46.0, chaos_bruit: 1.1, chaos_echelle: 18.0, chaos_detail: 0.6,
+                chaos_rayon: 34.0, chaos_hauteur: 72.0, chaos_bruit: 1.1, chaos_echelle: 18.0, chaos_detail: 0.6,
                 chaos_stalactites: 0.3,
             ),
         ),

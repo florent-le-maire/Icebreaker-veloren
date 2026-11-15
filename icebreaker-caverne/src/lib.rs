@@ -84,35 +84,37 @@ forme! {
     }
     "Zone plate" {
         plaine_rayon: 50.0, 15.0, 110.0, 1.0, "Rayon";
-        plaine_hauteur: 12.0, 5.0, 40.0, 1.0, "Hauteur sous plafond";
+        plaine_hauteur: 30.0, 5.0, 90.0, 1.0, "Hauteur sous plafond";
         plaine_contour: 0.3, 0.0, 0.7, 0.01, "Contour irrégulier";
         plaine_sol: 2.0, 0.0, 8.0, 0.5, "Bosses du sol";
-        plaine_plafond: 4.0, 0.0, 12.0, 0.5, "Relief du plafond";
+        plaine_plafond: 8.0, 0.0, 24.0, 0.5, "Relief du plafond";
         plaine_stalactites: 0.5, 0.0, 1.0, 0.01, "Stalactites";
         plaine_stalagmites: 0.2, 0.0, 1.0, 0.01, "Stalagmites";
         plaine_piliers: 0.2, 0.0, 1.0, 0.01, "Piliers";
     }
     "Zone chaotique" {
         chaos_rayon: 30.0, 10.0, 70.0, 1.0, "Rayon";
-        chaos_hauteur: 36.0, 10.0, 90.0, 1.0, "Hauteur";
+        chaos_hauteur: 60.0, 10.0, 140.0, 1.0, "Hauteur";
         chaos_bruit: 0.7, 0.0, 1.5, 0.01, "Bosses et trous (0 : bulle lisse)";
         chaos_echelle: 16.0, 5.0, 40.0, 1.0, "Taille des bosses";
         chaos_detail: 0.5, 0.0, 1.0, 0.01, "Petit relief";
         chaos_stalactites: 0.2, 0.0, 1.0, 0.01, "Stalactites";
     }
     "Concrétions" {
-        stalactite_longueur: 8.0, 2.0, 24.0, 1.0, "Longueur des stalactites";
+        stalactite_longueur: 14.0, 2.0, 40.0, 1.0, "Longueur des stalactites";
     }
     "Galeries" {
-        galerie_largeur: 6.0, 2.0, 16.0, 0.5, "Demi-largeur";
-        galerie_hauteur: 9.0, 4.0, 24.0, 1.0, "Hauteur";
+        galerie_largeur: 8.0, 2.0, 16.0, 0.5, "Demi-largeur";
+        galerie_hauteur: 18.0, 4.0, 40.0, 1.0, "Hauteur";
         galerie_sinuosite: 0.5, 0.0, 1.0, 0.01, "Sinuosité";
         galerie_bruit: 0.6, 0.0, 1.0, 0.01, "Parois irrégulières";
     }
-    "Puits" {
-        puits_rayon: 14.0, 7.0, 30.0, 1.0, "Rayon";
+    "Descentes" {
+        puits_rayon: 14.0, 7.0, 30.0, 1.0, "Rayon des puits";
         puits_longueur: 25.0, 0.0, 80.0, 1.0, "Chute entre deux zones";
         puits_bruit: 0.5, 0.0, 1.0, 0.01, "Parois irrégulières";
+        lacets_largeur: 44.0, 20.0, 80.0, 1.0, "Largeur des lacets (descente en pente)";
+        puits_part: 0.2, 0.0, 1.0, 0.01, "Part des descentes en puits (le reste : pentes en lacets)";
     }
     "Sentier" {
         sentier_largeur: 2.0, 1.0, 4.0, 0.5, "Demi-largeur";
@@ -272,7 +274,7 @@ impl Caverne {
 }
 
 /// Seeds tried for a cave whose trail is whole.
-const ESSAIS: u64 = 6;
+const ESSAIS: u64 = 12;
 
 /// Rock kept over the top of a zone, under the surface.
 const COUVERTURE: i32 = 6;
@@ -395,6 +397,10 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
             if pitch < 0.2 && rng.chance(0.35) {
                 drop = -drop;
             }
+            // Icebreaker U.6: far enough aside for a slope with switchbacks,
+            // most of the time; otherwise right under, down a shaft.
+            let lacets = drop.abs() > 12.0 && !rng.chance(f.puits_part);
+            let horiz = if lacets { horiz.max(1.1 * drop.abs() + 24.0) } else { horiz };
             let mut centre = [
                 p.centre[0] + (az.cos() * horiz).round() as i32,
                 p.centre[1] + (az.sin() * horiz).round() as i32,
@@ -539,8 +545,11 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
     }
     for lien in &liens {
         let (debut, fin) = lien.puits.map_or((lien.points.len(), lien.points.len()), |(_, _, debut, fin)| (debut, fin));
-        creuser_galerie(&mut grille, &lien.points[..debut], f, s, surface);
-        creuser_galerie(&mut grille, &lien.points[fin..], f, s, surface);
+        // Switchbacks (a way much longer than it goes far): dug high, the legs open on each other as ledges on a slope.
+        let droit = lien.points.first().zip(lien.points.last()).map_or(0.0, |(p, q)| (q[0] - p[0]).hypot(q[1] - p[1]));
+        let ample = if lien.puits.is_none() && longueur(&lien.points) > 1.6 * droit { 2.2 } else { 1.0 };
+        creuser_galerie(&mut grille, &lien.points[..debut], f, s, surface, ample);
+        creuser_galerie(&mut grille, &lien.points[fin..], f, s, surface, ample);
         if let Some((centre, rayon, ..)) = lien.puits {
             let zs = lien.points[debut..fin].iter().map(|p| p[2]);
             let (low, high) = zs.fold((f32::MAX, f32::MIN), |(l, h), z| (l.min(z), h.max(z)));
@@ -686,8 +695,8 @@ fn creuser_puits(g: &mut Grille, centre: [f32; 2], rayon: f32, bas: i32, haut: i
 
 /// A gallery along a trail: wider than high, its width changing along the
 /// way, its walls roughened by the noise.
-fn creuser_galerie(g: &mut Grille, points: &[[f32; 3]], f: &Forme, s: u32, surface: &dyn Fn(i32, i32) -> i32) {
-    let hg = f.galerie_hauteur / 2.0;
+fn creuser_galerie(g: &mut Grille, points: &[[f32; 3]], f: &Forme, s: u32, surface: &dyn Fn(i32, i32) -> i32, ample: f32) {
+    let hg = f.galerie_hauteur / 2.0 * ample;
     for (i, p) in points.iter().enumerate().step_by(4) {
         let w = f.galerie_largeur * (0.75 + 0.5 * bruit2(i as f32 / 60.0, 0.0, s.wrapping_add(41)));
         let c = [p[0], p[1], p[2] + hg - 1.0];
@@ -810,6 +819,45 @@ fn tracer(a: [f32; 3], b: [f32; 3], f: &Forme, rng: &mut Alea, autour_a: &[f32],
             }
         }
     }
+    // Steeper: switchbacks down a slope (Icebreaker U.6), the trail swinging
+    // from side to side as it goes toward `b`. Each turn is level: there the
+    // two legs run side by side, and would cut each other if they sloped.
+    // Between the turns the legs are `espacement` apart, one above the other
+    // as the ledges of a cliff.
+    let espacement = 2.0 * f.sentier_largeur + 8.0;
+    const VIRAGE: f32 = 0.75;
+    // Narrow first; wider if the drop asks for it.
+    let essais = (2..=((d / espacement) as usize).min(12)).flat_map(|n| [(n, f.lacets_largeur), (n, f.lacets_largeur * 1.5)]);
+    for (n, largeur) in essais {
+        let wave = |t: f32| (n as f32 * PI * t).sin();
+        let count = ((n as f32 * largeur + d) * 3.0).ceil() as usize;
+        let plat: Vec<[f32; 2]> = (0..=count)
+            .map(|i| {
+                let t = i as f32 / count as f32;
+                // Straight out of the zones (their other ways are near), then
+                // the full swing; a slight wander along the legs.
+                let swing = ((t.min(1.0 - t) * d - 8.0) / 14.0).clamp(0.0, 1.0);
+                let o = sens * largeur / 2.0 * wave(t) * swing * (1.0 + 0.25 * a1 * (7.0 * PI * t).sin());
+                [a[0] + dx * t - dy / d * o, a[1] + dy * t + dx / d * o]
+            })
+            .collect();
+        // The slope only where the legs are apart: lengths walked on a slope.
+        let mut pente = vec![0.0; plat.len()];
+        for i in 1..plat.len() {
+            let step = (plat[i][0] - plat[i - 1][0]).hypot(plat[i][1] - plat[i - 1][1]);
+            let turn = wave(i as f32 / count as f32).abs() > VIRAGE;
+            pente[i] = pente[i - 1] + if turn { 0.0 } else { step };
+        }
+        let total = pente[plat.len() - 1] - 2.0 * palier;
+        if total >= besoin {
+            let points = plat
+                .iter()
+                .zip(&pente)
+                .map(|(p, l)| [p[0], p[1], a[2] + (b[2] - a[2]) * ((l - palier) / total).clamp(0.0, 1.0)])
+                .collect();
+            return (points, None);
+        }
+    }
     // Too steep: a shaft, `recul` blocks away from the ends of the trail.
     let rh = (f.puits_rayon - f.sentier_largeur - 2.0).max(4.0);
     let recul = rh + palier + 4.0;
@@ -907,7 +955,7 @@ fn concretions(g: &mut Grille, zone: &Zone, f: &Forme, rng: &mut Alea) {
             }
             let libre = plafond - sol + 1;
             match nature {
-                2 if libre <= 40 => {
+                2 if libre <= 70 => {
                     for k in 0..libre {
                         let t = k as f32 / (libre - 1).max(1) as f32;
                         disc(g, x, y, sol + k, thick * (0.6 + 0.8 * (2.0 * t - 1.0).powi(2)));

@@ -377,7 +377,9 @@ pub fn generate(
         for _ in 0..count {
             for _ in 0..10 {
                 let p = zone.sols[rng.random_range(0..zone.sols.len())];
-                if !taken.insert(p) {
+                // Away from the walls: an ore may lie at their foot (a solid sprite).
+                let open = [(1, 0), (-1, 0), (0, 1), (0, -1)].iter().all(|(dx, dy)| caverne.grille.air(p[0] + dx, p[1] + dy, p[2]));
+                if !open || !taken.insert(p) {
                     continue;
                 }
                 let asset = if rng.random_bool(pop.part_solitaires as f64) {
@@ -403,7 +405,9 @@ pub fn generate(
             for _ in 0..10 {
                 let p = zone.sols[rng.random_range(0..zone.sols.len())];
                 let trail = (-3..=3).any(|dx| (-3..=3).any(|dy| caverne.grille.sentier(p[0] + dx, p[1] + dy, p[2] - 1)));
-                if trail || !taken.insert(p) {
+                // Off the trail, and no one stands where the spike grows.
+                let near = taken.iter().any(|q| (q[0] - p[0]).abs() <= 3 && (q[1] - p[1]).abs() <= 3 && (q[2] - p[2]).abs() <= 8);
+                if trail || near || !taken.insert(p) {
                     continue;
                 }
                 crystals.push((monde(p), roll(&mut rng, settings.hauteur_cristaux)));

@@ -17,7 +17,7 @@
     // n'ont que des solitaires.
     population: (par_poche: (2, 3), par_niveau: 1, trous: 0.5, coffres: 0.3, coffre: "DungeonChest2", part_solitaires: 0.3),
     filons: (
-        chance: 0.06,
+        chance: 0.008,
         paliers: [
             [("Copper", 3.0), ("Tin", 3.0), ("Iron", 2.0)],
             [("Coal", 3.0), ("Cobalt", 2.0), ("Silver", 1.0)],
@@ -31,22 +31,22 @@
     ambiances: {
         "champignons": (
             roche: (70, 80, 60), lueur: (40, 110, 180), lueur_chance: 0.04,
-            sol: [("GlowMushroom", 0.04), ("CaveMushroom", 0.03), ("Mushroom", 0.02), ("GrassBlueMedium", 0.03), ("SporeReed", 0.02)],
-            plafond: [("MycelBlue", 0.05), ("CeilingMushroom", 0.03)],
+            sol: [("GlowMushroom", 0.004), ("CaveMushroom", 0.003), ("Mushroom", 0.002), ("GrassBlueMedium", 0.004), ("SporeReed", 0.002)],
+            plafond: [("MycelBlue", 0.006), ("CeilingMushroom", 0.004)],
             solitaires: ["common.entity.wild.aggressive.cave_spider", "common.entity.wild.peaceful.truffler", "common.entity.wild.peaceful.fungome", "common.entity.wild.aggressive.cave_troll"],
             cristaux: (0, 1),
         ),
         "cristaux": (
-            roche: (80, 80, 95), lueur: (150, 120, 230), lueur_chance: 0.06,
-            sol: [("CrystalLow", 0.03), ("CrystalHigh", 0.015), ("Amethyst", 0.005), ("Stones", 0.01)],
-            plafond: [("CrystalHigh", 0.03)],
+            roche: (80, 80, 95), lueur: (150, 120, 230), lueur_chance: 0.008,
+            sol: [("CrystalLow", 0.004), ("CrystalHigh", 0.002), ("Amethyst", 0.001), ("Stones", 0.002)],
+            plafond: [("CrystalHigh", 0.004)],
             solitaires: ["common.entity.wild.aggressive.dodarock", "common.entity.wild.aggressive.cave_spider", "common.entity.wild.aggressive.cave_salamander"],
             cristaux: (3, 7),
         ),
         "ossuaire": (
             roche: (75, 70, 60), lueur: (200, 150, 60), lueur_chance: 0.02,
-            sol: [("Bones", 0.05), ("EnsnaringWeb", 0.03), ("Stones", 0.02), ("Mud", 0.01), ("DeadBush", 0.01)],
-            plafond: [("EnsnaringWeb", 0.03)],
+            sol: [("Bones", 0.006), ("EnsnaringWeb", 0.004), ("Stones", 0.003), ("Mud", 0.002), ("DeadBush", 0.002)],
+            plafond: [("EnsnaringWeb", 0.004)],
             solitaires: ["common.entity.wild.aggressive.cave_spider", "common.entity.wild.aggressive.blue_oni", "common.entity.wild.aggressive.red_oni", "common.entity.wild.peaceful.bat"],
             cristaux: (0, 0),
         ),
