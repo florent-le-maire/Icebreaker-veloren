@@ -131,6 +131,9 @@ hud-settings-english_fallback = Afficher en Anglais les traductions manquantes
 hud-settings-awaitingkey = Appuyez sur une touche...
 hud-settings-unbound = Aucun
 hud-settings-reset_keybinds = Réinitialiser
+# Icebreaker : préréglages de clavier
+hud-settings-preset_azerty = Clavier AZERTY
+hud-settings-preset_qwerty = Clavier QWERTY
 hud-settings-chat_tabs = Onglets du tchat
 hud-settings-label = Nom :
 hud-settings-delete = Supprimer

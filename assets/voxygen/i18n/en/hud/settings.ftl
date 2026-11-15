@@ -161,6 +161,9 @@ hud-settings-language_send_to_server = Send the configured language to servers (
 hud-settings-awaitingkey = Press a key...
 hud-settings-unbound = None
 hud-settings-reset_keybinds = Reset to defaults
+# Icebreaker: keyboard presets
+hud-settings-preset_azerty = AZERTY keyboard
+hud-settings-preset_qwerty = QWERTY keyboard
 hud-settings-keybind-helper =
     M1 to set
     M2 to unset

@@ -352,3 +352,83 @@ impl Default for ControlSettings {
         new_settings
     }
 }
+
+// Icebreaker : préréglage QWERTY (bouton dans Réglages > Contrôles). Les touches
+// de base restent AZERTY ; on ne change que celles qui diffèrent, reprises de
+// Veloren d'origine. `settings.ron` garde l'écart à AZERTY, donc le choix persiste.
+impl ControlSettings {
+    pub fn qwerty() -> Self {
+        let char = |s| KeyMouse::Key(Key::Character(winit::keyboard::SmolStr::new(s)));
+        let mut settings = Self::default();
+        for (game_input, key) in [
+            (GameInput::MoveForward, "W"),
+            (GameInput::MoveLeft, "A"),
+            (GameInput::AutoWalk, "."),
+            (GameInput::ZoomOut, "("),
+            (GameInput::CameraClamp, "'"),
+            (GameInput::CycleCamera, "0"),
+            (GameInput::Slot1, "1"),
+            (GameInput::Slot2, "2"),
+            (GameInput::Slot3, "3"),
+            (GameInput::Slot4, "4"),
+            (GameInput::Slot5, "5"),
+            (GameInput::Slot6, "6"),
+            (GameInput::Slot7, "7"),
+            (GameInput::Slot8, "8"),
+            (GameInput::Slot9, "9"),
+            (GameInput::Slot10, "Q"),
+            // Même place physique que W en AZERTY (W sert à avancer).
+            (GameInput::IcebreakerLockTarget, "Z"),
+            // Touche à gauche de Z sur un clavier ISO.
+            (GameInput::IcebreakerBalise, "\\"),
+        ] {
+            settings.modify_binding(game_input, char(key));
+        }
+        settings
+    }
+}
+
+#[cfg(test)]
+mod tests_icebreaker {
+    use super::*;
+
+    fn char(s: &str) -> Option<KeyMouse> {
+        Some(KeyMouse::Key(Key::Character(winit::keyboard::SmolStr::new(s))))
+    }
+
+    #[test]
+    fn qwerty_touches_principales() {
+        let q = ControlSettings::qwerty();
+        assert_eq!(q.get_binding(GameInput::MoveForward), char("W"));
+        assert_eq!(q.get_binding(GameInput::MoveLeft), char("A"));
+        assert_eq!(q.get_binding(GameInput::Slot1), char("1"));
+        assert_eq!(q.get_binding(GameInput::IcebreakerLockTarget), char("Z"));
+        // Les touches de base restent AZERTY.
+        let a = ControlSettings::default();
+        assert_eq!(a.get_binding(GameInput::MoveForward), char("Z"));
+    }
+
+    #[test]
+    fn qwerty_sans_conflit_ni_restes_azerty() {
+        let q = ControlSettings::qwerty();
+        for k in ["W", "A", "S", "D", "Q", "Z", "1", "2", "9", "0"] {
+            let key = char(k).unwrap();
+            assert!(!q.has_conflicting_bindings(key), "conflit sur {k}");
+        }
+        // Plus rien sur les anciennes touches AZERTY des emplacements.
+        for k in ["&", "é", "ç", "ù", "à"] {
+            let vide = q
+                .get_associated_game_inputs(&char(k).unwrap())
+                .is_none_or(|s| s.is_empty());
+            assert!(vide, "{k} encore pris");
+        }
+    }
+
+    #[test]
+    fn qwerty_survit_a_la_sauvegarde() {
+        let texte = ron::to_string(&ControlSettings::qwerty()).unwrap();
+        let relu: ControlSettings = ron::from_str(&texte).unwrap();
+        assert_eq!(relu.get_binding(GameInput::MoveForward), char("W"));
+        assert_eq!(relu.get_binding(GameInput::Slot10), char("Q"));
+    }
+}

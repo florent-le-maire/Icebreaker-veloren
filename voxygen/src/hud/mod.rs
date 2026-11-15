@@ -5640,6 +5640,12 @@ impl Hud {
     /// Icebreaker : comme un clic sur un onglet du panneau ouvert (essai sans les mains).
     pub fn icebreaker_onglet(&mut self, onglet: usize) { self.icebreaker.onglet(onglet); }
 
+    /// Icebreaker : ouvrir les réglages sur l'onglet Contrôles, comme F1 (essai sans les mains).
+    pub fn icebreaker_controles(&mut self) {
+        self.show.settings(true);
+        self.show.settings_tab = SettingsTab::Controls;
+    }
+
     /// Start showing a temporary notification ([ChangeNotification]) that zoom
     /// lock was toggled on/off.
     pub fn zoom_lock_toggle(&mut self, state: bool) {

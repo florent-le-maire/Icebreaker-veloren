@@ -24,6 +24,9 @@ widget_ids! {
         window_r,
         window_scrollbar,
         reset_controls_button,
+        // Icebreaker : préréglages de clavier
+        icebreaker_azerty_button,
+        icebreaker_qwerty_button,
         keybind_helper,
         gamepad_mode_button,
         gamepad_option_dropdown,
@@ -646,6 +649,43 @@ impl Widget for Controls<'_> {
         keybind_helper
             .top_right_with_margins_on(state.ids.window, offset + 5.0, 10.0)
             .set(state.ids.keybind_helper, ui);
+
+        // Icebreaker : préréglages de clavier AZERTY (= touches de base) et QWERTY, dans la
+        // colonne de droite sous la liste déroulante (posés avant elle pour qu'elle passe
+        // par-dessus une fois ouverte).
+        if let BindingMode::Keyboard = state.binding_mode {
+            let mut dessus = (state.ids.gamepad_mode_button, 55.0);
+            for (id, cle, evenement) in [
+                (
+                    state.ids.icebreaker_azerty_button,
+                    "hud-settings-preset_azerty",
+                    ResetKeyBindingsKeyboard,
+                ),
+                (
+                    state.ids.icebreaker_qwerty_button,
+                    "hud-settings-preset_qwerty",
+                    PresetQwerty,
+                ),
+            ] {
+                if Button::image(self.imgs.button)
+                    .w_h(125.0, 35.0)
+                    .hover_image(self.imgs.button_hover)
+                    .press_image(self.imgs.button_press)
+                    .down_from(dessus.0, dessus.1)
+                    .align_right_of(state.ids.gamepad_mode_button)
+                    .label(&self.localized_strings.get_msg(cle))
+                    .label_font_size(self.fonts.cyri.scale(14))
+                    .label_color(TEXT_COLOR)
+                    .label_font_id(self.fonts.cyri.conrod_id)
+                    .label_y(Relative::Scalar(2.0))
+                    .set(id, ui)
+                    .was_clicked()
+                {
+                    events.push(evenement);
+                }
+                dessus = (id, 10.0);
+            }
+        }
 
         // Drop down menu to select keyboard game bindings or menu bindings
         if let BindingMode::Keyboard = state.binding_mode {

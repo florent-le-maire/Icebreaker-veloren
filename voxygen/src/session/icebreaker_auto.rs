@@ -11,7 +11,8 @@
 //! plan sans panneau. `fermer` ferme le plan, pour voir ce qui se montre hors
 //! du plan (`/balise`). `regarder` : mort, passe à l'allié suivant, comme le
 //! clic gauche (`/kill` deux fois avant : à terre, puis mort). `onglet 3` : le
-//! troisième onglet du panneau ouvert (salle d'armes).
+//! troisième onglet du panneau ouvert (salle d'armes). `controles` : les
+//! réglages sur l'onglet Contrôles.
 
 use std::{
     collections::VecDeque,
@@ -46,6 +47,8 @@ pub enum Pas {
     Cliquer(String),
     /// Cliquer l'onglet `n` (compté depuis zéro) du panneau ouvert.
     Onglet(usize),
+    /// Ouvrir les réglages sur l'onglet Contrôles (`controles`, X.16).
+    Controles,
     /// Envoyer cette commande (nom, arguments), comme un bouton du panneau.
     Commande(String, Vec<String>),
     Capturer,
@@ -97,6 +100,7 @@ impl Auto {
                 },
                 None if sorte == "fermer" => Pas::Fermer,
                 None if sorte == "regarder" => Pas::Regarder,
+                None if sorte == "controles" => Pas::Controles,
                 None => Pas::Cliquer(sorte.to_string()),
             });
             a_faire.push_back(Pas::Capturer);

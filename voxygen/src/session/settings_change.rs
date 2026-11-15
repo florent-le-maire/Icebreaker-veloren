@@ -58,6 +58,8 @@ pub enum Control {
     ChangeBindingKeyboard(GameInput),
     RemoveBindingKeyboard(GameInput),
     ResetKeyBindingsKeyboard,
+    // Icebreaker : préréglage QWERTY (AZERTY = ResetKeyBindingsKeyboard).
+    PresetQwerty,
 
     // change keyboard menu bindings
     ChangeBindingKeyboardMenu(MenuInput),
@@ -450,6 +452,10 @@ impl SettingsChange {
                 },
                 Control::ResetKeyBindingsKeyboard => {
                     settings.controls = ControlSettings::default();
+                },
+                // Icebreaker : préréglage QWERTY.
+                Control::PresetQwerty => {
+                    settings.controls = ControlSettings::qwerty();
                 },
 
                 // reset gamepad
