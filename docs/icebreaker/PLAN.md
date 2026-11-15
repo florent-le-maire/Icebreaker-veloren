@@ -93,7 +93,7 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
   immobiles (le recul est annulé) et 2 avec le recul de Veloren. Testé (4 tests, client texte : tous au même niveau) ;
   recul annulé pas vu dans le vrai client. — b3e8769
 - [x] **X.16 Clavier AZERTY ou QWERTY** — deux boutons dans Réglages > Contrôles : touches de base (AZERTY) ou
-  QWERTY (WASD, 1 à 0, cible sur Z). Testé (3 tests, boutons vus au vrai client) ; clic pas fait en jeu. — 50d1b5dfab
+  QWERTY (WASD, 1 à 0, cible sur Z). Testé (3 tests, boutons vus au vrai client) ; clic pas fait en jeu. — ced08d6028
 
 ## Jalon L — Combat, suite (Flo, 2026-11-07)
 
