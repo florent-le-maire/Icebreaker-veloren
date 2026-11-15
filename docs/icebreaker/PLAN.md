@@ -365,6 +365,8 @@ tâche pour ce qui casse.
   le sentier se suit-il à l'aller et au retour, les puits et leurs lacets, la caméra sous les plafonds bas, la
   lumière, la densité des sprites et des créatures dans les très grandes zones ; atelier : glisser les curseurs,
   « Copier les réglages ».
+- U.7, U.8 : on arrive dans la salle sûre de la grotte, sous terre (lieu seul et expédition en campagne), sans
+  créature autour ; le chef est loin ; `/rentrer` ramène au village depuis le fond.
 - K.3 : les trois ambiances se reconnaissent-elles, la roche luisante suffit-elle sans lanterne (`QUESTIONS.md`, Q22) ;
   caméra dans les boyaux.
 - K.4 : miner un filon à la pioche, changement d'arme ; K.5 : créatures des culs-de-sac posées un bloc trop haut ou

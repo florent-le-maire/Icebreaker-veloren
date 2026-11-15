@@ -74,6 +74,18 @@ images (dessus, côté) ; `-- stats` compte les grottes réussies au premier ess
   (`puits_part`, 0,2) ou quand la place manque ; créatures à l'écart des parois, cristaux à l'écart des créatures.
   Testé : tests, 160 grottes (aucune coupée, 12 graines dérivées au plus), exemple sur 12 mondes (0 problème),
   capture de l'atelier. Pas revu en jeu. — 5078857ef8
+- [x] **U.7 Salle sûre** (demande de Flo, 2026-11-15) — la grotte n'a plus de bouche en surface : elle est entièrement
+  sous terre, sa première zone sous l'origine du site. Une **salle sûre** (petite poche calme, `abri_rayon`) est
+  accrochée à une zone tirée par la graine ; on y arrive. Le chef est dans la zone la plus loin de la salle sûre le
+  long du sentier, et les niveaux (filons, butin) se comptent depuis elle. Marqueur vert dans l'atelier. Testé :
+  tests du générateur (une salle sûre dans chaque grotte, fond à plus de 60 blocs), 160 grottes sans sentier coupé.
+  — 0ba4c2865f
+- [x] **U.8 Arrivée sous terre** — le serveur fait apparaître l'équipe dans la salle sûre (`dungeon_arrival_under`,
+  `arrival_pos` : lieu seul, emplacement de campagne, grotte refaite pour une expédition) ; aucune créature à moins
+  de `population.calme` blocs (30) de l'arrivée, ni filon ni coffre dans la salle. On ressort par `/rentrer`. Testé :
+  10 tests de `veloren-world`, exemple sur 12 mondes (0 problème, le contrôle part de la salle sûre), serveur lancé
+  (apparition à z = 60 sous un sol vers 200). Pas vérifié : un vrai joueur qui arrive, en lieu seul et en campagne ;
+  le retour par `/rentrer` depuis le fond. — 0ba4c2865f
 
 ## Reste
 
