@@ -226,12 +226,12 @@ Pluie de flèches restent tels quels.
 
 - [x] **A.25 Volée mortelle : viser en tenant** *(second retour de Flo, 2026-11-15)* — le cercle suit le regard tant
   que la touche est tenue, la pluie part au relâchement ; 12 salves de 24 flèches toutes les 0,3 s. Vu dans le vrai
-  client (cercle tenu, flèches) ; pas vu : le cercle qui suit un regard qui bouge. — c6ef011fc9
+  client (cercle tenu, flèches) ; pas vu : le cercle qui suit un regard qui bouge. — 895210980b
 - [x] **A.26 Envol : ailes dorées, pas de dégâts de chute** — modèle voxel à nous (`glider/icebreaker_ailes.vox`,
   écrit par `outils/ailes_envol.py`), montré pendant le bond quel que soit le planeur porté. Vu dans le vrai client
-  (ailes, PV intacts à l'atterrissage). — 03e2f1ddb6
+  (ailes, PV intacts à l'atterrissage). — a361a0ac37
 - [x] **A.27 Séisme : trois frappes en cône** — le cône revient, trois frappes d'affilée, une secousse de 30 à
-  chacune (`icebreaker_frappes` sur `Shockwave`). Vu : deux touches sur un orque ; pas vu : la troisième. — 03e2f1ddb6
+  chacune (`icebreaker_frappes` sur `Shockwave`). Vu : deux touches sur un orque ; pas vu : la troisième. — a361a0ac37
 
 Reportable : blocage dur des armes, bascule entre deux jeux d'armes (Q46), masquer le journal de Veloren dans le
 client, recharges gardées à la reconnexion.
