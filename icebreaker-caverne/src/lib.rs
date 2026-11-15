@@ -78,8 +78,8 @@ forme! {
         emprise: 250.0, 80.0, 400.0, 10.0, "Emprise (blocs de chaque côté de l'entrée)";
         profondeur: 160.0, 40.0, 320.0, 10.0, "Profondeur maximale";
     }
-    "Entrée" {
-        entree_longueur: 30.0, 10.0, 80.0, 1.0, "Longueur de l'entrée";
+    "Salle sûre" {
+        abri_rayon: 9.0, 6.0, 18.0, 1.0, "Rayon de la salle sûre (arrivée)";
         entree_profondeur: 18.0, 6.0, 60.0, 1.0, "Roche au-dessus de la première zone";
     }
     "Zone plate" {
@@ -198,6 +198,8 @@ pub enum Genre {
     Chaos,
     /// A small side pocket (a chest, a lone beast).
     Niche,
+    /// The safe room: where one arrives, away from the chief.
+    Abri,
 }
 
 /// A zone of the cave: where it was dug (the walls wander around).
@@ -245,9 +247,9 @@ pub struct Caverne {
     pub grille: Grille,
     pub zones: Vec<Zone>,
     pub liens: Vec<Lien>,
-    /// Which way the entrance goes from the mouth (horizontal, unit).
-    pub dir: [i32; 2],
-    /// Where the trail starts, at the mouth.
+    /// The safe room (Icebreaker U.7), if it found a place.
+    pub abri: Option<usize>,
+    /// Where one arrives: in the safe room, a block one stands in.
     pub depart: [i32; 3],
     /// Whether every zone is reached on foot from the mouth, and back.
     pub praticable: bool,
@@ -261,7 +263,7 @@ impl Caverne {
     /// trail (niches aside).
     pub fn fond(&self) -> usize {
         (0..self.zones.len())
-            .filter(|i| self.zones[*i].genre != Genre::Niche)
+            .filter(|i| !matches!(self.zones[*i].genre, Genre::Niche | Genre::Abri))
             .max_by(|a, b| self.zones[*a].distance.total_cmp(&self.zones[*b].distance))
             .unwrap_or(0)
     }
@@ -311,20 +313,12 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
     let prof = (f.profondeur as i32 + (-creux).min(150)).min(-plancher.max(-100_000) - 8).max(24);
     let mut grille = Grille::new([-e, -e, -prof - 8], [e, e, 10]);
 
-    // The entrance runs toward the highest ground (the cave stays under it).
-    let dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-    let l0 = f.entree_longueur as i32;
-    let start = rng.indice(4);
-    let dir = (0..4)
-        .map(|i| dirs[(start + i) % 4])
-        .max_by_key(|d| surface(d[0] * l0, d[1] * l0))
-        .unwrap_or(dirs[0]);
-
     // How far a zone may reach past its radii (the noise of its walls).
     let debord = |genre: Genre| match genre {
         Genre::Plaine => [1.0 + f.plaine_contour, 1.0 + f.plaine_contour, 1.3],
         Genre::Chaos => [1.0 + f.chaos_bruit; 3],
         Genre::Niche => [1.3; 3],
+        Genre::Abri => [1.2; 3],
     };
     let tailles = |rng: &mut Alea, genre: Genre| {
         let mut var = |v: f32| (v * (1.0 + f.variation * rng.entre(-1.0, 1.0))).round().max(3.0) as i32;
@@ -332,6 +326,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
             Genre::Plaine => [var(f.plaine_rayon), var(f.plaine_rayon), var(f.plaine_hauteur / 2.0)],
             Genre::Chaos => [var(f.chaos_rayon), var(f.chaos_rayon), var(f.chaos_hauteur / 2.0)],
             Genre::Niche => [var(6.5), var(6.5), 4],
+            Genre::Abri => [var(f.abri_rayon), var(f.abri_rayon), 5],
         }
     };
     // The lowest ground over a zone.
@@ -357,14 +352,13 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
     };
     let genre_tire = |rng: &mut Alea| if rng.chance(f.part_plaine) { Genre::Plaine } else { Genre::Chaos };
 
-    // The first zone, at the end of the entrance: small enough to hold in the area.
+    // The first zone, under the origin: small enough to hold in the area.
     let genre = genre_tire(&mut rng);
     let mut rayon = tailles(&mut rng, genre);
-    let most = (((e - l0 - 12) as f32 / (1.0 + 2.0 * debord(genre)[0])) as i32).max(6);
+    let most = (((e - 12) as f32 / debord(genre)[0]) as i32).max(6);
     rayon[0] = rayon[0].min(most);
     rayon[1] = rayon[1].min(most);
-    let reach = l0 + (rayon[0] + rayon[1]) / 2;
-    let mut centre = [dir[0] * reach, dir[1] * reach, -(f.entree_profondeur as i32) - rayon[2]];
+    let mut centre = [0, 0, -(f.entree_profondeur as i32) - rayon[2]];
     centre[2] = centre[2].min(sous_terre(centre, rayon));
     let mut zones = vec![Zone {
         centre,
@@ -377,7 +371,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
     }];
     // The directions of the ways out of each zone: they stay apart (two
     // trails that cross at different heights would cut each other).
-    let mut azimuts: Vec<Vec<f32>> = vec![vec![(-dir[1] as f32).atan2(-dir[0] as f32)]];
+    let mut azimuts: Vec<Vec<f32>> = vec![Vec::new()];
     const ECART_ANGLE: f32 = 0.6;
 
     // The others: each hangs on a zone already there, beside it or under it
@@ -496,6 +490,43 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
             }
         }
     }
+    // The safe room (Icebreaker U.7), where one arrives: a small quiet pocket
+    // beside a zone drawn by the seed. The cave has no way out to the surface.
+    let mut abri = None;
+    let mut candidats: Vec<usize> = (0..principales).collect();
+    while abri.is_none() && !candidats.is_empty() {
+        let parent = candidats.swap_remove(rng.indice(candidats.len()));
+        for _ in 0..24 {
+            let rayon = tailles(&mut rng, Genre::Abri);
+            let p = &zones[parent];
+            let az = rng.entre(0.0, TAU);
+            let d = (p.rayon[0] + p.rayon[1]) as f32 / 2.0 * debord(p.genre)[0].min(1.3) + rayon[0] as f32 + rng.entre(8.0, 16.0);
+            let mut centre = [
+                p.centre[0] + (az.cos() * d).round() as i32,
+                p.centre[1] + (az.sin() * d).round() as i32,
+                p.centre[2] - p.rayon[2] + rayon[2] + rng.entre(-2.0, 2.0).round() as i32,
+            ];
+            centre[2] = centre[2].min(sous_terre(centre, rayon));
+            if dedans(centre, rayon, Genre::Abri)
+                && libre(&zones, parent, centre, rayon)
+                && ecart_angle(&azimuts[parent], az) >= ECART_ANGLE
+            {
+                abri = Some(zones.len());
+                zones.push(Zone {
+                    centre,
+                    rayon,
+                    genre: Genre::Abri,
+                    parent: Some(parent),
+                    ancre: centre,
+                    distance: 0.0,
+                    sols: Vec::new(),
+                });
+                azimuts[parent].push(az);
+                azimuts.push(vec![az + PI]);
+                break;
+            }
+        }
+    }
 
     // Dig the zones, then find where the trail passes in each.
     for zone in &zones {
@@ -503,36 +534,26 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
             Genre::Plaine => creuser_plaine(&mut grille, zone, f, s),
             Genre::Chaos => creuser_chaos(&mut grille, zone, f.chaos_bruit, f.chaos_echelle, f.chaos_detail, s),
             Genre::Niche => creuser_chaos(&mut grille, zone, 0.3, 7.0, 0.5, s),
+            Genre::Abri => creuser_chaos(&mut grille, zone, 0.15, 8.0, 0.3, s),
         }
     }
     for zone in &mut zones {
         zone.ancre = ancre(&grille, zone);
     }
 
-    // The ways: from the mouth to the first zone, from each zone to its
-    // parent, and the loops.
+    // The ways: from each zone to its parent, and the loops.
     let reel = |p: [i32; 3]| p.map(|e| e as f32);
-    let bouche = [-2.0 * dir[0] as f32, -2.0 * dir[1] as f32, 0.0];
     let mut liens = Vec::new();
     let vers = |p: [f32; 3], c: [f32; 2]| (c[1] - p[1]).atan2(c[0] - p[0]);
     for (i, zone) in zones.iter().enumerate() {
-        let (de, a) = match zone.parent {
-            Some(parent) => (Some(parent), reel(zones[parent].ancre)),
-            None => (None, bouche),
-        };
-        let b = reel(zone.ancre);
-        let (points, puits) = tracer(a, b, f, &mut rng, de.map_or(&[], |p| &azimuts[p]), &azimuts[i]);
+        let Some(parent) = zone.parent else { continue };
+        let (a, b) = (reel(zones[parent].ancre), reel(zone.ancre));
+        let (points, puits) = tracer(a, b, f, &mut rng, &azimuts[parent], &azimuts[i]);
         if let Some((c, ..)) = puits {
-            if let Some(parent) = de {
-                azimuts[parent].push(vers(a, c));
-            }
+            azimuts[parent].push(vers(a, c));
             azimuts[i].push(vers(b, c));
         }
-        liens.push(Lien { de, vers: i, points, puits });
-    }
-    for i in 0..zones.len() {
-        let from = zones[i].parent.map_or(0.0, |p| zones[p].distance);
-        zones[i].distance = from + longueur(&liens[i].points);
+        liens.push(Lien { de: Some(parent), vers: i, points, puits });
     }
     for (a, b) in boucles {
         let (pa, pb) = (reel(zones[a].ancre), reel(zones[b].ancre));
@@ -571,9 +592,28 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
     let poser = |g: &Grille, p: [i32; 3]| {
         [0, -1, 1, -2, 2, -3, 3].iter().map(|dz| [p[0], p[1], p[2] + dz]).find(|q| debout(g, q[0], q[1], q[2])).unwrap_or(p)
     };
-    let depart = poser(&grille, [bouche[0] as i32, bouche[1] as i32, 0]);
     for zone in &mut zones {
         zone.ancre = poser(&grille, zone.ancre);
+    }
+    // One arrives in the safe room (in the first zone if it found no place).
+    let arrivee = abri.unwrap_or(0);
+    let depart = zones[arrivee].ancre;
+    // How far each zone is from there along the trail, by the shortest way.
+    let mut loin = vec![f32::MAX; zones.len()];
+    loin[arrivee] = 0.0;
+    for _ in 0..zones.len() {
+        for lien in &liens {
+            let (Some(a), b, l) = (lien.de, lien.vers, longueur(&lien.points)) else { continue };
+            if loin[a] + l < loin[b] {
+                loin[b] = loin[a] + l;
+            }
+            if loin[b] + l < loin[a] {
+                loin[a] = loin[b] + l;
+            }
+        }
+    }
+    for (zone, d) in zones.iter_mut().zip(loin) {
+        zone.distance = d;
     }
     grille.garder_relie(depart);
 
@@ -594,11 +634,12 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
         .max()
         .unwrap_or(0);
     let resume = format!(
-        "{} zone(s) plate(s), {} chaotique(s), {} niche(s), {} puits ; dénivelé {} blocs, étendue {} blocs, {} blocs \
+        "{} zone(s) plate(s), {} chaotique(s), {} niche(s), {} salle sûre, {} puits ; dénivelé {} blocs, étendue {} blocs, {} blocs \
          d'air, {} sols à pied ; sentier {}",
         n(Genre::Plaine),
         n(Genre::Chaos),
         n(Genre::Niche),
+        n(Genre::Abri),
         liens.iter().filter(|l| l.puits.is_some()).count(),
         -bas,
         large,
@@ -610,7 +651,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
         grille,
         zones,
         liens,
-        dir,
+        abri,
         depart,
         praticable,
         essais: 1,
@@ -920,7 +961,7 @@ fn concretions(g: &mut Grille, zone: &Zone, f: &Forme, rng: &mut Alea) {
     let (stalactites, stalagmites, piliers) = match zone.genre {
         Genre::Plaine => (f.plaine_stalactites, f.plaine_stalagmites, f.plaine_piliers),
         Genre::Chaos => (f.chaos_stalactites, f.chaos_stalactites * 0.5, 0.0),
-        Genre::Niche => return,
+        Genre::Niche | Genre::Abri => return,
     };
     let [rx, ry, h] = zone.rayon.map(|e| e as f32);
     let [cx, cy, cz] = zone.centre;
@@ -1056,6 +1097,9 @@ mod tests {
                 let c = generer(&profil.forme, graine, &|_, _| 0, i32::MIN);
                 assert!(c.praticable, "{nom}, graine {graine} : {}", c.resume);
                 assert!(c.zones.len() >= 2, "{nom}, graine {graine} : {}", c.resume);
+                assert!(c.abri.is_some(), "{nom}, graine {graine} : pas de salle sûre");
+                assert_eq!(c.zones[c.abri.unwrap()].ancre, c.depart);
+                assert!(c.zones[c.fond()].distance > 60.0, "{nom}, graine {graine} : le fond est à {} blocs", c.zones[c.fond()].distance);
                 for zone in &c.zones {
                     assert!(!zone.sols.is_empty(), "{nom}, graine {graine} : zone sans sol en {:?}", zone.centre);
                     assert!(zone.centre[2] + zone.rayon[2] <= -COUVERTURE, "{nom}, graine {graine} : zone hors de terre");

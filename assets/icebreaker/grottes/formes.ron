@@ -9,7 +9,7 @@
         "gouffre": (
             poids: 1.0,
             forme: (
-                zones: 6.0, verticalite: 0.95, part_plaine: 0.3, entree_longueur: 60.0, profondeur: 280.0, emprise: 220.0, boucles: 0.0,
+                zones: 6.0, verticalite: 0.95, part_plaine: 0.3, profondeur: 280.0, emprise: 220.0, boucles: 0.0,
                 plaine_rayon: 32.0, chaos_rayon: 26.0, chaos_hauteur: 64.0, puits_rayon: 16.0, puits_longueur: 40.0,
             ),
         ),

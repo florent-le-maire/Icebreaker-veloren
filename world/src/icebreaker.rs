@@ -135,6 +135,15 @@ pub fn site_area(kind: SiteKind, world_dims: vek::Aabr<i32>) -> vek::Aabr<i32> {
 
 /// Where players arrive at a dungeon of our generator: out of its entrance
 /// tunnel.
+/// Icebreaker U.8: where players arrive under the ground (the safe room of
+/// the cave, which has no mouth at the surface): a block one stands in.
+pub fn dungeon_arrival_under(site: &Site) -> Option<vek::Vec3<i32>> {
+    site.plots().find_map(|plot| match plot.kind() {
+        PlotKind::IcebreakerGrotte(grotte) => Some(grotte.get().grotte().arrival),
+        _ => None,
+    })
+}
+
 pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
     site.plots().find_map(|plot| match plot.kind() {
         PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get().entrance()),
@@ -505,7 +514,7 @@ pub fn check_generated_grotte(
     // Standing at p: solid under, two blocks of air.
     let standing = |p: vek::Vec3<i32>| !hollow(p - vek::Vec3::unit_z()) && hollow(p) && hollow(p + vek::Vec3::unit_z());
     // From the mouth, down to the ground.
-    let mut start = grotte.mouth + vek::Vec3::unit_z() * 3;
+    let mut start = grotte.arrival + vek::Vec3::unit_z();
     while hollow(start - vek::Vec3::unit_z()) && start.z > volume.min.z {
         start.z -= 1;
     }

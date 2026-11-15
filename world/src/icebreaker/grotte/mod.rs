@@ -98,6 +98,9 @@ pub struct PopulationSettings {
     /// Icebreaker H.4: share of the lone monsters among the creatures of the
     /// zones (the niches hold only lone monsters).
     pub part_solitaires: f32,
+    /// Icebreaker U.8: no creature within this many blocks of where one
+    /// arrives (the safe room).
+    pub calme: i32,
 }
 
 /// A mood of the cave (Icebreaker K.3): what its rock and its sprites are.
@@ -223,10 +226,11 @@ pub struct Inhabitant {
 /// A generated cave, ready to be drawn.
 #[derive(Clone)]
 pub struct Grotte {
-    /// The mouth, at the surface.
+    /// The origin of the cave, at the surface (the cave has no mouth there
+    /// any more, Icebreaker U.8: its shape is in blocks relative to this).
     pub mouth: Vec3<i32>,
-    /// Which way the entrance goes from the mouth (horizontal, unit).
-    pub dir: Vec2<i32>,
+    /// Where one arrives: in the safe room, a block one stands in.
+    pub arrival: Vec3<i32>,
     /// Icebreaker U.4: its shape, in blocks relative to the mouth, and the
     /// profile of `formes.ron` it was drawn with.
     pub caverne: Arc<Caverne>,
@@ -268,6 +272,12 @@ impl Grotte {
     pub fn air(&self, wpos: Vec3<i32>) -> bool {
         let p = wpos - self.mouth;
         self.caverne.grille.air(p.x, p.y, p.z)
+    }
+
+    /// Whether `wpos` is in the safe room.
+    pub fn in_safe_room(&self, wpos: Vec3<i32>) -> bool {
+        let p = (wpos - self.mouth).into_array();
+        self.caverne.abri.is_some_and(|i| self.caverne.zones[i].contient(p, 1.3))
     }
 
     /// The level of the zone `wpos` is in (the entrance level out of them all).
@@ -343,8 +353,16 @@ pub fn generate(
     }];
     let mut chests = Vec::new();
     let mut chest_levels = Vec::new();
+    // Icebreaker U.8: no one near where the party arrives.
+    let quiet = |p: [i32; 3]| (0..3).map(|k| ((p[k] - caverne.depart[k]) as i64).pow(2)).sum::<i64>() >= (pop.calme as i64).pow(2);
     for (i, zone) in zones.iter().enumerate() {
+        if zone.genre == Genre::Abri {
+            continue;
+        }
         if zone.genre == Genre::Niche {
+            if !quiet(zone.ancre) {
+                continue;
+            }
             if rng.random_bool(pop.trous as f64) && taken.insert(zone.ancre) {
                 let asset = lone(&mut rng);
                 inhabitants.push(Inhabitant {
@@ -379,7 +397,7 @@ pub fn generate(
                 let p = zone.sols[rng.random_range(0..zone.sols.len())];
                 // Away from the walls: an ore may lie at their foot (a solid sprite).
                 let open = [(1, 0), (-1, 0), (0, 1), (0, -1)].iter().all(|(dx, dy)| caverne.grille.air(p[0] + dx, p[1] + dy, p[2]));
-                if !open || !taken.insert(p) {
+                if !open || !quiet(p) || !taken.insert(p) {
                     continue;
                 }
                 let asset = if rng.random_bool(pop.part_solitaires as f64) {
@@ -400,7 +418,7 @@ pub fn generate(
     }
     // Glowing crystals (K.3): on the floors, off the trail.
     let mut crystals = Vec::new();
-    for zone in zones.iter().filter(|z| z.genre != Genre::Niche && !z.sols.is_empty()) {
+    for zone in zones.iter().filter(|z| !matches!(z.genre, Genre::Niche | Genre::Abri) && !z.sols.is_empty()) {
         for _ in 0..roll(&mut rng, look.cristaux).max(0) {
             for _ in 0..10 {
                 let p = zone.sols[rng.random_range(0..zone.sols.len())];
@@ -443,7 +461,7 @@ pub fn generate(
 
     Grotte {
         mouth,
-        dir: Vec2::from(caverne.dir),
+        arrival: monde(caverne.depart),
         summary: format!(
             "grotte {ambiance}, forme {profil}, race {}, graine {seed} : {} ; {} habitant(s), {} cristal(aux), {} coffre(s) ({} par \
              palier), fond en {:?}",
@@ -497,7 +515,16 @@ mod tests {
                 assert!(grotte.bounds().contains_point(grotte.monde(zone.ancre)));
             }
             assert!(grotte.bounds().contains_point(MOUTH));
-            assert!(grotte.air(grotte.monde(grotte.caverne.depart)), "graine {seed} : la bouche est bouchée");
+            // Icebreaker U.8: one arrives in the safe room, with no one around, far from the chief.
+            assert!(grotte.caverne.abri.is_some(), "graine {seed} : pas de salle sûre");
+            assert!(grotte.air(grotte.arrival) && !grotte.air(grotte.arrival - Vec3::unit_z()), "graine {seed} : arrivée dans la roche");
+            assert!(grotte.in_safe_room(grotte.arrival));
+            let calme = settings.population.calme as f32;
+            for i in &grotte.inhabitants {
+                let d = i.pos.as_::<f32>().distance(grotte.arrival.as_::<f32>());
+                assert!(d >= calme, "graine {seed} : {} à {d} blocs de l'arrivée", i.asset);
+                assert!(!i.chief || d >= 60.0, "graine {seed} : le chef est à {d} blocs de l'arrivée");
+            }
             assert_eq!(cave(&settings, seed).summary, grotte.summary);
         }
     }

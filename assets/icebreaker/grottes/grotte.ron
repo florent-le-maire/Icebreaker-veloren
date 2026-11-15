@@ -14,8 +14,9 @@
     // niche, une créature avec la chance trous et un coffre (sprite coffre, butin de butin.ron selon le niveau, B.5)
     // avec la chance coffres ; le chef de la race (H.4) dans la zone la plus loin de l'entrée. part_solitaires (H.4) :
     // part des monstres solitaires de l'ambiance parmi les créatures des zones, les autres sont de la race ; les niches
-    // n'ont que des solitaires.
-    population: (par_poche: (2, 3), par_niveau: 1, trous: 0.5, coffres: 0.3, coffre: "DungeonChest2", part_solitaires: 0.3),
+    // n'ont que des solitaires. calme (U.8) : aucune créature à moins de ce nombre de blocs de la salle sûre, où
+    // l'équipe arrive (la grotte n'a plus de bouche en surface).
+    population: (par_poche: (2, 3), par_niveau: 1, trous: 0.5, coffres: 0.3, coffre: "DungeonChest2", part_solitaires: 0.3, calme: 30),
     filons: (
         chance: 0.008,
         paliers: [

@@ -147,8 +147,7 @@ pub fn new_layout(
     let site = &index.sites[slot.site];
     match world::icebreaker::regenerate_slot(world, site, seed) {
         Ok(true) => {
-            let arrival = crate::icebreaker_slots::arrival(site, site.origin);
-            slot.arrival = world.find_accessible_pos(index, arrival, false);
+            slot.arrival = crate::icebreaker_slots::arrival_pos(world, index, site, site.origin);
             crate::icebreaker_mission::set_dungeon(mission, sleep, slot.site, site);
             info!(slot = %slot.name, seed, arrival = ?slot.arrival, "Icebreaker: new plan for the dungeon slot");
         },

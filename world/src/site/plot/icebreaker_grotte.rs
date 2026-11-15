@@ -26,7 +26,7 @@ pub struct IcebreakerGrotte {
 
 impl IcebreakerGrotte {
     fn new(grotte: Grotte) -> Self {
-        let entrance = grotte.mouth.xy() - grotte.dir * 4;
+        let entrance = grotte.arrival.xy();
         Self { grotte, entrance }
     }
 
@@ -91,11 +91,9 @@ impl Structure for IcebreakerGrotte {
         &self,
         spawn_rules: &mut SpawnRules,
         _land: &Land,
-        wpos: Vec2<i32>,
+        _wpos: Vec2<i32>,
         _weight: f32,
     ) {
-        // No tree around the mouth: the entrance runs in the open for a while.
-        spawn_rules.trees &= wpos.distance_squared(self.grotte.mouth.xy()) > 24 * 24;
         spawn_rules.waypoints = false;
     }
 
@@ -117,11 +115,10 @@ impl Structure for IcebreakerGrotte {
         let cave = Arc::clone(&grotte);
         let air = move |pos: Vec3<i32>| cave.air(pos);
         frame.sample(air.clone()).clear();
-        let (a, top) = (air.clone(), grotte.mouth.z - 2);
+        let a = air.clone();
         frame
             .sample(move |pos| {
-                pos.z <= top
-                    && !a(pos)
+                !a(pos)
                     && (a(pos + up)
                         || a(pos - up)
                         || a(pos + Vec3::unit_x())
@@ -147,6 +144,7 @@ impl Structure for IcebreakerGrotte {
                 a(pos)
                     && !a(pos - up)
                     && cave.filons.strikes(pos)
+                    && !cave.in_safe_room(pos)
                     && !cave.caverne.grille.sentier(p.x, p.y, p.z - 1)
                     && !(a(pos + Vec3::unit_x()) && a(pos - Vec3::unit_x()) && a(pos + Vec3::unit_y()) && a(pos - Vec3::unit_y()))
             })

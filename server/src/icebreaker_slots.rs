@@ -52,6 +52,15 @@ pub fn arrival(site: &Site, map_center: Vec2<i32>) -> Vec2<i32> {
     })
 }
 
+/// Where players stand when they arrive at a dungeon site. Icebreaker U.8:
+/// the cave has no mouth, one arrives in its safe room, under the ground.
+pub fn arrival_pos(world: &World, index: IndexRef, site: &Site, map_center: Vec2<i32>) -> Vec3<f32> {
+    match world::icebreaker::dungeon_arrival_under(site) {
+        Some(pos) => world.find_accessible_pos_above(index, pos.xy(), pos.z - 1),
+        None => world.find_accessible_pos(index, arrival(site, map_center), false),
+    }
+}
+
 impl IcebreakerSlots {
     /// The dungeon slots of the campaign's world.
     pub fn new(world: &World, index: IndexRef, zone_margin: f32) -> Self {
@@ -72,7 +81,7 @@ impl IcebreakerSlots {
             })
             .map(|(name, id)| {
                 let site = &index.sites[id];
-                let arrival = world.find_accessible_pos(index, arrival(site, map_center), false);
+                let arrival = arrival_pos(world, index, site, map_center);
                 let slot = Slot {
                     name,
                     site: id,

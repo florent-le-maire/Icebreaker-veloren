@@ -571,7 +571,12 @@ impl Server {
                 TerrainChunkSize::center_wpos(spawn_chunk)
             });
 
-            world.find_accessible_pos(index, spawn_wpos, false)
+            // Icebreaker U.8: in a cave instance, in its safe room, under the ground.
+            instance_site
+                .and_then(|site| world::icebreaker::dungeon_arrival_under(&index.sites[site]))
+                .map(|under| world.find_accessible_pos_above(index, under.xy(), under.z - 1))
+                .inspect(|spawn| info!(?spawn, "Icebreaker cave spawn, in the safe room"))
+                .unwrap_or_else(|| world.find_accessible_pos(index, spawn_wpos, false))
         });
         #[cfg(not(feature = "worldgen"))]
         let spawn_point = SpawnPoint::default();

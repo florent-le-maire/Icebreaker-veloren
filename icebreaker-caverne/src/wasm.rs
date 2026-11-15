@@ -44,6 +44,8 @@ pub extern "C" fn generer(graine: f64) -> u32 {
             Genre::Plaine => 1,
             Genre::Chaos => 2,
             Genre::Niche => 3,
+            // The safe room is the first mark: where one arrives.
+            Genre::Abri => continue,
         };
         marks.push([zone.ancre[0], zone.ancre[1], zone.ancre[2], kind]);
     }
