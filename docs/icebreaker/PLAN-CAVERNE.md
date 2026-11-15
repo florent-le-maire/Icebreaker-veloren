@@ -73,7 +73,7 @@ images (dessus, côté) ; `-- stats` compte les grottes réussies au premier ess
   sur les autres comme des corniches), les puits en hélice ne servent plus que pour une part réglable des descentes
   (`puits_part`, 0,2) ou quand la place manque ; créatures à l'écart des parois, cristaux à l'écart des créatures.
   Testé : tests, 160 grottes (aucune coupée, 12 graines dérivées au plus), exemple sur 12 mondes (0 problème),
-  capture de l'atelier. Pas revu en jeu. — 50fe32d860
+  capture de l'atelier. Pas revu en jeu. — 5078857ef8
 
 ## Reste
 
