@@ -3621,6 +3621,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "icebreaker-caverne"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "ron",
+ "serde",
+]
+
+[[package]]
 name = "icebreaker-salles"
 version = "0.1.0"
 dependencies = [

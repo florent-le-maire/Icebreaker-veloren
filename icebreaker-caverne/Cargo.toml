@@ -1,0 +1,22 @@
+# Icebreaker : la forme des grottes (docs/icebreaker/PLAN-CAVERNE.md, jalon U). Un générateur sans dépendance à
+# Veloren : le jeu (veloren-world) s'en sert pour creuser la Grotte, et il est compilé en WebAssembly pour l'atelier
+# (`.\icebreaker.ps1 caverne`, page web/index.html).
+[package]
+name = "icebreaker-caverne"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde = { workspace = true }
+ron = { workspace = true }
+
+[dev-dependencies]
+image = { workspace = true }
