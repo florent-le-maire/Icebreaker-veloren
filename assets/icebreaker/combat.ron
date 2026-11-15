@@ -17,9 +17,8 @@
     creatures_explosion: 1.4,  // boule de feu, flèche explosive
     creatures_onde: 1.5,       // ondes de choc (onde de feu : ~3 coups)
     creatures_autre: 2.0,      // arcs électriques, zones persistantes
-    // Un coup ne retire pas plus de cette part des PV max d'une créature (3 coups au moins) ;
-    // multipliée par le bonus de dégâts de l'attaquant (potions, puis forge et âmes) : gagner en puissance la relève.
-    plafond_coup_creature: 0.4,
+    // Pas de plafond par coup (retiré le 2026-11-15, Flo) : un coup fait ses dégâts pleins, un ultime peut tuer d'un coup.
+    // Pour le remettre : `plafond_coup_creature: 0.4` (part des PV max d'une créature qu'un coup retire au plus).
     // Part de la vitesse du tireur que reprennent ses projectiles (flèches, sorts, objets lancés) :
     // 0 = le tir part droit vers le viseur même en se déplaçant de côté (X.13), 1 = comme Veloren.
     part_vitesse_tireur: 0.0,

@@ -219,15 +219,9 @@ mod tests {
         let touche = coup(5.0, AttackSource::Beam);
         assert!(touche < coup(7.0, AttackSource::Projectile));
         assert!(pv / touche >= 8.0, "lance-flammes {}", pv / touche);
-        // Aucun coup de départ ne tue d'un coup : tir chargé (25), onde de feu
-        // (20), flèche explosive (15).
-        for (base, source) in [
-            (25.0, AttackSource::Projectile),
-            (20.0, AttackSource::GroundShockwave),
-            (15.0, AttackSource::Explosion),
-        ] {
-            assert!(coup(base, source) <= pv * 0.5, "{base} {source:?}");
-        }
+        // Pas de plafond par coup (retiré le 2026-11-15) : un tir chargé (25)
+        // retire plus de la moitié des PV.
+        assert!(coup(25.0, AttackSource::Projectile) > pv * 0.5);
         // Coup de gnarling (2,5 à 4) contre un joueur de 100 PV : 3 à 4 coups en
         // moyenne.
         let coups_joueur = 100.0 / (3.25 * c.degats_contre_joueurs);

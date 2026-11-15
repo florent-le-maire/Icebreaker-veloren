@@ -33,10 +33,6 @@ nom = "Rayons contre les créatures, par touche"
 unite = "×"
 
 [[chiffre]]
-cle = "plafond_coup_creature"
-nom = "Part des PV qu'un coup peut retirer à une créature, au plus"
-
-[[chiffre]]
 cle = "rayon"
 fichier = "verrouillage.ron"
 nom = "Portée du verrouillage"
@@ -58,9 +54,8 @@ dégâts de Veloren. Une créature plus forte encaisse plus, comme avant.
 
 Contre les créatures, le multiplicateur dépend de l'attaque : on reste plus faible de loin. Il faut cinq à six
 flèches ou boules de feu pour un gnarling, et le lance-flammes, qui touche trois fois par seconde, fait à chaque
-touche la moitié d'une flèche. Surtout, **un coup ne retire jamais plus de 40 % des PV d'une créature** : même un
-tir chargé ne tue pas d'un coup. Ce plafond monte avec les bonus de dégâts (potions, puis forge et âmes) : c'est en
-gagnant en puissance qu'on finit par abattre un ennemi d'un seul coup.
+touche la moitié d'une flèche. Il n'y a pas de plafond par coup (retiré le 2026-11-15) : une grosse attaque ou un
+ultime peut abattre un petit ennemi d'un seul coup.
 
 La conséquence, c'est qu'on ne fonce plus. On **verrouille** l'ennemi le plus proche du centre de l'écran (touche W
 par défaut) : la caméra le suit, la molette passe à l'ennemi voisin, et un anneau doré respire sur lui. Trop loin,
