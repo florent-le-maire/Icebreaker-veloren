@@ -285,7 +285,13 @@ impl CharacterCacheKey {
                 None
             },
             lantern: key_from_slot(EquipSlot::Lantern),
-            glider: key_from_slot(EquipSlot::Glider),
+            // Icebreaker : pendant l'ultime « Envol », des ailes dorées à la place du planeur porté
+            // (A.26, `humanoid_glider_manifest.ron`).
+            glider: if matches!(cs, Some(CharacterState::LeapExplosionShockwave(_))) {
+                Some(String::from("icebreaker.ailes"))
+            } else {
+                key_from_slot(EquipSlot::Glider)
+            },
             foot: key_from_slot(EquipSlot::Armor(ArmorSlot::Feet)),
             head: key_from_slot(EquipSlot::Armor(ArmorSlot::Head)),
             hand: if are_hands_visible {

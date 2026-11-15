@@ -1549,6 +1549,12 @@ impl ServerEvent for LandOnGroundEvent {
             // remove the following relevant part of the if statement.
             let falldmg_threshold = 30.0;
             if relative_vel >= falldmg_threshold
+                // Icebreaker : l'ultime « Envol » retombe sans dégâts de chute (A.26).
+                && !matches!(
+                    character_states.get(ev.entity),
+                    Some(CharacterState::LeapExplosionShockwave(c))
+                        if c.static_data.icebreaker_releve.is_some()
+                )
                 && physic_states
                     .get(ev.entity)
                     .is_none_or(|ps| ps.in_liquid().is_none())

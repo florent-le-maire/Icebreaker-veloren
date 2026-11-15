@@ -4197,9 +4197,10 @@ impl Animation for BasicAction {
                 let en_l_air = movementbase.min(1.0) * (1.0 - move2base);
                 let battement = (movementbase * 9.0).sin() * 0.3 * en_l_air;
 
-                next.glider.position = Vec3::new(0.0, -4.0, 9.0);
-                next.glider.orientation = Quaternion::rotation_x(1.1 + battement);
-                next.glider.scale = Vec3::one() * 0.8 * ailes;
+                // Le modèle des ailes est debout (A.26) : il s'accroche entre les épaules.
+                next.glider.position = Vec3::new(0.0, -3.5, -9.0);
+                next.glider.orientation = Quaternion::rotation_x(-0.15 + battement);
+                next.glider.scale = Vec3::one() * ailes;
 
                 // Ramassé avant le bond, cambré en l'air, plié à l'impact.
                 next.chest.position += Vec3::new(0.0, 0.0, -2.0) * move1 * (1.0 - en_l_air);

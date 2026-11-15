@@ -6,14 +6,14 @@
     ultimes: [
         ("envol", (
             nom: "Envol",
-            description: "Le guerrier s'élève, des ailes dans le dos, et retombe : l'impact blesse les ennemis autour et relève les alliés à terre.",
+            description: "Le guerrier s'élève, des ailes dorées dans le dos, et retombe sans dégâts de chute : l'impact blesse les ennemis autour et relève les alliés à terre.",
             capacite: "icebreaker.abilities.guerrier.ultimes.envol",
             icone: "common.abilities.axe.furor",
             recharge: 90.0,
         )),
         ("seisme", (
             nom: "Séisme",
-            description: "Une onde de choc part tout autour du guerrier : elle blesse, soulève et étourdit ce qu'elle touche.",
+            description: "Trois frappes au sol d'affilée : chacune lance devant le guerrier une secousse qui blesse et soulève.",
             capacite: "icebreaker.abilities.guerrier.ultimes.seisme",
             animation: "common.abilities.hammer.tremor",
             recharge: 60.0,

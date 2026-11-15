@@ -1,16 +1,16 @@
-// Icebreaker : Séisme (ultime du guerrier, A.20) — copie de common.abilities.hammer.tremor : l'onde part tout autour du guerrier (360° au lieu de 45°), frappe bien plus fort (damage 60 au lieu de 25), étourdit (poise 80) et va plus loin (1,5 s).
+// Icebreaker : Séisme (ultime du guerrier, A.20, A.27) — copie de common.abilities.hammer.tremor : le guerrier frappe le sol trois fois d'affilée (`icebreaker_frappes`), et chaque frappe lance une secousse en cône devant lui (30 de dégâts au lieu de 25, poise 40) ; il peut tourner un peu entre deux frappes.
 Shockwave(
     energy_cost: 20,
-    buildup_duration: 0.4,
-    swing_duration: 0.3,
+    buildup_duration: 0.3,
+    swing_duration: 0.25,
     recover_duration: 0.3,
-    damage: 60,
-    poise_damage: 80,
-    knockback: (strength: 8.0, direction: Up),
-    shockwave_angle: 360.0,
+    damage: 30,
+    poise_damage: 40,
+    knockback: (strength: 5.0, direction: Up),
+    shockwave_angle: 45.0,
     shockwave_vertical_angle: 45.0,
     shockwave_speed: 16.0,
-    shockwave_duration: 1.5,
+    shockwave_duration: 1.2,
     dodgeable: Jump,
     move_efficiency: 0.0,
     damage_kind: Crushing,
@@ -18,4 +18,5 @@ Shockwave(
     ori_rate: 0.2,
     timing: PostAction,
     emit_outcome: false,
+    icebreaker_frappes: Some(3),
 )

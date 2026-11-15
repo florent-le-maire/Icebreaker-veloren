@@ -1091,6 +1091,10 @@ pub enum CharacterAbility {
         minimum_combo: Option<u32>,
         #[serde(default)]
         combo_consumption: ComboConsumption,
+        /// Icebreaker : nombre de frappes d'affilée, une onde à chacune (ultime
+        /// « Séisme », A.27).
+        #[serde(default)]
+        icebreaker_frappes: Option<u32>,
         #[serde(default)]
         meta: AbilityMeta,
     },
@@ -1901,6 +1905,7 @@ impl CharacterAbility {
                 emit_outcome: _,
                 minimum_combo: _,
                 combo_consumption: _,
+                icebreaker_frappes: _,
                 meta: _,
             } => {
                 *buildup_duration /= stats.speed;
@@ -3079,6 +3084,7 @@ impl TryFrom<(&CharacterAbility, AbilityInfo, &JoinData<'_>)> for CharacterState
                 emit_outcome,
                 minimum_combo,
                 combo_consumption,
+                icebreaker_frappes,
                 meta: _,
             } => CharacterState::Shockwave(shockwave::Data {
                 static_data: shockwave::StaticData {
@@ -3104,9 +3110,11 @@ impl TryFrom<(&CharacterAbility, AbilityInfo, &JoinData<'_>)> for CharacterState
                     minimum_combo: *minimum_combo,
                     combo_on_use: data.combo.map_or(0, |c| c.counter()),
                     combo_consumption: *combo_consumption,
+                    icebreaker_frappes: *icebreaker_frappes,
                 },
                 timer: Duration::default(),
                 stage_section: StageSection::Buildup,
+                icebreaker_faites: 0,
             }),
             CharacterAbility::Explosion {
                 energy_cost: _,

@@ -60,6 +60,10 @@ pub struct StaticData {
     pub minimum_combo: Option<u32>,
     pub combo_on_use: u32,
     pub combo_consumption: ComboConsumption,
+    /// Icebreaker : nombre de frappes d'affilée, une onde à chacune (ultime
+    /// « Séisme », A.27).
+    #[serde(default)]
+    pub icebreaker_frappes: Option<u32>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -71,6 +75,9 @@ pub struct Data {
     pub timer: Duration,
     /// What section the character stage is in
     pub stage_section: StageSection,
+    /// Icebreaker : frappes déjà données (A.27).
+    #[serde(default)]
+    pub icebreaker_faites: u32,
 }
 
 impl CharacterBehavior for Data {
@@ -165,6 +172,14 @@ impl CharacterBehavior for Data {
                         self.attack(data, output_events);
                     }
 
+                    // Icebreaker : encore une frappe à donner, on repart du début (A.27).
+                    if self.icebreaker_faites + 1 < self.static_data.icebreaker_frappes.unwrap_or(1) {
+                        if let CharacterState::Shockwave(c) = &mut update.character {
+                            c.timer = Duration::default();
+                            c.stage_section = StageSection::Buildup;
+                            c.icebreaker_faites += 1;
+                        }
+                    } else
                     // Transitions to recover
                     if let CharacterState::Shockwave(c) = &mut update.character {
                         c.timer = Duration::default();
