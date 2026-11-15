@@ -66,6 +66,14 @@ images (dessus, côté) ; `-- stats` compte les grottes réussies au premier ess
   problème : toutes les zones atteintes à pied dans les blocs générés, habitants apparus une fois et debout, coffres
   posés), serveur lancé. Pas vu en jeu. — 0f42ff8c39
 - [x] **U.5 Docs** — ce plan, `PLAN-GROTTE.md`, `PLAN.md`, `README.md`, `CLAUDE.md`, fiche wiki de la grotte, Q54.
+- [x] **U.6 Retours de Flo après essai en jeu (2026-11-15)** — plafonds bien plus hauts (zone plate 30 blocs par
+  défaut, 34 au profil plaine ; zones chaotiques 60 à 72 ; galeries 18) ; sprites de sol et de plafond et filons
+  divisés par 8 environ (`grotte.ron`) ; descentes : les zones se placent assez à l'écart pour une **pente en
+  lacets** (le sentier va d'un bord à l'autre d'une salle en pente, virages à plat, les lacets s'ouvrent les uns
+  sur les autres comme des corniches), les puits en hélice ne servent plus que pour une part réglable des descentes
+  (`puits_part`, 0,2) ou quand la place manque ; créatures à l'écart des parois, cristaux à l'écart des créatures.
+  Testé : tests, 160 grottes (aucune coupée, 12 graines dérivées au plus), exemple sur 12 mondes (0 problème),
+  capture de l'atelier. Pas revu en jeu. — 50fe32d860
 
 ## Reste
 
