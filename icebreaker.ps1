@@ -49,6 +49,9 @@ param(
     [ValidateSet("", "human", "orc", "dwarf", "elf", "draugr", "danari")] [string]$Race = "",
     # Ambiance de la grotte (K.3) : champignons, cristaux ou ossuaire ; au hasard sinon.
     [string]$Ambiance = "",
+    # Forme de la grotte (U.4) : un profil de assets\icebreaker\grottes\formes.ron (gouffre, plaine, chaos,
+    # mixte) ; au hasard par la graine sinon.
+    [string]$Profil = "",
     # Icebreaker X.10 : la partie (dossier userdata-icebreaker\parties\<nom>) ; par défaut ICEBREAKER_PARTIE
     # (hérité d'un serveur qui en lance un autre), sinon la dernière jouée, sinon « Partie 1 ».
     [string]$Partie = ""
@@ -176,6 +179,7 @@ $env:ICEBREAKER_DONJON_ENNEMIS = $Ennemis
 $env:ICEBREAKER_DONJON_FACTION = $Faction
 $env:ICEBREAKER_DONJON_RACE = $Race
 $env:ICEBREAKER_GROTTE_AMBIANCE = $Ambiance
+$env:ICEBREAKER_GROTTE_PROFIL = $Profil
 Write-Host "Icebreaker : $Lieu ($Site), partie « $Partie », graine $Seed, port $port"
 Set-Location $repo
 & ".\target\debug\veloren-server-cli.exe" --no-auth

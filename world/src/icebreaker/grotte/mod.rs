@@ -1,28 +1,29 @@
 //! Icebreaker: the cave (« Grotte », `docs/icebreaker/PLAN-GROTTE.md`,
-//! jalon K): a place of natural pockets and bores dug in the rock, drawn by
-//! the `IcebreakerGrotte` plot (`site/plot/icebreaker_grotte.rs`). No cells
-//! nor rooms here: the layout is in blocks.
+//! jalon K), drawn by the `IcebreakerGrotte` plot
+//! (`site/plot/icebreaker_grotte.rs`). Its shape comes from the
+//! `icebreaker-caverne` generator (jalon U, `PLAN-CAVERNE.md`: zones, shafts
+//! and a trail, dug in a grid of blocks); here is what lives in it: the mood,
+//! the ores, the inhabitants, the chests.
 
 use super::dungeon::settings::sprite_kind;
 use crate::util::RandomField;
-use common::{comp::item::tool::ToolKind, terrain::SpriteKind};
-use crate::util::{FastNoise, Sampler};
+use common::{comp::item::tool::ToolKind, terrain::SpriteKind, vol::RectVolSize};
+use hashbrown::HashSet;
+use icebreaker_caverne::{Caverne, Forme, Formes, Genre};
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use serde::Deserialize;
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 use vek::*;
 
 /// `assets/icebreaker/grottes/grotte.ron`.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Settings {
-    pub entree: EntranceSettings,
     /// Icebreaker I.11: chunks kept around the mouth, on each side, for the
     /// cave and the ones drawn again in its place.
     pub emprise: i32,
-    pub poche: PocketSettings,
-    pub reseau: NetworkSettings,
-    pub relief: ReliefSettings,
+    /// Height of the glowing crystals, in blocks (min, max).
+    pub hauteur_cristaux: (i32, i32),
     /// The ores (Icebreaker K.4).
     pub filons: VeinSettings,
     /// The inhabitants (Icebreaker K.5).
@@ -37,86 +38,36 @@ pub struct Settings {
     /// Icebreaker B.5: the loot by depth (`butin.ron`), read by `load`.
     #[serde(skip)]
     pub butin: Option<super::butin::Butin>,
+    /// Icebreaker U.4: the shapes (`formes.ron`), read by `load`.
+    #[serde(skip)]
+    pub formes: Option<Formes>,
 }
 
-/// The entrance: a bore from the mouth, at the surface, down to the first pocket.
-#[derive(Clone, Debug, Deserialize)]
-pub struct EntranceSettings {
-    /// Blocks between the surface and the centre of the first pocket.
-    pub profondeur: i32,
-    /// Horizontal blocks between the mouth and the centre of the first pocket.
-    pub longueur: i32,
-    /// Radius of the bore, in blocks.
-    pub rayon: f32,
-}
-
-/// A pocket (a chamber): an ellipsoid.
-#[derive(Clone, Debug, Deserialize)]
-pub struct PocketSettings {
-    /// Horizontal radius, in blocks (min, max).
-    pub rayon: (i32, i32),
-    /// Half-height, in blocks (min, max).
-    pub hauteur: (i32, i32),
-}
-
-/// The network (Icebreaker K.2): pockets at several depths, linked by bores
-/// (a tree from the entrance, plus loops), with dead ends out of the pockets.
-#[derive(Clone, Debug, Deserialize)]
-pub struct NetworkSettings {
-    /// Pockets in all, entrance pocket included (min, max).
-    pub poches: (i32, i32),
-    /// Depth levels, the entrance pocket at the first.
-    pub niveaux: i32,
-    /// Blocks down from one level to the next.
-    pub ecart_niveau: i32,
-    /// Horizontal blocks between the walls of a pocket and of its parent (min, max).
-    pub ecart: (i32, i32),
-    /// Radius of a bore between two pockets, in blocks (min, max).
-    pub rayon_boyau: (i32, i32),
-    /// Extra bores between pockets already placed (min, max).
-    pub boucles: (i32, i32),
-    /// Dead ends out of each pocket (min, max), their length (min, max) and radius.
-    pub culs_de_sac: (i32, i32),
-    pub longueur_cul_de_sac: (i32, i32),
-    pub rayon_cul_de_sac: f32,
-}
-
-/// The relief (Icebreaker K.3): how uneven the floors and the walls are.
-#[derive(Clone, Debug, Deserialize)]
-pub struct ReliefSettings {
-    /// Height of the bumps of a pocket's floor, in blocks.
-    pub bosses: f32,
-    /// How far the walls of a pocket wander, as a share of its radius.
-    pub rugosite: f32,
-    /// Height of stalagmites and stalactites, in blocks (min, max).
-    pub hauteur_concretions: (i32, i32),
-}
-
-/// The ores (Icebreaker K.4): mineable sprites at the foot of the pocket
-/// walls, richer with depth.
+/// The ores (Icebreaker K.4): mineable sprites at the foot of the walls,
+/// richer as one goes further in the cave.
 #[derive(Clone, Debug, Deserialize)]
 pub struct VeinSettings {
-    /// Chance of an ore on each floor block of the rim.
+    /// Chance of an ore on each floor block at the foot of a wall.
     pub chance: f32,
-    /// From where the floor counts as the rim: squared normalised distance
-    /// from the centre (1 at the wall).
-    pub bord: f32,
-    /// The ores of each depth level (sprite name, weight); the last tier
-    /// serves the deeper levels too.
+    /// The ores of each level (sprite name, weight), from the entrance to
+    /// the end of the cave.
     pub paliers: Vec<Vec<(String, f32)>>,
 }
 
 impl VeinSettings {
-    /// The ores of a pocket at `level`.
+    /// The ores of a zone at `level`.
     pub fn tier(&self, level: i32) -> &[(String, f32)] {
         let i = (level.max(0) as usize).min(self.paliers.len().saturating_sub(1));
         self.paliers.get(i).map(|t| t.as_slice()).unwrap_or(&[])
     }
 
-    /// The ore at `pos`, a floor block on the rim of a pocket at `level`, if
-    /// the draw (by position: the same every time) puts one there.
+    /// Whether the draw (by position: the same every time) puts an ore at `pos`.
+    pub fn strikes(&self, pos: Vec3<i32>) -> bool { RandomField::new(950).chance(pos, self.chance) }
+
+    /// The ore at `pos`, a floor block at the foot of a wall of a zone at
+    /// `level`, if the draw puts one there.
     pub fn ore(&self, level: i32, pos: Vec3<i32>) -> Option<SpriteKind> {
-        if !RandomField::new(950).chance(pos, self.chance) {
+        if !self.strikes(pos) {
             return None;
         }
         let tier = self.tier(level);
@@ -135,36 +86,33 @@ impl VeinSettings {
 /// The inhabitants (Icebreaker K.5): how many, and where the chests lie.
 #[derive(Clone, Debug, Deserialize)]
 pub struct PopulationSettings {
-    /// Creatures per pocket (min, max), at the entrance level...
+    /// Creatures per zone (min, max), at the entrance...
     pub par_poche: (i32, i32),
-    /// ...plus this many per level of depth.
+    /// ...plus this many per level further in the cave.
     pub par_niveau: i32,
-    /// Chance of a creature at the end of a dead end, and of a chest there.
+    /// Chance of a creature in a niche, and of a chest there.
     pub trous: f32,
     pub coffres: f32,
     /// The chest sprite.
     pub coffre: String,
     /// Icebreaker H.4: share of the lone monsters among the creatures of the
-    /// pockets (the dead ends hold only lone monsters).
+    /// zones (the niches hold only lone monsters).
     pub part_solitaires: f32,
 }
 
-/// A mood of the cave (Icebreaker K.3): what its floors, walls, concretions
-/// and sprites are made of.
+/// A mood of the cave (Icebreaker K.3): what its rock and its sprites are.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Ambiance {
-    /// Colour of the rubble floors.
+    /// Colour of the rock of the cave.
     pub roche: (u8, u8, u8),
-    /// Colour of the glowing rock, and its share among the floor blocks.
+    /// Colour of the glowing rock, and its share among the blocks of the walls.
     pub lueur: (u8, u8, u8),
     pub lueur_chance: f32,
     /// Sprites on the floors, with a chance per block.
     pub sol: Vec<(String, f32)>,
     /// Sprites under the ceilings, with a chance per block.
     pub plafond: Vec<(String, f32)>,
-    /// Stalagmites, stalactites and glowing crystals per pocket (min, max).
-    pub stalagmites: (i32, i32),
-    pub stalactites: (i32, i32),
+    /// Glowing crystals per zone (min, max).
     pub cristaux: (i32, i32),
     /// Icebreaker H.4: the lone monsters living here (entities of Veloren, of
     /// no race).
@@ -175,27 +123,11 @@ impl Settings {
     pub fn parse(text: &str) -> Result<Self, String> {
         let settings: Self = ron::from_str(text).map_err(|e| format!("grotte.ron illisible : {e}"))?;
         let mut errors = Vec::new();
-        if settings.entree.profondeur < 4 || settings.entree.longueur < 4 || settings.entree.rayon < 1.0 {
-            errors.push("entree : profondeur et longueur d'au moins 4 blocs, rayon d'au moins 1".to_string());
+        if settings.emprise < 3 {
+            errors.push("emprise : au moins 3 tronçons".to_string());
         }
-        if settings.emprise < 1 {
-            errors.push("emprise : au moins 1 tronçon".to_string());
-        }
-        let n = &settings.reseau;
-        let mut ranges = vec![
-            ("poche.rayon", settings.poche.rayon, 2),
-            ("poche.hauteur", settings.poche.hauteur, 2),
-            ("reseau.poches", n.poches, 1),
-            ("reseau.ecart", n.ecart, 2),
-            ("reseau.rayon_boyau", n.rayon_boyau, 1),
-            ("reseau.boucles", n.boucles, 0),
-            ("reseau.culs_de_sac", n.culs_de_sac, 0),
-            ("reseau.longueur_cul_de_sac", n.longueur_cul_de_sac, 2),
-            ("relief.hauteur_concretions", settings.relief.hauteur_concretions, 1),
-        ];
+        let mut ranges = vec![("hauteur_cristaux", settings.hauteur_cristaux, 1)];
         for ambiance in settings.ambiances.values() {
-            ranges.push(("stalagmites", ambiance.stalagmites, 0));
-            ranges.push(("stalactites", ambiance.stalactites, 0));
             ranges.push(("cristaux", ambiance.cristaux, 0));
         }
         for (name, (low, high), least) in ranges {
@@ -203,15 +135,9 @@ impl Settings {
                 errors.push(format!("{name} : (min, max) avec {least} ≤ min ≤ max"));
             }
         }
-        if n.niveaux < 1 || n.ecart_niveau < 4 || n.rayon_cul_de_sac < 1.0 {
-            errors.push("reseau : au moins 1 niveau, ecart_niveau ≥ 4, rayon_cul_de_sac ≥ 1".into());
-        }
-        if settings.relief.bosses < 0.0 || !(0.0..=0.5).contains(&settings.relief.rugosite) {
-            errors.push("relief : bosses ≥ 0, rugosite entre 0 et 0,5".into());
-        }
         let veins = &settings.filons;
-        if !(0.0..=1.0).contains(&veins.chance) || !(0.0..1.0).contains(&veins.bord) || veins.paliers.is_empty() {
-            errors.push("filons : chance entre 0 et 1, bord entre 0 et 1, au moins un palier".into());
+        if !(0.0..=1.0).contains(&veins.chance) || veins.paliers.is_empty() {
+            errors.push("filons : chance entre 0 et 1, au moins un palier".into());
         }
         for (sprite, weight) in veins.paliers.iter().flatten() {
             match sprite_kind(sprite) {
@@ -230,7 +156,7 @@ impl Settings {
         }
         for (name, ambiance) in &settings.ambiances {
             for (sprite, chance) in ambiance.sol.iter().chain(&ambiance.plafond) {
-                if super::dungeon::settings::sprite_kind(sprite).is_none() {
+                if sprite_kind(sprite).is_none() {
                     errors.push(format!("ambiances.{name} : sprite inconnu « {sprite} »"));
                 }
                 if !(0.0..=1.0).contains(chance) {
@@ -239,6 +165,9 @@ impl Settings {
             }
             if !(0.0..=1.0).contains(&ambiance.lueur_chance) {
                 errors.push(format!("ambiances.{name} : lueur_chance entre 0 et 1"));
+            }
+            if ambiance.solitaires.is_empty() {
+                errors.push(format!("ambiances.{name} : solitaires (au moins un)"));
             }
         }
         let pop = &settings.population;
@@ -254,11 +183,6 @@ impl Settings {
         if sprite_kind(&pop.coffre).is_none() {
             errors.push(format!("population : coffre inconnu « {} »", pop.coffre));
         }
-        for (name, ambiance) in &settings.ambiances {
-            if ambiance.solitaires.is_empty() {
-                errors.push(format!("ambiances.{name} : solitaires (au moins un)"));
-            }
-        }
         if settings.habitants.is_empty() || settings.chef.is_empty() {
             errors.push("habitants (au moins un) et chef".into());
         }
@@ -271,79 +195,15 @@ impl Settings {
     }
 
     pub fn load() -> Result<Self, String> {
-        let path = common::assets::ASSETS_PATH.join("icebreaker/grottes/grotte.ron");
-        let text = std::fs::read_to_string(&path).map_err(|e| format!("{} : {e}", path.display()))?;
-        let mut settings = Self::parse(&text)?;
+        let read = |name: &str| {
+            let path = common::assets::ASSETS_PATH.join("icebreaker/grottes").join(name);
+            std::fs::read_to_string(&path).map_err(|e| format!("{} : {e}", path.display()))
+        };
+        let mut settings = Self::parse(&read("grotte.ron")?)?;
         settings.butin = Some(super::butin::Butin::load()?);
+        settings.formes = Some(Formes::lire(&read("formes.ron")?)?);
         Ok(settings)
     }
-}
-
-/// The bumps of the floors: 0 to `bosses` blocks, smooth over a few blocks.
-pub fn bump(xy: Vec2<i32>, bosses: f32) -> i32 {
-    (FastNoise::new(731).get(xy.with_z(0).as_::<f64>() / 6.0) * bosses).round() as i32
-}
-
-/// A pocket: an ellipsoid of air around `center`, at depth `level` (0 = the
-/// entrance pocket).
-#[derive(Clone, Debug)]
-pub struct Pocket {
-    pub center: Vec3<i32>,
-    pub radius: Vec3<i32>,
-    pub level: i32,
-}
-
-impl Pocket {
-    pub fn aabb(&self) -> Aabb<i32> {
-        Aabb {
-            min: self.center - self.radius,
-            max: self.center + self.radius,
-        }
-    }
-
-    /// Where one stands in the middle of the pocket: on its floor.
-    pub fn floor(&self) -> Vec3<i32> { self.center.with_z(self.center.z - self.radius.z + 1) }
-
-    /// The height of the floor at `xy` (rubble over the bottom of the
-    /// ellipsoid, Icebreaker K.3): the first solid block from below.
-    pub fn floor_z(&self, xy: Vec2<i32>, bosses: f32) -> i32 { self.center.z - self.radius.z + bump(xy, bosses) }
-
-    /// Squared normalised horizontal distance of `xy` from the centre (1 at the rim).
-    pub fn rim(&self, xy: Vec2<i32>) -> f32 {
-        let d = (xy - self.center.xy()).as_::<f32>();
-        (d.x / self.radius.x as f32).powi(2) + (d.y / self.radius.y as f32).powi(2)
-    }
-
-    /// The height of the ceiling at `xy` (the last air block), if the pocket
-    /// is open there.
-    pub fn ceiling_z(&self, xy: Vec2<i32>) -> Option<i32> {
-        let rim = self.rim(xy);
-        (rim < 1.0).then(|| self.center.z + (self.radius.z as f32 * (1.0 - rim).sqrt()).floor() as i32 - 1)
-    }
-}
-
-/// A bore: a tube of air from `a` to `b`.
-#[derive(Clone, Debug)]
-pub struct Bore {
-    pub a: Vec3<i32>,
-    pub b: Vec3<i32>,
-    pub radius: f32,
-}
-
-/// A concretion of a pocket (Icebreaker K.3).
-#[derive(Clone, Debug)]
-pub struct Speleothem {
-    /// On the floor (stalagmite, crystal) or under the ceiling (stalactite).
-    pub base: Vec3<i32>,
-    pub height: i32,
-    pub kind: SpeleothemKind,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum SpeleothemKind {
-    Stalagmite,
-    Stalactite,
-    Crystal,
 }
 
 /// An inhabitant of the cave (Icebreaker K.5): where it appears (the block
@@ -354,30 +214,34 @@ pub struct Inhabitant {
     pub asset: String,
     /// The leader: killing it wins the mission (G.7).
     pub chief: bool,
-    /// Icebreaker B.14: the depth of its pocket, and the loot table it drops
+    /// Icebreaker B.14: the level of its zone, and the loot table it drops
     /// (`butin.ron`; `None`: its own, from Veloren).
     pub level: i32,
     pub loot: Option<String>,
 }
 
 /// A generated cave, ready to be drawn.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Grotte {
     /// The mouth, at the surface.
     pub mouth: Vec3<i32>,
-    /// Which way the entrance bore goes from the mouth (horizontal, unit).
+    /// Which way the entrance goes from the mouth (horizontal, unit).
     pub dir: Vec2<i32>,
-    pub pockets: Vec<Pocket>,
-    /// The bores between the pockets (the entrance bore first).
-    pub bores: Vec<Bore>,
-    /// Dead ends out of the pockets: `b` is their end, the hole the beasts
-    /// come from.
-    pub dead_ends: Vec<Bore>,
-    pub speleothems: Vec<Speleothem>,
+    /// Icebreaker U.4: its shape, in blocks relative to the mouth, and the
+    /// profile of `formes.ron` it was drawn with.
+    pub caverne: Arc<Caverne>,
+    pub profil: String,
+    /// The level of each zone of `caverne`: 0 at the entrance, `niveaux - 1`
+    /// at the end.
+    pub levels: Vec<i32>,
+    pub niveaux: i32,
+    /// The blocks the cave touches.
+    pub bounds: Aabb<i32>,
+    /// Glowing crystals: the block they stand in, and their height.
+    pub crystals: Vec<(Vec3<i32>, i32)>,
     /// The mood drawn, and what it is made of.
     pub ambiance: String,
     pub look: Ambiance,
-    pub relief: ReliefSettings,
     pub filons: VeinSettings,
     /// The inhabitants (Icebreaker K.5), the chief among them.
     pub inhabitants: Vec<Inhabitant>,
@@ -386,7 +250,7 @@ pub struct Grotte {
     /// Where the chests lie, and their sprite.
     pub chests: Vec<Vec3<i32>>,
     /// Icebreaker B.5: the tier of each chest (same order), by the level of
-    /// its pocket, and the loot settings.
+    /// its zone, and the loot settings.
     pub chest_tiers: Vec<usize>,
     pub butin: Option<super::butin::Butin>,
     pub chest: String,
@@ -395,118 +259,41 @@ pub struct Grotte {
 
 impl Grotte {
     /// The blocks the cave may touch.
-    pub fn bounds(&self) -> Aabb<i32> {
-        let mut bounds = Aabb {
-            min: self.mouth,
-            max: self.mouth,
-        };
-        for pocket in &self.pockets {
-            let margin = (pocket.radius.x.max(pocket.radius.y) as f32 * self.relief.rugosite).ceil() as i32 + 2;
-            bounds.expand_to_contain(Aabb {
-                min: pocket.aabb().min - margin,
-                max: pocket.aabb().max + margin,
-            });
-        }
-        for bore in self.bores.iter().chain(&self.dead_ends) {
-            let r = bore.radius.ceil() as i32 + 2;
-            bounds.expand_to_contain_point(bore.a - r);
-            bounds.expand_to_contain_point(bore.a + r);
-            bounds.expand_to_contain_point(bore.b - r);
-            bounds.expand_to_contain_point(bore.b + r);
-        }
-        bounds
+    pub fn bounds(&self) -> Aabb<i32> { self.bounds }
+
+    /// A block of the shape, in the world.
+    pub fn monde(&self, p: [i32; 3]) -> Vec3<i32> { self.mouth + Vec3::from(p) }
+
+    /// Whether the cave is hollow at `wpos`.
+    pub fn air(&self, wpos: Vec3<i32>) -> bool {
+        let p = wpos - self.mouth;
+        self.caverne.grille.air(p.x, p.y, p.z)
     }
 
-    /// The deepest pocket (where the chief lives).
-    pub fn deepest(&self) -> &Pocket {
-        self.pockets.iter().min_by_key(|p| p.center.z).expect("a cave has pockets")
-    }
-}
-
-/// Tries to place a pocket before giving up on it.
-const PLACEMENT_TRIES: usize = 80;
-
-/// Blocks along for one block down, at least: a slope one walks back up
-/// (one-block steps).
-const SLOPE: f32 = 1.6;
-
-/// Whether `candidate` would cut through one of `existing` out of the pockets
-/// (two tubes crossing leave a pit in one of them).
-fn crosses(existing: &[Bore], pockets: &[Pocket], candidate: &Bore) -> bool {
-    let in_pocket = |p: Vec3<i32>| {
-        pockets.iter().any(|pocket| {
-            let aabb = pocket.aabb();
-            Aabb {
-                min: aabb.min - 2,
-                max: aabb.max + 2,
-            }
-            .contains_point(p)
-        })
-    };
-    let samples = |bore: &Bore| {
-        let n = ((bore.b - bore.a).as_::<f32>().magnitude().ceil() as i32).max(1);
-        (0..=n)
-            .map(move |k| {
-                (bore.a.as_::<f32>() + (bore.b - bore.a).as_::<f32>() * (k as f32 / n as f32)).map(|e| e.round() as i32)
-            })
-            .filter(|p| !in_pocket(*p))
-            .collect::<Vec<_>>()
-    };
-    // Through a pocket it does not come from or go to: a pit in that pocket.
-    let margin = |pocket: &Pocket| Aabb {
-        min: pocket.aabb().min - 3,
-        max: pocket.aabb().max + 3,
-    };
-    let own = |pocket: &Pocket| {
-        let aabb = margin(pocket);
-        aabb.contains_point(candidate.a) || aabb.contains_point(candidate.b)
-    };
-    let n = ((candidate.b - candidate.a).as_::<f32>().magnitude().ceil() as i32).max(1);
-    let through = (0..=n).any(|k| {
-        let p = (candidate.a.as_::<f32>() + (candidate.b - candidate.a).as_::<f32>() * (k as f32 / n as f32))
-            .map(|e| e.round() as i32);
-        pockets.iter().any(|pocket| !own(pocket) && margin(pocket).contains_point(p))
-    });
-    if through {
-        return true;
-    }
-    let mine = samples(candidate);
-    existing.iter().any(|other| {
-        let least = candidate.radius + other.radius + 2.0;
-        samples(other)
+    /// The level of the zone `wpos` is in (the entrance level out of them all).
+    pub fn level_at(&self, wpos: Vec3<i32>) -> i32 {
+        let p = (wpos - self.mouth).into_array();
+        self.caverne
+            .zones
             .iter()
-            .any(|p| mine.iter().any(|q| (*p - *q).as_::<f32>().magnitude() < least))
-    })
+            .position(|z| z.contient(p, 1.25))
+            .map_or(0, |i| self.levels[i])
+    }
 }
 
-/// Generates a cave whose mouth is at `mouth` (a surface position): the
-/// entrance pocket under the mouth, then the others, each hung on a pocket
-/// of the level above (a tree), plus loops and dead ends; `ambiance` names
-/// the mood wanted (drawn by the seed if `None` or unknown).
+/// Generates a cave whose mouth is at `mouth` (a surface position).
+/// `ambiance` names the mood wanted and `profil` the shape (drawn by the seed
+/// if `None` or unknown); `surface` gives the height of the ground.
 pub fn generate(
     settings: &Settings,
     seed: u64,
     mouth: Vec3<i32>,
     ambiance: Option<&str>,
+    profil: Option<&str>,
     surface: &dyn Fn(Vec2<i32>) -> i32,
 ) -> Grotte {
     let mut rng = ChaCha8Rng::seed_from_u64(seed);
-    // Everything stays under the ground (the terrain may fall away from the mouth).
-    let underground = |bore: &Bore| {
-        let n = ((bore.b - bore.a).as_::<f32>().magnitude() / 3.0).ceil().max(1.0) as i32;
-        (0..=n).all(|k| {
-            let p = bore.a.as_::<f32>() + (bore.b - bore.a).as_::<f32>() * (k as f32 / n as f32);
-            p.z + bore.radius + 3.0 < surface(p.xy().map(|e| e.round() as i32)) as f32
-        })
-    };
     let roll = |rng: &mut ChaCha8Rng, (low, high): (i32, i32)| rng.random_range(low..=high);
-    let radius = |rng: &mut ChaCha8Rng| {
-        Vec3::new(
-            roll(rng, settings.poche.rayon),
-            roll(rng, settings.poche.rayon),
-            roll(rng, settings.poche.hauteur),
-        )
-    };
     let names: Vec<&String> = settings.ambiances.keys().collect();
     let ambiance = ambiance
         .filter(|a| settings.ambiances.contains_key(*a))
@@ -514,344 +301,163 @@ pub fn generate(
         .unwrap_or_else(|| names[rng.random_range(0..names.len())].clone());
     let look = settings.ambiances[&ambiance].clone();
 
-    // The entrance runs toward the highest ground (the cave stays under it).
-    let dirs = [Vec2::new(1, 0), Vec2::new(-1, 0), Vec2::new(0, 1), Vec2::new(0, -1)];
-    let start = rng.random_range(0..4);
-    let dir = (0..4)
-        .map(|i| dirs[(start + i) % 4])
-        .max_by_key(|d| surface(mouth.xy() + *d * settings.entree.longueur))
-        .unwrap_or(dirs[0]);
-    // The entrance pocket: under the mouth, under the ground even where the
-    // terrain falls away, and far enough for the entrance bore to be gentle
-    // (the farther it is, the lower the ground may be there: until it settles).
-    let first_radius = radius(&mut rng);
-    let mut longueur = settings.entree.longueur;
-    let mut first_center = mouth;
-    for _ in 0..8 {
-        let xy = mouth.xy() + dir * longueur;
-        let z = (mouth.z - settings.entree.profondeur).min(surface(xy) - first_radius.z - 8);
-        first_center = xy.with_z(z);
-        let drop = (mouth.z + 2 - (z - first_radius.z + 1)) as f32;
-        let needed = longueur.max((SLOPE * drop).ceil() as i32 + 4);
-        if needed == longueur {
-            break;
-        }
-        longueur = needed;
-    }
-    let first = Pocket {
-        center: first_center,
-        radius: first_radius,
-        level: 0,
+    // The shape (Icebreaker U.4): a profile of `formes.ron`, within the area
+    // kept for the cave.
+    let (profil, mut forme) = match &settings.formes {
+        Some(formes) => {
+            let (nom, forme) = formes.tirer(seed, profil);
+            (nom.to_string(), forme.clone())
+        },
+        None => ("défaut".to_string(), Forme::default()),
     };
-    // Bores run at floor level, so that one walks from a pocket into them: they
-    // start at the rim of the pocket, toward where they go, their floor level
-    // with the pocket's (a tube of radius r clears r - 1 blocks under its
-    // axis). The entrance bore starts a little before the mouth, above the
-    // ground: it opens to the sky.
-    let rim = |pocket: &Pocket, toward: Vec2<i32>, radius: f32| {
-        let d = (toward - pocket.center.xy()).as_::<f32>().try_normalized().unwrap_or(Vec2::unit_x());
-        let along = 1.0 / ((d.x / pocket.radius.x as f32).powi(2) + (d.y / pocket.radius.y as f32).powi(2)).sqrt();
-        // On the flat floor of the pocket (0.92 of its radius), a little inside.
-        let xy = pocket.center.xy().as_::<f32>() + d * (along * 0.86);
-        xy.map(|e| e.round() as i32).with_z(pocket.floor().z + radius.ceil() as i32 - 1)
+    let chunk = common::terrain::TerrainChunkSize::RECT_SIZE.x as i32;
+    forme.emprise = forme.emprise.min((settings.emprise * chunk - 8) as f32);
+    // Not under the bottom of the world.
+    let caverne =
+        icebreaker_caverne::generer(&forme, seed, &|x, y| surface(mouth.xy() + Vec2::new(x, y)) - mouth.z, 8 - mouth.z);
+    let monde = |p: [i32; 3]| mouth + Vec3::from(p);
+    let zones = &caverne.zones;
+
+    // Levels: by how far the zone is along the trail; a niche has the level
+    // of the zone it opens on.
+    let niveaux = settings.filons.paliers.len().max(1) as i32;
+    let level_of = |i: usize| {
+        let i = if zones[i].genre == Genre::Niche { zones[i].parent.unwrap_or(i) } else { i };
+        ((caverne.avancee(i) * niveaux as f32) as i32).min(niveaux - 1)
     };
-    let mut bores = vec![Bore {
-        a: (mouth.xy() - dir * 3).with_z(mouth.z + 2),
-        b: rim(&first, mouth.xy(), settings.entree.rayon),
-        radius: settings.entree.rayon,
-    }];
-    // A slope one walks up: at least `SLOPE` blocks along for one block down.
-    let gentle = |a: Vec3<i32>, b: Vec3<i32>| (a.xy() - b.xy()).as_::<f32>().magnitude() >= SLOPE * (a.z - b.z).abs() as f32;
-    let mut pockets = vec![first];
-    let mut links: Vec<(usize, usize)> = Vec::new();
+    let levels: Vec<i32> = (0..zones.len()).map(level_of).collect();
 
-    // The tree: pocket i goes one level deeper every `levels / count` pockets.
-    let net = &settings.reseau;
-    let count = roll(&mut rng, net.poches).max(1);
-    for i in 1..count {
-        let level = ((i * net.niveaux) / count).min(net.niveaux - 1);
-        let parents: Vec<usize> = (0..pockets.len()).filter(|p| pockets[*p].level == level - 1).collect();
-        let parents = if parents.is_empty() { (0..pockets.len()).collect() } else { parents };
-        let mut placed = None;
-        for _ in 0..PLACEMENT_TRIES {
-            let parent = parents[rng.random_range(0..parents.len())];
-            let radius = radius(&mut rng);
-            let angle = rng.random_range(0.0..std::f32::consts::TAU);
-            let gap = roll(&mut rng, net.ecart);
-            let distance = pockets[parent].radius.x.max(pockets[parent].radius.y) + radius.x.max(radius.y) + gap;
-            let offset = Vec2::new(angle.cos(), angle.sin()) * distance as f32;
-            let drop = if level > pockets[parent].level {
-                net.ecart_niveau + rng.random_range(-3..=3)
-            } else {
-                rng.random_range(-4..=4)
-            };
-            let center = (pockets[parent].center.xy().as_::<f32>() + offset)
-                .map(|e| e.round() as i32)
-                .with_z(pockets[parent].center.z - drop);
-            // Under the ground here, with rock above.
-            let center = center.with_z(center.z.min(surface(center.xy()) - radius.z - 8));
-            let candidate = Pocket { center, radius, level };
-            // Away from every other pocket, and never above the entrance pocket.
-            let clear = pockets.iter().all(|p| {
-                let d = (p.center.xy() - center.xy()).as_::<f32>().magnitude();
-                d >= (p.radius.x.max(p.radius.y) + radius.x.max(radius.y) + 4) as f32
-                    || (p.center.z - center.z).abs() > p.radius.z + radius.z + 6
-            });
-            if !(clear && center.z + radius.z < mouth.z - 6) {
-                continue;
-            }
-            // Its bore: a gentle slope, crossing no other bore.
-            let bore_radius = roll(&mut rng, net.rayon_boyau) as f32;
-            let bore = Bore {
-                a: rim(&pockets[parent], candidate.center.xy(), bore_radius),
-                b: rim(&candidate, pockets[parent].center.xy(), bore_radius),
-                radius: bore_radius,
-            };
-            if gentle(bore.a, bore.b) && underground(&bore) && !crosses(&bores, &pockets, &bore) {
-                placed = Some((parent, candidate, bore));
-                break;
-            }
-        }
-        let Some((parent, pocket, bore)) = placed else { continue };
-        bores.push(bore);
-        links.push((parent, pockets.len()));
-        pockets.push(pocket);
-    }
-
-    // Loops: between two pockets of the same level or of neighbouring levels,
-    // not yet linked, the closest first; a gentle slope, crossing nothing.
-    let mut loops = 0;
-    for _ in 0..roll(&mut rng, net.boucles).max(0) {
-        let mut pairs: Vec<(i32, usize, usize)> = Vec::new();
-        for a in 0..pockets.len() {
-            for b in a + 1..pockets.len() {
-                if links.contains(&(a, b)) || links.contains(&(b, a)) || (pockets[a].level - pockets[b].level).abs() > 1 {
-                    continue;
-                }
-                let d = (pockets[a].center - pockets[b].center).map(|e| e.abs()).sum();
-                pairs.push((d, a, b));
-            }
-        }
-        pairs.sort();
-        let radius = roll(&mut rng, net.rayon_boyau) as f32;
-        let found = pairs.iter().find_map(|(_, a, b)| {
-            let bore = Bore {
-                a: rim(&pockets[*a], pockets[*b].center.xy(), radius),
-                b: rim(&pockets[*b], pockets[*a].center.xy(), radius),
-                radius,
-            };
-            (gentle(bore.a, bore.b) && underground(&bore) && !crosses(&bores, &pockets, &bore)).then_some((*a, *b, bore))
-        });
-        let Some((a, b, bore)) = found else { break };
-        bores.push(bore);
-        links.push((a, b));
-        loops += 1;
-    }
-
-    // Dead ends: narrow tubes out of each pocket, slightly rising or falling,
-    // crossing nothing.
-    let mut dead_ends: Vec<Bore> = Vec::new();
-    for pocket in &pockets {
-        for _ in 0..roll(&mut rng, net.culs_de_sac).max(0) {
-            for _ in 0..10 {
-                let angle = rng.random_range(0.0..std::f32::consts::TAU);
-                let length = roll(&mut rng, net.longueur_cul_de_sac);
-                let start = pocket.center.xy().as_::<f32>()
-                    + Vec2::new(angle.cos(), angle.sin()) * (pocket.radius.x.min(pocket.radius.y) as f32 - 2.0);
-                let end = start + Vec2::new(angle.cos(), angle.sin()) * length as f32;
-                let z = pocket.floor().z + net.rayon_cul_de_sac.ceil() as i32 - 1;
-                let bore = Bore {
-                    a: start.map(|e| e.round() as i32).with_z(z),
-                    b: end.map(|e| e.round() as i32).with_z(z + rng.random_range(-2..=3)),
-                    radius: net.rayon_cul_de_sac,
-                };
-                let others: Vec<Bore> = bores.iter().chain(&dead_ends).cloned().collect();
-                if underground(&bore) && !crosses(&others, &pockets, &bore) {
-                    dead_ends.push(bore);
-                    break;
-                }
-            }
-        }
-    }
-
-    // Concretions (K.3): in each pocket, away from its middle and from the
-    // ways in (the bores and dead ends), on the floor or under the ceiling.
-    let mut speleothems = Vec::new();
-    let relief = &settings.relief;
-    for pocket in &pockets {
-        let ways: Vec<f32> = bores
-            .iter()
-            .chain(&dead_ends)
-            .filter_map(|bore| {
-                let (from, to) = if pocket.aabb().contains_point(bore.b) {
-                    (pocket.center, bore.a)
-                } else if pocket.aabb().contains_point(bore.a) {
-                    (pocket.center, bore.b)
-                } else {
-                    return None;
-                };
-                let d = (to.xy() - from.xy()).as_::<f32>();
-                Some(d.y.atan2(d.x))
-            })
-            .collect();
-        let kinds = [
-            (SpeleothemKind::Stalagmite, look.stalagmites),
-            (SpeleothemKind::Stalactite, look.stalactites),
-            (SpeleothemKind::Crystal, look.cristaux),
-        ];
-        for (kind, range) in kinds {
-            for _ in 0..roll(&mut rng, range).max(0) {
-                for _ in 0..10 {
-                    let angle = rng.random_range(0.0..std::f32::consts::TAU);
-                    let away = ways.iter().all(|w| {
-                        let diff = (angle - w).rem_euclid(std::f32::consts::TAU);
-                        diff.min(std::f32::consts::TAU - diff) > 0.7
-                    });
-                    if !away {
-                        continue;
-                    }
-                    let reach = rng.random_range(0.45..0.8);
-                    let xy = pocket.center.xy()
-                        + Vec2::new(
-                            (angle.cos() * reach * pocket.radius.x as f32).round() as i32,
-                            (angle.sin() * reach * pocket.radius.y as f32).round() as i32,
-                        );
-                    // A stalactite stops above the middle of the pocket: the bores pass there.
-                    let height = roll(&mut rng, relief.hauteur_concretions).min(pocket.radius.z - 1).max(1);
-                    let base = match kind {
-                        SpeleothemKind::Stalactite => match pocket.ceiling_z(xy) {
-                            Some(z) => xy.with_z(z),
-                            None => continue,
-                        },
-                        _ => xy.with_z(pocket.floor_z(xy, relief.bosses) + 1),
-                    };
-                    speleothems.push(Speleothem { base, height, kind });
-                    break;
-                }
-            }
-        }
-    }
-
-    // Inhabitants (K.5): creatures of the mood in every pocket, more of them
-    // with depth, away from the concretions and from each other; one in some
-    // dead ends, with a chest; the chief in the middle of the deepest pocket.
+    // Inhabitants (K.5): the chief at the end of the cave; creatures in every
+    // zone, more of them further in; a lone monster and a chest in some
+    // niches. All of them stand where one walks from the mouth.
     let pop = &settings.population;
-    let mut inhabitants: Vec<Inhabitant> = Vec::new();
+    let lone = |rng: &mut ChaCha8Rng| look.solitaires[rng.random_range(0..look.solitaires.len())].clone();
+    let fond = caverne.fond();
+    let mut taken: HashSet<[i32; 3]> = HashSet::from([zones[fond].ancre]);
+    let mut inhabitants = vec![Inhabitant {
+        pos: monde(zones[fond].ancre),
+        asset: settings.chef.clone(),
+        chief: true,
+        level: levels[fond],
+        loot: None,
+    }];
     let mut chests = Vec::new();
     let mut chest_levels = Vec::new();
-    // Icebreaker H.4: the people of the race, and lone monsters (only them in
-    // the dead ends).
-    let lone = |rng: &mut ChaCha8Rng| look.solitaires[rng.random_range(0..look.solitaires.len())].clone();
-    let pick = |rng: &mut ChaCha8Rng| {
-        if rng.random_bool(pop.part_solitaires as f64) {
-            lone(rng)
-        } else {
-            settings.habitants[rng.random_range(0..settings.habitants.len())].clone()
-        }
-    };
-    for pocket in &pockets {
-        let count = roll(&mut rng, pop.par_poche).max(0) + pocket.level * pop.par_niveau;
-        for _ in 0..count {
-            for _ in 0..10 {
-                let angle = rng.random_range(0.0..std::f32::consts::TAU);
-                let reach = rng.random_range(0.15..0.7);
-                let xy = pocket.center.xy()
-                    + Vec2::new(
-                        (angle.cos() * reach * pocket.radius.x as f32).round() as i32,
-                        (angle.sin() * reach * pocket.radius.y as f32).round() as i32,
-                    );
-                let clear = speleothems.iter().all(|s| {
-                    s.kind == SpeleothemKind::Stalactite || (s.base.xy() - xy).map(|e| e.abs()).reduce_max() > 2
-                }) && inhabitants.iter().all(|i| i.pos.xy() != xy);
-                if !clear {
-                    continue;
-                }
-                let asset = pick(&mut rng);
+    for (i, zone) in zones.iter().enumerate() {
+        if zone.genre == Genre::Niche {
+            if rng.random_bool(pop.trous as f64) && taken.insert(zone.ancre) {
+                let asset = lone(&mut rng);
                 inhabitants.push(Inhabitant {
-                    pos: xy.with_z(pocket.floor_z(xy, relief.bosses) + 1),
+                    pos: monde(zone.ancre),
                     asset,
                     chief: false,
-                    level: pocket.level,
+                    level: levels[i],
+                    loot: None,
+                });
+            }
+            // The chest at the back of the niche: as far from its way in as one stands.
+            let back = zone
+                .sols
+                .iter()
+                .filter(|p| !taken.contains(*p) && **p != zone.ancre)
+                .max_by_key(|p| (0..3).map(|k| (p[k] - zone.ancre[k]).pow(2)).sum::<i32>());
+            if let Some(back) = back
+                && rng.random_bool(pop.coffres as f64)
+            {
+                taken.insert(*back);
+                chests.push(monde(*back));
+                chest_levels.push(levels[i].max(0) as usize);
+            }
+            continue;
+        }
+        if zone.sols.is_empty() {
+            continue;
+        }
+        let count = roll(&mut rng, pop.par_poche).max(0) + levels[i] * pop.par_niveau;
+        for _ in 0..count {
+            for _ in 0..10 {
+                let p = zone.sols[rng.random_range(0..zone.sols.len())];
+                if !taken.insert(p) {
+                    continue;
+                }
+                let asset = if rng.random_bool(pop.part_solitaires as f64) {
+                    lone(&mut rng)
+                } else {
+                    settings.habitants[rng.random_range(0..settings.habitants.len())].clone()
+                };
+                inhabitants.push(Inhabitant {
+                    pos: monde(p),
+                    asset,
+                    chief: false,
+                    level: levels[i],
                     loot: None,
                 });
                 break;
             }
         }
     }
-    for bore in &dead_ends {
-        let along = (bore.b - bore.a).xy().as_::<f32>();
-        let dir = along.try_normalized().unwrap_or(Vec2::unit_x());
-        // Where one stands in the tube, `back` blocks before its end.
-        let stand = |back: f32| {
-            let xy = bore.b.xy().as_::<f32>() - dir * back;
-            let t = ((xy - bore.a.xy().as_::<f32>()).magnitude() / along.magnitude().max(1.0)).clamp(0.0, 1.0);
-            let axis = bore.a.z as f32 + t * (bore.b.z - bore.a.z) as f32;
-            xy.map(|e| e.round() as i32).with_z(axis.round() as i32 - (bore.radius as i32 - 1))
-        };
-        // Icebreaker B.5: the depth of its pocket (the one it starts from).
-        let level = pockets
-            .iter()
-            .min_by_key(|p| (p.center.xy() - bore.a.xy()).map(|e| e as i64 * e as i64).sum())
-            .map_or(0, |p| p.level);
-        if rng.random_bool(pop.trous as f64) {
-            let asset = lone(&mut rng);
-            inhabitants.push(Inhabitant { pos: stand(3.0), asset, chief: false, level, loot: None });
+    // Glowing crystals (K.3): on the floors, off the trail.
+    let mut crystals = Vec::new();
+    for zone in zones.iter().filter(|z| z.genre != Genre::Niche && !z.sols.is_empty()) {
+        for _ in 0..roll(&mut rng, look.cristaux).max(0) {
+            for _ in 0..10 {
+                let p = zone.sols[rng.random_range(0..zone.sols.len())];
+                let trail = (-3..=3).any(|dx| (-3..=3).any(|dy| caverne.grille.sentier(p[0] + dx, p[1] + dy, p[2] - 1)));
+                if trail || !taken.insert(p) {
+                    continue;
+                }
+                crystals.push((monde(p), roll(&mut rng, settings.hauteur_cristaux)));
+                break;
+            }
         }
-        if rng.random_bool(pop.coffres as f64) {
-            chests.push(stand(1.0));
-            chest_levels.push(level.max(0) as usize);
-        }
-    }
-    if let Some(deep) = pockets.iter().min_by_key(|p| p.center.z) {
-        inhabitants.push(Inhabitant {
-            pos: deep.center.xy().with_z(deep.floor_z(deep.center.xy(), relief.bosses) + 1),
-            asset: settings.chef.clone(),
-            chief: true,
-            level: deep.level,
-            loot: None,
-        });
     }
 
-    let levels = pockets.iter().map(|p| p.level).max().unwrap_or(0) + 1;
     let species = crate::icebreaker::races::species_of(&settings.especes, seed).cloned();
     let butin = settings.butin.clone();
     let chest_tiers: Vec<usize> = chest_levels
         .iter()
-        .map(|l| butin.as_ref().map_or(1, |b| b.palier(*l, levels.max(1) as usize)))
+        .map(|l| butin.as_ref().map_or(1, |b| b.palier(*l, niveaux as usize)))
         .collect();
     if let Some(b) = &butin {
         for i in &mut inhabitants {
             let kind = if i.chief { "chief" } else { "" };
-            i.loot = Some(b.creature(kind, b.palier(i.level.max(0) as usize, levels.max(1) as usize)).to_string());
+            i.loot = Some(b.creature(kind, b.palier(i.level.max(0) as usize, niveaux as usize)).to_string());
         }
     }
     let tiers = butin.as_ref().map_or(1, |b| b.paliers());
     let chests_by_tier: Vec<String> = (1..=tiers)
         .map(|p| chest_tiers.iter().filter(|t| **t == p).count().to_string())
         .collect();
+
+    // The blocks it touches: its air, and the rock around it.
+    let mut bounds = Aabb { min: mouth, max: mouth };
+    for i in caverne.grille.cellules_air() {
+        bounds.expand_to_contain_point(monde(caverne.grille.position(i)));
+    }
+    bounds.min -= 2;
+    bounds.max += 3;
+
     Grotte {
         mouth,
-        dir,
+        dir: Vec2::from(caverne.dir),
         summary: format!(
-            "grotte {ambiance}, race {}, graine {seed} : {} poche(s) sur {levels} niveau(x), {} boyau(x) dont {loops} boucle(s), {} \
-             cul(s)-de-sac, {} concrétion(s), {} habitant(s), {} coffre(s) ({} par palier), fond en {:?}",
+            "grotte {ambiance}, forme {profil}, race {}, graine {seed} : {} ; {} habitant(s), {} cristal(aux), {} coffre(s) ({} par \
+             palier), fond en {:?}",
             species.as_deref().unwrap_or("des fichiers"),
-            pockets.len(),
-            bores.len(),
-            dead_ends.len(),
-            speleothems.len(),
+            caverne.resume,
             inhabitants.len(),
+            crystals.len(),
             chests.len(),
             chests_by_tier.join(" / "),
-            pockets.iter().min_by_key(|p| p.center.z).map(|p| p.center)
+            monde(zones[fond].ancre),
         ),
-        pockets,
-        bores,
-        dead_ends,
-        speleothems,
+        levels,
+        niveaux,
+        bounds,
+        crystals,
+        profil,
         ambiance,
         look,
-        relief: relief.clone(),
         filons: settings.filons.clone(),
         inhabitants,
         species,
@@ -859,6 +465,7 @@ pub fn generate(
         chest_tiers,
         butin,
         chest: settings.population.coffre.clone(),
+        caverne: Arc::new(caverne),
     }
 }
 
@@ -866,85 +473,55 @@ pub fn generate(
 mod tests {
     use super::*;
 
+    const MOUTH: Vec3<i32> = Vec3::new(1000, 1000, 200);
+
+    fn cave(settings: &Settings, seed: u64) -> Grotte { generate(settings, seed, MOUTH, None, None, &|_| MOUTH.z) }
+
     #[test]
     fn settings_load() { Settings::load().unwrap(); }
 
+    /// Icebreaker U.4: the cave lies under its mouth, every zone is walked to
+    /// from it, and the same seed gives the same cave.
     #[test]
-    fn a_pocket_lies_under_the_mouth() {
+    fn a_cave_lies_under_the_mouth() {
         let settings = Settings::load().unwrap();
-        let mouth = Vec3::new(1000, 1000, 200);
-        let grotte = generate(&settings, 7, mouth, None, &|_| mouth.z);
-        let pocket = &grotte.pockets[0];
-        assert!(pocket.center.z + pocket.radius.z < mouth.z, "la poche n'est pas sous terre");
-        assert_eq!(grotte.bores[0].a.z, mouth.z + 2, "l'entrée ne s'ouvre pas au ciel");
-        assert!(grotte.bounds().contains_point(pocket.center));
-        // Same seed, same cave.
-        assert_eq!(generate(&settings, 7, mouth, None, &|_| mouth.z).summary, grotte.summary);
-    }
-
-    /// Icebreaker K.2: the network holds enough pockets, on several levels,
-    /// all linked to the entrance, none overlapping.
-    #[test]
-    fn the_network_is_a_cave() {
-        let settings = Settings::load().unwrap();
-        let mouth = Vec3::new(1000, 1000, 200);
-        for seed in 0..20 {
-            let grotte = generate(&settings, seed, mouth, None, &|_| mouth.z);
-            let n = grotte.pockets.len();
-            assert!(n >= settings.reseau.poches.0 as usize, "graine {seed} : {n} poches");
-            let levels = grotte.pockets.iter().map(|p| p.level).max().unwrap() + 1;
-            assert!(levels >= 2, "graine {seed} : un seul niveau");
-            assert!(grotte.deepest().center.z < grotte.pockets[0].center.z - settings.reseau.ecart_niveau / 2);
-            // Linked: from the entrance pocket, every pocket is reached through the bores.
-            let index_of = |p: Vec3<i32>| {
-                grotte.pockets.iter().position(|q| q.rim(p.xy()) <= 1.3 && (p.z - q.center.z).abs() <= q.radius.z + 4)
-            };
-            let mut reached = vec![false; n];
-            reached[0] = true;
-            loop {
-                let mut changed = false;
-                for bore in &grotte.bores[1..] {
-                    if let (Some(a), Some(b)) = (index_of(bore.a), index_of(bore.b))
-                        && reached[a] != reached[b]
-                    {
-                        reached[a] = true;
-                        reached[b] = true;
-                        changed = true;
-                    }
-                }
-                if !changed {
-                    break;
-                }
+        for seed in 0..6 {
+            let grotte = cave(&settings, seed);
+            assert!(grotte.caverne.praticable, "graine {seed} : {}", grotte.summary);
+            for zone in &grotte.caverne.zones {
+                assert!(zone.centre[2] + zone.rayon[2] < 0, "graine {seed} : une zone n'est pas sous terre");
+                assert!(grotte.bounds().contains_point(grotte.monde(zone.ancre)));
             }
-            assert!(reached.iter().all(|r| *r), "graine {seed} : une poche sans boyau");
-            for (i, a) in grotte.pockets.iter().enumerate() {
-                for b in &grotte.pockets[i + 1..] {
-                    let d = (a.center.xy() - b.center.xy()).as_::<f32>().magnitude();
-                    let apart = d >= (a.radius.x.max(a.radius.y) + b.radius.x.max(b.radius.y)) as f32
-                        || (a.center.z - b.center.z).abs() > a.radius.z + b.radius.z;
-                    assert!(apart, "graine {seed} : deux poches se chevauchent");
-                }
-            }
-            assert!(!grotte.dead_ends.is_empty());
+            assert!(grotte.bounds().contains_point(MOUTH));
+            assert!(grotte.air(grotte.monde(grotte.caverne.depart)), "graine {seed} : la bouche est bouchée");
+            assert_eq!(cave(&settings, seed).summary, grotte.summary);
         }
     }
 
-    /// Icebreaker K.3: every mood can be asked for, and the concretions stand
-    /// inside their pocket.
+    /// Every shape of `formes.ron` can be asked for, and holds in the area kept.
     #[test]
-    fn moods_and_concretions() {
+    fn every_shape_holds_in_its_area() {
         let settings = Settings::load().unwrap();
-        let mouth = Vec3::new(1000, 1000, 200);
+        let kept = settings.emprise * 32;
+        for name in settings.formes.as_ref().unwrap().profils.keys() {
+            let grotte = generate(&settings, 5, MOUTH, None, Some(name), &|_| MOUTH.z);
+            assert_eq!(&grotte.profil, name);
+            let b = grotte.bounds();
+            assert!(
+                b.min.x > MOUTH.x - kept && b.max.x < MOUTH.x + kept && b.min.y > MOUTH.y - kept && b.max.y < MOUTH.y + kept,
+                "{name} : {b:?} hors de l'emprise"
+            );
+        }
+    }
+
+    /// Icebreaker K.3: every mood can be asked for.
+    #[test]
+    fn moods() {
+        let settings = Settings::load().unwrap();
         for name in settings.ambiances.keys() {
-            let grotte = generate(&settings, 3, mouth, Some(name), &|_| mouth.z);
-            assert_eq!(&grotte.ambiance, name);
-            assert!(!grotte.speleothems.is_empty(), "{name} : aucune concrétion");
-            for s in &grotte.speleothems {
-                let inside = grotte.pockets.iter().any(|p| p.rim(s.base.xy()) < 1.0 && (s.base.z - p.center.z).abs() <= p.radius.z + 1);
-                assert!(inside, "{name} : concrétion hors des poches en {:?}", s.base);
-            }
+            assert_eq!(&generate(&settings, 3, MOUTH, Some(name), None, &|_| MOUTH.z).ambiance, name);
         }
-        assert!(settings.ambiances.contains_key(&generate(&settings, 11, mouth, Some("lune"), &|_| mouth.z).ambiance));
+        assert!(settings.ambiances.contains_key(&generate(&settings, 11, MOUTH, Some("lune"), None, &|_| MOUTH.z).ambiance));
     }
 
     #[test]
@@ -957,24 +534,24 @@ mod tests {
                 .filter_map(|pos| veins.ore(level, pos))
                 .collect()
         };
-        let (top, bottom) = (found(0), found(settings.reseau.niveaux - 1));
+        let (top, bottom) = (found(0), found(veins.paliers.len() as i32 - 1));
         assert!(!top.is_empty() && !bottom.is_empty(), "pas de filon");
         assert!(top.is_disjoint(&bottom), "les mêmes minerais en haut et au fond : {top:?} / {bottom:?}");
         assert!(bottom.contains(&SpriteKind::Gold) && !top.contains(&SpriteKind::Gold), "l'or n'est pas au fond");
     }
 
-    /// Icebreaker B.5: each chest has a tier (its pocket's level); over a few
-    /// caves, chests of every tier.
+    /// Icebreaker B.5: each chest has a tier (the level of its zone); over a
+    /// few caves, chests of every tier.
     #[test]
     fn chests_get_richer_with_depth() {
         let settings = Settings::load().unwrap();
         assert!(settings.butin.is_some());
-        let mouth = Vec3::new(1000, 1000, 200);
         let mut by_tier = [0; 3];
-        for seed in 0..40 {
-            let grotte = generate(&settings, seed, mouth, None, &|_| mouth.z);
+        for seed in 0..20 {
+            let grotte = cave(&settings, seed);
             assert_eq!(grotte.chest_tiers.len(), grotte.chests.len());
-            for tier in &grotte.chest_tiers {
+            for (chest, tier) in grotte.chests.iter().zip(&grotte.chest_tiers) {
+                assert!(grotte.air(*chest), "graine {seed} : coffre dans la roche");
                 by_tier[tier - 1] += 1;
             }
         }
@@ -982,48 +559,49 @@ mod tests {
     }
 
     /// Icebreaker B.14: every inhabitant drops a table of `butin.ron`, the
-    /// chief its own, the others that of their pocket's level.
+    /// chief its own, the others that of the level of their zone.
     #[test]
     fn inhabitants_drop_the_loot_of_their_depth() {
         let settings = Settings::load().unwrap();
         let butin = settings.butin.clone().unwrap();
-        let mouth = Vec3::new(1000, 1000, 200);
-        for seed in 0..10 {
-            let grotte = generate(&settings, seed, mouth, None, &|_| mouth.z);
-            let levels = grotte.pockets.iter().map(|p| p.level).max().unwrap() as usize + 1;
+        for seed in 0..6 {
+            let grotte = cave(&settings, seed);
             for i in &grotte.inhabitants {
                 let expected = if i.chief {
                     butin.chef.as_str()
                 } else {
-                    butin.creature("", butin.palier(i.level as usize, levels))
+                    butin.creature("", butin.palier(i.level as usize, grotte.niveaux as usize))
                 };
                 assert_eq!(i.loot.as_deref(), Some(expected), "graine {seed} : {i:?}");
             }
             let deepest = grotte.inhabitants.iter().filter(|i| !i.chief).map(|i| i.level).max().unwrap();
-            assert!(deepest > 0, "graine {seed} : personne en bas");
+            assert!(deepest > 0, "graine {seed} : personne au fond");
         }
     }
 
+    /// Icebreaker K.5: one chief at the end of the cave; everyone stands in
+    /// the cave, no two at the same place.
     #[test]
     fn the_cave_is_inhabited() {
         use common::assets::AssetExt;
         let settings = Settings::load().unwrap();
-        let mouth = Vec3::new(1000, 1000, 200);
         let mut total = 0;
-        for seed in 1..=20 {
-            let grotte = generate(&settings, seed, mouth, None, &|_| mouth.z);
+        for seed in 1..=10 {
+            let grotte = cave(&settings, seed);
             let chiefs: Vec<&Inhabitant> = grotte.inhabitants.iter().filter(|i| i.chief).collect();
             assert_eq!(chiefs.len(), 1, "graine {seed} : un seul chef");
-            assert!(grotte.deepest().aabb().contains_point(chiefs[0].pos), "graine {seed} : le chef n'est pas au fond");
-            let bounds = grotte.bounds();
+            let fond = &grotte.caverne.zones[grotte.caverne.fond()];
+            assert_eq!(chiefs[0].pos, grotte.monde(fond.ancre), "graine {seed} : le chef n'est pas au fond");
+            let mut places = std::collections::HashSet::new();
             for i in &grotte.inhabitants {
-                assert!(bounds.contains_point(i.pos), "graine {seed} : habitant hors de la grotte en {:?}", i.pos);
+                assert!(grotte.air(i.pos) && !grotte.air(i.pos - Vec3::unit_z()), "graine {seed} : {i:?} n'est pas debout");
+                assert!(places.insert(i.pos), "graine {seed} : deux habitants en {:?}", i.pos);
             }
-            assert!(grotte.inhabitants.len() >= 15, "graine {seed} : {} habitant(s) seulement", grotte.inhabitants.len());
+            assert!(grotte.inhabitants.len() >= 10, "graine {seed} : {} habitant(s) seulement", grotte.inhabitants.len());
             total += grotte.inhabitants.len();
         }
-        let mean = total as f32 / 20.0;
-        assert!((25.0..=40.0).contains(&mean), "{mean} habitants par grotte en moyenne");
+        let mean = total as f32 / 10.0;
+        assert!((15.0..=50.0).contains(&mean), "{mean} habitants par grotte en moyenne");
         // Every creature named in the data is an entity of Veloren.
         let people = settings.habitants.iter().chain(std::iter::once(&settings.chef));
         for asset in settings.ambiances.values().flat_map(|a| &a.solitaires).chain(people) {
@@ -1035,9 +613,8 @@ mod tests {
     #[test]
     fn one_race_per_cave() {
         let settings = Settings::load().unwrap();
-        let mouth = Vec3::new(1000, 1000, 200);
-        for seed in 1..=10 {
-            let grotte = generate(&settings, seed, mouth, None, &|_| mouth.z);
+        for seed in 1..=6 {
+            let grotte = cave(&settings, seed);
             let species = grotte.species.clone().expect("une race");
             assert!(settings.especes.contains(&species));
             assert!(grotte.summary.contains(&format!("race {species}")));

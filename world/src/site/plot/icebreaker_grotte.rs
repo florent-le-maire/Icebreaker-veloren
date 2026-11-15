@@ -6,10 +6,10 @@ use crate::{
     Land,
     icebreaker::{
         dungeon::settings::{SleepSettings, sprite_kind},
-        grotte::{self, Grotte, SpeleothemKind, bump},
+        grotte::{self, Grotte},
     },
     site::namegen::NameGen,
-    util::{FastNoise, RandomField, Sampler},
+    util::RandomField,
 };
 use common::terrain::{Block, BlockKind, SpriteCfg};
 use rand_chacha::ChaCha8Rng;
@@ -94,109 +94,66 @@ impl Structure for IcebreakerGrotte {
         wpos: Vec2<i32>,
         _weight: f32,
     ) {
-        // No tree over the cave: the entrance may run in the open for a while.
-        spawn_rules.trees &= !self.bounds().contains_point(wpos);
+        // No tree around the mouth: the entrance runs in the open for a while.
+        spawn_rules.trees &= wpos.distance_squared(self.grotte.mouth.xy()) > 24 * 24;
         spawn_rules.waypoints = false;
     }
 
     fn render_inner(&self, _site: &Site, _land: &Land, painter: &Painter) {
-        let grotte = &self.grotte;
+        let grotte = Arc::new(self.grotte.clone());
         let look = &grotte.look;
-        let (bosses, rugosite) = (grotte.relief.bosses, grotte.relief.rugosite);
         let (r, g, b) = look.roche;
         let rock = Block::new(BlockKind::Rock, Rgb::new(r, g, b));
         let (r, g, b) = look.lueur;
         let glow = Block::new(BlockKind::GlowingRock, Rgb::new(r, g, b));
         let glow_chance = look.lueur_chance;
+        let up = Vec3::unit_z();
 
-        // The pockets (Icebreaker K.3): an ellipsoid whose walls wander with
-        // the noise, a rubble floor with bumps and glowing rock, sprites on the
-        // floor and under the ceiling.
-        for pocket in &grotte.pockets {
-            let (center, radius) = (pocket.center, pocket.radius);
-            let margin = (radius.x.max(radius.y) as f32 * rugosite).ceil() as i32 + 1;
-            // The noise is in -1..1: the walls wander by `rugosite` of the radius.
-            let inside = move |pos: Vec3<i32>| {
-                let d = (pos - center).as_::<f32>() / radius.as_::<f32>();
-                let noise = FastNoise::new(913).get(pos.as_::<f64>() / 5.0);
-                d.magnitude() < 1.0 + rugosite * noise
-            };
-            let frame = Aabb {
-                min: center - radius - margin,
-                max: center + radius + margin,
-            };
-            // The dome of the pocket, and a flat floor under it, 0.92 of its
-            // radius: the bores arrive on it (at 0.86), whatever the noise does.
-            let dome = painter.ellipsoid(frame).sample(inside);
-            let wide = (radius.xy().as_::<f32>() * 0.92).map(|e| e.round() as i32);
-            let floor_disc = painter
-                .cylinder(Aabb {
-                    min: (center.xy() - wide).with_z(center.z - radius.z),
-                    max: (center.xy() + wide).with_z(center.z + 1),
-                });
-            let cavity = dome.union(floor_disc);
-            cavity.clear();
-            let floor_z = move |xy: Vec2<i32>| center.z - radius.z + bump(xy, bosses);
-            cavity
-                .sample(move |pos| pos.z <= floor_z(pos.xy()))
-                .fill(Fill::Sampling(Arc::new(move |pos| {
-                    Some(if RandomField::new(917).chance(pos, glow_chance) { glow } else { rock })
-                })));
-            cavity
-                .sample(move |pos| pos.z == floor_z(pos.xy()) + 1)
-                .fill(scatter(&look.sol, 920));
-            // The ores (Icebreaker K.4): at the foot of the walls, by depth.
-            let (veins, level, bord) = (grotte.filons.clone(), pocket.level, grotte.filons.bord);
-            let rim = move |xy: Vec2<i32>| ((xy - center.xy()).as_::<f32>() / radius.xy().as_::<f32>()).magnitude_squared();
-            cavity
-                .sample(move |pos| pos.z == floor_z(pos.xy()) + 1 && rim(pos.xy()) >= bord)
-                .fill(Fill::Sampling(Arc::new(move |pos| veins.ore(level, pos).map(Block::air))));
-            cavity
-                .sample(move |pos| pos.z > center.z && !inside(pos + Vec3::unit_z()))
-                .fill(scatter(&look.plafond, 940));
-        }
-        // The concretions: tapered spikes of rock, or of glowing rock (before
-        // the bores, which cut through them).
-        for s in &grotte.speleothems {
-            let (tip, fill) = match s.kind {
-                SpeleothemKind::Stalagmite => (s.base + Vec3::unit_z() * s.height, Fill::Block(rock)),
-                SpeleothemKind::Stalactite => (s.base - Vec3::unit_z() * s.height, Fill::Block(rock)),
-                SpeleothemKind::Crystal => (s.base + Vec3::unit_z() * s.height, Fill::Block(glow)),
-            };
-            painter.line_two_radius(s.base, tip, 2.0, 0.5).fill(fill);
-        }
-        // The bores: a tube, its walls and ceiling roughened by the noise; its
-        // floor follows the axis one block at a time (one walks it back up),
-        // except inside the pockets, where their floor rules.
-        let pockets: Vec<Aabb<i32>> = grotte
-            .pockets
-            .iter()
-            .map(|p| Aabb {
-                min: p.aabb().min - 1,
-                max: p.aabb().max + 1,
+        // Icebreaker U.4: the shape is a grid of blocks (`icebreaker-caverne`):
+        // its air is cleared, and the rock that touches it takes the colours
+        // of the mood, with glowing rock here and there. Above the mouth the
+        // ground stays as it is: the entrance opens in it.
+        let frame = painter.aabb(grotte.bounds());
+        let cave = Arc::clone(&grotte);
+        let air = move |pos: Vec3<i32>| cave.air(pos);
+        frame.sample(air.clone()).clear();
+        let (a, top) = (air.clone(), grotte.mouth.z - 2);
+        frame
+            .sample(move |pos| {
+                pos.z <= top
+                    && !a(pos)
+                    && (a(pos + up)
+                        || a(pos - up)
+                        || a(pos + Vec3::unit_x())
+                        || a(pos - Vec3::unit_x())
+                        || a(pos + Vec3::unit_y())
+                        || a(pos - Vec3::unit_y()))
             })
-            .collect();
-        let pockets = Arc::new(pockets);
-        for bore in grotte.bores.iter().chain(&grotte.dead_ends) {
-            painter.line(bore.a, bore.b, bore.radius).clear();
-            let (a, ab, r) = (bore.a.as_::<f32>(), (bore.b - bore.a).as_::<f32>(), bore.radius);
-            let axis_z = move |pos: Vec3<i32>| {
-                let t = ((pos.as_::<f32>() - a).dot(ab) / ab.magnitude_squared().max(1.0)).clamp(0.0, 1.0);
-                a.z + t * ab.z
-            };
-            painter
-                .line(bore.a, bore.b, bore.radius + 1.5)
-                .sample(move |pos| {
-                    pos.z as f32 >= axis_z(pos) && FastNoise::new(919).get(pos.as_::<f64>() / 4.0) > 0.6
-                })
-                .clear();
-            let pockets = Arc::clone(&pockets);
-            painter
-                .line(bore.a, bore.b, bore.radius)
-                .sample(move |pos| {
-                    pos.z <= axis_z(pos).round() as i32 - r as i32 && !pockets.iter().any(|p| p.contains_point(pos))
-                })
-                .fill(Fill::Block(rock));
+            .fill(Fill::Sampling(Arc::new(move |pos| {
+                Some(if RandomField::new(917).chance(pos, glow_chance) { glow } else { rock })
+            })));
+        // Sprites on the floors and under the ceilings.
+        let a = air.clone();
+        frame.sample(move |pos| a(pos) && !a(pos - up)).fill(scatter(&look.sol, 920));
+        let a = air.clone();
+        frame.sample(move |pos| a(pos) && !a(pos + up)).fill(scatter(&look.plafond, 940));
+        // The ores (Icebreaker K.4): on the floor at the foot of a wall, off
+        // the trail, by the level of the zone.
+        let (a, cave) = (air.clone(), Arc::clone(&grotte));
+        let ores = Arc::clone(&grotte);
+        frame
+            .sample(move |pos| {
+                let p = pos - cave.mouth;
+                a(pos)
+                    && !a(pos - up)
+                    && cave.filons.strikes(pos)
+                    && !cave.caverne.grille.sentier(p.x, p.y, p.z - 1)
+                    && !(a(pos + Vec3::unit_x()) && a(pos - Vec3::unit_x()) && a(pos + Vec3::unit_y()) && a(pos - Vec3::unit_y()))
+            })
+            .fill(Fill::Sampling(Arc::new(move |pos| ores.filons.ore(ores.level_at(pos), pos).map(Block::air))));
+        // The crystals: tapered spikes of glowing rock.
+        for (base, height) in &grotte.crystals {
+            painter.line_two_radius(*base, *base + up * *height, 2.0, 0.5).fill(Fill::Block(glow));
         }
         // The inhabitants and the chests (Icebreaker K.5). The painter's area
         // includes its far edge, shared with the next chunk: spawn there only
@@ -292,14 +249,16 @@ impl IcebreakerGrotte {
     /// next seeds while it goes past the area kept for it; and whether it fits.
     fn generate_inside(settings: &grotte::Settings, land: &Land, origin: Vec2<i32>, seed: u64) -> (Self, bool) {
         let mouth = origin.with_z(land.get_alt_approx(origin) as i32);
-        // The mood asked for (`-Ambiance` of the launcher), or one drawn by the seed.
+        // The mood and the shape asked for (`-Ambiance` and `-Profil` of the launcher), or drawn by the seed.
         let ambiance = std::env::var("ICEBREAKER_GROTTE_AMBIANCE").ok().filter(|a| !a.is_empty());
+        let profil = std::env::var("ICEBREAKER_GROTTE_PROFIL").ok().filter(|p| !p.is_empty());
         // Icebreaker H.4: the race asked for (`-Race`), or one drawn by the seed.
         let race = std::env::var("ICEBREAKER_DONJON_RACE").ok().filter(|r| !r.is_empty());
         let kept = Self::emprise(settings, origin);
         let mut plot = None;
         for seed in seed..seed + FIT_TRIES {
-            let mut grotte = grotte::generate(settings, seed, mouth, ambiance.as_deref(), &|xy| land.get_alt_approx(xy) as i32);
+            let surface = |xy| land.get_alt_approx(xy) as i32;
+            let mut grotte = grotte::generate(settings, seed, mouth, ambiance.as_deref(), profil.as_deref(), &surface);
             if let Some(race) = &race {
                 let drawn = format!("race {}", grotte.species.as_deref().unwrap_or("des fichiers"));
                 grotte.summary = grotte.summary.replacen(&drawn, &format!("race {race}"), 1);

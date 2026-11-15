@@ -1,42 +1,23 @@
 // Icebreaker : réglages de la grotte (lieu « Grotte », docs/icebreaker/PLAN-GROTTE.md, jalon K).
+// Sa forme (zones, puits, sentier) vient de formes.ron, à côté (jalon U, docs/icebreaker/PLAN-CAVERNE.md) ; ici, ce
+// qui y vit.
 (
-    // Entrée (K.1) : un boyau de la bouche (en surface) au centre de la première poche.
-    entree: (profondeur: 18, longueur: 36, rayon: 3.0),
-    // Icebreaker I.11 : tronçons (32 blocs) réservés autour de la bouche, de chaque côté ; une grotte refaite pour une
-    // expédition (I.12) doit y tenir (elles tiennent toutes sous 8 aujourd'hui), sinon on garde la précédente.
+    // Icebreaker I.11 : tronçons (32 blocs) réservés autour de la bouche, de chaque côté ; la grotte et celles refaites
+    // à sa place pour une expédition (I.12) y tiennent : l'emprise d'une forme (formes.ron) est ramenée à cette valeur.
     emprise: 9,
-    // Poche : un ellipsoïde ; rayon horizontal et demi-hauteur en blocs (min, max).
-    poche: (rayon: (10, 14), hauteur: (5, 7)),
-    // Réseau (K.2) : poches (la première comprise) réparties sur des niveaux de profondeur, chacune accrochée par un
-    // boyau à une poche du niveau au-dessus ; ecart : blocs entre les parois de deux poches liées ; boucles : boyaux
-    // en plus entre les poches les plus proches ; culs-de-sac : tubes étroits qui partent de chaque poche (les trous
-    // d'où sortent les bêtes), longueur et rayon en blocs.
-    reseau: (
-        poches: (6, 10),
-        niveaux: 3,
-        ecart_niveau: 16,
-        ecart: (30, 48),
-        rayon_boyau: (3, 5),
-        boucles: (1, 2),
-        culs_de_sac: (1, 2),
-        longueur_cul_de_sac: (8, 16),
-        rayon_cul_de_sac: 2.0,
-    ),
-    // Relief (K.3) : bosses = hauteur des bosses du sol (blocs) ; rugosite = de combien les parois d'une poche
-    // s'écartent de l'ellipsoïde (part du rayon) ; hauteur_concretions = stalagmites, stalactites et cristaux (blocs).
-    relief: (bosses: 1.0, rugosite: 0.18, hauteur_concretions: (3, 7)),
-    // Filons (K.4) : minerais en sprites minables (à la pioche) au pied des parois des poches : chance par bloc du
-    // bord du sol (bord : à partir de quelle part du rayon, au carré, le sol compte comme le bord) ; minerais par
-    // niveau de profondeur (nom de sprite, poids), le dernier palier servant aux niveaux plus profonds.
-    // Habitants (K.5) : dans chaque poche, par_poche créatures (min, max) plus par_niveau par niveau de profondeur ;
-    // au bout de chaque cul-de-sac, une créature avec la chance trous et un coffre (sprite coffre, butin de butin.ron selon le niveau de la poche, B.5) avec la chance
-    // coffres ; le chef de la race (H.4) dans la poche la plus profonde. part_solitaires (H.4) : part des monstres
-    // solitaires de l'ambiance parmi les créatures des poches, les autres sont de la race ; les culs-de-sac n'ont que des
-    // solitaires.
+    // Hauteur des cristaux luisants (K.3), en blocs (min, max).
+    hauteur_cristaux: (3, 7),
+    // Filons (K.4) : minerais en sprites minables (à la pioche) sur le sol au pied des parois, hors du sentier : chance
+    // par bloc ; minerais par niveau (nom de sprite, poids), de l'entrée au fond de la grotte (le niveau d'une zone
+    // vient de sa distance à l'entrée le long du sentier).
+    // Habitants (K.5) : dans chaque zone, par_poche créatures (min, max) plus par_niveau par niveau ; dans chaque
+    // niche, une créature avec la chance trous et un coffre (sprite coffre, butin de butin.ron selon le niveau, B.5)
+    // avec la chance coffres ; le chef de la race (H.4) dans la zone la plus loin de l'entrée. part_solitaires (H.4) :
+    // part des monstres solitaires de l'ambiance parmi les créatures des zones, les autres sont de la race ; les niches
+    // n'ont que des solitaires.
     population: (par_poche: (2, 3), par_niveau: 1, trous: 0.5, coffres: 0.3, coffre: "DungeonChest2", part_solitaires: 0.3),
     filons: (
         chance: 0.06,
-        bord: 0.55,
         paliers: [
             [("Copper", 3.0), ("Tin", 3.0), ("Iron", 2.0)],
             [("Coal", 3.0), ("Cobalt", 2.0), ("Silver", 1.0)],
@@ -44,8 +25,8 @@
         ],
     ),
     // Ambiances (K.3) : une par grotte, tirée par la graine ou demandée (-Ambiance du lanceur, variable
-    // ICEBREAKER_GROTTE_AMBIANCE). roche : couleur du sol ; lueur : couleur de la roche luisante et sa part dans le
-    // sol ; sol et plafond : sprites de Veloren (nom, chance par bloc) ; stalagmites, stalactites, cristaux par poche ;
+    // ICEBREAKER_GROTTE_AMBIANCE). roche : couleur des parois ; lueur : couleur de la roche luisante et sa part dans
+    // les parois ; sol et plafond : sprites de Veloren (nom, chance par bloc) ; cristaux luisants par zone ;
     // solitaires (H.4) : les monstres sans race de l'ambiance (entités de Veloren), l'araignée des cavernes partout.
     ambiances: {
         "champignons": (
@@ -53,21 +34,21 @@
             sol: [("GlowMushroom", 0.04), ("CaveMushroom", 0.03), ("Mushroom", 0.02), ("GrassBlueMedium", 0.03), ("SporeReed", 0.02)],
             plafond: [("MycelBlue", 0.05), ("CeilingMushroom", 0.03)],
             solitaires: ["common.entity.wild.aggressive.cave_spider", "common.entity.wild.peaceful.truffler", "common.entity.wild.peaceful.fungome", "common.entity.wild.aggressive.cave_troll"],
-            stalagmites: (2, 5), stalactites: (3, 8), cristaux: (0, 1),
+            cristaux: (0, 1),
         ),
         "cristaux": (
             roche: (80, 80, 95), lueur: (150, 120, 230), lueur_chance: 0.06,
             sol: [("CrystalLow", 0.03), ("CrystalHigh", 0.015), ("Amethyst", 0.005), ("Stones", 0.01)],
             plafond: [("CrystalHigh", 0.03)],
             solitaires: ["common.entity.wild.aggressive.dodarock", "common.entity.wild.aggressive.cave_spider", "common.entity.wild.aggressive.cave_salamander"],
-            stalagmites: (1, 3), stalactites: (2, 5), cristaux: (3, 7),
+            cristaux: (3, 7),
         ),
         "ossuaire": (
             roche: (75, 70, 60), lueur: (200, 150, 60), lueur_chance: 0.02,
             sol: [("Bones", 0.05), ("EnsnaringWeb", 0.03), ("Stones", 0.02), ("Mud", 0.01), ("DeadBush", 0.01)],
             plafond: [("EnsnaringWeb", 0.03)],
             solitaires: ["common.entity.wild.aggressive.cave_spider", "common.entity.wild.aggressive.blue_oni", "common.entity.wild.aggressive.red_oni", "common.entity.wild.peaceful.bat"],
-            stalagmites: (3, 7), stalactites: (4, 9), cristaux: (0, 0),
+            cristaux: (0, 0),
         ),
     },
     // Habitants (H.4) : une race par grotte, tirée par la graine parmi especes (ou -Race du lanceur) ; rôles des classes

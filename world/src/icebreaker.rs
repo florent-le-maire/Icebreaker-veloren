@@ -436,7 +436,7 @@ pub fn check_generated_dungeon(
 
 /// Generates the chunks of the cave in `world` and checks its blocks
 /// (`examples/icebreaker_grotte.rs`): walking from the mouth (steps of one
-/// block up, any fall down), every pocket is reached (Icebreaker K.2). `None`
+/// block up, any fall down), every zone is reached (Icebreaker K.2, U.4). `None`
 /// if the world has no cave; otherwise a summary and the problems found.
 pub fn check_generated_grotte(
     world: &crate::World,
@@ -532,40 +532,12 @@ pub fn check_generated_grotte(
         }
     }
     let mut problems = Vec::new();
-    for (i, pocket) in grotte.pockets.iter().enumerate() {
-        let aabb = pocket.aabb();
-        if !seen.iter().any(|p| aabb.contains_point(*p)) {
-            problems.push(format!("poche {i} (niveau {}) inaccessible depuis la bouche : {:?}", pocket.level, pocket.center));
-        }
-    }
-    // Along each bore, the floor under its axis never steps more than one
-    // block (one walks it both ways).
-    for (i, bore) in grotte.bores.iter().enumerate() {
-        let n = ((bore.b - bore.a).as_::<f32>().magnitude().ceil() as i32).max(1);
-        let mut last: Option<(i32, vek::Vec3<i32>)> = None;
-        for k in 0..=n {
-            let p = (bore.a.as_::<f32>() + (bore.b - bore.a).as_::<f32>() * (k as f32 / n as f32))
-                .map(|e| e.round() as i32);
-            // The entrance bore may run in the open for a while: the terrain decides there.
-            if i == 0 && (p.z + 1..=p.z + 12).all(|z| hollow(p.xy().with_z(z))) {
-                last = None;
-                continue;
-            }
-            let mut z = p.z;
-            while z > volume.min.z && hollow(p.xy().with_z(z)) {
-                z -= 1;
-            }
-            if let Some((prev, at)) = last
-                && (z - prev).abs() > 1
-            {
-                problems.push(format!("boyau {i} : marche de {} blocs entre {at:?} et {:?}", (z - prev).abs(), p.xy().with_z(z)));
-            }
-            last = Some((z, p.xy().with_z(z)));
-        }
-    }
-    for (i, end) in grotte.dead_ends.iter().enumerate() {
-        if !hollow(end.b) {
-            problems.push(format!("cul-de-sac {i} bouché en {:?}", end.b));
+    // Icebreaker U.4: the trail reaches every zone (its anchor, a block off
+    // at most: the terrain may round a floor).
+    for (i, zone) in grotte.caverne.zones.iter().enumerate() {
+        let anchor = grotte.monde(zone.ancre);
+        if ![0, 1, -1].iter().any(|dz| seen.contains(&(anchor + vek::Vec3::unit_z() * *dz))) {
+            problems.push(format!("zone {i} ({:?}, niveau {}) inaccessible depuis la bouche : {anchor:?}", zone.genre, grotte.levels[i]));
         }
     }
     // `ICEBREAKER_GROTTE_ATTEINT=x,y`: the heights reached on foot in that column.
@@ -588,25 +560,12 @@ pub fn check_generated_grotte(
             .collect();
         problems.push(format!("colonne ({x}, {y}) de z = {} (gauche) à {} : {line}", volume.max.z, volume.min.z));
     }
-    let pockets: Vec<String> = grotte
-        .pockets
+    let zones: Vec<String> = grotte
+        .caverne
+        .zones
         .iter()
-        .map(|p| format!("{:?} r {:?} niveau {} sol {}", p.center, p.radius, p.level, p.floor().z))
-        .collect();
-    problems.extend(std::env::var("ICEBREAKER_GROTTE_COLONNE").ok().map(|_| format!("poches :\n  {}", pockets.join("\n  "))));
-    let concretions: Vec<String> = grotte
-        .speleothems
-        .iter()
-        .map(|s| format!("{:?} {:?} h {}", s.kind, s.base, s.height))
-        .collect();
-    problems.extend(std::env::var("ICEBREAKER_GROTTE_COLONNE").ok().map(|_| format!("concrétions :\n  {}", concretions.join("\n  "))));
-    let bores: Vec<String> = grotte
-        .bores
-        .iter()
-        .map(|b| {
-            let along = (b.a.xy() - b.b.xy()).as_::<f32>().magnitude().max(1.0);
-            format!("{:?} → {:?} (r {}, pente {:.2})", b.a, b.b, b.radius, (b.a.z - b.b.z).abs() as f32 / along)
-        })
+        .enumerate()
+        .map(|(i, z)| format!("{:?} en {:?}, rayons {:?}, niveau {}, {} sols", z.genre, grotte.monde(z.ancre), z.rayon, grotte.levels[i], z.sols.len()))
         .collect();
     // The inhabitants (K.5): each one stands on the floor and appears once;
     // each chest is drawn.
@@ -621,7 +580,7 @@ pub fn check_generated_grotte(
         if n != 1 {
             problems.push(format!("habitant {} apparu {n} fois en {:?}", inhabitant.asset, inhabitant.pos));
         }
-        // The bores round their floor as they are drawn: a block off is fine,
+        // The terrain may round a floor as it is drawn: a block off is fine,
         // the creature falls or is pushed out (the mission knows the position).
         if ![0, 1, -1].iter().any(|dz| standing(inhabitant.pos + vek::Vec3::unit_z() * *dz)) {
             problems.push(format!("habitant {} dans la roche ou en l'air en {:?}", inhabitant.asset, inhabitant.pos));
@@ -648,14 +607,14 @@ pub fn check_generated_grotte(
         }
     }
     // The ores (K.4): one stands on them (a mineable sprite is solid); counted
-    // by the level of the pocket they lie in.
-    let mut ores = vec![0usize; grotte.pockets.iter().map(|p| p.level + 1).max().unwrap_or(1) as usize];
+    // by the level of the zone they lie in.
+    let mut ores = vec![0usize; grotte.niveaux.max(1) as usize];
     for p in &seen {
         let mined = block_at(*p - vek::Vec3::unit_z())
             .and_then(|b| b.get_sprite())
             .is_some_and(|s| s.mine_tool() == Some(common::comp::item::tool::ToolKind::Pick));
-        if mined && let Some(pocket) = grotte.pockets.iter().find(|pocket| pocket.aabb().contains_point(*p)) {
-            ores[pocket.level as usize] += 1;
+        if mined {
+            ores[grotte.level_at(*p) as usize] += 1;
         }
     }
     if ores.iter().sum::<usize>() == 0 {
@@ -663,7 +622,7 @@ pub fn check_generated_grotte(
     }
     let summary = format!(
         "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, filons par niveau {:?}, {} habitant(s) ({appeared} \
-         apparus), {} coffre(s)\nboyaux :\n  {}",
+         apparus), {} coffre(s)\nzones :\n  {}",
         grotte.summary,
         grotte.mouth,
         plot.entrance(),
@@ -671,7 +630,7 @@ pub fn check_generated_grotte(
         ores,
         grotte.inhabitants.len(),
         grotte.chests.len(),
-        bores.join("\n  ")
+        zones.join("\n  ")
     );
     Some((summary, problems))
 }

@@ -278,12 +278,14 @@ const ESSAIS: u64 = 6;
 const COUVERTURE: i32 = 6;
 
 /// Generates the cave of `graine`. `surface(x, y)` is the height of the
-/// ground around the mouth (0 at the mouth): the zones stay under it.
-pub fn generer(forme: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Caverne {
+/// ground around the mouth (0 at the mouth): the zones stay under it; where
+/// the ground falls away from the mouth, the cave may go as much deeper than
+/// `profondeur`, but never under `plancher` (the bottom of the world).
+pub fn generer(forme: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: i32) -> Caverne {
     let forme = forme.bornee();
     let mut dernier = None;
     for essai in 0..ESSAIS {
-        let mut caverne = essayer(&forme, graine.wrapping_add(essai.wrapping_mul(0x9e37_79b9_7f4a_7c15)), surface);
+        let mut caverne = essayer(&forme, graine.wrapping_add(essai.wrapping_mul(0x9e37_79b9_7f4a_7c15)), surface, plancher);
         caverne.essais = essai as u32 + 1;
         if caverne.praticable {
             return caverne;
@@ -293,10 +295,18 @@ pub fn generer(forme: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) ->
     dernier.expect("ESSAIS is at least 1")
 }
 
-fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Caverne {
+fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: i32) -> Caverne {
     let mut rng = Alea::new(graine);
     let s = (graine as u32) ^ ((graine >> 32) as u32);
-    let (e, prof) = (f.emprise as i32, f.profondeur as i32);
+    let e = f.emprise as i32;
+    // How far the ground falls around the mouth: the cave may go as much deeper.
+    let mut creux = 0;
+    for x in (-e..=e).step_by(16) {
+        for y in (-e..=e).step_by(16) {
+            creux = creux.min(surface(x, y));
+        }
+    }
+    let prof = (f.profondeur as i32 + (-creux).min(150)).min(-plancher.max(-100_000) - 8).max(24);
     let mut grille = Grille::new([-e, -e, -prof - 8], [e, e, 10]);
 
     // The entrance runs toward the highest ground (the cave stays under it).
@@ -982,10 +992,10 @@ mod tests {
     #[test]
     fn same_seed_same_cave() {
         let forme = Forme::default();
-        let (a, b) = (generer(&forme, 7, &|_, _| 0), generer(&forme, 7, &|_, _| 0));
+        let (a, b) = (generer(&forme, 7, &|_, _| 0, i32::MIN), generer(&forme, 7, &|_, _| 0, i32::MIN));
         assert_eq!(a.resume, b.resume);
         assert_eq!(a.grille.cellules_air().collect::<Vec<_>>(), b.grille.cellules_air().collect::<Vec<_>>());
-        assert_ne!(a.resume, generer(&forme, 8, &|_, _| 0).resume);
+        assert_ne!(a.resume, generer(&forme, 8, &|_, _| 0, i32::MIN).resume);
     }
 
     /// Every profile, over a few seeds: every zone is reached on foot from
@@ -995,7 +1005,7 @@ mod tests {
         let formes = formes();
         for (nom, profil) in &formes.profils {
             for graine in 0..6 {
-                let c = generer(&profil.forme, graine, &|_, _| 0);
+                let c = generer(&profil.forme, graine, &|_, _| 0, i32::MIN);
                 assert!(c.praticable, "{nom}, graine {graine} : {}", c.resume);
                 assert!(c.zones.len() >= 2, "{nom}, graine {graine} : {}", c.resume);
                 for zone in &c.zones {
@@ -1016,7 +1026,7 @@ mod tests {
     fn the_seed_draws_different_caves() {
         let formes = formes();
         let depth = |nom: &str| {
-            let c = generer(&formes.profils[nom].forme, 3, &|_, _| 0);
+            let c = generer(&formes.profils[nom].forme, 3, &|_, _| 0, i32::MIN);
             -c.zones.iter().map(|z| z.centre[2]).min().unwrap()
         };
         assert!(depth("gouffre") > 2 * depth("plaine"), "gouffre {} / plaine {}", depth("gouffre"), depth("plaine"));

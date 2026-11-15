@@ -9573,6 +9573,7 @@ dependencies = [
  "flate2",
  "fxhash",
  "hashbrown 0.17.1",
+ "icebreaker-caverne",
  "image",
  "indicatif",
  "itertools 0.14.0",

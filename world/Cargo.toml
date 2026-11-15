@@ -34,6 +34,8 @@ default = ["simd"]
 
 [dependencies]
 common = { package = "veloren-common", path = "../common" }
+# Icebreaker : la forme des grottes (jalon U)
+icebreaker-caverne = { path = "../icebreaker-caverne" }
 common_base = { package = "veloren-common-base", path = "../common/base" }
 common-net = { package = "veloren-common-net", path = "../common/net" }
 common-dynlib = { package = "veloren-common-dynlib", path = "../common/dynlib", optional = true }

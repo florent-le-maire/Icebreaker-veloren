@@ -15,7 +15,7 @@ fn main() {
         // How often the first seed tried gives a whole trail, and how long it takes.
         for (nom, profil) in &formes.profils {
             let start = std::time::Instant::now();
-            let caves: Vec<_> = (0..40).map(|g| generer(&profil.forme, g, &|_, _| 0)).collect();
+            let caves: Vec<_> = (0..40).map(|g| generer(&profil.forme, g, &|_, _| 0, i32::MIN)).collect();
             println!(
                 "{nom} : {} sur 40 au premier essai, {} coupée(s), {:?} par grotte",
                 caves.iter().filter(|c| c.essais == 1).count(),
@@ -29,7 +29,7 @@ fn main() {
     let (nom, forme) = formes.tirer(graine, args.get(1).map(String::as_str));
     let dossier = args.get(3).cloned().unwrap_or_else(|| ".".into());
     let start = std::time::Instant::now();
-    let c = generer(forme, graine, &|_, _| 0);
+    let c = generer(forme, graine, &|_, _| 0, i32::MIN);
     println!("{nom}, graine {graine} ({:?}) : {}", start.elapsed(), c.resume);
     if !c.praticable {
         ruptures(&c);

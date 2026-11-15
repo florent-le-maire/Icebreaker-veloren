@@ -31,7 +31,7 @@ pub extern "C" fn entree(n: usize) -> *mut f32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn generer(graine: f64) -> u32 {
     let mut etat = ETAT.lock().unwrap();
-    let caverne = generer_caverne(&Forme::depuis_valeurs(&etat.entree), graine as u64, &|_, _| 0);
+    let caverne = generer_caverne(&Forme::depuis_valeurs(&etat.entree), graine as u64, &|_, _| 0, i32::MIN);
     let m = mailler(&caverne);
     etat.sorties[0] = m.sommets.iter().flat_map(|v| v.to_le_bytes()).collect();
     etat.sorties[1] = m.couleurs;

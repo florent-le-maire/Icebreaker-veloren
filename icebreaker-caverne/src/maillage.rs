@@ -106,7 +106,7 @@ mod tests {
             chaos_rayon: 10.0,
             ..Forme::default()
         };
-        let c = generer(&forme, 1, &|_, _| 0);
+        let c = generer(&forme, 1, &|_, _| 0, i32::MIN);
         let m = mailler(&c);
         assert!(!m.indices.is_empty());
         let vertex = |i: u32| [0, 1, 2].map(|k| m.sommets[i as usize * 3 + k] as f32);
