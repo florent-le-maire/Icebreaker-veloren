@@ -22,6 +22,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | `PLAN-BOUCLES.md` | Proposition : ce qui rend village → donjon → village intéressant (jalon B) |
 | `PLAN-DONJON.md` | Proposition : ce qu'on fait en bas, ressources, foreuse, trous, combat, monstres à coop (jalon E) |
 | `PLAN-GROTTE.md` | La grotte façon Deep Rock Galactic (jalon K, fait en première version) |
+| `PLAN-CAVERNE.md` | Grottes organiques : le générateur qui donne sa forme à la grotte, et son atelier web de réglage (jalon U) |
 | `PLAN-MOD.md` | Proposition : passer d'une copie modifiée à un mod (jalon M) |
 | `PLAN-WIKI.md` | Le wiki de l'équipe : site généré depuis ces docs et `assets/icebreaker/` (jalon W) |
 | `PLAN-INTERFACE.md` | Refonte de l'interface ajoutée par Icebreaker : maquettes, charte, règles (jalon N) |
@@ -60,6 +61,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | Y | Une identité par race ennemie | `PLAN.md` | Y.1 à Y.3 et Y.9 codés (2026-11-14) ; Y.4 à Y.8 restent | — (supprimé) |
 | A | Armes, classes et compétences | `PLAN-CLASSES.md` | codé le 2026-11-11 pour les trois classes, ultimes refaits le 2026-11-15 (A.19 à A.23) ; reste l'avis sur les maquettes (A.2) et l'essai dans le vrai client | `Veloren-classes` |
 | O | Lieu d'entraînement et de playtest | `PLAN-ENTRAINEMENT.md` | O.1 à O.8 codés le 2026-11-14 ; reste l'essai à la main dans le vrai client | `Veloren-entrainement` |
+| U | Grottes organiques et atelier de réglage | `PLAN-CAVERNE.md` | U.1 à U.5 codés le 2026-11-15 ; profils à régler dans l'atelier, pas vu en jeu | `Veloren-caverne` |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 

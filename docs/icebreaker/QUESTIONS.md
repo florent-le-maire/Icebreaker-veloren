@@ -61,6 +61,10 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   comme habitants, ou ne compter que les agressives ?
 - **Q25 La pioche** en mains secondaires de chaque classe (on change d'arme pour miner) : préférable à une pioche
   dans le sac ? La foreuse (E.6) la remplacera-t-elle ?
+- **Q54 Remonter d'une grotte** (jalon U, `PLAN-CAVERNE.md`) : le générateur pose un sentier qu'on peut toujours
+  suivre à pied, à l'aller comme au retour (lacets le long des puits) ; falaises et trous sont à côté. Garder ce
+  sentier garanti, ou vouloir de vraies chutes sans retour à pied quand les cordes (E.7) existeront ? Lié à Q15.
+  *Proposé* : garder le sentier tant qu'il n'y a pas de cordes. *Qui* : Flo, Sayanel.
 
 ## 4. Village et personnages (jalon R, `design/village.md`)
 

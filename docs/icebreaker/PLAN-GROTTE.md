@@ -8,6 +8,11 @@ de `PLAN.md`. Worktree `Veloren-grotte` (`git worktree add ../Veloren-grotte -b 
 
 ## Forme visée
 
+*Depuis le jalon U (2026-11-15, `PLAN-CAVERNE.md`), la forme décrite ici (poches en ellipsoïde, boyaux droits,
+culs-de-sac) est remplacée par celle du générateur `icebreaker-caverne` : zones plates ou chaotiques, puits,
+niches et sentier. Ambiances, filons, habitants, chef et butin restent ceux de K.3 à K.5 ; les réglages `entree`,
+`poche`, `reseau` et `relief` de `grotte.ron` n'existent plus (voir `formes.ron`).*
+
 Pas de cases ni de salles : le tracé est en blocs, rendu avec le `Painter` de Veloren.
 
 - Une **entrée** en surface : tunnel en pente, comme le donjon généré ; apparition devant.

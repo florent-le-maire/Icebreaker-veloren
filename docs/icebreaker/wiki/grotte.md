@@ -2,57 +2,70 @@
 ordre = 7
 titre = "La grotte"
 icone = "voxygen/element/weapons/pickaxe.png"
-schema = "coupe-grotte"
-resume = "Des poches et des boyaux creusés dans la roche, des filons à la pioche, un chef au fond. Façon Deep Rock Galactic."
-reglages = ["grottes/grotte.ron", "butin.ron"]
-taches = ["K", "B.5", "B.14"]
+resume = "Des cavernes creusées dans la roche, plates ou en gouffre selon la graine, des filons à la pioche, un chef au fond. Façon Deep Rock Galactic."
+reglages = ["grottes/grotte.ron", "grottes/formes.ron", "butin.ron"]
+taches = ["K", "U", "B.5", "B.14"]
 systemes = [
+  "icebreaker-caverne/src/lib.rs",
   "world/src/icebreaker/grotte/mod.rs",
   "world/src/site/plot/icebreaker_grotte.rs",
   "world/src/icebreaker/butin.rs",
 ]
 
 [[chiffre]]
-cle = "poches"
-nom = "Poches par grotte"
+cle = "emprise"
+nom = "Tronçons réservés de chaque côté de l'entrée"
 
 [[chiffre]]
-cle = "niveaux"
-nom = "Niveaux de profondeur"
+cle = "par_poche"
+nom = "Créatures par zone, à l'entrée"
 
 [[chiffre]]
-cle = "ecart_niveau"
-nom = "Blocs entre deux niveaux"
+cle = "par_niveau"
+nom = "Créatures en plus par niveau"
 
 [[chiffre]]
 cle = "chance"
-nom = "Chance de filon par bloc de bord"
+nom = "Chance de filon par bloc au pied d'une paroi"
 pourcent = true
 +++
 
 ## La règle
 
-La grotte est le deuxième lieu de notre fabrication, sans salles ni cases : tout est creusé en blocs. De la
-**bouche** en surface, un boyau descend vers la première **poche**, un ellipsoïde au sol bosselé. De là, un
-réseau de poches sur plusieurs niveaux, chacune accrochée à une poche du niveau au-dessus, avec quelques boucles
-et des culs-de-sac étroits d'où sortent les bêtes.
+La grotte est le deuxième lieu de notre fabrication, sans salles ni cases : tout est creusé en blocs. Chaque grotte
+tire une **forme** par sa graine :
 
-Chaque grotte tire une **ambiance** (champignons, cristaux, ossuaire) : la couleur de la roche, la roche luisante,
-les sprites au sol et au plafond, les créatures et le **chef**, qui attend dans la poche la plus profonde. Le
-tuer, c'est la victoire.
+- le **gouffre** : des zones empilées, reliées par des puits où l'on descend en lacets le long de la paroi ;
+- la **plaine** : d'immenses salles basses, des forêts de stalactites, presque pas de dénivelé ;
+- le **chaos** : des salles pleines de bosses, de trous et de ponts de roche, sur plusieurs hauteurs ;
+- le **mixte** : un peu de tout.
 
-Au pied des parois, des **filons** à miner à la pioche (chaque personnage en a une) : cuivre et étain près de la
-surface, or et gemmes tout en bas. Au bout des culs-de-sac, parfois une créature et un coffre, d'autant plus
-riche que sa poche est profonde (`butin.ron`). Les créatures lâchent elles aussi le butin de leur
-profondeur, le chef bien plus.
+De la **bouche** en surface, un **sentier** descend et relie toutes les zones : on peut toujours le suivre à pied,
+à l'aller comme au retour. Falaises, trous et replats sont à côté. De petites **niches** s'ouvrent au bord des
+zones : parfois une bête, parfois un coffre.
+
+Chaque grotte tire aussi une **ambiance** (champignons, cristaux, ossuaire) : la couleur de la roche, la roche
+luisante, les sprites au sol et au plafond, les créatures. Le **chef** attend dans la zone la plus loin de l'entrée.
+Le tuer, c'est la victoire.
+
+Au pied des parois, des **filons** à miner à la pioche (chaque personnage en a une) : cuivre et étain près de
+l'entrée, or et gemmes au fond. Coffres et créatures donnent le butin de leur niveau (`butin.ron`), le chef bien plus.
+
+## Régler la forme
+
+`.\icebreaker.ps1 caverne` ouvre l'**atelier** : une page avec un curseur par réglage et la grotte en 3D, qui se
+refait à chaque changement. C'est le même générateur que le jeu. « Copier les réglages » donne le bloc à coller dans
+un profil de `formes.ron`.
 
 ## Pourquoi
 
-Un lieu « Deep Rock Galactic » pour varier des donjons bâtis : on y descend pour la matière, et la forme libre du
-réseau donne des combats dans des espaces ouverts plutôt que dans des couloirs. K.1 à K.5 sont faits mais pas
-encore parcourus dans le vrai client.
+Un lieu « Deep Rock Galactic » pour varier des donjons bâtis : on y descend pour la matière, et la forme libre
+donne des combats dans des espaces ouverts plutôt que dans des couloirs. La première version (jalon K) faisait des
+poches reliées par des boyaux : on y sentait encore des salles et des couloirs. Le jalon U l'a remplacée.
 
 ## En images
+
+Les captures ci-dessous datent de la première forme (jalon K) ; elles sont à refaire.
 
 ![La bouche de la grotte en surface et le boyau d’entrée](images/grotte-bouche.png)
 

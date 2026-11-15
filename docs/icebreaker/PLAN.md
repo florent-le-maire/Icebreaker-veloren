@@ -18,7 +18,7 @@ Le jeu doit rester lançable après chaque tâche.
 - **Ce qui se joue** (`icebreaker.ps1 campagne`, un seul serveur, `0016`) : le village (vue de dessus U, entrepôt,
   caisse, intendance, infirmerie, chantiers payés par la caisse, charrette et registre commun de personnages, départ
   groupé), deux emplacements de donjon Gnarling, deux de notre générateur (salles de formes variées, verrous et clés,
-  dormeurs, décor), une grotte façon Deep Rock Galactic (poches, filons, chef au fond), combat létal et verrouillage
+  dormeurs, décor), une grotte façon Deep Rock Galactic (formes tirées par la graine, filons, chef au fond), combat létal et verrouillage
   de cible, à terre et relève, sac du mort (jalon T). Détail et hashes : `HISTORIQUE.md`, `PLAN-GROTTE.md`.
 - **Presque rien n'a été vu dans le vrai client** : la plupart des tâches ont été vérifiées par des tests et le client
   texte ; seuls les jalons X (interface du village) et N (interface refaite) ont été joués par Flo. Liste : « À
@@ -32,6 +32,10 @@ Le jeu doit rester lançable après chaque tâche.
   (`PLAN-DONJON.md`, E.1 à E.16), mod (`PLAN-MOD.md`), piliers, menace et âmes (`design/`), idées (`IDEES.md`).
 - **Prochaine étape proposée** : une session de test dans le vrai client sur la liste « À vérifier en jeu », puis le
   bloc 1 des boucles (B.1 à B.4) (à plusieurs sur le VPS, `QUESTIONS.md`, Q7).
+- **Jalon U (2026-11-15)** : la grotte prend sa forme d'un nouveau générateur (`PLAN-CAVERNE.md`) : gouffre, plaine,
+  chaos ou mixte selon la graine, zones plates à stalactites, zones pleines de bosses et de trous, puits, et un
+  sentier toujours praticable à pied. Atelier web pour régler les profils : `.\icebreaker.ps1 caverne`. Vérifié en
+  test et par l'exemple de contrôle (12 mondes générés) ; pas vu en jeu, profils à régler par Flo.
 - **Jalon A (2026-11-11)** : armes, classes et compétences (`PLAN-CLASSES.md`, `decisions/0020`) codé pour les trois
   classes : jeux d'armes, 2 compétences d'arme + ultime + passif, recharges, niveaux 1 à 5, lot tiré à la charrette,
   maîtrise en expédition, salle d'armes (7e bâtiment). Vérifié en test, au client texte (de bout en bout en
@@ -352,6 +356,10 @@ tâche pour ce qui casse.
   (`butin.ron`) ; rien d'inutile. B.14 : ce que lâchent les créatures, le chef, le boss.
 
 **Grotte**
+- U.4 : descendre dans une grotte de chaque forme (`donjon -Site Grotte -Profil gouffre`, `plaine`, `chaos`, `mixte`) :
+  le sentier se suit-il à l'aller et au retour, les puits et leurs lacets, la caméra sous les plafonds bas, la
+  lumière, la densité des sprites et des créatures dans les très grandes zones ; atelier : glisser les curseurs,
+  « Copier les réglages ».
 - K.3 : les trois ambiances se reconnaissent-elles, la roche luisante suffit-elle sans lanterne (`QUESTIONS.md`, Q22) ;
   caméra dans les boyaux.
 - K.4 : miner un filon à la pioche, changement d'arme ; K.5 : créatures des culs-de-sac posées un bloc trop haut ou
