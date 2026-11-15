@@ -77,6 +77,9 @@ forme! {
         boucles: 1.0, 0.0, 4.0, 1.0, "Boucles";
         emprise: 250.0, 80.0, 400.0, 10.0, "Emprise (blocs de chaque côté de l'entrée)";
         profondeur: 160.0, 40.0, 320.0, 10.0, "Profondeur maximale";
+        etendue_x: 1.0, 0.2, 1.0, 0.05, "Étendue sur X (1 : entière, moins : resserrée)";
+        etendue_y: 1.0, 0.2, 1.0, 0.05, "Étendue sur Y (1 partout : grotte ronde)";
+        etendue_z: 1.0, 0.2, 1.0, 0.05, "Étendue sur Z (moins : grotte en galette)";
     }
     "Salle sûre" {
         abri_rayon: 9.0, 6.0, 18.0, 1.0, "Rayon de la salle sûre (arrivée)";
@@ -310,7 +313,10 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
             creux = creux.min(surface(x, y));
         }
     }
-    let prof = (f.profondeur as i32 + (-creux).min(150)).min(-plancher.max(-100_000) - 8).max(24);
+    // Icebreaker U.9: the zones hold in an ellipse around the origin, and the
+    // depth is as squeezed (`etendue_x`, `_y`, `_z`: 1 everywhere, a round cave).
+    let axes = [f.emprise * f.etendue_x, f.emprise * f.etendue_y];
+    let prof = ((f.profondeur * f.etendue_z) as i32 + (-creux).min(150)).min(-plancher.max(-100_000) - 8).max(24);
     let mut grille = Grille::new([-e, -e, -prof - 8], [e, e, 10]);
 
     // How far a zone may reach past its radii (the noise of its walls).
@@ -340,7 +346,8 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
     let dedans = |centre: [i32; 3], rayon: [i32; 3], genre: Genre| {
         let d = debord(genre);
         let ext = [0, 1, 2].map(|i| (rayon[i] as f32 * d[i]).ceil() as i32 + 3);
-        centre[0].abs() + ext[0] < e && centre[1].abs() + ext[1] < e && centre[2] - ext[2] > -prof - 6
+        let q = [0, 1].map(|i| (centre[i].abs() + ext[i]) as f32 / axes[i]);
+        q[0] * q[0] + q[1] * q[1] < 1.0 && centre[2] - ext[2] > -prof - 6
     };
     let libre = |zones: &[Zone], sauf: usize, centre: [i32; 3], rayon: [i32; 3]| {
         zones.iter().enumerate().all(|(i, z)| {
@@ -355,7 +362,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
     // The first zone, under the origin: small enough to hold in the area.
     let genre = genre_tire(&mut rng);
     let mut rayon = tailles(&mut rng, genre);
-    let most = (((e - 12) as f32 / debord(genre)[0]) as i32).max(6);
+    let most = (((axes[0].min(axes[1]) * 0.7 - 12.0) / debord(genre)[0]) as i32).max(6);
     rayon[0] = rayon[0].min(most);
     rayon[1] = rayon[1].min(most);
     let mut centre = [0, 0, -(f.entree_profondeur as i32) - rayon[2]];
@@ -918,7 +925,8 @@ fn tracer(a: [f32; 3], b: [f32; 3], f: &Forme, rng: &mut Alea, autour_a: &[f32],
             if ca.min(cb) < rh + palier {
                 score -= 10.0;
             }
-            if c[0].abs().max(c[1].abs()) + f.puits_rayon + 6.0 > f.emprise {
+            let out = |i: usize, etendue: f32| (c[i].abs() + f.puits_rayon + 6.0) / (f.emprise * etendue);
+            if out(0, f.etendue_x).hypot(out(1, f.etendue_y)) > 1.0 {
                 score -= 100.0;
             }
             if score > best.0 {
@@ -1108,6 +1116,27 @@ mod tests {
                 for i in c.grille.cellules_air() {
                     let p = c.grille.position(i);
                     assert!((0..3).all(|k| p[k] > min[k] && p[k] < max[k] - 1));
+                }
+            }
+        }
+    }
+
+    /// Icebreaker U.9: squeezed along an axis, the cave holds in its ellipse
+    /// and is still walked.
+    #[test]
+    fn a_squeezed_cave_holds_in_its_shape() {
+        let formes = formes();
+        for (nom, profil) in &formes.profils {
+            for (k, etendue) in [[0.35, 1.0, 1.0], [1.0, 0.35, 1.0], [1.0, 1.0, 0.4]].into_iter().enumerate() {
+                let f = Forme { etendue_x: etendue[0], etendue_y: etendue[1], etendue_z: etendue[2], ..profil.forme.clone() };
+                for graine in 0..3 {
+                    let c = generer(&f, graine, &|_, _| 0, i32::MIN);
+                    assert!(c.praticable, "{nom}, axe {k}, graine {graine} : {}", c.resume);
+                    for zone in &c.zones {
+                        let q = [0, 1].map(|i| zone.centre[i] as f32 / (f.emprise * etendue[i]));
+                        assert!(q[0].hypot(q[1]) < 1.0, "{nom}, axe {k}, graine {graine} : zone hors de l'ellipse");
+                        assert!(zone.centre[2] as f32 > -f.profondeur * etendue[2] - 6.0, "{nom}, axe {k}, graine {graine} : zone trop profonde");
+                    }
                 }
             }
         }
