@@ -4185,6 +4185,31 @@ impl Animation for BasicAction {
                     next.lantern.orientation = next.hand_r.orientation.inverse();
                 }
             },
+            // Icebreaker : Envol (ultime du guerrier, A.22) — il se ramasse, puis s'élève bras écartés,
+            // des ailes déployées dans le dos (l'os du planeur), qui battent puis se replient au sol.
+            Some("icebreaker.abilities.guerrier.ultimes.envol") => {
+                let ailes = match d.stage_section {
+                    Some(StageSection::Buildup) => move1base,
+                    Some(StageSection::Movement | StageSection::Action) => 1.0,
+                    Some(StageSection::Recover) => 1.0 - move3base,
+                    _ => 0.0,
+                };
+                let en_l_air = movementbase.min(1.0) * (1.0 - move2base);
+                let battement = (movementbase * 9.0).sin() * 0.3 * en_l_air;
+
+                next.glider.position = Vec3::new(0.0, -4.0, 9.0);
+                next.glider.orientation = Quaternion::rotation_x(1.1 + battement);
+                next.glider.scale = Vec3::one() * 0.8 * ailes;
+
+                // Ramassé avant le bond, cambré en l'air, plié à l'impact.
+                next.chest.position += Vec3::new(0.0, 0.0, -2.0) * move1 * (1.0 - en_l_air);
+                next.chest.orientation.rotate_x(-0.3 * move1 + 0.6 * en_l_air - 0.5 * move2);
+                next.head.orientation.rotate_x(0.3 * en_l_air);
+                next.hand_l.position += Vec3::new(-5.0, 0.0, 6.0) * en_l_air;
+                next.hand_r.position += Vec3::new(5.0, 0.0, 6.0) * en_l_air;
+                next.foot_l.position += Vec3::new(0.0, -2.0, 1.0) * en_l_air;
+                next.foot_r.position += Vec3::new(0.0, -3.0, 2.0) * en_l_air;
+            },
             _ => {},
         }
 

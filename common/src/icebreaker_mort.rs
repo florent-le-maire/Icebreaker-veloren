@@ -47,6 +47,16 @@ pub fn en_releve<'a>(
     })
 }
 
+/// A.22 : la relève de zone d'un ultime (« Envol ») atteint une entité à terre à `rayon` au plus de `centre`.
+pub fn dans_la_releve_de_zone(
+    centre: vek::Vec3<f32>,
+    rayon: f32,
+    pos: vek::Vec3<f32>,
+    a_terre: bool,
+) -> bool {
+    a_terre && centre.distance_squared(pos) <= rayon * rayon
+}
+
 /// L'objet « sac du mort » posé au sol à la mort d'un joueur en expédition (T.3).
 pub const SAC_DU_MORT: &str = "common.items.icebreaker.sac_du_mort";
 
@@ -78,6 +88,17 @@ impl IcebreakerMort {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn releve_de_zone() {
+        let centre = vek::Vec3::new(10.0, 10.0, 5.0);
+        let pres = vek::Vec3::new(14.0, 10.0, 5.0);
+        let loin = vek::Vec3::new(30.0, 10.0, 5.0);
+        assert!(dans_la_releve_de_zone(centre, 8.0, pres, true));
+        // Debout, ou hors du rayon : rien.
+        assert!(!dans_la_releve_de_zone(centre, 8.0, pres, false));
+        assert!(!dans_la_releve_de_zone(centre, 8.0, loin, true));
+    }
 
     #[test]
     fn delai_a_terre() {

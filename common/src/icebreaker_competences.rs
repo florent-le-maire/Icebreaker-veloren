@@ -685,7 +685,11 @@ impl IcebreakerCompetences {
             du_jeu.then_some((numero, niveau))
         } else if touche == TOUCHE_ULTIME {
             let id = self.acquis.ultime.as_deref()?;
-            let numero = registre.numero(id)?;
+            // Un ultime retiré du jeu (« fureur », A.22) : le premier de la classe prend sa place.
+            let numero = registre.numero(id).or_else(|| {
+                let (premier, _) = registre.ultimes_de(&self.classe).first()?;
+                registre.numero(premier)
+            })?;
             let de_la_classe = matches!(
                 &registre.par_numero(numero)?.sorte,
                 Sorte::Ultime { classe } if *classe == self.classe
@@ -1039,7 +1043,8 @@ mod tests {
                     effectif.capacite
                 );
                 assert!(
-                    effectif.animation.starts_with("common.abilities."),
+                    effectif.animation.starts_with("common.abilities.")
+                        || effectif.animation.starts_with("icebreaker.abilities."),
                     "{} niveau {niveau} : animation {}",
                     entree.id,
                     effectif.animation
@@ -1221,7 +1226,7 @@ mod tests {
         );
         assert_eq!(
             guerrier.sur_touche(TOUCHE_ULTIME, Some(&grande_epee)),
-            Some((numero("fureur"), NIVEAU_DEPART))
+            Some((numero("envol"), NIVEAU_DEPART))
         );
         assert_eq!(guerrier.sur_touche(TOUCHES, Some(&grande_epee)), None);
 
@@ -1231,7 +1236,7 @@ mod tests {
         assert_eq!(guerrier.sur_touche(1, Some(&marteau)), None);
         assert_eq!(
             guerrier.sur_touche(TOUCHE_ULTIME, Some(&marteau)),
-            Some((numero("fureur"), NIVEAU_DEPART))
+            Some((numero("envol"), NIVEAU_DEPART))
         );
         // Mains vides : pareil.
         assert_eq!(guerrier.sur_touche(0, None), None);
@@ -1264,7 +1269,7 @@ mod tests {
             animation_de(numero("tourbillon"), Some(ContextualIndex(3))),
             Some("common.abilities.sword.cleaving_whirlwind_slice")
         );
-        assert_eq!(icone_de(numero("fureur")), Some("common.abilities.axe.furor"));
+        assert_eq!(icone_de(numero("envol")), Some("common.abilities.axe.furor"));
         assert_eq!(animation_de(u16::MAX, None), None);
     }
 

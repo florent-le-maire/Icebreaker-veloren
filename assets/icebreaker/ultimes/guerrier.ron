@@ -4,10 +4,11 @@
 #![enable(implicit_some)]
 (
     ultimes: [
-        ("fureur", (
-            nom: "Fureur",
-            description: "Quinze secondes de fureur : chaque coup porté en appelle un autre.",
-            capacite: "common.abilities.axe.furor",
+        ("envol", (
+            nom: "Envol",
+            description: "Le guerrier s'élève, des ailes dans le dos, et retombe : l'impact blesse les ennemis autour et relève les alliés à terre.",
+            capacite: "icebreaker.abilities.guerrier.ultimes.envol",
+            icone: "common.abilities.axe.furor",
             recharge: 90.0,
         )),
         ("seisme", (

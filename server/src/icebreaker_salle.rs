@@ -785,7 +785,7 @@ mod tests {
         let mut acquis = Acquis::lot(
             "grande_epee",
             &["balayage_lourd", "tourbillon"],
-            Some("fureur"),
+            Some("envol"),
             Some("robuste"),
         );
         acquis.jeux.get_mut("grande_epee").unwrap().maitrise = maitrise;
@@ -888,7 +888,7 @@ mod tests {
         assert!(ligne(armes, "Grande épée").action.is_none(), "déjà appris");
         let ultimes = lignes(&p, 2);
         assert_eq!(commande(ligne(ultimes, "Séisme")), ("salle apprendre ultime seisme".into(), false));
-        assert!(ligne(ultimes, "Fureur").action.is_none(), "actif");
+        assert!(ligne(ultimes, "Envol").action.is_none(), "actif");
         let passifs = lignes(&p, 3);
         assert_eq!(commande(ligne(passifs, "Peau dure")), ("salle apprendre passif peau_dure".into(), true));
 
@@ -935,7 +935,7 @@ mod tests {
         assert!(debloquer(&mut autre, "grande_epee", &inconnue, &salle).unwrap_err().contains("Il faut 1 point"));
         assert!(debloquer(&mut autre, "grande_epee", "tourbillon", &salle).unwrap_err().contains("déjà débloquée"));
         assert!(debloquer(&mut autre, "grande_epee", "nimporte", &salle).unwrap_err().contains("inconnue"));
-        assert!(debloquer(&mut autre, "grande_epee", "fureur", &salle).unwrap_err().contains("ultime"));
+        assert!(debloquer(&mut autre, "grande_epee", "envol", &salle).unwrap_err().contains("ultime"));
         let d_ailleurs = registre().jeu("hache").unwrap().competences[0].0.clone();
         assert!(debloquer(&mut autre, "grande_epee", &d_ailleurs, &salle).unwrap_err().contains("autre jeu"));
         assert!(debloquer(&mut autre, "hache", &d_ailleurs, &salle).unwrap_err().contains("ne connaissez pas"));
@@ -1038,20 +1038,20 @@ mod tests {
         let mut acquis = acquis_grande_epee(0);
         let avant = acquis.clone();
         assert!(apprendre_ultime(&mut acquis, "guerrier", "seisme", &salle, 199).unwrap_err().contains("Il vous manque 1 or"));
-        assert!(apprendre_ultime(&mut acquis, "guerrier", "fureur", &salle, 999).unwrap_err().contains("déjà"));
+        assert!(apprendre_ultime(&mut acquis, "guerrier", "envol", &salle, 999).unwrap_err().contains("déjà"));
         assert!(apprendre_ultime(&mut acquis, "guerrier", "balayage_lourd", &salle, 999).unwrap_err().contains("inconnu"));
         assert!(apprendre_passif(&mut acquis, "guerrier", "robuste", &salle, 999).unwrap_err().contains("déjà"));
         assert!(apprendre_passif(&mut acquis, "guerrier", "zzz", &salle, 999).is_err());
         assert!(activer_ultime(&mut acquis, "guerrier", "seisme").unwrap_err().contains("pas encore"));
-        assert!(activer_ultime(&mut acquis, "guerrier", "fureur").unwrap_err().contains("déjà actif"));
+        assert!(activer_ultime(&mut acquis, "guerrier", "envol").unwrap_err().contains("déjà actif"));
         assert_eq!(acquis, avant);
 
         let achat = apprendre_ultime(&mut acquis, "guerrier", "seisme", &salle, 200).unwrap();
         assert_eq!((achat.prix, achat.armes.len()), (salle.prix_ultime, 0));
         assert_eq!(acquis.ultime.as_deref(), Some("seisme"), "il devient l'ultime actif");
-        assert_eq!(acquis.ultimes, vec!["fureur".to_string(), "seisme".into()]);
-        activer_ultime(&mut acquis, "guerrier", "fureur").unwrap();
-        assert_eq!(acquis.ultime.as_deref(), Some("fureur"));
+        assert_eq!(acquis.ultimes, vec!["envol".to_string(), "seisme".into()]);
+        activer_ultime(&mut acquis, "guerrier", "envol").unwrap();
+        assert_eq!(acquis.ultime.as_deref(), Some("envol"));
 
         let achat = apprendre_passif(&mut acquis, "guerrier", "peau_dure", &salle, 120).unwrap();
         assert_eq!(achat.prix, salle.prix_passif);
@@ -1129,7 +1129,7 @@ mod tests {
         let p = panneau(Some(&competences), Some(&inventaire), 0, false, &salle, None);
         let ultimes = lignes(&p, 2);
         assert_eq!(ultimes.len(), registre().ultimes_de("guerrier").len());
-        let fureur = ligne(ultimes, "Fureur");
+        let fureur = ligne(ultimes, "Envol");
         assert_eq!(fureur.pastille, Some((texte("actif"), Ton::Bon)));
         let (_, ultime) = &registre().ultimes_de("guerrier")[0];
         assert_eq!(

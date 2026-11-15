@@ -8,7 +8,7 @@ use crate::{
         CharacterState, StateUpdate, ability::Dodgeable, character_state::OutputEvents,
         item::Reagent, shockwave,
     },
-    event::{ExplosionEvent, ShockwaveEvent},
+    event::{ExplosionEvent, IcebreakerReleveZoneEvent, ShockwaveEvent},
     explosion::{ColorPreset, TerrainReplacementPreset},
     states::{
         behavior::{CharacterBehavior, JoinData},
@@ -85,6 +85,10 @@ pub struct StaticData {
 
     /// Movement speed efficiency
     pub move_efficiency: f32,
+    /// Icebreaker : rayon dans lequel l'atterrissage relève les alliés à terre
+    /// (ultime « Envol », A.22).
+    #[serde(default)]
+    pub icebreaker_releve: Option<f32>,
     /// What key is used to press ability
     pub ability_info: AbilityInfo,
 }
@@ -267,6 +271,15 @@ impl CharacterBehavior for Data {
                         pos: *data.pos,
                         ori: *data.ori,
                     });
+
+                    // Icebreaker : l'atterrissage relève les alliés à terre (A.22).
+                    if let Some(rayon) = self.static_data.icebreaker_releve {
+                        output_events.emit_server(IcebreakerReleveZoneEvent {
+                            par: *data.uid,
+                            pos: data.pos.0,
+                            rayon,
+                        });
+                    }
 
                     // Transitions to recover
                     if let CharacterState::LeapExplosionShockwave(c) = &mut update.character {

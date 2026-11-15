@@ -44,7 +44,7 @@ use common::{
         ChatEvent, ComboChangeEvent, CreateItemDropEvent, CreateNpcEvent, CreateObjectEvent,
         DeleteEvent, DestroyEvent, DownedEvent, EmitExt, Emitter, EnergyChangeEvent,
         EntityAttackedHookEvent, EventBus, ExplosionEvent, HealthChangeEvent, HelpDownedEvent,
-        KillEvent, KnockbackEvent, LandOnGroundEvent, MakeAdminEvent, ParryHookEvent,
+        IcebreakerReleveZoneEvent, KillEvent, KnockbackEvent, LandOnGroundEvent, MakeAdminEvent, ParryHookEvent,
         PermanentChange, PoiseChangeEvent, RegrowHeadEvent, RemoveLightEmitterEvent, RespawnEvent,
         ShootEvent, SoundEvent, StartInteractionEvent, StartTeleportingEvent, TeleportToEvent,
         TeleportToPositionEvent, TransformEvent, UpdateMapMarkerEvent,
@@ -88,6 +88,8 @@ pub(super) fn register_event_systems(builder: &mut DispatcherBuilder) {
     event_dispatch::<HealthChangeEvent>(builder, &[]);
     event_dispatch::<KillEvent>(builder, &[]);
     event_dispatch::<HelpDownedEvent>(builder, &[]);
+    // Icebreaker : relève de zone (A.22).
+    event_dispatch::<IcebreakerReleveZoneEvent>(builder, &[]);
     event_dispatch::<DownedEvent>(builder, &[&event_sys_name::<HealthChangeEvent>()]);
     event_dispatch::<KnockbackEvent>(builder, &[]);
     event_dispatch::<DestroyEvent>(builder, &[&event_sys_name::<HealthChangeEvent>()]);
@@ -389,6 +391,42 @@ impl ServerEvent for HelpDownedEvent {
                         actor,
                         saver,
                     );
+                }
+            }
+        }
+    }
+}
+
+/// Icebreaker : relève de zone (ultime « Envol », A.22). Chaque autre entité à
+/// terre dans le rayon est relevée comme par la touche de relève, sans geste
+/// ni durée (mêmes PV : `mort.ron`).
+impl ServerEvent for IcebreakerReleveZoneEvent {
+    type SystemData<'a> = (
+        Read<'a, EventBus<HelpDownedEvent>>,
+        ReadStorage<'a, Uid>,
+        ReadStorage<'a, comp::Pos>,
+        ReadStorage<'a, comp::Health>,
+    );
+
+    fn handle(
+        events: impl ExactSizeIterator<Item = Self>,
+        (help_downed, uids, positions, healths): Self::SystemData<'_>,
+    ) {
+        let mut emitter = help_downed.emitter();
+        for ev in events {
+            for (uid, pos, health) in (&uids, &positions, &healths).join() {
+                if *uid != ev.par
+                    && common::icebreaker_mort::dans_la_releve_de_zone(
+                        ev.pos,
+                        ev.rayon,
+                        pos.0,
+                        health.has_consumed_death_protection(),
+                    )
+                {
+                    emitter.emit(HelpDownedEvent {
+                        helper: Some(ev.par),
+                        target: *uid,
+                    });
                 }
             }
         }

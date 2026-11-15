@@ -150,7 +150,7 @@ mod tests {
         };
 
         /// Un guerrier du registre, arme sortie, avec les armes du jeu d'armes `jeu` et le lot par
-        /// défaut de sa classe (grande épée : balayage lourd, tourbillon ; ultime : fureur).
+        /// défaut de sa classe (grande épée : balayage lourd, tourbillon ; ultime : envol).
         fn guerrier(state: &mut State, jeu: &str) -> Entity {
             let armes = &registre().jeu(jeu).expect("jeu d'armes").armes;
             let loadout = LoadoutBuilder::empty()
@@ -264,7 +264,7 @@ mod tests {
                 .clear();
             appuyer(&mut state, entity, TOUCHE_ULTIME);
             tick(&mut state, Duration::from_secs_f32(0.033));
-            assert_eq!(lancee(&state, entity), Some(Ability::Icebreaker(numero("fureur"))));
+            assert_eq!(lancee(&state, entity), Some(Ability::Icebreaker(numero("envol"))));
         }
 
         /// Le personnage a fini son geste et relâché ses touches : arme en mains, prêt à relancer.
@@ -325,7 +325,7 @@ mod tests {
             au_repos(&mut state, entity);
             appuyer(&mut state, entity, TOUCHE_ULTIME);
             tick(&mut state, Duration::from_secs_f32(0.033));
-            assert_eq!(lancee(&state, entity), Some(Ability::Icebreaker(numero("fureur"))));
+            assert_eq!(lancee(&state, entity), Some(Ability::Icebreaker(numero("envol"))));
             assert!(reste(&state).is_some(), "le balayage attend toujours");
 
             // Une fois le temps passé, elle repart, et se recharge de nouveau.

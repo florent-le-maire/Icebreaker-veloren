@@ -368,6 +368,14 @@ pub struct HelpDownedEvent {
     pub target: Uid,
 }
 
+/// Icebreaker : relève les alliés à terre de `par` dans `rayon` autour de
+/// `pos` (ultime « Envol », A.22).
+pub struct IcebreakerReleveZoneEvent {
+    pub par: Uid,
+    pub pos: Vec3<f32>,
+    pub rayon: f32,
+}
+
 pub struct DownedEvent {
     pub entity: EcsEntity,
 }

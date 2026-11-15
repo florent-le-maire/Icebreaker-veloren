@@ -971,7 +971,7 @@ mod tests {
             Recrue {
                 nom: "Leif".into(),
                 classe: "guerrier".into(),
-                acquis: Acquis::lot("marteau", &["moulinet"], Some("fureur"), Some("robuste")),
+                acquis: Acquis::lot("marteau", &["moulinet"], Some("envol"), Some("robuste")),
             },
             Recrue { nom: "Anna".into(), classe: "archer".into(), acquis: Acquis::default() },
             Recrue {
@@ -986,7 +986,7 @@ mod tests {
         assert_eq!(lignes.len(), 6, "{lignes:?}");
         assert_eq!(lignes[0].titre, texte("Leif"));
         assert_eq!(lignes[0].sous_titre, texte("guerrier · marteau à deux mains"));
-        assert_eq!(lignes[1].sous_titre, texte("ultime Fureur · passif Robuste"));
+        assert_eq!(lignes[1].sous_titre, texte("ultime Envol · passif Robuste"));
         assert!(lignes[1].estompee && lignes[1].action.is_none());
         assert_eq!(lignes[2].titre, texte("Anna"));
         assert_eq!(lignes[2].sous_titre, texte("archer · arc"));

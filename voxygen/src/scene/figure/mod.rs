@@ -1769,6 +1769,8 @@ impl FigureMgr {
                     | CharacterState::BasicBlock(_)
                     | CharacterState::RiposteMelee(_)
                     | CharacterState::LeapRanged(_)
+                    // Icebreaker : le bond de l'ultime « Envol » (A.22).
+                    | CharacterState::LeapExplosionShockwave(_)
                     | CharacterState::Simple(_) => {
                         let timer = character.timer();
                         let stage_section = character.stage_section();

@@ -966,6 +966,10 @@ pub enum CharacterAbility {
         shockwave_damage_kind: DamageKind,
         shockwave_specifier: comp::shockwave::FrontendSpecifier,
         move_efficiency: f32,
+        /// Icebreaker : rayon dans lequel l'atterrissage relève les alliés à
+        /// terre (ultime « Envol », A.22).
+        #[serde(default)]
+        icebreaker_releve: Option<f32>,
         #[serde(default)]
         meta: AbilityMeta,
     },
@@ -1702,6 +1706,7 @@ impl CharacterAbility {
                 shockwave_damage_kind: _,
                 shockwave_specifier: _,
                 move_efficiency: _,
+                icebreaker_releve: _,
                 meta: _,
             } => {
                 *energy_cost /= stats.energy_efficiency;
@@ -2750,6 +2755,7 @@ impl TryFrom<(&CharacterAbility, AbilityInfo, &JoinData<'_>)> for CharacterState
                 shockwave_damage_kind,
                 shockwave_specifier,
                 move_efficiency,
+                icebreaker_releve,
                 meta: _,
             } => CharacterState::LeapExplosionShockwave(leap_explosion_shockwave::Data {
                 static_data: leap_explosion_shockwave::StaticData {
@@ -2781,6 +2787,7 @@ impl TryFrom<(&CharacterAbility, AbilityInfo, &JoinData<'_>)> for CharacterState
                     shockwave_damage_kind: *shockwave_damage_kind,
                     shockwave_specifier: *shockwave_specifier,
                     move_efficiency: *move_efficiency,
+                    icebreaker_releve: *icebreaker_releve,
                     ability_info,
                 },
                 timer: Duration::default(),
