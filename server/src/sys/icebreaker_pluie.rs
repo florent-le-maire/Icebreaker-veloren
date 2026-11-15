@@ -47,8 +47,8 @@ pub struct IcebreakerPluies(Vec<PluieEnCours>);
 /// Une pluie commence : on mesure la place sous le plafond et on la range.
 pub fn handle_icebreaker_pluie(server: &mut Server, ev: IcebreakerPluieEvent) {
     let ecs = server.state().ecs();
-    // Le point visé est un bloc du sol : on part d'un peu au-dessus.
-    let centre = ev.centre + Vec3::unit_z();
+    // Le centre est posé sur le sol : on part d'un peu au-dessus.
+    let centre = ev.centre + Vec3::unit_z() * 0.3;
     let libre = ecs
         .read_resource::<TerrainGrid>()
         .ray(centre, centre + Vec3::unit_z() * ev.pluie.hauteur)

@@ -5,7 +5,7 @@
     ultimes: [
         ("volee_mortelle", (
             nom: "Volée mortelle",
-            description: "Un cercle marque le sol là où l'archer vise, puis cinq salves de flèches y tombent du ciel.",
+            description: "Tenir la touche pour viser : un cercle suit le regard. La relâcher : une pluie dense de flèches y tombe.",
             capacite: "icebreaker.abilities.archer.ultimes.volee_mortelle",
             animation: "common.abilities.bow.death_volley",
             recharge: 90.0,

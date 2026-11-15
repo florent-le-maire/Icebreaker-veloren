@@ -83,6 +83,20 @@ impl CharacterBehavior for Data {
 
         match self.stage_section {
             StageSection::Buildup => {
+                // Icebreaker : une pluie se vise ; le cercle suit le regard tant que la touche est
+                // tenue, la pluie part quand on la relâche (A.25).
+                if let Some(pluie) = self.static_data.icebreaker_pluie {
+                    output_events.emit_local(LocalEvent::CreateOutcome(Outcome::IcebreakerZone {
+                        pos: icebreaker_centre(data, &pluie),
+                        radius: pluie.rayon,
+                    }));
+                    if self.timer >= self.static_data.buildup_duration
+                        && input_is_pressed(data, self.static_data.ability_info.input)
+                    {
+                        handle_interrupts(data, &mut update, output_events);
+                        return update;
+                    }
+                }
                 if self.timer < self.static_data.buildup_duration {
                     // Build up
                     if let CharacterState::BasicRanged(c) = &mut update.character {
@@ -148,14 +162,9 @@ impl CharacterBehavior for Data {
                         );
                     // Icebreaker : pas de tir, une pluie sur la zone visée (A.23).
                     if let Some(pluie) = self.static_data.icebreaker_pluie {
-                        let vise = self
-                            .static_data
-                            .ability_info
-                            .input_attr
-                            .and_then(|ia| ia.select_pos);
                         output_events.emit_server(crate::event::IcebreakerPluieEvent {
                             lanceur: data.entity,
-                            centre: pluie.centre(data.pos.0, vise, *data.inputs.look_dir),
+                            centre: icebreaker_centre(data, &pluie),
                             pluie,
                             body: self.static_data.projectile_body,
                             projectile,
@@ -278,6 +287,31 @@ impl CharacterBehavior for Data {
 
         update
     }
+}
+
+/// Icebreaker : le centre d'une pluie (A.23, A.25) : là où le regard touche le terrain, ramené à
+/// portée du lanceur, puis posé sur le sol.
+fn icebreaker_centre(data: &JoinData, pluie: &crate::icebreaker_pluie::Pluie) -> vek::Vec3<f32> {
+    use crate::vol::ReadVol;
+    use vek::Vec3;
+    let oeil = data.pos.0 + Vec3::unit_z() * data.body.eye_height(data.scale.map_or(1.0, |s| s.0));
+    let regard = *data.inputs.look_dir;
+    let loin = pluie.portee * 2.0;
+    let distance = data
+        .terrain
+        .ray(oeil, oeil + regard * loin)
+        .until(|b| b.is_solid())
+        .cast()
+        .0;
+    let vise = (distance < loin - 0.5).then(|| oeil + regard * distance);
+    let haut = pluie.centre(data.pos.0, vise, regard) + Vec3::unit_z() * 3.0;
+    let chute = data
+        .terrain
+        .ray(haut, haut - Vec3::unit_z() * 40.0)
+        .until(|b| b.is_solid())
+        .cast()
+        .0;
+    haut - Vec3::unit_z() * chute
 }
 
 fn reset_state(

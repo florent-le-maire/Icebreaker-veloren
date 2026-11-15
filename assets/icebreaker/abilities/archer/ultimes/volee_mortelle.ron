@@ -1,4 +1,4 @@
-// Icebreaker : Volée mortelle (ultime de l'archer, A.23) — sur la base de common.abilities.bow.death_volley : l'archer tire vers le ciel ; un cercle de 6 m apparaît là où il vise (30 m au plus), puis cinq salves de douze flèches perforantes y tombent, une par seconde (`icebreaker_pluie`, réglages : common/src/icebreaker_pluie.rs).
+// Icebreaker : Volée mortelle (ultime de l'archer, A.23) — sur la base de common.abilities.bow.death_volley : l'archer tire vers le ciel ; tant que la touche est tenue, un cercle de 6 m suit le point visé (30 m au plus) ; au relâchement, douze salves de vingt-quatre flèches perforantes y tombent, une toutes les 0,3 s (A.25) (`icebreaker_pluie`, réglages : common/src/icebreaker_pluie.rs).
 BasicRanged(
     energy_cost: 30,
     buildup_duration: 0.3,
@@ -6,7 +6,7 @@ BasicRanged(
     projectile: (
         kind: Simple,
         attack: Some((
-            damage: 10,
+            damage: 8,
             without_combo: true,
             damage_kind: Piercing,
         )),
@@ -18,10 +18,10 @@ BasicRanged(
         recover: Some(0.2),
     ),
     icebreaker_pluie: Some((
-        delai: 0.8,
-        salves: 5,
-        intervalle: 1.0,
-        par_salve: 12,
+        delai: 0.3,
+        salves: 12,
+        intervalle: 0.3,
+        par_salve: 24,
         rayon: 6.0,
         hauteur: 14.0,
         portee: 30.0,
