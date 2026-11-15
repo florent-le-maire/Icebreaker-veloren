@@ -18,6 +18,8 @@ userdata
 userdata-icebreaker
 # Icebreaker : site généré par icebreaker-wiki
 /site
+# Icebreaker : le générateur de grottes compilé pour l'atelier (.\icebreaker.ps1 caverne)
+/icebreaker-caverne/web/caverne-wasm.js
 Makefile
 
 ## Allow asset hud settings

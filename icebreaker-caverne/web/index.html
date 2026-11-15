@@ -1,0 +1,304 @@
+<!doctype html>
+<!-- Icebreaker : l'atelier des grottes (docs/icebreaker/PLAN-CAVERNE.md, jalon U). Ouvert par `.\icebreaker.ps1 caverne`,
+     qui compile le générateur (icebreaker-caverne) en WebAssembly et l'écrit dans caverne-wasm.js à côté de cette page.
+     La 3D vient de three.js, chargé depuis jsdelivr (il faut être en ligne). -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier des grottes</title>
+<style>
+  :root {
+    --fond: #14171c; --panneau: #1c2027; --bord: #2c323c; --texte: #e6e8ec; --discret: #9aa3b0;
+    --accent: #f0be46; --alerte: #ff6b5e;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; background: var(--fond); color: var(--texte); font: 14px/1.4 system-ui, "Segoe UI", sans-serif; }
+  #reglages { width: 340px; flex: none; overflow-y: auto; background: var(--panneau); border-right: 1px solid var(--bord); padding: 14px 14px 30px; }
+  h1 { font-size: 17px; margin: 0 0 2px; }
+  .sous-titre { color: var(--discret); margin: 0 0 14px; font-size: 12.5px; }
+  .ligne { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .ligne label { flex: none; width: 58px; color: var(--discret); }
+  input[type=number], select, button {
+    background: var(--fond); color: var(--texte); border: 1px solid var(--bord); border-radius: 6px; padding: 6px 8px; font: inherit;
+  }
+  input[type=number], select { flex: 1; min-width: 0; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.principal { background: var(--accent); color: #1b1505; border-color: var(--accent); font-weight: 600; }
+  details { border-top: 1px solid var(--bord); padding: 8px 0 2px; }
+  summary { cursor: pointer; font-weight: 600; margin-bottom: 6px; }
+  .champ { margin-bottom: 9px; }
+  .champ .tete { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+  .champ .tete span:last-child { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .champ.change .tete span:first-child::after { content: " *"; color: var(--accent); }
+  input[type=range] { width: 100%; margin: 2px 0 0; accent-color: var(--accent); }
+  #scene { flex: 1; position: relative; min-width: 0; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .barre { position: absolute; display: flex; gap: 6px; align-items: center; background: #1c2027e6; border: 1px solid var(--bord); border-radius: 8px; padding: 6px 8px; }
+  #vues { top: 10px; left: 10px; }
+  #coupe { top: 10px; right: 10px; }
+  #coupe input { width: 180px; margin: 0; }
+  #etat { left: 10px; right: 10px; bottom: 10px; display: block; font-size: 12.5px; }
+  #etat .coupe { color: var(--alerte); font-weight: 600; }
+  #legende { bottom: 64px; left: 10px; flex-direction: column; align-items: flex-start; gap: 2px; font-size: 12px; }
+  #legende i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  #erreur { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; padding: 30px; text-align: center; color: var(--alerte); }
+  dialog { background: var(--panneau); color: var(--texte); border: 1px solid var(--bord); border-radius: 10px; width: min(640px, 90vw); }
+  dialog textarea { width: 100%; height: 50vh; background: var(--fond); color: var(--texte); border: 1px solid var(--bord); font: 12px/1.35 ui-monospace, Consolas, monospace; }
+  dialog::backdrop { background: #000a; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script src="caverne-wasm.js"></script>
+</head>
+<body>
+<aside id="reglages">
+  <h1>Atelier des grottes</h1>
+  <p class="sous-titre">Même générateur que le jeu : ce que tu vois ici est la grotte de cette graine.</p>
+  <div class="ligne"><label for="graine">Graine</label><input id="graine" type="number" min="0" step="1" value="1"><button id="hasard" title="Une autre graine">Au hasard</button></div>
+  <div class="ligne"><label for="profil">Profil</label><select id="profil"></select></div>
+  <div class="ligne"><button id="copier" class="principal" style="flex:1">Copier les réglages</button><button id="defaut" title="Revenir aux réglages du profil">Réinitialiser</button></div>
+  <div id="groupes"></div>
+</aside>
+<main id="scene">
+  <canvas id="toile"></canvas>
+  <div id="vues" class="barre">
+    <button data-vue="perspective">Perspective</button><button data-vue="dessus">Dessus</button><button data-vue="cote">Côté</button>
+  </div>
+  <div id="coupe" class="barre"><span>Coupe</span><input id="hauteur" type="range" min="0" max="1" step="1" value="1"><span id="hauteur-texte"></span></div>
+  <div id="legende" class="barre">
+    <span><i style="background:#5fd16a"></i>Entrée</span>
+    <span><i style="background:#f0be46"></i>Sentier (toujours praticable à pied)</span>
+    <span><i style="background:#5aa7ff"></i>Zone plate</span>
+    <span><i style="background:#ff9a4a"></i>Zone chaotique</span>
+    <span><i style="background:#c9cdd6"></i>Niche (coffre)</span>
+    <span><i style="background:#ff4d4d"></i>Fond (chef)</span>
+  </div>
+  <div id="etat" class="barre">Chargement…</div>
+  <div id="erreur"></div>
+</main>
+<dialog id="ron">
+  <p>Bloc <code>forme</code> à coller dans un profil de <code>assets/icebreaker/grottes/formes.ron</code> :</p>
+  <textarea readonly></textarea>
+  <p style="text-align:right;margin-bottom:0"><span id="copie" style="color:var(--discret);margin-right:10px"></span><button id="fermer">Fermer</button></p>
+</dialog>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const erreur = (texte) => { $('erreur').style.display = 'flex'; $('erreur').textContent = texte; $('etat').textContent = ''; };
+
+let THREE, OrbitControls;
+try {
+  THREE = await import('three');
+  ({ OrbitControls } = await import('three/addons/controls/OrbitControls.js'));
+} catch (e) {
+  erreur("three.js n'a pas pu être chargé (il faut être en ligne) : " + e.message);
+  throw e;
+}
+if (!window.CAVERNE_WASM) {
+  erreur("caverne-wasm.js est absent : lancer .\\icebreaker.ps1 caverne depuis la racine du dépôt, qui compile le générateur et ouvre cette page.");
+  throw new Error('caverne-wasm.js absent');
+}
+const octets = Uint8Array.from(atob(window.CAVERNE_WASM), (c) => c.charCodeAt(0));
+const wasm = (await WebAssembly.instantiate(octets, {})).instance.exports;
+
+// Sorties du générateur : copiées hors de sa mémoire (elle peut grandir d'un appel à l'autre).
+const sortie = (i) => new Uint8Array(wasm.memory.buffer, wasm.sortie_ptr(i), wasm.sortie_len(i)).slice();
+const texte = (quoi, graine = 0) => { wasm.texte(quoi, graine); return new TextDecoder().decode(sortie(5)); };
+const ecrire = (valeurs) => new Float32Array(wasm.memory.buffer, wasm.entree(valeurs.length), valeurs.length).set(valeurs);
+
+// Les réglages (clé, groupe, libellé, bornes) et les profils viennent du générateur : une seule liste.
+const champs = texte(0).split('\n').map((l) => {
+  const [cle, groupe, libelle, min, max, pas, defaut] = l.split('\t');
+  return { cle, groupe, libelle, min: +min, max: +max, pas: +pas, defaut: +defaut };
+});
+const profils = {};
+for (const l of texte(1).split('\n')) {
+  const [nom, , ...valeurs] = l.split('\t');
+  profils[nom] = valeurs.map(Number);
+}
+const AUTO = '(tiré par la graine)';
+$('profil').append(...[AUTO, ...Object.keys(profils)].map((n) => new Option(n, n)));
+
+// Un curseur par réglage, par groupe.
+const groupes = {};
+champs.forEach((c, i) => {
+  if (!groupes[c.groupe]) {
+    const d = document.createElement('details');
+    d.open = true;
+    d.innerHTML = `<summary>${c.groupe}</summary>`;
+    $('groupes').append(d);
+    groupes[c.groupe] = d;
+  }
+  const div = document.createElement('div');
+  div.className = 'champ';
+  div.innerHTML = `<div class="tete"><span>${c.libelle}</span><span></span></div><input type="range" min="${c.min}" max="${c.max}" step="${c.pas}">`;
+  c.curseur = div.querySelector('input');
+  c.sortie = div.querySelector('.tete span:last-child');
+  c.bloc = div;
+  c.curseur.addEventListener('input', () => { afficher(c, i); demander(); });
+  groupes[c.groupe].append(div);
+});
+let reference = [];
+const afficher = (c, i) => {
+  c.sortie.textContent = c.curseur.value;
+  c.bloc.classList.toggle('change', Math.abs(+c.curseur.value - reference[i]) > 1e-6);
+};
+const graine = () => Math.max(0, Math.floor(+$('graine').value || 0));
+const nomProfil = () => ($('profil').value === AUTO ? texte(3, graine()) : $('profil').value);
+const charger = () => {
+  reference = profils[nomProfil()];
+  champs.forEach((c, i) => { c.curseur.value = reference[i]; afficher(c, i); });
+};
+
+// La scène : z vers le haut, les parois vues de l'intérieur (les faces regardent l'air).
+THREE.ColorManagement.enabled = false;
+const rendu = new THREE.WebGLRenderer({ canvas: $('toile'), antialias: true, preserveDrawingBuffer: true });
+rendu.outputColorSpace = THREE.LinearSRGBColorSpace;
+rendu.localClippingEnabled = true;
+rendu.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0e1116);
+const camera = new THREE.PerspectiveCamera(50, 1, 1, 5000);
+camera.up.set(0, 0, 1);
+const orbite = new OrbitControls(camera, rendu.domElement);
+orbite.addEventListener('change', () => dessiner());
+const plan = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
+const matiere = new THREE.MeshBasicMaterial({ vertexColors: true, clippingPlanes: [plan] });
+let grotte = null;
+const marques = new THREE.Group();
+scene.add(marques);
+// La surface : une grille discrète, hors brume.
+const sol = new THREE.GridHelper(800, 40, 0x3a4250, 0x232a34);
+sol.rotation.x = Math.PI / 2;
+sol.material.transparent = true;
+sol.material.opacity = 0.45;
+sol.material.fog = false;
+scene.add(sol);
+const COULEURS = [0x5fd16a, 0x5aa7ff, 0xff9a4a, 0xc9cdd6, 0xff4d4d];
+let boite = new THREE.Box3();
+// La brume donne la profondeur : le fond de la grotte s'estompe, quel que soit le recul.
+scene.fog = new THREE.Fog(0x0e1116, 1, 2);
+
+const dessiner = () => {
+  const centre = boite.getCenter(new THREE.Vector3());
+  const rayon = boite.getSize(new THREE.Vector3()).length() / 2 || 1;
+  const recul = camera.position.distanceTo(centre);
+  scene.fog.near = Math.max(1, recul - rayon);
+  scene.fog.far = recul + rayon * 1.6;
+  rendu.render(scene, camera);
+};
+const tailler = () => {
+  const { clientWidth: w, clientHeight: h } = $('scene');
+  rendu.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  dessiner();
+};
+addEventListener('resize', tailler);
+
+const cadrer = (vue) => {
+  const centre = boite.getCenter(new THREE.Vector3());
+  const taille = boite.getSize(new THREE.Vector3());
+  const recul = Math.max(taille.x, taille.y, taille.z) * 1.25 + 40;
+  orbite.target.copy(centre);
+  if (vue === 'dessus') camera.position.set(centre.x, centre.y - 0.01, centre.z + recul * 1.1);
+  else if (vue === 'cote') camera.position.set(centre.x, centre.y - recul * 1.2, centre.z);
+  else camera.position.set(centre.x - recul * 0.55, centre.y - recul * 0.8, centre.z + recul * 0.55);
+  orbite.update();
+  dessiner();
+};
+document.querySelectorAll('#vues button').forEach((b) => b.addEventListener('click', () => cadrer(b.dataset.vue)));
+
+const couper = () => {
+  const h = +$('hauteur').value;
+  const tout = h >= +$('hauteur').max;
+  plan.constant = tout ? 1e6 : h;
+  $('hauteur-texte').textContent = tout ? 'entière' : `sous ${h}`;
+  dessiner();
+};
+$('hauteur').addEventListener('input', couper);
+
+// ?profil=gouffre&graine=3&vue=cote&coupe=-40 ouvre sur une grotte précise.
+const demande = new URLSearchParams(location.search);
+let premiere = true;
+const generer = () => {
+  const debut = performance.now();
+  ecrire(champs.map((c) => +c.curseur.value));
+  const entier = wasm.generer(graine());
+  const sommets = new Int16Array(sortie(0).buffer);
+  const indices = new Uint32Array(sortie(2).buffer);
+  const geometrie = new THREE.BufferGeometry();
+  geometrie.setAttribute('position', new THREE.BufferAttribute(sommets, 3));
+  geometrie.setAttribute('color', new THREE.BufferAttribute(sortie(1), 3, true));
+  geometrie.setIndex(new THREE.BufferAttribute(indices, 1));
+  geometrie.computeBoundingBox();
+  if (grotte) { scene.remove(grotte); grotte.geometry.dispose(); }
+  grotte = new THREE.Mesh(geometrie, matiere);
+  grotte.frustumCulled = false;
+  scene.add(grotte);
+  boite = geometrie.boundingBox.clone();
+
+  marques.clear();
+  const m = new Int16Array(sortie(3).buffer);
+  for (let i = 0; i < m.length; i += 4) {
+    const bille = new THREE.Mesh(
+      new THREE.SphereGeometry(m[i + 3] === 3 ? 1.6 : 2.6, 16, 12),
+      new THREE.MeshBasicMaterial({ color: COULEURS[m[i + 3]], depthTest: false }),
+    );
+    bille.renderOrder = 2;
+    bille.position.set(m[i] + 0.5, m[i + 1] + 0.5, m[i + 2] + 1.5);
+    marques.add(bille);
+  }
+
+  // La coupe garde sa hauteur si elle tient encore dans la nouvelle grotte.
+  const h = $('hauteur');
+  const etaitEntiere = +h.value >= +h.max;
+  h.min = Math.floor(boite.min.z) + 1;
+  h.max = Math.ceil(boite.max.z) + 1;
+  if (etaitEntiere || +h.value > +h.max) h.value = h.max;
+  if (premiere && demande.has('coupe')) h.value = demande.get('coupe');
+  couper();
+  if (premiere) { premiere = false; cadrer(new URLSearchParams(location.search).get('vue') || 'perspective'); }
+
+  const resume = new TextDecoder().decode(sortie(4));
+  const ms = Math.round(performance.now() - debut);
+  $('etat').innerHTML = `<b>${nomProfil()}</b>, graine ${graine()} · ${resume.replace('sentier COUPÉ', '<span class="coupe">sentier COUPÉ</span>')} · ${(indices.length / 6).toLocaleString('fr')} faces, ${ms} ms`;
+  if (!entier) console.warn('sentier coupé');
+  dessiner();
+};
+let attente = 0;
+const demander = () => { clearTimeout(attente); attente = setTimeout(generer, 40); };
+
+$('graine').addEventListener('input', () => { if ($('profil').value === AUTO) charger(); demander(); });
+$('profil').addEventListener('change', () => { charger(); demander(); });
+$('hasard').addEventListener('click', () => {
+  $('graine').value = Math.floor(Math.random() * 1e6);
+  if ($('profil').value === AUTO) charger();
+  demander();
+});
+$('defaut').addEventListener('click', () => { charger(); demander(); });
+$('copier').addEventListener('click', async () => {
+  ecrire(champs.map((c) => +c.curseur.value));
+  const ron = texte(2);
+  $('ron').querySelector('textarea').value = ron;
+  $('copie').textContent = '';
+  $('ron').showModal();
+  try { await navigator.clipboard.writeText(ron); $('copie').textContent = 'Copié dans le presse-papiers.'; }
+  catch { $('copie').textContent = 'Sélectionner le texte et le copier.'; }
+});
+$('fermer').addEventListener('click', () => $('ron').close());
+
+if (demande.has('graine')) $('graine').value = demande.get('graine');
+if (profils[demande.get('profil')]) $('profil').value = demande.get('profil');
+charger();
+tailler();
+generer();
+</script>
+</body>
+</html>

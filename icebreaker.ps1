@@ -13,6 +13,8 @@
 #                                             partie, tout se règle par /entrainement)
 #   .\icebreaker.ps1 mod                     (construit le mod dans assets\plugins ; le serveur
 #                                             doit être compilé avec --features plugins)
+#   .\icebreaker.ps1 caverne                 (atelier des grottes, jalon U : compile le générateur pour le
+#                                             navigateur et ouvre icebreaker-caverne\web\index.html)
 #
 # Chaque lieu génère son propre petit monde à chaque lancement (graine au hasard, ou -Seed).
 # Les personnages sont communs à tous les lieux : ils vivent dans la partie, userdata-icebreaker\parties\<nom>
@@ -20,7 +22,7 @@
 # Dans le jeu : Multijoueur, serveur « localhost:<port> », n'importe quel pseudo.
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("campagne", "village", "donjon", "route", "entrainement", "mod")]
+    [ValidateSet("campagne", "village", "donjon", "route", "entrainement", "mod", "caverne")]
     [string]$Lieu,
     # Site autour duquel le lieu est généré (par défaut : Gnarling au donjon, Town au village).
     [string]$Site,
@@ -66,6 +68,22 @@ if ($Lieu -eq "mod") {
     tar -cf "$repo\assets\plugins\icebreaker.plugin.tar" -C $pack icebreaker.wasm plugin.toml
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     Write-Host "Icebreaker : mod pose dans assets\plugins\icebreaker.plugin.tar"
+    exit 0
+}
+
+# L'atelier des grottes (docs/icebreaker/PLAN-CAVERNE.md) : le générateur en WebAssembly, écrit en base64 dans un
+# script à côté de la page pour qu'elle s'ouvre d'un double-clic.
+if ($Lieu -eq "caverne") {
+    cargo build -p icebreaker-caverne --release --lib --target wasm32-unknown-unknown
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Icebreaker : si la cible manque, lancer : rustup target add wasm32-unknown-unknown"
+        exit $LASTEXITCODE
+    }
+    $wasm = [IO.File]::ReadAllBytes("$repo\target\wasm32-unknown-unknown\release\icebreaker_caverne.wasm")
+    $page = "$repo\icebreaker-caverne\web"
+    [IO.File]::WriteAllText("$page\caverne-wasm.js", "window.CAVERNE_WASM = '" + [Convert]::ToBase64String($wasm) + "';")
+    Write-Host "Icebreaker : atelier des grottes, $page\index.html"
+    Start-Process "$page\index.html"
     exit 0
 }
 
