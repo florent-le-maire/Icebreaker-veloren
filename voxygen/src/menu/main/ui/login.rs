@@ -571,6 +571,10 @@ fn campagne<'a>(
 #[derive(Default)]
 struct PartiesStates {
     parties: Vec<button::State>,
+    // Icebreaker X.17 : « Supprimer » de chaque partie, puis « Oui / Non ».
+    supprimer: Vec<button::State>,
+    oui: button::State,
+    non: button::State,
     liste: scrollable::State,
     nom: text_input::State,
     nouvelle: button::State,
@@ -595,6 +599,9 @@ fn choix_partie<'a>(
     const SPACING: u16 = 6;
     states
         .parties
+        .resize_with(menu.parties.len(), Default::default);
+    states
+        .supprimer
         .resize_with(menu.parties.len(), Default::default);
     let bouton = |element: Element<'a, Message>| -> Element<'a, Message> {
         Container::new(element)
@@ -638,13 +645,80 @@ fn choix_partie<'a>(
                 track: Some(style::scrollable::Track::Color(Rgba::new(42, 48, 51, 255))),
                 scroller: style::scrollable::Scroller::Color(Rgba::new(156, 179, 179, 255)),
             });
-        for (index, ((state, partie), date)) in states
+        // Icebreaker X.17 : un petit bouton rouge par ligne, et la confirmation à la
+        // place de la ligne choisie (une seule à la fois, d'où les `take`).
+        let style_petit = |rouge: bool| {
+            let color = if rouge { (190, 50, 40) } else { (60, 66, 70) };
+            style::button::Style::new(imgs.selection)
+                .hover_image(imgs.selection_hover)
+                .press_image(imgs.selection_press)
+                .image_color(Rgba::new(color.0, color.1, color.2, 210))
+        };
+        let petit = |state, texte: String, rouge: bool, message| -> Element<'a, Message> {
+            Button::new(
+                state,
+                Text::new(texte)
+                    .size(fonts.cyri.scale(14))
+                    .color(if rouge {
+                        iced::Color::from_rgb(1.0, 0.6, 0.55)
+                    } else {
+                        iced::Color::WHITE
+                    })
+                    .horizontal_alignment(iced::HorizontalAlignment::Center)
+                    .vertical_alignment(iced::VerticalAlignment::Center),
+            )
+            .style(style_petit(rouge))
+            .padding(8)
+            .min_height(36)
+            .on_press(message)
+            .into()
+        };
+        let (mut oui, mut non) = (Some(&mut states.oui), Some(&mut states.non));
+        for (index, (((state, supprimer), partie), date)) in states
             .parties
             .iter_mut()
+            .zip(states.supprimer.iter_mut())
             .zip(&menu.parties)
             .zip(&menu.dates)
             .enumerate()
         {
+            if menu.a_supprimer == Some(index)
+                && let (Some(oui), Some(non)) = (oui.take(), non.take())
+            {
+                let question = i18n.get_msg_ctx(
+                    "icebreaker-partie-supprimer-question",
+                    &i18n::fluent_args! { "partie" => partie.nom.clone() },
+                );
+                liste = liste.push(
+                    Container::new(
+                        Row::with_children(vec![
+                            Text::new(question.into_owned())
+                                .size(fonts.cyri.scale(16))
+                                .width(Length::Fill)
+                                .into(),
+                            petit(
+                                oui,
+                                i18n.get_msg("icebreaker-partie-supprimer-oui").into_owned(),
+                                true,
+                                Message::CampagneSupprimerOui,
+                            ),
+                            petit(
+                                non,
+                                i18n.get_msg("icebreaker-partie-supprimer-non").into_owned(),
+                                false,
+                                Message::CampagneSupprimerNon,
+                            ),
+                        ])
+                        .align_items(Align::Center)
+                        .spacing(6),
+                    )
+                    .padding(8)
+                    .width(Length::Fill)
+                    .height(Length::Units(52))
+                    .center_y(),
+                );
+                continue;
+            }
             // La plus récente (la première) se « continue », les autres se « jouent ».
             let recente = index == 0;
             let action = i18n.get_msg(if recente {
@@ -653,39 +727,51 @@ fn choix_partie<'a>(
                 "icebreaker-partie-jouer"
             });
             let color = if recente { (97, 255, 18) } else { (97, 97, 25) };
-            liste = liste.push(
-                Button::new(
-                    state,
-                    Row::with_children(vec![
-                        Column::with_children(vec![
-                            Text::new(partie.nom.clone())
-                                .size(fonts.cyri.scale(18))
-                                .into(),
-                            Text::new(date.clone())
-                                .size(fonts.cyri.scale(13))
-                                .color(pale)
-                                .into(),
-                        ])
-                        .width(Length::Fill)
-                        .into(),
-                        Text::new(action.into_owned())
-                            .size(fonts.cyri.scale(16))
-                            .vertical_alignment(iced::VerticalAlignment::Center)
+            let jouer: Element<'a, Message> = Button::new(
+                state,
+                Row::with_children(vec![
+                    Column::with_children(vec![
+                        Text::new(partie.nom.clone())
+                            .size(fonts.cyri.scale(18))
+                            .into(),
+                        Text::new(date.clone())
+                            .size(fonts.cyri.scale(13))
+                            .color(pale)
                             .into(),
                     ])
-                    .align_items(Align::Center)
-                    .spacing(8),
-                )
-                .style(
-                    style::button::Style::new(imgs.selection)
-                        .hover_image(imgs.selection_hover)
-                        .press_image(imgs.selection_press)
-                        .image_color(Rgba::new(color.0, color.1, color.2, 192)),
-                )
-                .padding(8)
-                .width(Length::Fill)
-                .min_height(52)
-                .on_press(Message::CampagnePartie(partie.nom.clone())),
+                    .width(Length::Fill)
+                    .into(),
+                    Text::new(action.into_owned())
+                        .size(fonts.cyri.scale(16))
+                        .vertical_alignment(iced::VerticalAlignment::Center)
+                        .into(),
+                ])
+                .align_items(Align::Center)
+                .spacing(8),
+            )
+            .style(
+                style::button::Style::new(imgs.selection)
+                    .hover_image(imgs.selection_hover)
+                    .press_image(imgs.selection_press)
+                    .image_color(Rgba::new(color.0, color.1, color.2, 192)),
+            )
+            .padding(8)
+            .width(Length::Fill)
+            .min_height(52)
+            .on_press(Message::CampagnePartie(partie.nom.clone()))
+            .into();
+            liste = liste.push(
+                Row::with_children(vec![
+                    jouer,
+                    petit(
+                        supprimer,
+                        i18n.get_msg("icebreaker-partie-supprimer").into_owned(),
+                        true,
+                        Message::CampagneSupprimer(index),
+                    ),
+                ])
+                .align_items(Align::Center)
+                .spacing(4),
             );
         }
         children.push(liste.into());
@@ -732,7 +818,7 @@ fn choix_partie<'a>(
         Some(Message::CampagneRetour),
     )));
     Column::with_children(children)
-        .width(Length::Units(INPUT_WIDTH + 30))
+        .width(Length::Units(INPUT_WIDTH + 110))
         .spacing(SPACING)
         .align_items(Align::Center)
         .into()

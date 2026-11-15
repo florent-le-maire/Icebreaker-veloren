@@ -79,6 +79,9 @@ pub struct MenuParties {
     pub dates: Vec<String>,
     pub nom: String,
     pub erreur: Option<NomRefuse>,
+    /// Icebreaker X.17 : la partie (index dans `parties`) dont la suppression
+    /// attend sa confirmation (« Oui / Non » à la place de sa ligne).
+    pub a_supprimer: Option<usize>,
 }
 
 impl MenuParties {
@@ -91,6 +94,7 @@ impl MenuParties {
             dates,
             nom: String::new(),
             erreur: None,
+            a_supprimer: None,
         }
     }
 }
@@ -171,6 +175,63 @@ pub fn nom_partie(saisie: &str, existantes: &[Partie]) -> Result<String, NomRefu
         return Err(NomRefuse::Existe);
     }
     Ok(nom.to_string())
+}
+
+/// Icebreaker X.17 : la partie du serveur du lieu, s'il écoute sur ce PC (rien
+/// pour un lieu distant ou sans partie).
+pub fn partie_en_cours(lieu: &Lieu) -> Option<String> {
+    if lieu.adresse.is_some() || lieu.sans_partie {
+        return None;
+    }
+    let local = SocketAddr::from((Ipv4Addr::LOCALHOST, lieu.port));
+    TcpStream::connect_timeout(&local, Duration::from_millis(300)).ok()?;
+    let en_cours = std::fs::read_to_string(PARTIE_DU_SERVEUR).ok()?;
+    Some(en_cours.trim().to_string()).filter(|p| !p.is_empty())
+}
+
+/// Pourquoi une partie n'a pas été supprimée.
+#[derive(Debug, PartialEq, Eq)]
+pub enum SuppressionRefusee {
+    /// Son serveur tourne : fermer d'abord sa fenêtre.
+    EnCours,
+    /// Le dossier n'a pas pu être effacé (texte de l'erreur).
+    Echec(String),
+}
+
+/// Icebreaker X.17 : efface la partie `nom` du dossier `dossier` (personnages,
+/// caisse, village…), sauf si c'est `en_cours`, la partie de son serveur qui
+/// tourne. `derniere.txt` qui la désignait est effacé aussi : sinon
+/// `icebreaker.ps1` recréerait une partie vide du même nom.
+pub fn supprimer_partie_dans(
+    dossier: &Path,
+    nom: &str,
+    en_cours: Option<&str>,
+) -> Result<(), SuppressionRefusee> {
+    // Le nom vient de la liste (un sous-dossier) ; on refuse tout ce qui sortirait
+    // du dossier.
+    if nom.is_empty() || nom == "." || nom == ".." || nom.contains(['/', '\\']) {
+        return Err(SuppressionRefusee::Echec(format!(
+            "nom de partie invalide : {nom}"
+        )));
+    }
+    if en_cours.is_some_and(|p| p.eq_ignore_ascii_case(nom)) {
+        return Err(SuppressionRefusee::EnCours);
+    }
+    std::fs::remove_dir_all(dossier.join(nom))
+        .map_err(|e| SuppressionRefusee::Echec(e.to_string()))?;
+    let derniere = dossier.join("derniere.txt");
+    if std::fs::read_to_string(&derniere).is_ok_and(|d| d.trim().eq_ignore_ascii_case(nom)) {
+        let _ = std::fs::remove_file(derniere);
+    }
+    info!("Icebreaker : partie « {nom} » supprimée");
+    Ok(())
+}
+
+/// La même chose dans `userdata-icebreaker/parties`, en regardant si le
+/// serveur du lieu tourne pour cette partie.
+pub fn supprimer_partie(lieu: Option<&Lieu>, nom: &str) -> Result<(), SuppressionRefusee> {
+    let en_cours = lieu.and_then(partie_en_cours);
+    supprimer_partie_dans(Path::new(PARTIES), nom, en_cours.as_deref())
 }
 
 /// Lance le serveur du lieu pour la partie `partie` s'il n'écoute pas déjà, et
@@ -351,5 +412,49 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dossier);
         assert_eq!(noms, ["Récente", "Ancienne"]);
         assert!(parties_dans(&dossier).is_empty());
+    }
+
+    #[test]
+    fn supprimer_une_partie() {
+        let dossier =
+            std::env::temp_dir().join(format!("icebreaker-supprimer-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dossier);
+        for nom in ["Garder", "Effacer", "Ouverte"] {
+            std::fs::create_dir_all(dossier.join(nom).join("personnages")).unwrap();
+            std::fs::write(dossier.join(nom).join(HORLOGE), "()").unwrap();
+        }
+        std::fs::write(dossier.join("derniere.txt"), "Effacer").unwrap();
+        let noms =
+            || -> Vec<String> { parties_dans(&dossier).into_iter().map(|p| p.nom).collect() };
+
+        // La partie dont le serveur tourne reste.
+        assert_eq!(
+            supprimer_partie_dans(&dossier, "Ouverte", Some("Ouverte")),
+            Err(SuppressionRefusee::EnCours)
+        );
+        // Ni chemin ni dossier parent.
+        for nom in ["..", "", "a/b", "..\\Garder"] {
+            assert!(matches!(
+                supprimer_partie_dans(&dossier, nom, None),
+                Err(SuppressionRefusee::Echec(_))
+            ));
+        }
+        // Une autre se supprime, avec derniere.txt qui la désignait.
+        assert_eq!(
+            supprimer_partie_dans(&dossier, "Effacer", Some("Ouverte")),
+            Ok(())
+        );
+        assert!(!dossier.join("derniere.txt").exists());
+        let mut restantes = noms();
+        restantes.sort();
+        assert_eq!(restantes, ["Garder", "Ouverte"]);
+        // derniere.txt qui désigne une autre partie reste.
+        std::fs::write(dossier.join("derniere.txt"), "Garder").unwrap();
+        assert_eq!(supprimer_partie_dans(&dossier, "Ouverte", None), Ok(()));
+        assert!(dossier.join("derniere.txt").exists());
+        assert_eq!(noms(), ["Garder"]);
+        // Une partie qui n'existe plus : échec, rien d'autre ne bouge.
+        assert!(supprimer_partie_dans(&dossier, "Effacer", None).is_err());
+        let _ = std::fs::remove_dir_all(&dossier);
     }
 }

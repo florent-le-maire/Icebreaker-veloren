@@ -27,6 +27,13 @@ icebreaker-partie-continuer-action = Continue
 icebreaker-partie-jouer = Play
 icebreaker-partie-jouee = played on { $date } at { $heure }
 icebreaker-partie-creer = Create
+# Icebreaker X.17: delete a game from the menu.
+icebreaker-partie-supprimer = Delete
+icebreaker-partie-supprimer-question = Delete "{ $partie }"?
+icebreaker-partie-supprimer-oui = Yes
+icebreaker-partie-supprimer-non = No
+icebreaker-partie-supprimer-en-cours = The game "{ $partie }" is running: close its server window before deleting it.
+icebreaker-partie-supprimer-echec = The game "{ $partie }" could not be deleted (see the log).
 icebreaker-etape-serveur = Server started
 icebreaker-etape-monde = Preparing the world
 icebreaker-etape-connexion = Connecting

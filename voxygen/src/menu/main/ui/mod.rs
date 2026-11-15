@@ -295,6 +295,10 @@ enum Message {
     CampagneNom(String),
     CampagneNouvelle,
     CampagneRetour,
+    // Icebreaker X.17 : supprimer une partie (index dans la liste), puis Oui / Non.
+    CampagneSupprimer(usize),
+    CampagneSupprimerOui,
+    CampagneSupprimerNon,
     UnlockServerField,
     LanguageChanged(usize),
     OpenLanguageMenu,
@@ -524,6 +528,44 @@ impl Controls {
         }
     }
 
+    /// Icebreaker X.17 : supprime la partie confirmée, puis relit la liste ;
+    /// une partie dont le serveur tourne reste, avec un message.
+    fn icebreaker_supprimer(&mut self) {
+        let Some(menu) = &mut self.icebreaker_parties else {
+            return;
+        };
+        let Some(partie) = menu
+            .a_supprimer
+            .take()
+            .and_then(|i| menu.parties.get(i).cloned())
+        else {
+            return;
+        };
+        let lieu_index = menu.lieu;
+        let lieu = icebreaker::lieux().read().0.get(lieu_index).cloned();
+        let resultat = icebreaker::supprimer_partie(lieu.as_ref(), &partie.nom);
+        self.icebreaker_ouvrir_parties(lieu_index);
+        if let Err(refus) = resultat {
+            let i18n = self.i18n.read();
+            let args = i18n::fluent_args! { "partie" => partie.nom.clone() };
+            let message = match refus {
+                icebreaker::SuppressionRefusee::EnCours => {
+                    i18n.get_msg_ctx("icebreaker-partie-supprimer-en-cours", &args)
+                },
+                icebreaker::SuppressionRefusee::Echec(erreur) => {
+                    warn!(
+                        "Icebreaker : partie « {} » non supprimée : {erreur}",
+                        partie.nom
+                    );
+                    i18n.get_msg_ctx("icebreaker-partie-supprimer-echec", &args)
+                },
+            }
+            .into_owned();
+            drop(i18n);
+            self.connection_error(message);
+        }
+    }
+
     /// Icebreaker N.6 : ouvre le choix de la partie du lieu `lieu` (index dans
     /// `lieux.ron`), le texte de date de chaque partie étant préparé ici, une fois.
     fn icebreaker_ouvrir_parties(&mut self, lieu: usize) {
@@ -681,6 +723,18 @@ impl Controls {
                 }
             },
             Message::CampagnePartie(partie) => self.icebreaker_lancer(ui, &partie, events),
+            // Icebreaker X.17 : la suppression d'une partie se confirme sur sa ligne.
+            Message::CampagneSupprimer(index) => {
+                if let Some(menu) = &mut self.icebreaker_parties {
+                    menu.a_supprimer = Some(index);
+                }
+            },
+            Message::CampagneSupprimerNon => {
+                if let Some(menu) = &mut self.icebreaker_parties {
+                    menu.a_supprimer = None;
+                }
+            },
+            Message::CampagneSupprimerOui => self.icebreaker_supprimer(),
             Message::CampagneNouvelle => {
                 let Some(menu) = &mut self.icebreaker_parties else {
                     return;

@@ -27,6 +27,13 @@ icebreaker-partie-continuer-action = Continuer
 icebreaker-partie-jouer = Jouer
 icebreaker-partie-jouee = jouée le { $date } à { $heure }
 icebreaker-partie-creer = Créer
+# Icebreaker X.17 : supprimer une partie depuis le menu.
+icebreaker-partie-supprimer = Supprimer
+icebreaker-partie-supprimer-question = Supprimer « { $partie } » ?
+icebreaker-partie-supprimer-oui = Oui
+icebreaker-partie-supprimer-non = Non
+icebreaker-partie-supprimer-en-cours = La partie « { $partie } » tourne : fermer la fenêtre de son serveur avant de la supprimer.
+icebreaker-partie-supprimer-echec = La partie « { $partie } » n'a pas pu être supprimée (voir le journal).
 icebreaker-etape-serveur = Serveur lancé
 icebreaker-etape-monde = Préparation du monde
 icebreaker-etape-connexion = Connexion
