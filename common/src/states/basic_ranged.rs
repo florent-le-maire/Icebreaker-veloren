@@ -51,6 +51,9 @@ pub struct StaticData {
     pub vertical_angle_offset: f32,
     //For particle effects
     pub marker: Option<FrontendMarker>,
+    /// Icebreaker : le tir devient une pluie sur la zone visée (A.23).
+    #[serde(default)]
+    pub icebreaker_pluie: Option<crate::icebreaker_pluie::Pluie>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -143,6 +146,29 @@ impl CharacterBehavior for Data {
                             Some(self.static_data.ability_info),
                             Some(data.stats),
                         );
+                    // Icebreaker : pas de tir, une pluie sur la zone visée (A.23).
+                    if let Some(pluie) = self.static_data.icebreaker_pluie {
+                        let vise = self
+                            .static_data
+                            .ability_info
+                            .input_attr
+                            .and_then(|ia| ia.select_pos);
+                        output_events.emit_server(crate::event::IcebreakerPluieEvent {
+                            lanceur: data.entity,
+                            centre: pluie.centre(data.pos.0, vise, *data.inputs.look_dir),
+                            pluie,
+                            body: self.static_data.projectile_body,
+                            projectile,
+                            light: self.static_data.projectile_light,
+                            speed: self.static_data.projectile_speed
+                                * data.stats.projectile_speed_mult,
+                        });
+                        if let CharacterState::BasicRanged(c) = &mut update.character {
+                            c.exhausted = true;
+                        }
+                        handle_interrupts(data, &mut update, output_events);
+                        return update;
+                    }
                     // Shoots all projectiles simultaneously
                     let num_projectiles = self
                         .static_data

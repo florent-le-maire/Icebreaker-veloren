@@ -12,6 +12,7 @@ pub mod icebreaker_focus;
 // Icebreaker O : réapparition au lieu d'entraînement.
 pub mod icebreaker_arene;
 pub mod icebreaker_mort;
+pub mod icebreaker_pluie;
 pub mod icebreaker_panneaux;
 pub mod icebreaker_rondes;
 pub mod icebreaker_sleep;
@@ -60,6 +61,8 @@ pub fn add_server_systems(dispatch_builder: &mut DispatcherBuilder) {
     dispatch::<icebreaker_village::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_entrainement::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_mort::Sys>(dispatch_builder, &[]);
+    // Icebreaker : pluies de projectiles sur une zone (A.23).
+    dispatch::<icebreaker_pluie::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_arene::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_balise::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_panneaux::Sys>(dispatch_builder, &[]);

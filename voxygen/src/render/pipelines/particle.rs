@@ -134,6 +134,8 @@ pub enum ParticleMode {
     Dust = 81,
     CaveDust = 82,
     BubbleAmbient = 83,
+    // Icebreaker : cercle au sol d'une zone où des projectiles vont tomber (A.23).
+    IcebreakerZone = 84,
 }
 
 impl ParticleMode {

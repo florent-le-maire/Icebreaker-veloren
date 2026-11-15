@@ -208,6 +208,12 @@ pub enum Outcome {
         pos: Vec3<f32>,
         radius: f32,
     },
+    /// Icebreaker : cercle au sol d'une zone où des projectiles vont tomber
+    /// (A.23).
+    IcebreakerZone {
+        pos: Vec3<f32>,
+        radius: f32,
+    },
 }
 
 impl Outcome {
@@ -253,6 +259,7 @@ impl Outcome {
             | Outcome::Glider { pos, .. }
             | Outcome::Splash { pos, .. }
             | Outcome::Transformation { pos }
+            | Outcome::IcebreakerZone { pos, .. }
             | Outcome::FirePillarIndicator { pos, .. } => Some(*pos),
             Outcome::BreakBlock { pos, .. }
             | Outcome::DamagedBlock { pos, .. }

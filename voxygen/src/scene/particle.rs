@@ -696,6 +696,23 @@ impl ParticleMgr {
                     },
                 );
             },
+            // Icebreaker : cercle au sol d'une zone où des projectiles vont tomber (A.23).
+            Outcome::IcebreakerZone { pos, radius } => {
+                self.add_particles(
+                    scene_data.particles_chance,
+                    radius.powi(2) as usize / 2,
+                    || {
+                        Particle::new_directed(
+                            Duration::from_millis(500),
+                            time,
+                            ParticleMode::IcebreakerZone,
+                            *pos + 0.2 * Vec3::<f32>::unit_z(),
+                            *pos + 0.2 * Vec3::<f32>::unit_z() + *radius * Vec3::unit_x(),
+                            scene_data,
+                        )
+                    },
+                );
+            },
             Outcome::ProjectileShot { .. }
             | Outcome::Beam { .. }
             | Outcome::ExpChange { .. }

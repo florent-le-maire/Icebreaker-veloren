@@ -754,6 +754,8 @@ impl Server {
 
         // Icebreaker : à terre et mort (jalon T).
         state.ecs_mut().insert(sys::icebreaker_mort::IcebreakerATerre::default());
+        // Icebreaker : pluies de projectiles en cours (A.23).
+        state.ecs_mut().insert(sys::icebreaker_pluie::IcebreakerPluies::default());
         // Icebreaker O : les morts du lieu d'entraînement, qui réapparaissent à l'entrée.
         #[cfg(feature = "worldgen")]
         state.ecs_mut().insert(sys::icebreaker_arene::IcebreakerArene {

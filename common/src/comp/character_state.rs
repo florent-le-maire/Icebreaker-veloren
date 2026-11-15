@@ -60,6 +60,8 @@ event_emitters! {
         help_downed: event::HelpDownedEvent,
         // Icebreaker : relève de zone (ultime « Envol », A.22).
         icebreaker_releve_zone: event::IcebreakerReleveZoneEvent,
+        // Icebreaker : pluie de projectiles sur une zone (ultime « Volée mortelle », A.23).
+        icebreaker_pluie: event::IcebreakerPluieEvent,
     }
 }
 

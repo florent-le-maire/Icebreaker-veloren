@@ -121,6 +121,8 @@ const int FLAME_CLOAK_ORBIT = 80;
 const int DUST = 81;
 const int CAVE_DUST = 82;
 const int BUBBLE_AMBIENT = 83;
+// Icebreaker : cercle au sol d'une zone où des projectiles vont tomber (A.23).
+const int ICEBREAKER_ZONE = 84;
 
 // meters per second squared (acceleration)
 const float earth_gravity = 9.807;
@@ -1209,6 +1211,16 @@ void main() {
                 spiral_motion(vec3(0, 0, 0.1), (length(inst_dir) + 0.8) * sqrt(percent()), percent(), start_end(6.0, 2.0 + 0.2 * rand0), 2 * PI * rand1),
                 vec3((2.5 * (1 - slow_start(0.02)))),
                 vec4(mix(vec3(3.0, 1.3, 0.8), vec3(2.0 + 0.1 * rand2, 0.8 + 0.1 * rand3, 0.3 + 0.1 * rand4), percent()), 0.8),
+                spin_in_axis(vec3(rand5, rand6, rand7), percent() * 8 + 3 * rand8)
+            );
+            break;
+        // Icebreaker : comme FIRE_PILLAR_INDICATOR, en clair et froid (A.23).
+        case ICEBREAKER_ZONE:
+            f_reflect = 0.0;
+            attr = Attr(
+                spiral_motion(vec3(0, 0, 0.1), (length(inst_dir) + 0.8) * sqrt(percent()), percent(), start_end(6.0, 2.0 + 0.2 * rand0), 2 * PI * rand1),
+                vec3((2.5 * (1 - slow_start(0.02)))),
+                vec4(mix(vec3(2.4, 2.6, 3.0), vec3(1.2 + 0.1 * rand2, 1.6 + 0.1 * rand3, 2.6 + 0.1 * rand4), percent()), 0.8),
                 spin_in_axis(vec3(rand5, rand6, rand7), percent() * 8 + 3 * rand8)
             );
             break;

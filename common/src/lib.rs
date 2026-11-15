@@ -18,6 +18,8 @@ pub mod combat;
 // Icebreaker : combat létal (multiplicateurs de dégâts).
 pub mod icebreaker_combat;
 pub mod icebreaker_mort;
+// Icebreaker : pluie de projectiles sur une zone visée (A.23).
+pub mod icebreaker_pluie;
 // Icebreaker : balise lumineuse (jalon J).
 pub mod icebreaker_balise;
 // Icebreaker : panneau typé de l'interface (jalon N).

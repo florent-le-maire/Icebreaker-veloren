@@ -166,6 +166,8 @@ impl Server {
         self.handle_serial_events(handle_create_object);
         self.handle_serial_events(handle_create_aura_entity);
         self.handle_serial_events(handle_summon_beam_pillars);
+        // Icebreaker : pluie de projectiles sur une zone (A.23).
+        self.handle_serial_events(crate::sys::icebreaker_pluie::handle_icebreaker_pluie);
         self.handle_serial_events(handle_delete);
 
         self.handle_serial_events(handle_character_delete);

@@ -376,6 +376,18 @@ pub struct IcebreakerReleveZoneEvent {
     pub rayon: f32,
 }
 
+/// Icebreaker : une pluie de projectiles sur le cercle de centre `centre`
+/// (ultime « Volée mortelle », A.23, `icebreaker_pluie`).
+pub struct IcebreakerPluieEvent {
+    pub lanceur: EcsEntity,
+    pub centre: Vec3<f32>,
+    pub pluie: crate::icebreaker_pluie::Pluie,
+    pub body: comp::Body,
+    pub projectile: comp::Projectile,
+    pub light: Option<comp::LightEmitter>,
+    pub speed: f32,
+}
+
 pub struct DownedEvent {
     pub entity: EcsEntity,
 }

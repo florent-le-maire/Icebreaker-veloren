@@ -23,6 +23,16 @@ const ENTREE: Duration = Duration::from_secs(25);
 /// Le temps qu'un panneau arrive et s'affiche avant sa capture.
 const ENTRE_DEUX: Duration = Duration::from_secs(3);
 
+/// Le temps entre deux pas : `ICEBREAKER_AUTO_PAS` (secondes), pour saisir un geste court (un ultime,
+/// A.22), sinon `ENTRE_DEUX`.
+fn entre_deux() -> Duration {
+    std::env::var("ICEBREAKER_AUTO_PAS")
+        .ok()
+        .and_then(|s| s.parse::<f32>().ok())
+        .filter(|s| *s > 0.0)
+        .map_or(ENTRE_DEUX, Duration::from_secs_f32)
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Pas {
     Ouvrir,
@@ -103,7 +113,7 @@ impl Auto {
             return None;
         }
         let pas = self.a_faire.pop_front()?;
-        self.quand = maintenant + ENTRE_DEUX;
+        self.quand = maintenant + entre_deux();
         Some(pas)
     }
 }

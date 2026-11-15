@@ -845,6 +845,9 @@ pub enum CharacterAbility {
         #[serde(default)]
         ori_modifier: OrientationModifier,
         marker: Option<comp::FrontendMarker>,
+        /// Icebreaker : le tir devient une pluie sur la zone visée (A.23).
+        #[serde(default)]
+        icebreaker_pluie: Option<crate::icebreaker_pluie::Pluie>,
         #[serde(default)]
         meta: AbilityMeta,
     },
@@ -1568,6 +1571,7 @@ impl CharacterAbility {
                 movement_modifier: _,
                 ori_modifier: _,
                 marker: _,
+                icebreaker_pluie: _,
                 meta: _,
             } => {
                 *buildup_duration /= stats.speed;
@@ -2570,6 +2574,7 @@ impl TryFrom<(&CharacterAbility, AbilityInfo, &JoinData<'_>)> for CharacterState
                 movement_modifier,
                 ori_modifier,
                 marker,
+                icebreaker_pluie,
                 meta: _,
             } => CharacterState::BasicRanged(basic_ranged::Data {
                 static_data: basic_ranged::StaticData {
@@ -2587,6 +2592,7 @@ impl TryFrom<(&CharacterAbility, AbilityInfo, &JoinData<'_>)> for CharacterState
                     movement_modifier: *movement_modifier,
                     ori_modifier: *ori_modifier,
                     marker: *marker,
+                    icebreaker_pluie: *icebreaker_pluie,
                 },
                 timer: Duration::default(),
                 stage_section: StageSection::Buildup,
