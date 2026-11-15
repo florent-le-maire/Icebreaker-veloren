@@ -40,8 +40,9 @@ tire une **forme** par sa graine :
 - le **chaos** : des salles pleines de bosses, de trous et de ponts de roche, sur plusieurs hauteurs ;
 - le **mixte** : un peu de tout.
 
-De la **bouche** en surface, un **sentier** descend et relie toutes les zones : on peut toujours le suivre à pied,
-à l'aller comme au retour. Falaises, trous et replats sont à côté. De petites **niches** s'ouvrent au bord des
+L'équipe arrive dans une **salle sûre**, sous terre, à un endroit tiré par la graine : aucune créature autour, et le
+chef à l'autre bout. La grotte n'a pas de sortie en surface : on rentre par `/rentrer`. De la salle sûre, un
+**sentier** relie toutes les zones : on peut toujours le suivre à pied, à l'aller comme au retour. Falaises, trous et replats sont à côté. De petites **niches** s'ouvrent au bord des
 zones : parfois une bête, parfois un coffre.
 
 Chaque grotte tire aussi une **ambiance** (champignons, cristaux, ossuaire) : la couleur de la roche, la roche
