@@ -334,9 +334,9 @@ tâche pour ce qui casse.
 - A.16 : mage au bâton et au sceptre : effets sur de vraies cibles (brûlure, soin d'un allié, protection, hâte),
   gestes des copies du sceptre, trois ultimes ; l'inné (−10 % de PV) le rend-il trop fragile ?
 - A.17 : archer : saignement, ralentissement, bond arrière, trois ultimes ; équilibre.
-- A.19 à A.23 (ultimes refaits, 2026-11-15) : l'Envol relève-t-il un allié à terre, ses ailes conviennent-elles ; le
-  laser de Fournaise vu de côté et arrêté par un mur ; la Volée mortelle sur des ennemis et sous un plafond ; Séisme,
-  Bénédiction et Œil d'aigle sont-ils assez forts ; sans le plafond de 40 %, les grosses attaques d'arme tuent-elles
+- A.19 à A.27 (ultimes refaits, 2026-11-15) : l'Envol relève-t-il un allié à terre ; le laser de Fournaise arrêté
+  par un mur ; la Volée mortelle : le cercle suit-il bien le regard, est-elle assez dense, tient-elle sous un
+  plafond ; les trois frappes du Séisme ; l'équilibre de tous (plus tard) ; sans le plafond de 40 %, les grosses attaques d'arme tuent-elles
   trop vite.
 
 **Combat (donjon Gnarling)**
