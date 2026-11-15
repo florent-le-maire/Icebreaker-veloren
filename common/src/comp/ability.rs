@@ -1139,6 +1139,10 @@ pub enum CharacterAbility {
         ori_rate: f32,
         move_efficiency: f32,
         specifier: beam::FrontendSpecifier,
+        /// Icebreaker : le rayon dure ce nombre de secondes, touche tenue ou non
+        /// (ultime « Fournaise », A.21).
+        #[serde(default)]
+        icebreaker_duree: Option<f32>,
         #[serde(default)]
         meta: AbilityMeta,
     },
@@ -1955,6 +1959,7 @@ impl CharacterAbility {
                 move_efficiency: _,
                 ori_rate: _,
                 specifier: _,
+                icebreaker_duree: _,
                 meta: _,
             } => {
                 *buildup_duration /= stats.speed;
@@ -3161,6 +3166,7 @@ impl TryFrom<(&CharacterAbility, AbilityInfo, &JoinData<'_>)> for CharacterState
                 move_efficiency,
                 ori_rate,
                 specifier,
+                icebreaker_duree,
                 meta: _,
             } => CharacterState::BasicBeam(basic_beam::Data {
                 static_data: basic_beam::StaticData {
@@ -3180,6 +3186,7 @@ impl TryFrom<(&CharacterAbility, AbilityInfo, &JoinData<'_>)> for CharacterState
                     move_efficiency: *move_efficiency,
                     ori_rate: *ori_rate,
                     specifier: *specifier,
+                    icebreaker_duree: *icebreaker_duree,
                 },
                 timer: Duration::default(),
                 stage_section: StageSection::Buildup,

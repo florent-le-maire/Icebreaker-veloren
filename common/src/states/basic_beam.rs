@@ -65,6 +65,10 @@ pub struct StaticData {
     pub ability_info: AbilityInfo,
     /// Used to specify the beam to the frontend
     pub specifier: beam::FrontendSpecifier,
+    /// Icebreaker : le rayon dure ce nombre de secondes, touche tenue ou non
+    /// (ultime « Fournaise », A.21).
+    #[serde(default)]
+    pub icebreaker_duree: Option<f32>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -181,7 +185,12 @@ impl CharacterBehavior for Data {
                 }
             },
             StageSection::Action => {
-                if input_is_pressed(data, self.static_data.ability_info.input)
+                // Icebreaker : avec une durée, le rayon ne dépend plus de la touche (A.21).
+                let tenu = match self.static_data.icebreaker_duree {
+                    Some(duree) => self.timer < Duration::from_secs_f32(duree),
+                    None => input_is_pressed(data, self.static_data.ability_info.input),
+                };
+                if tenu
                     && (self.static_data.energy_drain <= f32::EPSILON
                         || update.energy.current() > 0.0)
                 {
