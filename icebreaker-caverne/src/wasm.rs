@@ -9,6 +9,9 @@ static FORMES: &str = include_str!("../../assets/icebreaker/grottes/formes.ron")
 
 struct Etat {
     entree: Vec<f32>,
+    /// Icebreaker U.10: the text of `formes.ron` the page got from the server
+    /// of the workshop (empty: the one built in, when the page is a file).
+    formes: Vec<u8>,
     /// 0: vertices (i16), 1: colours (u8), 2: triangles (u32), 3: marks (i16:
     /// x, y, z, kind), 4: summary, 5: the text asked by `texte`.
     sorties: [Vec<u8>; 6],
@@ -16,6 +19,7 @@ struct Etat {
 
 static ETAT: Mutex<Etat> = Mutex::new(Etat {
     entree: Vec::new(),
+    formes: Vec::new(),
     sorties: [const { Vec::new() }; 6],
 });
 
@@ -25,6 +29,15 @@ pub extern "C" fn entree(n: usize) -> *mut f32 {
     let mut etat = ETAT.lock().unwrap();
     etat.entree = vec![0.0; n];
     etat.entree.as_mut_ptr()
+}
+
+/// Room for the `n` bytes of `formes.ron`, as the server of the workshop
+/// gives it: the profiles `texte` lists are then the ones of that text.
+#[unsafe(no_mangle)]
+pub extern "C" fn formes(n: usize) -> *mut u8 {
+    let mut etat = ETAT.lock().unwrap();
+    etat.formes = vec![0; n];
+    etat.formes.as_mut_ptr()
 }
 
 /// Generates the cave of the settings written in `entree`; 1 if its trail is whole.
@@ -61,7 +74,7 @@ pub extern "C" fn generer(graine: f64) -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn texte(quoi: u32, graine: f64) {
     let mut etat = ETAT.lock().unwrap();
-    let formes = Formes::lire(FORMES);
+    let formes = Formes::lire(if etat.formes.is_empty() { FORMES } else { std::str::from_utf8(&etat.formes).unwrap_or("") });
     let text = match (quoi, formes) {
         (0, _) => CHAMPS
             .iter()

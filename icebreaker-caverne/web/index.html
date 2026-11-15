@@ -20,10 +20,15 @@
   .sous-titre { color: var(--discret); margin: 0 0 14px; font-size: 12.5px; }
   .ligne { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
   .ligne label { flex: none; width: 58px; color: var(--discret); }
-  input[type=number], select, button {
+  input[type=number], input[type=text], select, button {
     background: var(--fond); color: var(--texte); border: 1px solid var(--bord); border-radius: 6px; padding: 6px 8px; font: inherit;
   }
-  input[type=number], select { flex: 1; min-width: 0; }
+  input[type=number], input[type=text], select { flex: 1; min-width: 0; }
+  button:disabled { opacity: .45; cursor: default; border-color: var(--bord); }
+  fieldset { border: 1px solid var(--bord); border-radius: 8px; margin: 4px 0 12px; padding: 8px 10px 2px; }
+  legend { color: var(--discret); font-size: 12.5px; padding: 0 4px; }
+  #preset-etat { margin: 0 0 8px; min-height: 1em; }
+  #etat button { padding: 1px 7px; margin-left: 4px; font-size: 12px; }
   button { cursor: pointer; }
   button:hover { border-color: var(--accent); }
   button.principal { background: var(--accent); color: #1b1505; border-color: var(--accent); font-weight: 600; }
@@ -62,8 +67,15 @@
   <h1>Atelier des grottes</h1>
   <p class="sous-titre">Même générateur que le jeu : ce que tu vois ici est la grotte de cette graine.</p>
   <div class="ligne"><label for="graine">Graine</label><input id="graine" type="number" min="0" step="1" value="1"><button id="hasard" title="Une autre graine">Au hasard</button></div>
-  <div class="ligne"><label for="profil">Profil</label><select id="profil"></select></div>
-  <div class="ligne"><button id="copier" class="principal" style="flex:1">Copier les réglages</button><button id="defaut" title="Revenir aux réglages du profil">Réinitialiser</button></div>
+  <div class="ligne"><label for="profil">Preset</label><select id="profil"></select></div>
+  <div class="ligne"><button id="copier" style="flex:1">Copier les réglages</button><button id="defaut" title="Revenir aux réglages du preset">Réinitialiser</button></div>
+  <fieldset>
+    <legend>Enregistrer ces réglages comme preset</legend>
+    <div class="ligne"><label for="nom">Nom</label><input id="nom" type="text" maxlength="24" placeholder="a-z, 0-9, - et _"></div>
+    <div class="ligne"><label for="poids" title="Chance d'être tiré par la graine (0 : jamais tiré, seulement choisi)">Poids</label><input id="poids" type="number" min="0" max="100" step="0.5" value="1"></div>
+    <div class="ligne"><button id="enregistrer" class="principal" style="flex:1" title="Écrit le preset dans formes.ron (commit) : le jeu le propose au départ pour la Grotte">Enregistrer le preset</button><button id="supprimer">Supprimer</button></div>
+    <p id="preset-etat" class="sous-titre"></p>
+  </fieldset>
   <div id="groupes"></div>
 </aside>
 <main id="scene">
@@ -117,13 +129,36 @@ const champs = texte(0).split('\n').map((l) => {
   const [cle, groupe, libelle, min, max, pas, defaut] = l.split('\t');
   return { cle, groupe, libelle, min: +min, max: +max, pas: +pas, defaut: +defaut };
 });
-const profils = {};
-for (const l of texte(1).split('\n')) {
-  const [nom, , ...valeurs] = l.split('\t');
-  profils[nom] = valeurs.map(Number);
-}
+// Les presets sont les profils de formes.ron : ceux du fichier quand l'atelier est servi (.\icebreaker.ps1 caverne),
+// sinon ceux embarqués à la compilation.
 const AUTO = '(tiré par la graine)';
-$('profil').append(...[AUTO, ...Object.keys(profils)].map((n) => new Option(n, n)));
+const profils = {};
+const poids = {};
+const lireProfils = () => {
+  for (const nom of Object.keys(profils)) delete profils[nom];
+  for (const l of texte(1).split('\n')) {
+    const [nom, p, ...valeurs] = l.split('\t');
+    profils[nom] = valeurs.map(Number);
+    poids[nom] = +p;
+  }
+  const choisi = $('profil').value;
+  $('profil').replaceChildren(...[AUTO, ...Object.keys(profils)].map((n) => new Option(n, n)));
+  if (choisi === AUTO || profils[choisi]) $('profil').value = choisi;
+};
+const donnerFormes = (ron) => {
+  const o = new TextEncoder().encode(ron);
+  new Uint8Array(wasm.memory.buffer, wasm.formes(o.length), o.length).set(o);
+  lireProfils();
+};
+const servi = location.protocol.startsWith('http');
+let formesLues = false;
+if (servi) {
+  try {
+    const r = await fetch('/formes');
+    if (r.ok) { donnerFormes(await r.text()); formesLues = true; }
+  } catch { /* les profils embarqués */ }
+}
+if (!formesLues) lireProfils();
 
 // Un curseur par réglage, par groupe.
 const groupes = {};
@@ -154,6 +189,8 @@ const nomProfil = () => ($('profil').value === AUTO ? texte(3, graine()) : $('pr
 const charger = () => {
   reference = profils[nomProfil()];
   champs.forEach((c, i) => { c.curseur.value = reference[i]; afficher(c, i); });
+  $('nom').value = nomProfil();
+  $('poids').value = poids[nomProfil()] ?? 1;
 };
 
 // La scène : z vers le haut, les parois vues de l'intérieur (les faces regardent l'air).
@@ -268,7 +305,8 @@ const generer = () => {
 
   const resume = new TextDecoder().decode(sortie(4));
   const ms = Math.round(performance.now() - debut);
-  $('etat').innerHTML = `<b>${nomProfil()}</b>, graine ${graine()} · ${resume.replace('sentier COUPÉ', '<span class="coupe">sentier COUPÉ</span>')} · ${(indices.length / 6).toLocaleString('fr')} faces, ${ms} ms`;
+  const change = champs.some((c, i) => Math.abs(+c.curseur.value - reference[i]) > 1e-6);
+  $('etat').innerHTML = `Grotte <b>« ${nomProfil()}${change ? ' (modifié)' : ''} », graine ${graine()}</b><button id="copier-graine" title="Copier le preset et la graine">Copier</button> · ${resume.replace('sentier COUPÉ', '<span class="coupe">sentier COUPÉ</span>')} · ${(indices.length / 6).toLocaleString('fr')} faces, ${ms} ms`;
   if (!entier) console.warn('sentier coupé');
   dessiner();
 };
@@ -292,6 +330,49 @@ $('copier').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(ron); $('copie').textContent = 'Copié dans le presse-papiers.'; }
   catch { $('copie').textContent = 'Sélectionner le texte et le copier.'; }
 });
+$('etat').addEventListener('click', (e) => {
+  if (e.target.id === 'copier-graine') navigator.clipboard.writeText(`${nomProfil()} ${graine()}`).then(() => { e.target.textContent = 'Copié'; }, () => {});
+});
+
+// Les presets : enregistrés par le serveur de l'atelier dans formes.ron (avec un commit).
+const dire = (message, alerte = false) => {
+  $('preset-etat').textContent = message;
+  $('preset-etat').style.color = alerte ? 'var(--alerte)' : '';
+};
+const envoyer = async (chemin, corps, fait) => {
+  dire('Enregistrement…');
+  try {
+    const r = await fetch(chemin, { method: 'POST', body: corps });
+    const reponse = await r.text();
+    if (!r.ok) throw new Error(reponse);
+    donnerFormes(reponse);
+    dire(fait());
+    charger();
+    demander();
+  } catch (e) { dire(e.message, true); }
+};
+$('enregistrer').addEventListener('click', () => {
+  const nom = $('nom').value.trim();
+  const remplace = profils[nom] ? 'remplacé' : 'enregistré';
+  if (profils[nom] && !confirm(`Remplacer le preset « ${nom} » par les réglages affichés ?`)) return;
+  envoyer('/preset', `${nom}\n${$('poids').value}\n${champs.map((c) => c.curseur.value).join(' ')}`, () => {
+    $('profil').value = nom;
+    return `Preset « ${nom} » ${remplace} dans formes.ron (commit fait).`;
+  });
+});
+$('supprimer').addEventListener('click', () => {
+  const nom = $('nom').value.trim();
+  if (!confirm(`Supprimer le preset « ${nom} » de formes.ron ?`)) return;
+  envoyer('/preset/supprimer', nom, () => {
+    $('profil').value = AUTO;
+    return `Preset « ${nom} » supprimé (commit fait).`;
+  });
+});
+if (!formesLues) {
+  $('enregistrer').disabled = $('supprimer').disabled = true;
+  dire('Pour enregistrer un preset, ouvrir l’atelier par la commande icebreaker.ps1 caverne (http://localhost:8096).');
+}
+
 $('fermer').addEventListener('click', () => $('ron').close());
 
 if (demande.has('graine')) $('graine').value = demande.get('graine');

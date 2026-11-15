@@ -12,6 +12,7 @@
 pub mod bruit;
 pub mod grille;
 pub mod maillage;
+pub mod presets;
 #[cfg(target_arch = "wasm32")] mod wasm;
 
 use bruit::{Alea, bruit2, bruit3, fbm3};

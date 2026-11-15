@@ -14,7 +14,8 @@
 #   .\icebreaker.ps1 mod                     (construit le mod dans assets\plugins ; le serveur
 #                                             doit être compilé avec --features plugins)
 #   .\icebreaker.ps1 caverne                 (atelier des grottes, jalon U : compile le générateur pour le
-#                                             navigateur et ouvre icebreaker-caverne\web\index.html)
+#                                             navigateur et sert l'atelier sur http://localhost:8096, où
+#                                             l'on enregistre des presets dans formes.ron)
 #
 # Chaque lieu génère son propre petit monde à chaque lancement (graine au hasard, ou -Seed).
 # Les personnages sont communs à tous les lieux : ils vivent dans la partie, userdata-icebreaker\parties\<nom>
@@ -75,7 +76,8 @@ if ($Lieu -eq "mod") {
 }
 
 # L'atelier des grottes (docs/icebreaker/PLAN-CAVERNE.md) : le générateur en WebAssembly, écrit en base64 dans un
-# script à côté de la page pour qu'elle s'ouvre d'un double-clic.
+# script à côté de la page (elle s'ouvre aussi d'un double-clic, sans pouvoir enregistrer). Le serveur de l'atelier
+# (icebreaker-caverne, bin atelier) sert la page et écrit les presets dans formes.ron, avec un commit (U.10).
 if ($Lieu -eq "caverne") {
     cargo build -p icebreaker-caverne --release --lib --target wasm32-unknown-unknown
     if ($LASTEXITCODE -ne 0) {
@@ -85,8 +87,13 @@ if ($Lieu -eq "caverne") {
     $wasm = [IO.File]::ReadAllBytes("$repo\target\wasm32-unknown-unknown\release\icebreaker_caverne.wasm")
     $page = "$repo\icebreaker-caverne\web"
     [IO.File]::WriteAllText("$page\caverne-wasm.js", "window.CAVERNE_WASM = '" + [Convert]::ToBase64String($wasm) + "';")
-    Write-Host "Icebreaker : atelier des grottes, $page\index.html"
-    Start-Process "$page\index.html"
+    cargo build -p icebreaker-caverne --release --bin atelier
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    # Si un atelier tourne déjà, celui-ci s'arrête (port pris) et la page s'ouvre sur l'autre.
+    $atelier = Start-Process "$repo\target\release\atelier.exe" -WorkingDirectory $repo -NoNewWindow -PassThru
+    Start-Sleep -Seconds 1
+    Start-Process "http://localhost:8096"
+    $atelier | Wait-Process
     exit 0
 }
 
