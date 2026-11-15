@@ -1,5 +1,5 @@
 #[cfg(feature = "worldgen")] use crate::rtsim;
-use crate::icebreaker_slots::IcebreakerSlots;
+use crate::{icebreaker_expedition::IcebreakerExpedition, icebreaker_slots::IcebreakerSlots};
 use common::{
     comp::{PickupItem, Player, Pos},
     event::{DeleteEvent, EventBus},
@@ -48,6 +48,8 @@ impl<'a> System<'a> for Sys {
         // Icebreaker : les sacs des morts disparaissent à la remise à neuf (T.3).
         (Entities<'a>, ReadStorage<'a, PickupItem>, Read<'a, EventBus<DeleteEvent>>),
         NewPlanData<'a>,
+        // Icebreaker U.11: the party about to leave for a cave dug for it.
+        Write<'a, IcebreakerExpedition>,
     );
 
     const NAME: &'static str = "icebreaker_slots";
@@ -66,6 +68,7 @@ impl<'a> System<'a> for Sys {
             mut rtsim,
             (entities, pickup_items, delete_bus),
             mut new_plan,
+            mut expedition,
         ): Self::SystemData,
     ) {
         if slots.0.is_empty() {
@@ -77,7 +80,14 @@ impl<'a> System<'a> for Sys {
             .collect::<Vec<_>>();
         for slot in slots.0.iter_mut() {
             let occupied = players.iter().any(|pos| slot.holds(*pos));
-            if slot.occupied && !occupied {
+            // Icebreaker U.11: a party leaves for this (free) slot: its cave
+            // is dug again now, of the shape it chose.
+            let wanted = !occupied
+                && expedition
+                    .partance
+                    .as_ref()
+                    .is_some_and(|partance| !partance.refait && partance.site == slot.site);
+            if (slot.occupied && !occupied) || wanted {
                 #[cfg(feature = "worldgen")]
                 let forgotten = rtsim.forget_dungeon_traces(|wpos| slot.holds(wpos.xy().as_()));
                 #[cfg(not(feature = "worldgen"))]
@@ -123,8 +133,25 @@ impl<'a> System<'a> for Sys {
                 // Icebreaker I.12: a new plan, once the traces of the former one are forgotten.
                 #[cfg(feature = "worldgen")]
                 {
-                    let seed = rand::random();
-                    new_layout(slot, &new_plan.0, new_plan.1.as_index_ref(), &mut new_plan.3, &mut new_plan.4, seed);
+                    // Icebreaker U.11: a seed short enough to be read and typed in the workshop.
+                    let seed = u64::from(rand::random::<u32>());
+                    let profil = expedition.partance.as_ref().filter(|_| wanted).and_then(|p| p.profil.clone());
+                    new_layout(
+                        slot,
+                        &new_plan.0,
+                        new_plan.1.as_index_ref(),
+                        &mut new_plan.3,
+                        &mut new_plan.4,
+                        seed,
+                        profil.as_deref(),
+                    );
+                }
+            }
+            if wanted && let Some(partance) = expedition.partance.as_mut() {
+                partance.refait = true;
+                #[cfg(feature = "worldgen")]
+                {
+                    partance.grotte = world::icebreaker::grotte_info(&new_plan.1.as_index_ref().sites[slot.site]);
                 }
             }
             slot.occupied = occupied;
@@ -143,13 +170,15 @@ pub fn new_layout(
     mission: &mut crate::icebreaker_mission::IcebreakerMission,
     sleep: &mut super::icebreaker_sleep::IcebreakerSleep,
     seed: u64,
+    profil: Option<&str>,
 ) {
     let site = &index.sites[slot.site];
-    match world::icebreaker::regenerate_slot(world, site, seed) {
+    match world::icebreaker::regenerate_slot(world, site, seed, profil) {
         Ok(true) => {
             slot.arrival = crate::icebreaker_slots::arrival_pos(world, index, site, site.origin);
             crate::icebreaker_mission::set_dungeon(mission, sleep, slot.site, site);
-            info!(slot = %slot.name, seed, arrival = ?slot.arrival, "Icebreaker: new plan for the dungeon slot");
+            let grotte = world::icebreaker::grotte_info(site);
+            info!(slot = %slot.name, seed, ?grotte, arrival = ?slot.arrival, "Icebreaker: new plan for the dungeon slot");
         },
         Ok(false) => {},
         Err(e) => warn!(?e, slot = %slot.name, "Icebreaker: no new plan for the dungeon slot"),

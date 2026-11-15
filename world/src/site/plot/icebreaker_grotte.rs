@@ -205,7 +205,7 @@ impl Site {
                 return site;
             },
         };
-        let (plot, _) = IcebreakerGrotte::generate_inside(&settings, land, origin, rng.random());
+        let (plot, _) = IcebreakerGrotte::generate_inside(&settings, land, origin, u64::from(rng.random::<u32>()), None);
         // Icebreaker I.11: the site covers the area kept for the cave, so that
         // one drawn again in its place (I.12) is drawn whole.
         let bounds = IcebreakerGrotte::emprise(&settings, origin);
@@ -245,11 +245,21 @@ impl IcebreakerGrotte {
 
     /// The cave of `seed` whose mouth is at `origin`, drawn again with the
     /// next seeds while it goes past the area kept for it; and whether it fits.
-    fn generate_inside(settings: &grotte::Settings, land: &Land, origin: Vec2<i32>, seed: u64) -> (Self, bool) {
+    /// Icebreaker U.11: `voulu` is the shape the party chose (a preset of
+    /// `formes.ron`), if any.
+    fn generate_inside(
+        settings: &grotte::Settings,
+        land: &Land,
+        origin: Vec2<i32>,
+        seed: u64,
+        voulu: Option<&str>,
+    ) -> (Self, bool) {
         let mouth = origin.with_z(land.get_alt_approx(origin) as i32);
         // The mood and the shape asked for (`-Ambiance` and `-Profil` of the launcher), or drawn by the seed.
         let ambiance = std::env::var("ICEBREAKER_GROTTE_AMBIANCE").ok().filter(|a| !a.is_empty());
-        let profil = std::env::var("ICEBREAKER_GROTTE_PROFIL").ok().filter(|p| !p.is_empty());
+        let profil = voulu
+            .map(str::to_string)
+            .or_else(|| std::env::var("ICEBREAKER_GROTTE_PROFIL").ok().filter(|p| !p.is_empty()));
         // Icebreaker H.4: the race asked for (`-Race`), or one drawn by the seed.
         let race = std::env::var("ICEBREAKER_DONJON_RACE").ok().filter(|r| !r.is_empty());
         let kept = Self::emprise(settings, origin);
@@ -278,10 +288,10 @@ impl IcebreakerGrotte {
 impl Remplacable<IcebreakerGrotte> {
     /// Icebreaker I.11: draws in its place a new cave of `seed`, its mouth at
     /// the same `origin`, within the area kept for it. The current one stays
-    /// if none fits; says whether it was replaced.
-    pub fn regenerate(&self, land: &Land, origin: Vec2<i32>, seed: u64) -> Result<bool, String> {
+    /// if none fits; says whether it was replaced. `profil`: the shape asked for.
+    pub fn regenerate(&self, land: &Land, origin: Vec2<i32>, seed: u64, profil: Option<&str>) -> Result<bool, String> {
         let settings = grotte::Settings::load()?;
-        let (plot, fits) = IcebreakerGrotte::generate_inside(&settings, land, origin, seed);
+        let (plot, fits) = IcebreakerGrotte::generate_inside(&settings, land, origin, seed, profil);
         if fits {
             self.replace(plot);
         }
@@ -301,12 +311,12 @@ mod tests {
         let land = Land::empty();
         let origin = Vec2::broadcast(64 * 32);
         let kept = IcebreakerGrotte::emprise(&settings, origin);
-        let (first, fits) = IcebreakerGrotte::generate_inside(&settings, &land, origin, 0);
+        let (first, fits) = IcebreakerGrotte::generate_inside(&settings, &land, origin, 0, None);
         assert!(fits);
         let slot = Remplacable::new(first);
         let mut caves = vec![slot.get().grotte.summary.clone()];
         for seed in [100, 200, 300] {
-            assert!(slot.regenerate(&land, origin, seed).unwrap(), "graine {seed}");
+            assert!(slot.regenerate(&land, origin, seed, None).unwrap(), "graine {seed}");
             let now = slot.get();
             let b = now.bounds();
             assert!(kept.contains_point(b.min) && kept.contains_point(b.max), "graine {seed} : {b:?} hors de {kept:?}");
@@ -316,5 +326,13 @@ mod tests {
         caves.sort();
         caves.dedup();
         assert_eq!(caves.len(), 4, "deux grottes identiques");
+        // Icebreaker U.11: the shape asked for, and the seed kept to show it.
+        for preset in crate::icebreaker::grotte_presets() {
+            assert!(slot.regenerate(&land, origin, 400, Some(&preset)).unwrap(), "{preset}");
+            let now = slot.get();
+            assert_eq!(now.grotte.profil, preset);
+            assert!((400..400 + FIT_TRIES).contains(&now.grotte.seed));
+            assert!(now.grotte.summary.contains(&format!("graine {}", now.grotte.seed)), "{}", now.grotte.summary);
+        }
     }
 }

@@ -144,6 +144,28 @@ pub fn dungeon_arrival_under(site: &Site) -> Option<vek::Vec3<i32>> {
     })
 }
 
+/// Icebreaker U.11: the shape (a preset of `formes.ron`) and the seed of the
+/// cave of `site`.
+pub fn grotte_info(site: &Site) -> Option<(String, u64)> {
+    site.plots().find_map(|plot| match plot.kind() {
+        PlotKind::IcebreakerGrotte(grotte) => {
+            let plot = grotte.get();
+            Some((plot.grotte().profil.clone(), plot.grotte().seed))
+        },
+        _ => None,
+    })
+}
+
+/// Icebreaker U.11: the presets a party may choose the shape of its cave
+/// from: the profiles of `formes.ron`, read again at each call (the workshop
+/// adds some while the server runs).
+pub fn grotte_presets() -> Vec<String> {
+    grotte::Settings::load()
+        .ok()
+        .and_then(|settings| settings.formes)
+        .map_or_else(Vec::new, |formes| formes.profils.keys().cloned().collect())
+}
+
 pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
     site.plots().find_map(|plot| match plot.kind() {
         PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get().entrance()),
@@ -318,13 +340,14 @@ pub fn dungeon_mission(site: &Site) -> Option<crate::site::plot::MissionTargets>
 /// Icebreaker I.11: draws a new dungeon (of our generator) or cave of `seed`
 /// in place of the one of `site`, within the area kept for it; the chunks
 /// generated from now on draw it. `Ok(false)`: the site has none, or none fit
-/// (the current one stays).
-pub fn regenerate_slot(world: &crate::World, site: &Site, seed: u64) -> Result<bool, String> {
+/// (the current one stays). `profil` (Icebreaker U.11): the shape asked for a
+/// cave.
+pub fn regenerate_slot(world: &crate::World, site: &Site, seed: u64, profil: Option<&str>) -> Result<bool, String> {
     let land = crate::Land::from_sim(world.sim());
     for plot in site.plots() {
         let replaced = match plot.kind() {
             PlotKind::IcebreakerDungeon(dungeon) => dungeon.regenerate(&land, site.origin, seed)?,
-            PlotKind::IcebreakerGrotte(grotte) => grotte.regenerate(&land, site.origin, seed)?,
+            PlotKind::IcebreakerGrotte(grotte) => grotte.regenerate(&land, site.origin, seed, profil)?,
             _ => continue,
         };
         if !replaced {

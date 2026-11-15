@@ -115,7 +115,43 @@ impl<'a> System<'a> for Sys {
             }
         }
 
-        let Some((lieu, members)) = departure else {
+        // Where a party arrives, side by side; what they carry now is what
+        // `/rentrer` will count from. Icebreaker U.11: told the shape and
+        // the seed of their cave.
+        let mut arriver = |arrival: Vec3<f32>, members: Vec<specs::Entity>, grotte: Option<(String, u64)>| {
+            for (i, entity) in members.into_iter().enumerate() {
+                let offset = Vec3::new((i % 4) as f32 * 2.0, (i / 4) as f32 * 2.0, 0.0);
+                teleports.emit_now(TeleportToPositionEvent {
+                    entity,
+                    position: arrival + offset,
+                });
+                if let Some(mut inventory) = inventories.get_mut(entity) {
+                    // Icebreaker : une balise lumineuse pour le donjon (jalon J).
+                    crate::icebreaker_balise::donner_si_absente(&mut inventory);
+                    let _ = arrivals.insert(entity, Arrival::of(&inventory));
+                }
+                if let (Some((profil, seed)), Some(client)) = (&grotte, clients.get(entity)) {
+                    client.send_fallible(ServerGeneral::server_msg(
+                        ChatType::Meta,
+                        Content::Plain(icebreaker_expedition::annonce_grotte(profil, *seed)),
+                    ));
+                }
+            }
+        };
+        // Icebreaker U.11: the cave of the party that left was dug again
+        // (`sys::icebreaker_slots`): it arrives there.
+        if expedition.partance.as_ref().is_some_and(|partance| partance.refait)
+            && let Some(partance) = expedition.partance.take()
+            && let Some(slot) = slots.0.iter().find(|slot| slot.site == partance.site)
+        {
+            if let Some((profil, seed)) = &partance.grotte {
+                tracing::info!(profil, seed, "Icebreaker: the party arrives in its cave");
+            }
+            let members = partance.members.into_iter().filter(|entity| positions.contains(*entity)).collect();
+            arriver(slot.arrival, members, partance.grotte);
+        }
+
+        let Some((lieu, members, profil)) = departure else {
             return;
         };
         let members = members
@@ -123,23 +159,23 @@ impl<'a> System<'a> for Sys {
             .filter_map(|uid| id_maps.uid_entity(uid))
             .collect::<Vec<_>>();
 
-        // The campaign: teleported to the slot, side by side; what they carry
-        // now is what `/rentrer` will count from.
+        // The campaign: teleported to the slot.
         if campaign {
             let Some(slot) = free_slot(&lieu) else {
                 return;
             };
-            for (i, entity) in members.into_iter().enumerate() {
-                let offset = Vec3::new((i % 4) as f32 * 2.0, (i / 4) as f32 * 2.0, 0.0);
-                teleports.emit_now(TeleportToPositionEvent {
-                    entity,
-                    position: slot.arrival + offset,
+            // Icebreaker U.11: a cave is first dug again, of the shape the
+            // party chose; it arrives once this is done (next tick).
+            if lieu.site() == Some(icebreaker_expedition::SITE_GROTTE) {
+                expedition.partance = Some(icebreaker_expedition::Partance {
+                    site: slot.site,
+                    members,
+                    profil,
+                    refait: false,
+                    grotte: None,
                 });
-                if let Some(mut inventory) = inventories.get_mut(entity) {
-                    // Icebreaker : une balise lumineuse pour le donjon (jalon J).
-                    crate::icebreaker_balise::donner_si_absente(&mut inventory);
-                    let _ = arrivals.insert(entity, Arrival::of(&inventory));
-                }
+            } else {
+                arriver(slot.arrival, members, None);
             }
             return;
         }

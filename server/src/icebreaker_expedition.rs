@@ -36,7 +36,31 @@ pub struct IcebreakerExpedition {
     pub last_shown: f64,
     /// Icebreaker : ce qui a été montré au village en dernier (jalon N).
     pub montree: Option<common::icebreaker_panneau::Expedition>,
+    /// Icebreaker U.11: the party that left for a cave, while it is dug again.
+    pub partance: Option<Partance>,
 }
+
+/// Icebreaker U.11: a party that left for a cave of the campaign. Its slot is
+/// first made new, with the shape it chose (`sys::icebreaker_slots`, which
+/// says `refait` and which cave came out); then it arrives.
+pub struct Partance {
+    pub site: common::store::Id<world::site::Site>,
+    pub members: Vec<specs::Entity>,
+    pub profil: Option<String>,
+    pub refait: bool,
+    /// The shape and the seed of the cave dug.
+    pub grotte: Option<(String, u64)>,
+}
+
+/// The site (`-Site`) whose shape a party chooses.
+pub const SITE_GROTTE: &str = "Grotte";
+
+/// The word of `/expedition forme` that leaves the shape to the seed.
+pub const HASARD: &str = "hasard";
+
+/// What a party reads when it arrives in its cave: the same preset and seed
+/// in the workshop show its shape.
+pub fn annonce_grotte(profil: &str, seed: u64) -> String { format!("Grotte « {profil} », graine {seed}.") }
 
 impl IcebreakerExpedition {
     pub fn new(leader_pos: Option<Vec3<f32>>) -> Self {
@@ -47,6 +71,7 @@ impl IcebreakerExpedition {
             leader_pos,
             last_shown: 0.0,
             montree: None,
+            partance: None,
         }
     }
 
@@ -145,6 +170,9 @@ pub struct Expedition {
     pub members: Vec<Member>,
     /// When it leaves, once everyone is ready.
     pub departure: Option<f64>,
+    /// Icebreaker U.11: the shape chosen for the cave (a preset of
+    /// `formes.ron`); none: drawn by the seed.
+    pub profil: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -156,9 +184,20 @@ pub struct Member {
 
 impl Expedition {
     fn destination_name(&self) -> String {
+        let nom = lieux()
+            .get(self.destination)
+            .map_or_else(|| "?".to_string(), |lieu| lieu.nom.clone());
+        match &self.profil {
+            Some(profil) => format!("{nom} — {profil}"),
+            None => nom,
+        }
+    }
+
+    /// Whether it goes to a cave, whose shape is chosen.
+    fn is_grotte(&self) -> bool {
         lieux()
             .get(self.destination)
-            .map_or_else(|| "?".to_string(), |lieu| lieu.nom.clone())
+            .is_some_and(|lieu| lieu.site() == Some(SITE_GROTTE))
     }
 
     fn member(&self, uid: Uid) -> Option<&Member> { self.members.iter().find(|m| m.uid == uid) }
@@ -379,6 +418,22 @@ fn panneau_de(
             if m.uid == player { ligne.choisie() } else { ligne }
         })
         .collect();
+    // Icebreaker U.11: the shape of the cave, chosen by any member among the
+    // presets of the workshop.
+    if exp.is_grotte() {
+        let membre = exp.member(player).is_some();
+        let forme = |titre: String, mot: &str, choisie: bool| {
+            let ligne = Ligne::nouvelle(titre).icone("globe").action(
+                Action::nouvelle("Choisir", &["expedition", "forme", mot]).permise(membre && !choisie && !fantome),
+            );
+            if choisie { ligne.pastille("choisie", Ton::Or) } else { ligne }
+        };
+        panneau.lignes.push(forme("Forme de la grotte : au hasard".to_string(), HASARD, exp.profil.is_none()));
+        for preset in world::icebreaker::grotte_presets() {
+            let choisie = exp.profil.as_deref() == Some(preset.as_str());
+            panneau.lignes.push(forme(format!("Forme de la grotte : {preset}"), &preset, choisie));
+        }
+    }
     match exp.member(player) {
         None => {
             panneau.actions = vec![
@@ -441,11 +496,16 @@ pub(crate) fn handle_expedition(
     if crate::icebreaker_registre::is_ghost(ecs, client) {
         return Err(Content::Plain(crate::icebreaker_registre::GHOST_REFUSAL.to_string()));
     }
-    let Some(id) = args.first().and_then(|word| answer_of_word(word)) else {
+    // Icebreaker U.11: `/expedition forme <preset|hasard>`, or the preset after the destination.
+    let forme = args.first().is_some_and(|word| word == "forme");
+    let id = args.first().and_then(|word| answer_of_word(word));
+    if (id.is_none() && !forme) || (forme && args.len() < 2) {
         return Err(Content::Plain(
-            "/expedition <numéro de destination>, rejoindre, pret, attendre ou quitter".to_string(),
+            "/expedition <numéro de destination> [preset de grotte], forme <preset|hasard>, rejoindre, pret, attendre \
+             ou quitter"
+                .to_string(),
         ));
-    };
+    }
     let (Some(uid), alias) = (
         ecs.read_storage::<Uid>().get(client).copied(),
         ecs.read_storage::<comp::Player>()
@@ -455,7 +515,14 @@ pub(crate) fn handle_expedition(
         return Err(Content::Plain("Il faut être en jeu.".to_string()));
     };
     let now = ecs.read_resource::<common::resources::Time>().0;
-    let outcome = answer(uid, &alias, id, now);
+    let mut outcome = id.map(|id| answer(uid, &alias, id, now)).unwrap_or_default();
+    // The preset after a destination: only if this made the player a member.
+    let member = expedition().as_ref().is_some_and(|exp| exp.member(uid).is_some());
+    if let Some(preset) = args.get(1).filter(|_| forme || (member && id.is_some_and(|id| id < JOIN))) {
+        let chosen = choose_forme_on(&mut expedition(), uid, &alias, preset, &world::icebreaker::grotte_presets());
+        outcome.reply = chosen.reply.or(outcome.reply);
+        outcome.announce.extend(chosen.announce);
+    }
     if let Some(reply) = outcome.reply {
         server.notify_client(client, ServerGeneral::server_msg(ChatType::Meta, Content::Plain(reply)));
     }
@@ -463,6 +530,42 @@ pub(crate) fn handle_expedition(
         server.notify_players(ServerGeneral::server_msg(ChatType::Meta, Content::Plain(line)));
     }
     Ok(())
+}
+
+/// Icebreaker U.11: `player`, a member of the expedition to a cave, chooses
+/// its shape among `presets` (`HASARD`: left to the seed).
+fn choose_forme_on(
+    expedition: &mut Option<Expedition>,
+    player: Uid,
+    alias: &str,
+    forme: &str,
+    presets: &[String],
+) -> Outcome {
+    let mut outcome = Outcome::default();
+    let Some(exp) = expedition.as_mut().filter(|exp| exp.member(player).is_some()) else {
+        outcome.reply = Some("Il faut être inscrit à l'expédition pour choisir la forme de la grotte.".to_string());
+        return outcome;
+    };
+    if !exp.is_grotte() {
+        outcome.reply = Some("La forme ne se choisit que pour une grotte.".to_string());
+        return outcome;
+    }
+    let profil = if forme == HASARD {
+        None
+    } else if presets.iter().any(|preset| preset == forme) {
+        Some(forme.to_string())
+    } else {
+        outcome.reply = Some(format!("Pas de preset de grotte « {forme} ». Presets : {}.", presets.join(", ")));
+        return outcome;
+    };
+    if exp.profil != profil {
+        outcome.announce.push(match &profil {
+            Some(profil) => format!("{alias} choisit la forme de la grotte : {profil}."),
+            None => format!("{alias} laisse le hasard choisir la forme de la grotte."),
+        });
+        exp.profil = profil;
+    }
+    outcome
 }
 
 /// Applies the answer `response_id` of `player` (`alias`) at time `now`.
@@ -507,6 +610,7 @@ fn answer_to(
                         ready: false,
                     }],
                     departure: None,
+                    profil: None,
                 });
             },
             None => outcome.reply = Some("Ce n'est pas une destination d'expédition.".to_string()),
@@ -559,21 +663,25 @@ fn answer_to(
 /// Each tick: members gone (`present` false: disconnected, or too far from
 /// the leader) leave the expedition; once its time has come, it leaves if its
 /// destination `has_room` (a free dungeon slot, in the campaign): returns
-/// where to, and who. Also what to tell everyone.
+/// where to, who, and the shape chosen for a cave (U.11). Also what to tell
+/// everyone.
 pub fn tick(
     now: f64,
     present: impl Fn(Uid) -> bool,
     has_room: impl Fn(&Lieu) -> bool,
-) -> (Option<(Lieu, Vec<Uid>)>, Vec<String>) {
+) -> (Option<Departure>, Vec<String>) {
     tick_on(&mut expedition(), now, present, has_room)
 }
+
+/// An expedition that leaves: where to, who, the shape chosen for a cave.
+pub type Departure = (Lieu, Vec<Uid>, Option<String>);
 
 fn tick_on(
     expedition: &mut Option<Expedition>,
     now: f64,
     present: impl Fn(Uid) -> bool,
     has_room: impl Fn(&Lieu) -> bool,
-) -> (Option<(Lieu, Vec<Uid>)>, Vec<String>) {
+) -> (Option<Departure>, Vec<String>) {
     let mut announce = Vec::new();
     let Some(exp) = expedition.as_mut() else {
         return (None, announce);
@@ -613,7 +721,7 @@ fn tick_on(
         if let Some(lieu) = lieu {
             announce.push(format!("L'expédition part vers {} !", lieu.nom));
             return (
-                Some((lieu, exp.members.into_iter().map(|m| m.uid).collect())),
+                Some((lieu, exp.members.into_iter().map(|m| m.uid).collect(), exp.profil)),
                 announce,
             );
         }
@@ -757,7 +865,7 @@ mod tests {
         answer_to(&mut exp, flo, "Flo", READY, 20.0);
         answer_to(&mut exp, sayanel, "Sayanel", READY, 20.0);
         let (departure, _) = tick_on(&mut exp, 20.0 + DEPARTURE_DELAY, |_| true, |_| true);
-        let (lieu, members) = departure.unwrap();
+        let (lieu, members, _) = departure.unwrap();
         assert_eq!(lieu.nom, lieux()[usize::from(donjon)].nom);
         assert_eq!(members, vec![flo, sayanel]);
         assert_eq!(exp, None);
@@ -805,6 +913,7 @@ mod tests {
                 ready: true,
             }],
             departure: None,
+            profil: None,
         };
         let dehors = panneau_de(Some(&exp), flo, false, 0.0);
         assert_eq!(commandes(&dehors), vec![("expedition rejoindre".to_string(), true, true)]);
@@ -870,5 +979,61 @@ mod tests {
         // Flo leaves the expedition: cancelled.
         answer_to(&mut exp, flo, "Flo", LEAVE, 2.0);
         assert_eq!(exp, None);
+    }
+
+    /// Icebreaker U.11: a member of an expedition to the cave chooses its
+    /// shape among the presets; it leaves with it.
+    #[test]
+    fn the_party_chooses_the_shape_of_its_cave() {
+        let uid = |n| Uid(std::num::NonZeroU64::new(n).unwrap());
+        let (flo, sayanel) = (uid(1), uid(2));
+        let presets = vec!["gouffre".to_string(), "plaine".to_string()];
+        let site = |site: &str| {
+            destinations()
+                .into_iter()
+                .find(|(_, lieu)| lieu.site() == Some(site))
+                .map(|(index, _)| index as u16)
+                .unwrap()
+        };
+        // Nobody registered, or not a cave: nothing to choose.
+        let mut exp = None;
+        assert!(choose_forme_on(&mut exp, flo, "Flo", "gouffre", &presets).reply.is_some());
+        answer_to(&mut exp, flo, "Flo", site("Genere"), 0.0);
+        assert!(choose_forme_on(&mut exp, flo, "Flo", "gouffre", &presets).reply.is_some());
+        assert_eq!(exp.as_ref().unwrap().profil, None);
+
+        let mut exp = None;
+        answer_to(&mut exp, flo, "Flo", site(SITE_GROTTE), 0.0);
+        // Not a member, or not a preset: refused.
+        assert!(choose_forme_on(&mut exp, sayanel, "Sayanel", "gouffre", &presets).reply.is_some());
+        let unknown = choose_forme_on(&mut exp, flo, "Flo", "labyrinthe", &presets);
+        assert!(unknown.reply.is_some_and(|reply| reply.contains("gouffre, plaine")));
+        assert_eq!(exp.as_ref().unwrap().profil, None);
+        // Chosen: everyone is told, the destination names it, the panel shows it.
+        let chosen = choose_forme_on(&mut exp, flo, "Flo", "gouffre", &presets);
+        assert_eq!((chosen.reply, chosen.announce.len()), (None, 1));
+        assert_eq!(exp.as_ref().unwrap().destination_name(), "Grotte — gouffre");
+        let panneau = panneau_de(exp.as_ref(), flo, false, 0.0);
+        let titre = |l: &common::icebreaker_panneau::Ligne| match &l.titre {
+            Content::Plain(titre) => titre.clone(),
+            _ => String::new(),
+        };
+        let formes: Vec<_> = panneau.lignes.iter().filter(|l| titre(l).starts_with("Forme de la grotte")).collect();
+        assert!(formes.len() >= 2, "au hasard et les presets de formes.ron");
+        let action = |l: &common::icebreaker_panneau::Ligne| l.action.as_ref().map(|a| a.permise);
+        assert_eq!(action(formes[0]), Some(true), "au hasard : à choisir");
+        let gouffre = formes.iter().find(|l| titre(l).ends_with("gouffre")).expect("le preset gouffre");
+        assert_eq!(action(gouffre), Some(false), "déjà choisie");
+        // Sayanel, not in, cannot choose from the panel.
+        let dehors = panneau_de(exp.as_ref(), sayanel, false, 0.0);
+        assert!(dehors.lignes.iter().filter(|l| titre(l).starts_with("Forme")).all(|l| action(l) == Some(false)));
+        // It leaves with the shape; back to the seed with « hasard ».
+        answer_to(&mut exp, flo, "Flo", READY, 0.0);
+        let (departure, _) = tick_on(&mut exp.clone(), DEPARTURE_DELAY, |_| true, |_| true);
+        assert_eq!(departure.unwrap().2.as_deref(), Some("gouffre"));
+        choose_forme_on(&mut exp, flo, "Flo", HASARD, &presets);
+        let (departure, _) = tick_on(&mut exp, DEPARTURE_DELAY, |_| true, |_| true);
+        assert_eq!(departure.unwrap().2, None);
+        assert_eq!(annonce_grotte("gouffre", 48213), "Grotte « gouffre », graine 48213.");
     }
 }

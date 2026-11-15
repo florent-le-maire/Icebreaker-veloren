@@ -714,7 +714,7 @@ impl ServerChatCommand {
                 None,
             ),
             ServerChatCommand::Expedition => cmd(
-                vec![Any("choix", Required)],
+                vec![Any("choix", Required), Any("forme", Optional)],
                 Content::localized("command-expedition-desc"),
                 None,
             ),

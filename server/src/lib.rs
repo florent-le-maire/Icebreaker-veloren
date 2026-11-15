@@ -803,7 +803,7 @@ impl Server {
         // each launch, not the one of the world seed kept by the save.
         #[cfg(feature = "worldgen")]
         for slot in slots.0.iter_mut() {
-            sys::icebreaker_slots::new_layout(slot, &world, index.as_index_ref(), &mut mission, &mut sleep, rand::random());
+            sys::icebreaker_slots::new_layout(slot, &world, index.as_index_ref(), &mut mission, &mut sleep, u64::from(rand::random::<u32>()), None);
         }
         state.ecs_mut().insert(mission);
         state.ecs_mut().insert(sleep);

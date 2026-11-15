@@ -235,6 +235,9 @@ pub struct Grotte {
     /// profile of `formes.ron` it was drawn with.
     pub caverne: Arc<Caverne>,
     pub profil: String,
+    /// Icebreaker U.11: the seed it was generated from (shown with `profil`
+    /// to the party that arrives: the same in the workshop gives its shape).
+    pub seed: u64,
     /// The level of each zone of `caverne`: 0 at the entrance, `niveaux - 1`
     /// at the end.
     pub levels: Vec<i32>,
@@ -462,6 +465,7 @@ pub fn generate(
     Grotte {
         mouth,
         arrival: monde(caverne.depart),
+        seed,
         summary: format!(
             "grotte {ambiance}, forme {profil}, race {}, graine {seed} : {} ; {} habitant(s), {} cristal(aux), {} coffre(s) ({} par \
              palier), fond en {:?}",
