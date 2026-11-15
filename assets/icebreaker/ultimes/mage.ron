@@ -12,14 +12,14 @@
         )),
         ("fournaise", (
             nom: "Fournaise",
-            description: "Un jet de flammes continu pendant quatre secondes, qui enflamme tout sur son passage.",
+            description: "Un rayon qui charge un instant, puis brûle tout ce qui est sur sa ligne jusqu'au prochain mur.",
             capacite: "icebreaker.abilities.mage.ultimes.fournaise",
             animation: "common.abilities.staff.flamethrower",
             recharge: 75.0,
         )),
         ("benediction", (
             nom: "Bénédiction",
-            description: "Protège et soigne tout le groupe pendant quinze secondes, dans un grand rayon.",
+            description: "Protège fortement et soigne tout le groupe pendant quinze secondes, dans un grand rayon.",
             capacite: "icebreaker.abilities.mage.ultimes.benediction",
             animation: "common.abilities.staff.flame_cloak",
             icone: "common.abilities.sceptre.wardingaura",

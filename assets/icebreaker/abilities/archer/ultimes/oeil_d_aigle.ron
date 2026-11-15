@@ -1,0 +1,13 @@
+// Icebreaker : Œil d'aigle (ultime de l'archer, A.20) — copie de common.abilities.bow.eagle_eye, renforcée : visée parfaite deux fois plus forte (EagleEye 1,0) pendant 20 s, tirs et course plus rapides (Hastened 0,4), endurance qui remonte (EnergyRegen 10 par seconde).
+SelfBuff(
+    buildup_duration: 0.1,
+    cast_duration: 0.1,
+    recover_duration: 0.1,
+    buffs: [
+        BuffDesc(kind: EagleEye, data: BuffData(strength: 1.0, duration: Some(20.0))),
+        BuffDesc(kind: Hastened, data: BuffData(strength: 0.4, duration: Some(20.0))),
+        BuffDesc(kind: EnergyRegen, data: BuffData(strength: 10.0, duration: Some(20.0))),
+    ],
+    use_raw_buff_strength: true,
+    energy_cost: 25,
+)

@@ -18,8 +18,9 @@
         )),
         ("oeil_d_aigle", (
             nom: "Œil d'aigle",
-            description: "Quinze secondes de visée parfaite : les tirs de l'archer frappent bien plus fort.",
-            capacite: "common.abilities.bow.eagle_eye",
+            description: "Vingt secondes de visée parfaite : les tirs frappent bien plus fort, partent plus vite, et l'endurance remonte.",
+            capacite: "icebreaker.abilities.archer.ultimes.oeil_d_aigle",
+            animation: "common.abilities.bow.eagle_eye",
             recharge: 100.0,
         )),
     ],

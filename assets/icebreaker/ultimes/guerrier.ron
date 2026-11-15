@@ -12,8 +12,9 @@
         )),
         ("seisme", (
             nom: "Séisme",
-            description: "Une onde de choc au sol qui blesse et soulève tout ce qui est devant.",
-            capacite: "common.abilities.hammer.tremor",
+            description: "Une onde de choc part tout autour du guerrier : elle blesse, soulève et étourdit ce qu'elle touche.",
+            capacite: "icebreaker.abilities.guerrier.ultimes.seisme",
+            animation: "common.abilities.hammer.tremor",
             recharge: 60.0,
         )),
         ("rempart", (
