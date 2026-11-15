@@ -27,6 +27,10 @@ données qui font foi). Le reste de ce fichier est la proposition d'octobre pour
 - **Mort** : définitive (T.6), maîtrise et niveaux perdus avec le personnage.
 - Trois classes pour commencer : **guerrier** (tenir la ligne), **mage** (frapper de loin), **archer** (tenir la
   distance). Les combos de zones décrits plus bas ne sont pas dans ce jalon (Q36).
+- **Ultimes** (retours de Flo, 2026-11-15) : un ultime doit se voir et peser. Guerrier : Envol (bond ailé, dégâts de
+  zone aux ennemis seulement, relève des alliés à terre), Séisme (onde tout autour), Rempart. Mage : Pyroclasme,
+  Fournaise (laser qui charge puis brûle jusqu'au premier mur), Bénédiction. Archer : Volée mortelle (cercle au sol,
+  puis plusieurs salves), Pluie de flèches, Œil d'aigle. Pas de plafond de dégâts par coup.
 
 ## Proposition d'octobre (projet Godot, référence)
 

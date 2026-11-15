@@ -123,7 +123,8 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q48 Les compétences blessent les habitants du village.** Vu à l'essai du 2026-11-11 : un séisme lancé sur la
   place touche les recrues debout devant la charrette ; elles ripostent et tuent le personnage suivant dès son
   arrivée. Voisin de Q42 (mourir au village). *Proposé* : pas de dégâts au village hors des mannequins (zone sûre),
-  ou des recrues qui n'attaquent jamais. *Qui* : Flo.
+  ou des recrues qui n'attaquent jamais. *Qui* : Flo. *2026-11-15* : le Séisme frappe maintenant tout autour et bien
+  plus fort (A.20), l'Envol et la Volée mortelle touchent aussi tout ce qui n'est pas du groupe : la question pèse plus.
 - **Q47 Maquettes du jalon A** (A.2) : la barre de compétences et les panneaux de la charrette et de la salle d'armes
   (rangée 4 du canvas) conviennent-ils ? L'interface a été codée d'après elles sans attendre (A.6, A.8, A.11,
   A.12) : un avis contraire se corrige dans le code. Points à regarder : le passif en case ronde, posé à gauche de la

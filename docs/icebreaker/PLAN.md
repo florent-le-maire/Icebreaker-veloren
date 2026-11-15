@@ -38,6 +38,10 @@ Le jeu doit rester lançable après chaque tâche.
   campagne) et par captures du vrai client (barre, passif, salle d'armes) ; personne n'y a encore joué à la main
   (liste « À vérifier en jeu »). Restent : l'avis de Flo sur les maquettes (A.2, Q47) et sur Q43 à Q49. Le
   protocole a changé : client et serveur à recompiler ensemble, VPS à redéployer.
+- **Ultimes refaits (2026-11-15)** après l'essai de Flo (`PLAN-CLASSES.md`, A.19 à A.23) : plafond de 40 % par coup
+  retiré, Envol à la place de Fureur, Fournaise en laser, Volée mortelle en pluie visée, Séisme, Bénédiction et Œil
+  d'aigle renforcés. Vus partir dans le vrai client ; équilibre et relève à essayer à la main. Le protocole change
+  encore.
 
 ## Architecture visée
 
@@ -326,11 +330,15 @@ tâche pour ce qui casse.
 - A.16 : mage au bâton et au sceptre : effets sur de vraies cibles (brûlure, soin d'un allié, protection, hâte),
   gestes des copies du sceptre, trois ultimes ; l'inné (−10 % de PV) le rend-il trop fragile ?
 - A.17 : archer : saignement, ralentissement, bond arrière, trois ultimes ; équilibre.
+- A.19 à A.23 (ultimes refaits, 2026-11-15) : l'Envol relève-t-il un allié à terre, ses ailes conviennent-elles ; le
+  laser de Fournaise vu de côté et arrêté par un mur ; la Volée mortelle sur des ennemis et sous un plafond ; Séisme,
+  Bénédiction et Œil d'aigle sont-ils assez forts ; sans le plafond de 40 %, les grosses attaques d'arme tuent-elles
+  trop vite.
 
 **Combat (donjon Gnarling)**
 - L.1 : nombre de coups pour tuer et mourir (cible : 3 et 3 à 4), autres armes, boss.
 - L.5 : gnarling en 5 à 6 flèches ou boules de feu, ~10 touches de lance-flammes ; tir chargé et onde de feu ne tuent
-  pas d'un coup (plafond 40 %).
+  pas d'un coup (plafond 40 %). *Plafond retiré le 2026-11-15 (A.19) : ils peuvent tuer d'un coup.*
 - L.2 à L.4, X.6 : verrouillage W, molette, anneau centré (sinon régler `ancrage` dans `verrouillage.ron`).
 
 **Donjon généré**

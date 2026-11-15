@@ -203,6 +203,27 @@ Un commit par tâche, fusion dans `master` à chaque tâche ; le jeu reste lanç
   s'engagent avec leur lot et lancent une compétence). Le jalon reste ici tant que A.2 attend ; il ira dans
   `HISTORIQUE.md` ensuite. — fe906d7a6d, 9e9c6905b1
 
+**Retours de Flo sur les ultimes (2026-11-15)**, après son essai au lieu d'entraînement. Rempart, Pyroclasme et
+Pluie de flèches restent tels quels.
+
+- [x] **A.19 Plafond par coup retiré** — plus de limite de 40 % des PV max d'une créature par coup, pour tout le
+  combat (`combat.ron`, le champ reste lisible). Testé ; équilibre des grosses attaques d'arme à revoir en jeu.
+  — 968e671b7e
+- [x] **A.20 Séisme, Bénédiction, Œil d'aigle renforcés** — données : Séisme à 360°, 60 de dégâts, étourdit ;
+  Bénédiction 6 PV/s et protection 0,7 ; Œil d'aigle 20 s, visée doublée, hâte et endurance. Testé au chargement ;
+  Bénédiction et Séisme vus partir dans le vrai client, chiffres pas mesurés. — 0b573271f8
+- [x] **A.21 Fournaise : un laser** — charge 1,5 s, puis rayon étroit de 60 m pendant 2,5 s, touche tenue ou non
+  (`icebreaker_duree` sur `BasicBeam`). Vu dans le vrai client (charge, rayon, ennemi en feu) ; pas vu : l'arrêt
+  sur un mur, le rayon vu de côté. — 0b573271f8, a7119b8ea9
+- [x] **A.22 Envol remplace Fureur** — bond, ailes dans le dos, explosion et onde sur les ennemis à l'atterrissage,
+  relève des entités à terre à 10 m (`icebreaker_releve`, `IcebreakerReleveZoneEvent`). Vu dans le vrai client
+  (ailes en l'air, onde) ; pas vu : la relève d'un allié à terre, les dégâts. Une fiche qui porte encore `fureur`
+  lance le premier ultime de sa classe. — fba29ffb9c
+- [x] **A.23 Volée mortelle : pluie visée** — un cercle au sol là où l'on vise (30 m au plus), puis 5 salves de
+  12 flèches, une par seconde (`common/src/icebreaker_pluie.rs`, `server/src/sys/icebreaker_pluie.rs`). Vu dans le
+  vrai client (cercle, flèches plantées) ; pas vu : les dégâts sur des ennemis, sous un plafond. Le protocole
+  change. — 7c4230cf98
+
 Reportable : blocage dur des armes, bascule entre deux jeux d'armes (Q46), masquer le journal de Veloren dans le
 client, recharges gardées à la reconnexion.
 
@@ -229,4 +250,7 @@ les tests et fusionne.
 
 Animation des ultimes avec une arme étrangère au geste (Q45) ; bouclier en main gauche (clic droit, garde) ;
 lisibilité de la barre ; deux recrues de même classe côte à côte devant la charrette ; la salle d'armes à la souris
-(clics, molette) ; les effets du mage et de l'archer sur de vraies cibles.
+(clics, molette) ; les effets du mage et de l'archer sur de vraies cibles. Ultimes refaits (A.19 à A.23) : la relève d'un
+allié à terre par l'Envol et l'allure de ses ailes ; le laser de Fournaise vu de côté et contre un mur ; la Volée
+mortelle sur des ennemis et sous un plafond ; les chiffres du Séisme, de la Bénédiction et de l'Œil d'aigle ; les
+grosses attaques d'arme sans le plafond de 40 %.

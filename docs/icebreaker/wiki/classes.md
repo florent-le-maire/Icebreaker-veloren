@@ -126,7 +126,7 @@ d'effets permanents de Veloren (PV max, réduction de dégâts, vitesse). Une cl
 fichiers : aucun code à changer. Les points de maîtrise et les prix sont dans `salle_armes.ron`.
 
 Une compétence n'est pas une nouvelle attaque : elle réutilise une **capacité de Veloren** (le balayage lourd de
-l'épée, la fureur de la hache) avec son animation. Un niveau 2 ou 4 la lance avec des multiplicateurs ; un niveau 3
+l'épée, le séisme du marteau) avec son animation. Un niveau 2 ou 4 la lance avec des multiplicateurs ; un niveau 3
 ou 5 la remplace par une copie modifiée du fichier de la capacité, sous `assets/icebreaker/abilities/<classe>/`.
 
 À chaque lancer de la touche 1, 2 ou 3, un crochet unique dans le code de Veloren (`handle_ability`) regarde ce que
