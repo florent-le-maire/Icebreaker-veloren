@@ -111,6 +111,7 @@
     <span class="sep"></span>
     <button data-vue="perspective">Perspective</button><button data-vue="dessus">Dessus</button>
     <label title="Des murs d'un bloc pour voir dedans ; décocher pour poser contre un mur, en hauteur"><input id="murs-bas" type="checkbox" checked> Murs bas</label>
+    <label title="Un personnage de la taille d'un joueur (deux blocs de haut), pour juger de l'échelle. Il se déplace avec l'outil Sélectionner ; il n'est pas enregistré."><input id="perso" type="checkbox" checked> Personnage</label>
     <span class="sep"></span>
     <label title="L'étage affiché : on y peint les cases, on y pose les objets">Étage <select id="etage"></select></label>
     <button id="etage-dessus" title="Ajoute un étage au-dessus du plus haut : mêmes murs, du vide au-dessus du sol (une salle haute). On y peint ensuite du sol pour une mezzanine.">+ dessus</button>
@@ -336,6 +337,27 @@ function maillerVox(vox, offset) {
   return tas.geometrie();
 }
 
+// Le personnage témoin : un joueur fait environ deux blocs de haut. Tourné vers +x (orientation 0).
+const PERSONNAGE = (() => {
+  const t = new Tas();
+  const peau = [224, 172, 130], tunique = [62, 110, 170], braies = [70, 58, 48], cheveux = [80, 50, 30], botte = [45, 38, 34];
+  for (const y of [-0.3, 0.04]) {
+    t.boite([-0.15, y, 0], [0.34, 0.26, 0.22], botte);
+    t.boite([-0.13, y, 0.22], [0.26, 0.26, 0.63], braies);
+  }
+  t.boite([-0.17, -0.34, 0.85], [0.34, 0.68, 0.7], tunique);
+  for (const y of [-0.54, 0.34]) {
+    t.boite([-0.1, y, 0.95], [0.2, 0.2, 0.6], tunique);
+    t.boite([-0.1, y, 0.8], [0.2, 0.2, 0.15], peau);
+  }
+  t.boite([-0.2, -0.22, 1.55], [0.42, 0.44, 0.42], peau);
+  t.boite([-0.24, -0.25, 1.86], [0.44, 0.5, 0.14], cheveux);
+  t.boite([-0.24, -0.25, 1.55], [0.1, 0.5, 0.36], cheveux);
+  // Les yeux, pour voir où il regarde.
+  for (const y of [-0.14, 0.06]) t.boite([0.215, y, 1.74], [0.02, 0.08, 0.08], [30, 30, 40]);
+  return t.geometrie();
+})();
+const perso = { perso: true, x: 0, y: 0, z: 0, ori: 2, miroir: false };
 const MODELES = new Map();
 const INCONNU = (() => { const t = new Tas(); t.boite([-0.4, -0.4, 0], [0.8, 0.8, 0.8], [230, 60, 200]); return t.geometrie(); })();
 // La géométrie du premier modèle d'un objet (en jeu, un objet à plusieurs modèles en tire un au hasard).
@@ -492,6 +514,16 @@ async function batirObjets() {
     maille.userData.de = m;
     objets.push(maille); scene.add(maille);
   });
+  if ($('perso').checked) {
+    // Il reste sur l'étage affiché, et dans la salle.
+    if (Math.floor(perso.z / H) !== etage) perso.z = etage * H;
+    perso.x = Math.max(0, Math.min(largeur(salle) * C - 1, perso.x));
+    perso.y = Math.max(0, Math.min(profondeur(salle) * C - 1, perso.y));
+    const maille = new THREE.Mesh(PERSONNAGE, MATIERE);
+    placer(maille, perso);
+    maille.userData.de = perso;
+    objets.push(maille); scene.add(maille);
+  } else if (selection === perso) selection = null;
   for (const m of salle.manques) {
     if (Math.floor(m.z / H) > etage) continue;
     const maille = boiteManque(m);
@@ -617,6 +649,7 @@ $('roles').addEventListener('change', () => {
 });
 $('etage').onchange = () => { etage = +$('etage').value; batirCoque(); batirObjets(); cadrer(false); };
 $('murs-bas').onchange = () => batirCoque();
+$('perso').onchange = () => batirObjets();
 for (const b of document.querySelectorAll('[data-vue]')) b.onclick = () => cadrer(b.dataset.vue === 'dessus');
 
 // Une rangée de cases de plus, de roche : au nord et à l'ouest, les meubles reculent d'une case.
@@ -704,6 +737,7 @@ function ouvrir(id, texte, neuve = false) {
   salle = lireSalle(id, texte);
   enregistree = neuve ? '' : ecrireSalle(salle);
   selection = null; pile.avant = []; pile.apres = []; etage = salle.etages.some((e) => e.n === 0) ? 0 : salle.etages[0].n;
+  Object.assign(perso, { x: Math.floor(largeur(salle) * C / 2), y: Math.floor(profondeur(salle) * C / 2) - 2, z: etage * H, ori: 6 });
   remplirFiche(); batirCoque(); batirObjets(); cadrer(false); change();
 }
 function ouvrirListee(id) {
@@ -906,7 +940,7 @@ const rayon = new THREE.Raycaster();
 function viser(e, sauf = null) {
   const r = toile.getBoundingClientRect();
   rayon.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), camera);
-  const touche = rayon.intersectObjects([coque, ...objets.filter((o) => o !== sauf)], false)[0];
+  const touche = rayon.intersectObjects([coque, ...objets.filter((o) => o !== sauf && (courant === 'choisir' || o.userData.de !== perso))], false)[0];
   if (!touche) return null;
   const normale = touche.face.normal.clone().transformDirection(touche.object.matrixWorld);
   const p = touche.point.clone().addScaledVector(normale, 0.2);
@@ -918,7 +952,8 @@ const faceA = (n) => Math.abs(n.z) > 0.5 ? null : Math.abs(n.x) > Math.abs(n.y) 
 function dire(vise) {
   const lieu = vise ? `Bloc <b>${vise.bloc.join(', ')}</b> — case ${Math.floor(vise.bloc[0] / C) + 1}, ${Math.floor(vise.bloc[1] / C) + 1}.` : '';
   let quoi = '';
-  if (selection) quoi = selection.sprite ? ` Sélection : <b>${selection.sprite}</b> en ${selection.x}, ${selection.y}, ${selection.z}, orientation ${selection.ori}${selection.miroir ? ', miroir' : ''}.`
+  if (selection === perso) quoi = ' Sélection : le personnage témoin (deux blocs de haut), non enregistré.';
+  else if (selection) quoi = selection.sprite ? ` Sélection : <b>${selection.sprite}</b> en ${selection.x}, ${selection.y}, ${selection.z}, orientation ${selection.ori}${selection.miroir ? ', miroir' : ''}.`
     : ` Sélection : bloc « ${selection.libelle} » en ${selection.x}, ${selection.y}, ${selection.z}.`;
   $('lieu').innerHTML = lieu + quoi;
 }
@@ -951,7 +986,7 @@ toile.addEventListener('pointermove', (e) => {
       if (!glisse.garde) { garder(); glisse.garde = true; }
       Object.assign(m, { x, y, z });
       const maille = objets.find((o) => o.userData.de === m);
-      if (m.sprite) placer(maille, m); else maille.position.set(x + m.l / 2, y + m.p / 2, z + m.h / 2);
+      if (m.sprite || m.perso) placer(maille, m); else maille.position.set(x + m.l / 2, y + m.p / 2, z + m.h / 2);
     }
     return;
   }
@@ -1008,10 +1043,11 @@ function retirer(m) {
 }
 function supprimerSelection() {
   if (!selection) { message('Rien de sélectionné : cliquer d’abord un objet.', 'erreur'); return; }
+  if (selection === perso) { $('perso').checked = false; selection = null; batirObjets(); return; }
   garder(); retirer(selection); batirObjets(); batirCoque(); change();
 }
 function dupliquerSelection() {
-  if (!selection) return;
+  if (!selection || selection === perso) return;
   garder();
   const double = { ...selection, x: selection.x + 1 };
   (selection.sprite ? salle.meubles : salle.manques).push(double);
@@ -1033,7 +1069,7 @@ function gommer(v) {
 function tourner(pas) {
   if (courant === 'choisir' && selection) {
     garder();
-    if (selection.sprite) selection.ori = (selection.ori + pas + 8) % 8;
+    if (selection.sprite || selection.perso) selection.ori = (selection.ori + pas + 8) % 8;
     else [selection.l, selection.p] = [selection.p, selection.l];
     batirObjets(); change();
   } else if (courant === 'poser') {
