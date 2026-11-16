@@ -90,6 +90,7 @@
   <h2>Plan</h2>
   <div class="ligne"><label>Agrandir</label><button data-rangee="n" title="Une rangée de cases au nord">N</button><button data-rangee="s">S</button><button data-rangee="o">O</button><button data-rangee="e">E</button></div>
   <div class="ligne"><label>Réduire</label><button data-retirer="n" title="Retire la rangée de cases qui longe le mur du nord (le mur reste), avec les objets qui s'y trouvent">N</button><button data-retirer="s">S</button><button data-retirer="o">O</button><button data-retirer="e">E</button></div>
+  <div class="ligne"><label>Étages</label><button id="etage-dessus" style="flex:1" title="Ajoute un étage au-dessus du plus haut : mêmes murs, du vide au-dessus du sol (une salle haute). On y peint ensuite du sol pour une mezzanine.">+ dessus</button><button id="etage-dessous" style="flex:1" title="Ajoute un étage sous le plus bas : mêmes murs, du sol partout (une cave)">+ dessous</button><button id="etage-retirer" title="Retire l'étage affiché, s'il est le plus haut ou le plus bas (jamais l'étage 0)">Retirer</button></div>
   <p class="sous-titre" id="mesures"></p>
   <h2>Modèles qui manquent ici</h2>
   <p class="sous-titre" id="manques">Aucun bloc « ? » dans cette salle.</p>
@@ -584,6 +585,43 @@ for (const b of document.querySelectorAll('[data-rangee]')) b.onclick = () => {
   batirCoque(); batirObjets(); change();
 };
 
+// Un étage de plus. Au-dessus : les murs de l'étage le plus haut, et du vide là où il a du sol (une salle haute,
+// où l'on peint ensuite le sol d'une mezzanine). En dessous : les mêmes murs et du sol partout (une cave).
+function ajouterEtage(dessus) {
+  const numeros = salle.etages.map((e) => e.n);
+  const voisin = salle.etages.find((e) => e.n === (dessus ? Math.max(...numeros) : Math.min(...numeros)));
+  garder();
+  const lignes = voisin.lignes.map((ligne) => [...ligne].map((s) => s === ' ' ? ' ' : s === '#' || s === '+' ? '#' : dessus ? '_' : '.').join(''));
+  salle.etages.push({ n: voisin.n + (dessus ? 1 : -1), lignes });
+  // Comme dans les fichiers du jeu : l'étage le plus haut d'abord.
+  salle.etages.sort((a, b) => b.n - a.n);
+  etage = voisin.n + (dessus ? 1 : -1);
+  remplirFiche(); batirCoque(); batirObjets(); change();
+  message(dessus
+    ? `Étage ${etage} ajouté : du vide au-dessus de la salle. Peindre du « Sol » pour une mezzanine, et à l'étage ${etage - 1} un escalier ou une échelle pour y monter.`
+    : `Étage ${etage} ajouté : une cave. Y peindre un escalier ou une échelle ; il ouvrira le sol de l'étage ${etage + 1}.`);
+}
+$('etage-dessus').onclick = () => ajouterEtage(true);
+$('etage-dessous').onclick = () => ajouterEtage(false);
+$('etage-retirer').onclick = () => {
+  const numeros = salle.etages.map((e) => e.n);
+  if (etage === 0 || (etage !== Math.max(...numeros) && etage !== Math.min(...numeros))) {
+    message("On ne retire que l'étage le plus haut ou le plus bas, jamais l'étage 0 : afficher cet étage d'abord.", 'erreur');
+    return;
+  }
+  garder();
+  const ici = (m) => Math.floor(m.z / H) === etage;
+  const partis = salle.meubles.filter(ici).length + salle.manques.filter(ici).length;
+  salle.meubles = salle.meubles.filter((m) => !ici(m));
+  salle.manques = salle.manques.filter((m) => !ici(m));
+  salle.etages = salle.etages.filter((e) => e.n !== etage);
+  const retire = etage;
+  etage = retire > 0 ? retire - 1 : retire + 1;
+  selection = null;
+  remplirFiche(); batirCoque(); batirObjets(); change();
+  message(`Étage ${retire} retiré${partis ? `, avec ${partis} objet(s)` : ''}. Les escaliers et échelles qui y menaient sont à retirer aussi.`);
+};
+
 // Une rangée de cases en moins : celle qui longe le mur du bord (le mur reste) ; les objets qui s'y trouvaient
 // partent avec elle, les autres suivent.
 for (const b of document.querySelectorAll('[data-retirer]')) b.onclick = () => {
@@ -762,13 +800,16 @@ const fantome = { maille: null, orientation: 0, miroir: false, bloc: null, auto:
 const CASES = [
   ['.', 'Sol (efface pilier, coffre, créature)'], ['#', 'Mur'], [' ', 'Effacer la case (roche, hors de la salle)'], ['+', 'Porte possible'], ['O', 'Pilier'], ['*', 'Fosse possible'], ['$', 'Coffre'],
   ['b', 'Brute'], ['a', 'Archer'], ['g', 'Guetteur'], ['c', 'Chef'], ['B', 'Brute endormie'], ['A', 'Archer endormi'], ['G', 'Guetteur endormi'], ['S', 'Départ des joueurs'],
+  ['_', 'Vide : on voit l’étage du dessous, on peut y sauter'],
+  ['^', 'Escalier qui monte vers le nord'], ['v', 'Escalier qui monte vers le sud'], ['<', 'Escalier qui monte vers l’ouest'], ['>', 'Escalier qui monte vers l’est'],
+  ['H', 'Échelle vers l’étage du dessus'],
 ];
 let pinceau = '.';
 const manque = { libelle: 'trône', l: 3, p: 3, h: 4 };
 const AIDES = {
   poser: 'Clic : poser. R : tourner (Maj+R dans l’autre sens). M : miroir. Alt+clic sur un meuble : le prendre comme modèle. Clic droit : tourner la vue ; molette : zoom ; clic du milieu : glisser.',
   choisir: 'Clic : sélectionner ; glisser : déplacer. Flèches, Page préc./suiv. : un bloc. R, M : tourner, miroir. Ctrl+D : dupliquer. Suppr ou « Supprimer l’objet » : retirer.',
-  cases: 'Clic ou glisser : peindre les cases de l’étage affiché. « Sol » efface un pilier ou une créature, « Effacer la case » retire la case. À gauche : « Agrandir » et « Réduire » d’une rangée.',
+  cases: 'Clic ou glisser : peindre les cases de l’étage affiché. « Sol » efface un pilier ou une créature, « Effacer la case » retire la case. Un escalier ou une échelle ouvre le vide au-dessus de lui. À gauche : agrandir, réduire, ajouter un étage.',
   manque: 'Clic : poser un bloc « ? » à l’endroit où il manque un modèle. Son libellé dit ce que ce serait.',
   gomme: 'Clic sur un objet ou un bloc « ? » : le retirer. Glisser : retirer tout ce que la souris touche. Ctrl+Z : annuler.',
 };
@@ -845,6 +886,8 @@ function peindre(v) {
   const x = Math.floor(p.x / C), y = Math.floor(p.y / C);
   if (x < 0 || y < 0 || x > 40 || y > 40 || caseDe(salle, x, y, etage) === pinceau) return;
   poserCase(salle, x, y, etage, pinceau);
+  // Un escalier traverse le sol de l'étage du dessus, une échelle y débouche : du vide juste au-dessus.
+  if ('^v<>H'.includes(pinceau) && salle.etages.some((e) => e.n === etage + 1)) poserCase(salle, x, y, etage + 1, '_');
   batirCoque(); change();
 }
 

@@ -60,8 +60,9 @@ marque un modèle qui manque. D'où F.14 à F.17, avant F.11 à F.13.
   déplacer, dupliquer, supprimer, annuler ; bloc « ? ». Essayé dans Edge sans fenêtre, pas encore à la main ; le
   sens de chaque objet n'a pas été comparé un à un avec le jeu. `f6595cfb2c`
 - [x] **F.17 Atelier : plan, fiche, enregistrement** — cases à peindre, rangées à ajouter, fiche, nouvelle salle,
-  copie, suppression ; les blocs « ? » remontent dans la feuille « Modèles ». Escaliers, échelles et étages ne
-  s'éditent pas encore dans la page (ceux des salles existantes sont gardés). `f6595cfb2c`
+  copie, suppression ; les blocs « ? » remontent dans la feuille « Modèles ». Depuis, sur les
+  retours de Flo : gomme, rangées à retirer, étages à ajouter ou retirer, escaliers, échelles et vide à peindre
+  (une salle à étages faite dans l'atelier n'a pas encore été vue en jeu). `f6595cfb2c`
 - [ ] **F.18 Meubler les salles** (Flo, Sayanel, dans l'atelier) — chaque pièce du catalogue a au moins une salle
   meublée ; les blocs « ? » posés donnent la liste de F.13.
   *Fin* : un donjon généré ne montre plus de salle vide.
