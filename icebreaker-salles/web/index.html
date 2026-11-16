@@ -42,15 +42,20 @@
   #scene { flex: 1; position: relative; min-width: 0; }
   canvas#toile { display: block; width: 100%; height: 100%; }
   .barre { position: absolute; display: flex; gap: 6px; align-items: center; background: #1c2027e6; border: 1px solid var(--bord); border-radius: 8px; padding: 6px 8px; }
-  #outils { top: 10px; left: 10px; flex-wrap: wrap; max-width: calc(100% - 20px); }
+  #barres { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; pointer-events: none; }
+  #barres .barre { position: static; pointer-events: auto; }
+  #outils { flex-wrap: wrap; }
   #outils .sep { width: 1px; align-self: stretch; background: var(--bord); margin: 0 2px; }
-  #options { top: 58px; left: 10px; flex-wrap: wrap; font-size: 12.5px; max-width: calc(100% - 20px); }
+  #options { flex-wrap: wrap; font-size: 12.5px; }
   #options input[type=number] { width: 52px; flex: none; padding: 3px 5px; }
   #options input[type=text] { width: 150px; flex: none; padding: 3px 6px; }
   #options select { flex: none; padding: 3px 6px; }
   #etat { left: 10px; right: 10px; bottom: 10px; display: block; font-size: 12.5px; }
   #etat b { color: var(--accent); font-weight: 600; }
   #aide { color: var(--discret); }
+  .poignee { position: absolute; transform: translate(-50%, -50%); width: 26px; height: 26px; padding: 0; border-radius: 50%; font-weight: 700; font-size: 16px; line-height: 1; background: #1c2027e6; color: var(--bon); border-color: var(--bon); }
+  .poignee.moins { color: var(--alerte); border-color: var(--alerte); }
+  .poignee:hover { background: var(--fond); border-color: var(--texte); }
   #erreur { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; padding: 30px; text-align: center; color: var(--alerte); }
   #liste { flex: 1; overflow-y: auto; margin: 6px -12px 0; padding: 0 8px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; align-content: start; }
   .objet { border: 1px solid var(--bord); border-radius: 6px; padding: 3px 2px 4px; text-align: center; cursor: pointer; background: var(--fond); min-width: 0; }
@@ -88,15 +93,13 @@
   <label class="sous-titre" for="description">Description</label>
   <textarea id="description" rows="3"></textarea>
   <h2>Plan</h2>
-  <div class="ligne"><label>Agrandir</label><button data-rangee="n" title="Une rangée de cases au nord">N</button><button data-rangee="s">S</button><button data-rangee="o">O</button><button data-rangee="e">E</button></div>
-  <div class="ligne"><label>Réduire</label><button data-retirer="n" title="Retire la rangée de cases qui longe le mur du nord (le mur reste), avec les objets qui s'y trouvent">N</button><button data-retirer="s">S</button><button data-retirer="o">O</button><button data-retirer="e">E</button></div>
-  <div class="ligne"><label>Étages</label><button id="etage-dessus" style="flex:1" title="Ajoute un étage au-dessus du plus haut : mêmes murs, du vide au-dessus du sol (une salle haute). On y peint ensuite du sol pour une mezzanine.">+ dessus</button><button id="etage-dessous" style="flex:1" title="Ajoute un étage sous le plus bas : mêmes murs, du sol partout (une cave)">+ dessous</button><button id="etage-retirer" title="Retire l'étage affiché, s'il est le plus haut ou le plus bas (jamais l'étage 0)">Retirer</button></div>
   <p class="sous-titre" id="mesures"></p>
   <h2>Modèles qui manquent ici</h2>
   <p class="sous-titre" id="manques">Aucun bloc « ? » dans cette salle.</p>
 </aside>
 <main id="scene">
   <canvas id="toile"></canvas>
+  <div id="barres">
   <div id="outils" class="barre">
     <button data-outil="poser" title="Poser l'objet choisi (1)">Poser</button>
     <button data-outil="choisir" title="Sélectionner, déplacer (2)">Sélectionner</button>
@@ -108,10 +111,21 @@
     <span class="sep"></span>
     <button data-vue="perspective">Perspective</button><button data-vue="dessus">Dessus</button>
     <label title="Des murs d'un bloc pour voir dedans ; décocher pour poser contre un mur, en hauteur"><input id="murs-bas" type="checkbox" checked> Murs bas</label>
-    <label>Étage <select id="etage"></select></label>
+    <span class="sep"></span>
+    <label title="L'étage affiché : on y peint les cases, on y pose les objets">Étage <select id="etage"></select></label>
+    <button id="etage-dessus" title="Ajoute un étage au-dessus du plus haut : mêmes murs, du vide au-dessus du sol (une salle haute). On y peint ensuite du sol pour une mezzanine.">+ dessus</button>
+    <button id="etage-dessous" title="Ajoute un étage sous le plus bas : mêmes murs, du sol partout (une cave)">+ dessous</button>
+    <button id="etage-retirer" title="Retire l'étage affiché, s'il est le plus haut ou le plus bas (jamais l'étage 0)">Retirer</button>
   </div>
   <div id="options" class="barre"></div>
+  </div>
   <div id="etat" class="barre"><span id="lieu"></span> <span id="aide"></span></div>
+  <div id="poignees">
+    <button class="poignee" data-cote="n" data-rangee="n" title="Ajouter une rangée de cases de ce côté">+</button><button class="poignee moins" data-cote="n" data-retirer="n" title="Retirer la rangée de cases qui longe ce mur (le mur reste), avec les objets qui s'y trouvent">−</button>
+    <button class="poignee" data-cote="s" data-rangee="s" title="Ajouter une rangée de cases de ce côté">+</button><button class="poignee moins" data-cote="s" data-retirer="s" title="Retirer la rangée de cases qui longe ce mur (le mur reste), avec les objets qui s'y trouvent">−</button>
+    <button class="poignee" data-cote="o" data-rangee="o" title="Ajouter une rangée de cases de ce côté">+</button><button class="poignee moins" data-cote="o" data-retirer="o" title="Retirer la rangée de cases qui longe ce mur (le mur reste), avec les objets qui s'y trouvent">−</button>
+    <button class="poignee" data-cote="e" data-rangee="e" title="Ajouter une rangée de cases de ce côté">+</button><button class="poignee moins" data-cote="e" data-retirer="e" title="Retirer la rangée de cases qui longe ce mur (le mur reste), avec les objets qui s'y trouvent">−</button>
+  </div>
   <div id="erreur"></div>
 </main>
 <aside id="palette">
@@ -357,10 +371,12 @@ toile.addEventListener('contextmenu', (e) => e.preventDefault());
 const MATIERE = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
 const FANTOME = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthWrite: false });
 const MANQUE = new THREE.MeshBasicMaterial({ color: 0xe04fd0, transparent: true, opacity: 0.45, depthWrite: false });
+const GRILLE = new THREE.LineBasicMaterial({ color: 0xf0be46, transparent: true, opacity: 0.35 });
 const MANQUE_BORD = new THREE.LineBasicMaterial({ color: 0xff9af2 });
 
 let salle = null;          // la salle ouverte
 let enregistree = '';      // son texte tel qu'enregistré
+let grille = null;         // les traits des cases, sur le sol de l'étage affiché
 let coque = null;          // le maillage des murs et des sols
 let objets = [];           // les maillages des meubles et des blocs « ? », userData.de = l'entrée de la salle
 let selection = null;      // l'entrée sélectionnée (meuble ou manque)
@@ -415,6 +431,16 @@ function batirCoque() {
       }
     }));
   }
+  if (grille) { scene.remove(grille); grille.geometry.dispose(); }
+  const traits = [];
+  const l = largeur(salle), p = profondeur(salle), zg = etage * H + 0.03;
+  for (let x = -1; x <= l + 1; x++) traits.push(x * C, -C, zg, x * C, (p + 1) * C, zg);
+  for (let y = -1; y <= p + 1; y++) traits.push(-C, y * C, zg, (l + 1) * C, y * C, zg);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(traits, 3));
+  grille = new THREE.LineSegments(g, GRILLE);
+  grille.raycast = () => {};
+  scene.add(grille);
   coque = new THREE.Mesh(tas.geometrie(), MATIERE);
   scene.add(coque);
   $('mesures').textContent = `${largeur(salle)} × ${profondeur(salle)} cases (${largeur(salle) * C} × ${profondeur(salle) * C} blocs), ${salle.etages.length} étage(s), ${salle.meubles.length} meuble(s).`;
@@ -491,7 +517,7 @@ function cadrer(dessus) {
   const l = largeur(salle) * C, p = profondeur(salle) * C;
   const centre = new THREE.Vector3(l / 2, p / 2, etage * H);
   orbite.target.copy(centre);
-  const recul = Math.max(l, p * 1.3) * (dessus ? 1.35 : 1.15);
+  const recul = Math.max(l, p * 1.3) * (dessus ? 1.55 : 1.35);
   // Vu du nord du plan, vers le sud : x à droite, comme la carte du jeu vue par quelqu'un qui regarde vers +y.
   camera.position.copy(centre).add(dessus ? new THREE.Vector3(0, -0.01, recul) : new THREE.Vector3(0, -recul * 0.55, recul * 0.85));
   orbite.update();
@@ -505,7 +531,28 @@ function taille() {
 }
 window.addEventListener('resize', taille);
 taille();
-rendu.setAnimationLoop(() => { if (cadre) cadre.update(); rendu.render(scene, camera); });
+const POIGNEES = [...document.querySelectorAll('.poignee')];
+const point = new THREE.Vector3();
+function placerPoignees() {
+  if (!salle) return;
+  const l = largeur(salle) * C, p = profondeur(salle) * C, z = etage * H;
+  const { clientWidth: lw, clientHeight: lh } = $('scene');
+  for (const b of POIGNEES) {
+    // Le + et le − côte à côte, au milieu du côté, une demi-case dehors.
+    const le_long = b.dataset.retirer ? 2.2 : -2.2, dehors = C / 2;
+    const cote = b.dataset.cote;
+    if (cote === 'n') point.set(l / 2 + le_long, -dehors, z);
+    else if (cote === 's') point.set(l / 2 + le_long, p + dehors, z);
+    else if (cote === 'o') point.set(-dehors, p / 2 + le_long, z);
+    else point.set(l + dehors, p / 2 + le_long, z);
+    point.project(camera);
+    b.style.display = point.z < 1 ? '' : 'none';
+    const haut = $('barres').offsetHeight + 28, bas = lh - $('etat').offsetHeight - 30;
+    b.style.left = Math.max(20, Math.min(lw - 20, (point.x + 1) / 2 * lw)) + 'px';
+    b.style.top = Math.max(haut, Math.min(bas, (1 - point.y) / 2 * lh)) + 'px';
+  }
+}
+rendu.setAnimationLoop(() => { if (cadre) cadre.update(); rendu.render(scene, camera); placerPoignees(); });
 
 // ---------------------------------------------------------------------------------------------------------
 // L'historique et le message.
@@ -809,7 +856,7 @@ const manque = { libelle: 'trône', l: 3, p: 3, h: 4 };
 const AIDES = {
   poser: 'Clic : poser. R : tourner (Maj+R dans l’autre sens). M : miroir. Alt+clic sur un meuble : le prendre comme modèle. Clic droit : tourner la vue ; molette : zoom ; clic du milieu : glisser.',
   choisir: 'Clic : sélectionner ; glisser : déplacer. Flèches, Page préc./suiv. : un bloc. R, M : tourner, miroir. Ctrl+D : dupliquer. Suppr ou « Supprimer l’objet » : retirer.',
-  cases: 'Clic ou glisser : peindre les cases de l’étage affiché. « Sol » efface un pilier ou une créature, « Effacer la case » retire la case. Un escalier ou une échelle ouvre le vide au-dessus de lui. À gauche : agrandir, réduire, ajouter un étage.',
+  cases: 'Clic ou glisser : peindre les cases de l’étage affiché. « Sol » efface un pilier ou une créature, « Effacer la case » retire la case. Un escalier ou une échelle ouvre le vide au-dessus de lui. Les + et − au bord de la grille ajoutent ou retirent une rangée ; les étages sont dans la barre du haut.',
   manque: 'Clic : poser un bloc « ? » à l’endroit où il manque un modèle. Son libellé dit ce que ce serait.',
   gomme: 'Clic sur un objet ou un bloc « ? » : le retirer. Glisser : retirer tout ce que la souris touche. Ctrl+Z : annuler.',
 };
