@@ -32,8 +32,8 @@ nom = "Réservations par joueur"
 
 ## La règle
 
-Dans la campagne, on n'a pas « son » personnage. On arrive au village en **fantôme** (le spectateur de Veloren) et
-on va à la **charrette**, où attendent les recrues du jour : classe au hasard, nom tiré au sort, équipement de
+Dans la campagne, on n'a pas « son » personnage. On arrive au village en **fantôme** : un corps bleu un peu
+transparent, que les autres voient, qui glisse en flottant, saute haut et retombe lentement. On va à la **charrette**, où attendent les recrues du jour : classe au hasard, nom tiré au sort, équipement de
 départ visible sur elles. En engager une l'inscrit au **registre** du village : un personnage que n'importe quel
 joueur peut prendre, un seul à la fois.
 

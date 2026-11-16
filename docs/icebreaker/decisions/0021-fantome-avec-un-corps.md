@@ -1,7 +1,7 @@
 # 0021 — Le fantôme du village a un corps
 
 - **Date** : 2026-11-16
-- **Statut** : approche choisie par Flo le 2026-11-16 ; note à valider. Remplace, pour le village, « le mode
+- **Statut** : choisi et validé par Flo le 2026-11-16. Remplace, pour le village, « le mode
   spectateur de Veloren comme fantôme » de la décision `0017`.
 - **Tâches** : jalon FT, `PLAN-FANTOME.md`
 

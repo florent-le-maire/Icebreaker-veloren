@@ -303,6 +303,11 @@ tâche pour ce qui casse.
   à un mur et ceux en miroir).
 - Une salle meublée sort tournée ou en miroir dans un donjon entier, ses meubles avec elle.
 
+**Fantôme du village (jalon FT, `PLAN-FANTOME.md`)**
+- Marcher et sauter en fantôme : il glisse, saute haut, retombe lentement ; la caméra le suit dès l'arrivée.
+- À deux : chacun voit le fantôme de l'autre ; le pseudo au-dessus n'a pas été vu dans les captures.
+- Le fantôme ne peut ni attaquer ni ramasser ; parler à un PNJ ; mourir en expédition ramène au village en fantôme.
+
 **Clavier (X.16)**
 - Cliquer « Clavier QWERTY » puis « Clavier AZERTY » dans Réglages > Contrôles ; le choix tient après relance.
 
