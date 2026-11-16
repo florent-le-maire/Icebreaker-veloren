@@ -699,6 +699,16 @@ impl IcebreakerDungeon {
     /// Tells what was generated.
     fn log(&self) {
         info!("Icebreaker dungeon: {}\n{}", self.dungeon.summary, self.dungeon.plan.to_text());
+        // Icebreaker F.10 : where to stand to look at a room (`/goto`) : the free floor of the entrance level
+        // nearest to the middle of the plan, and the corner of the plan (a cell is `cell` blocks wide).
+        let floor: Vec<plan::Cell> =
+            self.dungeon.plan.cells.iter().filter(|(c, s)| c.level == 0 && **s == '.').map(|(c, _)| *c).collect();
+        let n = floor.len().max(1) as i32;
+        let (mx, my) = (floor.iter().map(|c| c.x).sum::<i32>() / n, floor.iter().map(|c| c.y).sum::<i32>() / n);
+        if let Some(middle) = floor.iter().min_by_key(|c| (c.x - mx).pow(2) + (c.y - my).pow(2)) {
+            let corner = self.spawn_pos(plan::Cell::new(0, 0, 0));
+            info!(middle = ?self.spawn_pos(*middle), ?corner, cell = self.render.cell_size, "Icebreaker dungeon viewpoint");
+        }
         for (cell, key) in &self.dungeon.locks {
             let (keyhole, dir) = (self.keyhole_pos(*cell), self.door_dir(*cell));
             info!(?keyhole, ?dir, key = key.item, "Icebreaker dungeon locked door");

@@ -1,5 +1,6 @@
 ; Forge : un grand feu, deux enclumes, des tonneaux d'eau et des outils. Trois portes.
 @roles: storage
+@fonction: forge
 @theme: artisan, militaire
 #######+#
 #|\.1./.#

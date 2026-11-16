@@ -1,5 +1,6 @@
 ; Ossuaire : pierres tombales et ossements ; deux piliers au milieu.
 @roles: sanctum
+@fonction: crypte
 @theme: culte
 #####+#####
 #9.-...-.9#

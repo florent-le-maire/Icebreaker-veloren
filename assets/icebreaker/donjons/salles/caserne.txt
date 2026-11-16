@@ -1,5 +1,6 @@
 ; Caserne : des couchages le long des murs, des heaumes, des brutes qui dorment. Deux portes.
 @roles: barracks
+@fonction: dortoir
 @theme: militaire
 #######+#
 #&.&.&..#

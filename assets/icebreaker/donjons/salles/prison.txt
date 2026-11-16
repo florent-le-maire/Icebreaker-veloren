@@ -1,5 +1,6 @@
 ; Prison : des cellules derrière des portes, chaînes, paille et ossements ; des barreaux dans la salle des gardes.
 @roles: prison
+@fonction: prison
 @theme: militaire, culte
 #########
 #7#:#7#-#

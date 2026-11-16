@@ -1,5 +1,6 @@
 ; Cellier : des rangées de tonneaux et de caisses. Quatre portes.
 @roles: storage
+@fonction: cellier
 @theme: artisan
 ###+#######
 #|\.|||\|"#

@@ -13,3 +13,5 @@ workspace = true
 [dependencies]
 anyhow = "1"
 rust_xlsxwriter = "0.82"
+ron = { workspace = true }
+serde = { workspace = true }

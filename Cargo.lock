@@ -3634,7 +3634,9 @@ name = "icebreaker-salles"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "ron",
  "rust_xlsxwriter",
+ "serde",
 ]
 
 [[package]]

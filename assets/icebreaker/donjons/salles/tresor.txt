@@ -1,5 +1,6 @@
 ; Petite salle au trésor, une seule entrée ; une bougie et un orbe.
 @roles: treasure
+@fonction: tresor
 #####
 #$!$#
 #.0.#

@@ -1,5 +1,6 @@
 ; Chambre forte : le trésor du donjon, des caisses et un orbe.
 @roles: vault, treasure
+@fonction: tresor
 ###+###
 #$!.!$#
 #"O.O"#

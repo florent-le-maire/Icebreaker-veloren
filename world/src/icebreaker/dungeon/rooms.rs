@@ -105,6 +105,9 @@ pub struct RoomTemplate {
     /// (`@poids:`, 1 by default).
     pub themes: Vec<String>,
     pub weight: f64,
+    /// Icebreaker : what the room is for (`@fonction:`, an entry of `donjons/pieces.ron`; none for entrances and
+    /// halls). Finer than the role: the role says who lives there, the function what the room looks like.
+    pub function: Option<String>,
     pub plan: Plan,
     pub connectors: Vec<Connector>,
 }
@@ -121,6 +124,7 @@ impl RoomTemplate {
         let mut bosses = Vec::new();
         let mut themes = Vec::new();
         let mut weight = 1.0;
+        let mut function = None;
         for (i, line) in text.lines().enumerate() {
             let Some(setting) = line.strip_prefix('@') else {
                 continue;
@@ -138,6 +142,7 @@ impl RoomTemplate {
                 },
                 "boss" => bosses.extend(names.map(String::from)),
                 "theme" => themes.extend(names.map(|n| n.to_lowercase())),
+                "fonction" => function = Some(value.trim().to_lowercase()).filter(|f| !f.is_empty()),
                 "poids" => match value.trim().parse::<f64>() {
                     Ok(w) if w > 0.0 => weight = w,
                     _ => errors.push(format!("ligne {} : « @poids » doit être un nombre positif", i + 1)),
@@ -157,7 +162,7 @@ impl RoomTemplate {
         }
 
         let plan = Plan::parse(text).map_err(|e| format!("salle « {id} » : {e}"))?;
-        Self::from_plan(id, roles, bosses, errors, plan).map(|room| Self { themes, weight, ..room })
+        Self::from_plan(id, roles, bosses, errors, plan).map(|room| Self { themes, weight, function, ..room })
     }
 
     /// Checks a plan and finds its connectors (`errors`: those of the header,
@@ -261,6 +266,7 @@ impl RoomTemplate {
             bosses,
             themes: Vec::new(),
             weight: 1.0,
+            function: None,
             plan,
             connectors,
         })
@@ -317,6 +323,7 @@ impl RoomTemplate {
         Self::from_plan(&format!("{}:{orientation}", self.id), self.roles.clone(), self.bosses.clone(), Vec::new(), plan).map(|room| Self {
             themes: self.themes.clone(),
             weight: self.weight,
+            function: self.function.clone(),
             ..room
         })
     }
@@ -458,6 +465,9 @@ mod tests {
         assert_eq!(room.themes, ["culte", "militaire"]);
         assert_eq!(room.weight, 2.5);
         assert_eq!(room.oriented(1).unwrap().themes, room.themes);
+        let kitchen = RoomTemplate::parse("x", "@roles: kitchen\n@fonction: Cuisine\n###\n+.+\n###\n").unwrap();
+        assert_eq!(kitchen.function.as_deref(), Some("cuisine"));
+        assert_eq!(kitchen.oriented(5).unwrap().function, kitchen.function);
         let e = RoomTemplate::parse("x", "@roles: hall\n@poids: lourd\n###\n+.+\n###\n").unwrap_err();
         assert!(e.contains("@poids"), "{e}");
         let catalog = RoomCatalog::load().unwrap();

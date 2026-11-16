@@ -1,5 +1,6 @@
 ; Salle du trône : le chef au fond, quatre braseros, trophées et heaumes le long des murs. Trois portes.
 @roles: chiefLair
+@fonction: trone
 @theme: militaire
 ######+######
 #4.5.....5.4#

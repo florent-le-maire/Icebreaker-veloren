@@ -1,5 +1,6 @@
 ; Sanctuaire : un puits au centre descend vers une crypte (échelle pour remonter) ; bougies et pierres tombales.
 @roles: sanctum
+@fonction: chapelle
 @theme: culte
 [étage 0]
 ####+####

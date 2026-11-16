@@ -1,5 +1,6 @@
 ; Réserve avec un grenier : on y monte par l'échelle. Tonneaux, caisses, sacs et étagères.
 @roles: storage
+@fonction: reserve
 @theme: artisan
 [étage 1]
 #######

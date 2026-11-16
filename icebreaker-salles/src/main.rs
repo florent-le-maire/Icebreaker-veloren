@@ -16,8 +16,39 @@ struct Symbol {
     at: String,
 }
 
+/// Le catalogue des pièces (`assets/icebreaker/donjons/pieces.ron`, F.10).
+#[derive(serde::Deserialize)]
+struct Pieces {
+    pieces: Vec<Piece>,
+    modeles: BTreeMap<String, Model>,
+}
+
+/// Une fonction de salle : ce qu'on s'attend à y voir, ce que Veloren a déjà, ce qui manque.
+#[derive(serde::Deserialize)]
+struct Piece {
+    id: String,
+    nom: String,
+    roles: Vec<String>,
+    themes: Vec<String>,
+    idee: String,
+    /// (meuble, sprite de Veloren).
+    meubles: Vec<(String, String)>,
+    /// Identifiants de `modeles`.
+    manques: Vec<String>,
+}
+
+/// Un modèle voxel à créer (F.13).
+#[derive(serde::Deserialize)]
+struct Model {
+    nom: String,
+    lot: u32,
+    idee: String,
+}
+
 struct Room {
     id: String,
+    /// `@fonction:` : identifiant d'une pièce du catalogue.
+    function: Option<String>,
     description: String,
     roles: Vec<String>,
     themes: Vec<String>,
@@ -161,9 +192,38 @@ fn main() -> Result<()> {
         }
     }
     rooms.sort_by(|a, b| a.id.cmp(&b.id));
-    write_workbook(&rooms, &symbols, &out)?;
-    println!("{} salles dans {out}", rooms.len());
+    let path = Path::new("assets/icebreaker/donjons/pieces.ron");
+    let pieces: Pieces = ron::from_str(&std::fs::read_to_string(path).with_context(|| path.display().to_string())?)
+        .with_context(|| path.display().to_string())?;
+    check(&pieces, &rooms)?;
+    write_workbook(&rooms, &symbols, &pieces, &out)?;
+    println!("{} salles, {} pièces, {} modèles à créer dans {out}", rooms.len(), pieces.pieces.len(), pieces.modeles.len());
     Ok(())
+}
+
+/// Le catalogue se tient : chaque manque est un modèle déclaré, chaque modèle sert, chaque `@fonction:` existe.
+fn check(pieces: &Pieces, rooms: &[Room]) -> Result<()> {
+    let mut errors = Vec::new();
+    for piece in &pieces.pieces {
+        for missing in &piece.manques {
+            if !pieces.modeles.contains_key(missing) {
+                errors.push(format!("pièce « {} » : modèle « {missing} » absent de `modeles`", piece.id));
+            }
+        }
+    }
+    for id in pieces.modeles.keys() {
+        if !pieces.pieces.iter().any(|p| p.manques.contains(id)) {
+            errors.push(format!("modèle « {id} » : aucune pièce ne le demande"));
+        }
+    }
+    for room in rooms {
+        if let Some(function) = &room.function
+            && !pieces.pieces.iter().any(|p| &p.id == function)
+        {
+            errors.push(format!("salle « {} » : fonction « {function} » absente de pieces.ron", room.id));
+        }
+    }
+    if errors.is_empty() { Ok(()) } else { anyhow::bail!("pieces.ron :\n{}", errors.join("\n")) }
 }
 
 /// Les lignes `'=': (sprite: "Nom", at: center, …), // libellé` du bloc `symbols` de `generation.ron`.
@@ -217,6 +277,7 @@ fn creature_name(symbol: char) -> String {
 fn read_room(id: &str, text: &str, symbols: &BTreeMap<char, Symbol>) -> Room {
     let mut room = Room {
         id: id.to_string(),
+        function: None,
         description: String::new(),
         roles: Vec::new(),
         themes: Vec::new(),
@@ -246,6 +307,7 @@ fn read_room(id: &str, text: &str, symbols: &BTreeMap<char, Symbol>) -> Room {
                 "roles" => room.roles = list(value),
                 "theme" => room.themes = list(value),
                 "boss" => room.bosses = list(value),
+                "fonction" => room.function = Some(value.trim().to_lowercase()).filter(|f| !f.is_empty()),
                 _ => {},
             }
         } else if let Some(header) = line.strip_prefix('[') {
@@ -308,8 +370,9 @@ fn square(look: &Look) -> Format {
 fn drawing_width(room: &Room) -> usize { room.levels.len() * (room.width + 1) - 1 }
 
 /// La fiche d'une salle, en clair.
-fn card(room: &Room, symbols: &BTreeMap<char, Symbol>) -> String {
+fn card(room: &Room, symbols: &BTreeMap<char, Symbol>, pieces: &Pieces) -> String {
     let mut text = String::new();
+    text.push_str(&format!("Pièce : {}\n", piece_name(room, pieces)));
     let roles: Vec<&str> = room.roles.iter().map(|r| role_name(r)).collect();
     text.push_str(&format!("Sert de : {}\n", roles.join(", ")));
     let themes = if room.themes.is_empty() { "tous".to_string() } else { room.themes.join(", ") };
@@ -344,7 +407,15 @@ fn card(room: &Room, symbols: &BTreeMap<char, Symbol>) -> String {
     text
 }
 
-fn write_workbook(rooms: &[Room], symbols: &BTreeMap<char, Symbol>, out: &str) -> Result<()> {
+/// Le nom de la pièce d'une salle (« — » pour une entrée ou une salle de passage).
+fn piece_name<'a>(room: &Room, pieces: &'a Pieces) -> &'a str {
+    room.function
+        .as_ref()
+        .and_then(|f| pieces.pieces.iter().find(|p| &p.id == f))
+        .map_or("—", |p| p.nom.as_str())
+}
+
+fn write_workbook(rooms: &[Room], symbols: &BTreeMap<char, Symbol>, pieces: &Pieces, out: &str) -> Result<()> {
     let mut book = Workbook::new();
     let head = Format::new()
         .set_bold()
@@ -399,7 +470,7 @@ fn write_workbook(rooms: &[Room], symbols: &BTreeMap<char, Symbol>, out: &str) -
             for r in top..=bottom {
                 sheet.set_row_height_pixels(r, 34)?;
             }
-            sheet.merge_range(top, 0, bottom, 0, &card(room, symbols), &card_format)?;
+            sheet.merge_range(top, 0, bottom, 0, &card(room, symbols, pieces), &card_format)?;
             sheet.merge_range(top, feedback_col, bottom, feedback_col, "", &feedback)?;
             for (k, (number, lines)) in room.levels.iter().enumerate() {
                 let left = 1 + (k * (room.width + 1)) as u16;
@@ -420,7 +491,7 @@ fn write_workbook(rooms: &[Room], symbols: &BTreeMap<char, Symbol>, out: &str) -
         let list = book.add_worksheet();
         list.set_name("Liste")?;
         for (c, (label, width)) in
-            [("N°", 5.0), ("Salle", 24.0), ("Sert de", 34.0), ("Style de donjon", 24.0), ("Taille", 12.0), ("Portes", 8.0)]
+            [("N°", 5.0), ("Salle", 24.0), ("Sert de", 34.0), ("Style de donjon", 24.0), ("Taille", 12.0), ("Portes", 8.0), ("Pièce", 24.0)]
                 .iter()
                 .enumerate()
         {
@@ -438,8 +509,17 @@ fn write_workbook(rooms: &[Room], symbols: &BTreeMap<char, Symbol>, out: &str) -
             list.write_string_with_format(r, 3, themes, &cell)?;
             list.write_string_with_format(r, 4, format!("{} × {}", room.width, room.depth), &cell)?;
             list.write_number_with_format(r, 5, room.doors as f64, &cell)?;
+            list.write_string_with_format(r, 6, piece_name(room, pieces), &cell)?;
         }
     }
+
+    // Icebreaker F.10 : le catalogue des pièces, puis les modèles à créer.
+    let pieces_sheet = book.add_worksheet();
+    pieces_sheet.set_name("Pièces")?;
+    pieces_table(pieces_sheet, pieces, rooms, &head, &cell, &feedback)?;
+    let models_sheet = book.add_worksheet();
+    models_sheet.set_name("Modèles")?;
+    models_table(models_sheet, pieces, &head, &cell, &feedback)?;
 
     let legend_sheet = book.add_worksheet();
     legend_sheet.set_name("Légende")?;
@@ -496,6 +576,82 @@ fn legend(sheet: &mut Worksheet, symbols: &BTreeMap<char, Symbol>, head: &Format
         sheet.write_string_with_format(r, 3, if item.at == "wall" { "contre le mur" } else { "au milieu" }, cell)?;
         sheet.set_row_height_pixels(r, 26)?;
         r += 1;
+    }
+    Ok(())
+}
+
+/// Feuille « Pièces » : une ligne par fonction, ce qu'on y attend, ce qui existe, ce qui manque.
+fn pieces_table(
+    sheet: &mut Worksheet,
+    pieces: &Pieces,
+    rooms: &[Room],
+    head: &Format,
+    cell: &Format,
+    feedback: &Format,
+) -> Result<()> {
+    let columns = [
+        ("Pièce", 20.0),
+        ("L'idée", 44.0),
+        ("Sert de", 22.0),
+        ("Style de donjon", 18.0),
+        ("Mobilier qui existe (objet de Veloren)", 52.0),
+        ("Modèles à créer", 34.0),
+        ("Salles dessinées", 26.0),
+        ("Retours (à remplir)", 50.0),
+    ];
+    for (c, (label, width)) in columns.iter().enumerate() {
+        sheet.write_string_with_format(0, c as u16, *label, head)?;
+        sheet.set_column_width(c as u16, *width)?;
+    }
+    sheet.set_freeze_panes(1, 1)?;
+    for (i, piece) in pieces.pieces.iter().enumerate() {
+        let r = (i + 1) as u32;
+        let roles: Vec<&str> = piece.roles.iter().map(|r| role_name(r)).collect();
+        let themes = if piece.themes.is_empty() { "tous".to_string() } else { piece.themes.join(", ") };
+        let furniture: Vec<String> = piece.meubles.iter().map(|(label, sprite)| format!("{label} ({sprite})")).collect();
+        let missing: Vec<String> = piece
+            .manques
+            .iter()
+            .filter_map(|id| pieces.modeles.get(id))
+            .map(|m| format!("{} (lot {})", m.nom, m.lot))
+            .collect();
+        let drawn: Vec<String> =
+            rooms.iter().filter(|room| room.function.as_ref() == Some(&piece.id)).map(|room| title(&room.id)).collect();
+        sheet.write_string_with_format(r, 0, &piece.nom, cell)?;
+        sheet.write_string_with_format(r, 1, &piece.idee, cell)?;
+        sheet.write_string_with_format(r, 2, roles.join(", "), cell)?;
+        sheet.write_string_with_format(r, 3, themes, cell)?;
+        sheet.write_string_with_format(r, 4, furniture.join("\n"), cell)?;
+        sheet.write_string_with_format(r, 5, if missing.is_empty() { "—".to_string() } else { missing.join("\n") }, cell)?;
+        sheet.write_string_with_format(r, 6, if drawn.is_empty() { "aucune".to_string() } else { drawn.join("\n") }, cell)?;
+        sheet.write_string_with_format(r, 7, "", feedback)?;
+        sheet.set_row_height(r, 15.0 * piece.meubles.len().max(piece.manques.len()).max(3) as f64)?;
+    }
+    Ok(())
+}
+
+/// Feuille « Modèles » : les modèles voxel à créer, par lot, avec les pièces qui les demandent.
+fn models_table(sheet: &mut Worksheet, pieces: &Pieces, head: &Format, cell: &Format, feedback: &Format) -> Result<()> {
+    let columns =
+        [("Lot", 6.0), ("Modèle", 24.0), ("L'idée", 70.0), ("Pour quelles pièces", 44.0), ("Retours (à remplir)", 50.0)];
+    for (c, (label, width)) in columns.iter().enumerate() {
+        sheet.write_string_with_format(0, c as u16, *label, head)?;
+        sheet.set_column_width(c as u16, *width)?;
+    }
+    sheet.set_freeze_panes(1, 0)?;
+    let mut models: Vec<(&String, &Model)> = pieces.modeles.iter().collect();
+    // Par lot, puis les plus demandés d'abord.
+    let uses = |id: &String| pieces.pieces.iter().filter(|p| p.manques.contains(id)).count();
+    models.sort_by_key(|(id, m)| (m.lot, std::cmp::Reverse(uses(id)), m.nom.clone()));
+    for (i, (id, model)) in models.iter().enumerate() {
+        let r = (i + 1) as u32;
+        let wanted: Vec<&str> =
+            pieces.pieces.iter().filter(|p| p.manques.contains(*id)).map(|p| p.nom.as_str()).collect();
+        sheet.write_number_with_format(r, 0, model.lot as f64, cell)?;
+        sheet.write_string_with_format(r, 1, &model.nom, cell)?;
+        sheet.write_string_with_format(r, 2, &model.idee, cell)?;
+        sheet.write_string_with_format(r, 3, wanted.join(", "), cell)?;
+        sheet.write_string_with_format(r, 4, "", feedback)?;
     }
     Ok(())
 }
