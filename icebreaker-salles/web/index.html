@@ -189,8 +189,8 @@ function lireSalle(id, texte) {
         const m = valeur.split(/\s+/);
         s.meubles.push({ sprite: m[0], x: +m[1], y: +m[2], z: +m[3], ori: +m[4] || 0, miroir: m[5] === 'miroir' });
       } else if (cle === 'manque') {
-        const m = valeur.match(/^"([^"]*)"\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
-        if (m) s.manques.push({ libelle: m[1], x: +m[2], y: +m[3], z: +m[4], l: +m[5], p: +m[6], h: +m[7] });
+        const m = valeur.match(/^"([^"]*)"\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(\d+)\s+(\d+)\s+(\d+)(?:\s+(\d))?/);
+        if (m) s.manques.push({ libelle: m[1], x: +m[2], y: +m[3], z: +m[4], l: +m[5], p: +m[6], h: +m[7], ori: +(m[8] || 0) });
       } else s.autres.push(ligne);
       continue;
     }
@@ -250,7 +250,7 @@ function ecrireSalle(s) {
   lignes.push(...s.autres);
   const ordre = (a, b) => a.z - b.z || a.y - b.y || a.x - b.x;
   for (const m of [...s.meubles].sort(ordre)) lignes.push(`@meuble: ${m.sprite} ${m.x} ${m.y} ${m.z} ${m.ori}${m.miroir ? ' miroir' : ''}`);
-  for (const m of [...s.manques].sort(ordre)) lignes.push(`@manque: "${m.libelle.replace(/"/g, "'")}" ${m.x} ${m.y} ${m.z} ${m.l} ${m.p} ${m.h}`);
+  for (const m of [...s.manques].sort(ordre)) lignes.push(`@manque: "${m.libelle.replace(/"/g, "'")}" ${m.x} ${m.y} ${m.z} ${m.l} ${m.p} ${m.h} ${m.ori || 0}`);
   const seul = s.etages.length === 1 && s.etages[0].n === 0;
   for (const e of s.etages) {
     if (!seul) lignes.push(`[étage ${e.n}]`);
@@ -394,6 +394,7 @@ const MATIERE = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.Do
 const FANTOME = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthWrite: false });
 const MANQUE = new THREE.MeshBasicMaterial({ color: 0xe04fd0, transparent: true, opacity: 0.45, depthWrite: false });
 const GRILLE = new THREE.LineBasicMaterial({ color: 0xf0be46, transparent: true, opacity: 0.35 });
+const FLECHE = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
 const MANQUE_BORD = new THREE.LineBasicMaterial({ color: 0xff9af2 });
 
 let salle = null;          // la salle ouverte
@@ -492,6 +493,20 @@ function boiteManque(m) {
   const groupe = new THREE.Mesh(new THREE.BoxGeometry(m.l, m.p, m.h), MANQUE);
   groupe.add(new THREE.LineSegments(new THREE.EdgesGeometry(groupe.geometry), MANQUE_BORD));
   groupe.children[0].raycast = () => {};
+  // La flèche : le devant du modèle (le visage d'une statue, le côté où l'on s'assoit sur un trône).
+  const petit_cote = Math.min(m.l, m.p), angle = (m.ori || 0) * Math.PI / 4;
+  const fleche = new THREE.Group();
+  const tige = new THREE.Mesh(new THREE.BoxGeometry(petit_cote * 0.5, petit_cote * 0.14, 0.06), FLECHE);
+  tige.position.x = -petit_cote * 0.1;
+  const pointe = new THREE.Mesh(new THREE.ConeGeometry(petit_cote * 0.22, petit_cote * 0.32, 3), FLECHE);
+  pointe.rotation.z = -Math.PI / 2;
+  pointe.scale.z = 0.2;
+  pointe.position.x = petit_cote * 0.3;
+  fleche.add(tige, pointe);
+  fleche.rotation.z = angle;
+  fleche.position.z = m.h / 2 + 0.06;
+  fleche.traverse((o) => { o.raycast = () => {}; });
+  groupe.add(fleche);
   const texte = etiquette('? ' + m.libelle);
   texte.position.set(0, 0, m.h / 2 + 0.9);
   groupe.add(texte);
@@ -531,7 +546,7 @@ async function batirObjets() {
     objets.push(maille); scene.add(maille);
   }
   montrerSelection();
-  const manques = salle.manques.map((m) => `« ${m.libelle} » (${m.l} × ${m.p} × ${m.h})`);
+  const manques = salle.manques.map((m) => `« ${m.libelle} » (${m.l} × ${m.p} × ${m.h}, vers ${SENS[m.ori || 0]})`);
   $('manques').textContent = manques.length ? manques.join(', ') : 'Aucun bloc « ? » dans cette salle.';
 }
 
@@ -886,12 +901,14 @@ const CASES = [
   ['H', 'Échelle vers l’étage du dessus'],
 ];
 let pinceau = '.';
-const manque = { libelle: 'trône', l: 3, p: 3, h: 4 };
+const manque = { libelle: 'trône', l: 3, p: 3, h: 4, ori: 0 };
+let etire = null;       // { x, y, z } : le coin d'où l'on étire un bloc « ? »
+const SENS = ['l’est', 'le sud-est', 'le sud', 'le sud-ouest', 'l’ouest', 'le nord-ouest', 'le nord', 'le nord-est'];
 const AIDES = {
   poser: 'Clic : poser. R : tourner (Maj+R dans l’autre sens). M : miroir. Alt+clic sur un meuble : le prendre comme modèle. Clic droit : tourner la vue ; molette : zoom ; clic du milieu : glisser.',
   choisir: 'Clic : sélectionner ; glisser : déplacer. Flèches, Page préc./suiv. : un bloc. R, M : tourner, miroir. Ctrl+D : dupliquer. Suppr ou « Supprimer l’objet » : retirer.',
   cases: 'Clic ou glisser : peindre les cases de l’étage affiché. « Sol » efface un pilier ou une créature, « Effacer la case » retire la case. Un escalier ou une échelle ouvre le vide au-dessus de lui. Les + et − au bord de la grille ajoutent ou retirent une rangée ; les étages sont dans la barre du haut.',
-  manque: 'Clic : poser un bloc « ? » à l’endroit où il manque un modèle. Son libellé dit ce que ce serait.',
+  manque: 'Clic : poser un bloc « ? » de la taille réglée. Glisser : l’étirer d’un coin à l’autre, en un seul bloc (un tapis, une estrade). R : tourner ; la flèche montre le devant du modèle.',
   gomme: 'Clic sur un objet ou un bloc « ? » : le retirer. Glisser : retirer tout ce que la souris touche. Ctrl+Z : annuler.',
 };
 function outil(nom) {
@@ -903,7 +920,8 @@ function outil(nom) {
     $('pinceau').onchange = () => { pinceau = $('pinceau').value; };
   } else if (nom === 'manque') {
     o.innerHTML = `Ce serait : <input id="m-libelle" type="text" list="m-modeles" value="${manque.libelle}"><datalist id="m-modeles">${Object.values(PIECES.modeles).map((m) => `<option value="${m.nom.toLowerCase()}">`).join('')}</datalist>
-      l <input id="m-l" type="number" min="1" max="21" value="${manque.l}"> p <input id="m-p" type="number" min="1" max="21" value="${manque.p}"> h <input id="m-h" type="number" min="1" max="6" value="${manque.h}"> blocs`;
+      l <input id="m-l" type="number" min="1" max="21" value="${manque.l}"> p <input id="m-p" type="number" min="1" max="21" value="${manque.p}"> h <input id="m-h" type="number" min="1" max="6" value="${manque.h}"> blocs <button id="m-tourner" title="R : un quart de tour">Tourner</button> <span>devant vers ${SENS[manque.ori]}</span>`;
+    $('m-tourner').onclick = () => tourner(1);
     for (const k of ['libelle', 'l', 'p', 'h']) $('m-' + k).onchange = () => { manque[k] = k === 'libelle' ? $('m-' + k).value.trim() || '?' : Math.max(1, +$('m-' + k).value || 1); majFantome(); };
   } else if (nom === 'choisir') {
     o.innerHTML = '<button id="s-supprimer" title="Suppr">Supprimer l’objet</button><button id="s-dupliquer" title="Ctrl+D">Dupliquer</button><button id="s-tourner" title="R">Tourner</button><button id="s-miroir" title="M">Miroir</button>';
@@ -954,7 +972,7 @@ function dire(vise) {
   let quoi = '';
   if (selection === perso) quoi = ' Sélection : le personnage témoin (deux blocs de haut), non enregistré.';
   else if (selection) quoi = selection.sprite ? ` Sélection : <b>${selection.sprite}</b> en ${selection.x}, ${selection.y}, ${selection.z}, orientation ${selection.ori}${selection.miroir ? ', miroir' : ''}.`
-    : ` Sélection : bloc « ${selection.libelle} » en ${selection.x}, ${selection.y}, ${selection.z}.`;
+    : ` Sélection : bloc « ${selection.libelle} » en ${selection.x}, ${selection.y}, ${selection.z}, ${selection.l} × ${selection.p} × ${selection.h}, devant vers ${SENS[selection.ori || 0]}.`;
   $('lieu').innerHTML = lieu + quoi;
 }
 
@@ -979,6 +997,7 @@ toile.addEventListener('pointermove', (e) => {
   dire(v);
   if (courant === 'cases') { if (peint) peindre(v); return; }
   if (courant === 'gomme') { if (gomme) gommer(v); return; }
+  if (etire) { etirer(e); return; }
   if (glisse && v) {
     const m = glisse.de;
     const [x, y, z] = v.bloc;
@@ -1001,6 +1020,27 @@ toile.addEventListener('pointermove', (e) => {
     placer(fantome.maille, { x: v.bloc[0], y: v.bloc[1], z: v.bloc[2], ori: fantome.orientation, miroir: fantome.miroir });
   } else fantome.maille.position.set(v.bloc[0] + manque.l / 2, v.bloc[1] + manque.p / 2, v.bloc[2] + manque.h / 2);
 });
+// La zone étirée : du coin où l'on a appuyé au bloc sous la souris, sur le même sol.
+function zoneEtiree() {
+  const sol = new THREE.Plane(new THREE.Vector3(0, 0, 1), -etire.z);
+  const p = rayon.ray.intersectPlane(sol, new THREE.Vector3());
+  const x1 = p ? Math.floor(p.x) : etire.x, y1 = p ? Math.floor(p.y) : etire.y;
+  const borne = (a, max) => Math.max(0, Math.min(max, a));
+  const xa = borne(Math.min(etire.x, x1), largeur(salle) * C - 1), xb = borne(Math.max(etire.x, x1), largeur(salle) * C - 1);
+  const ya = borne(Math.min(etire.y, y1), profondeur(salle) * C - 1), yb = borne(Math.max(etire.y, y1), profondeur(salle) * C - 1);
+  return { x: xa, y: ya, z: etire.z, l: xb - xa + 1, p: yb - ya + 1 };
+}
+function etirer(e) {
+  viser(e);
+  const zone = zoneEtiree();
+  etire.etendu = etire.etendu || zone.l > 1 || zone.p > 1;
+  if (!etire.etendu) return;
+  if (fantome.maille) scene.remove(fantome.maille);
+  fantome.maille = boiteManque({ ...manque, ...zone });
+  fantome.maille.traverse((o) => { o.raycast = () => {}; });
+  scene.add(fantome.maille);
+  $('lieu').innerHTML = `Bloc « ? » de <b>${zone.l} × ${zone.p}</b> blocs.`;
+}
 toile.addEventListener('pointerleave', () => { if (fantome.maille) fantome.maille.visible = false; });
 
 toile.addEventListener('pointerdown', (e) => {
@@ -1021,9 +1061,9 @@ toile.addEventListener('pointerdown', (e) => {
     salle.meubles.push(m);
     batirObjets(); batirCoque(); change();
   } else if (courant === 'manque') {
-    garder();
-    salle.manques.push({ ...manque, x, y, z });
-    batirObjets(); change();
+    // Posé au relâchement : tel quel pour un clic, étiré si l'on a glissé.
+    etire = { x, y, z, etendu: false };
+    toile.setPointerCapture(e.pointerId);
   } else if (courant === 'choisir') {
     selection = v.objet ? v.objet.userData.de : null;
     montrerSelection();
@@ -1032,6 +1072,13 @@ toile.addEventListener('pointerdown', (e) => {
 });
 toile.addEventListener('pointerup', () => {
   if (peint) { peint = false; }
+  if (etire) {
+    const zone = etire.etendu ? zoneEtiree() : { x: etire.x, y: etire.y, z: etire.z };
+    etire = null;
+    garder();
+    salle.manques.push({ ...manque, ...zone });
+    batirObjets(); change(); majFantome();
+  }
   if (gomme) { gomme = null; batirObjets(); }
   if (glisse) { const bouge = glisse.garde; glisse = null; if (bouge) { batirCoque(); change(); } montrerSelection(); }
 });
@@ -1070,8 +1117,12 @@ function tourner(pas) {
   if (courant === 'choisir' && selection) {
     garder();
     if (selection.sprite || selection.perso) selection.ori = (selection.ori + pas + 8) % 8;
-    else [selection.l, selection.p] = [selection.p, selection.l];
+    else { [selection.l, selection.p] = [selection.p, selection.l]; selection.ori = ((selection.ori || 0) + 2 * pas + 8) % 8; }
     batirObjets(); change();
+  } else if (courant === 'manque') {
+    [manque.l, manque.p] = [manque.p, manque.l];
+    manque.ori = (manque.ori + 2 * pas + 8) % 8;
+    outil('manque');
   } else if (courant === 'poser') {
     fantome.orientation = (fantome.orientation + pas + 8) % 8; fantome.auto = false;
     if (fantome.maille && fantome.bloc) fantome.maille.rotation.z = fantome.orientation * Math.PI / 4;

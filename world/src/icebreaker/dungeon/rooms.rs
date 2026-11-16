@@ -113,13 +113,15 @@ pub struct Furniture {
 }
 
 /// Icebreaker F.14 : a model the room wants and Veloren doesn't have (`@manque: "trône" 30 20 0 3 3 5`): its
-/// name, the block of its lowest corner and its size in blocks. Nothing is drawn in the game; it is the list of
-/// models to make (F.13).
+/// name, the block of its lowest corner, its size in blocks, and the way it faces (0 to 7 like a sprite, 0 if not
+/// said: `@manque: "statue" 30 20 0 2 2 5 6`). Nothing is drawn in the game; it is the list of models to make
+/// (F.13), each with the place and the direction the model must have.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Missing {
     pub label: String,
     pub pos: (i32, i32, i32),
     pub size: (i32, i32, i32),
+    pub ori: u8,
 }
 
 /// `Barrel 12 8 0 2 miroir`.
@@ -150,13 +152,18 @@ fn parse_missing(value: &str) -> Result<Missing, String> {
     let rest = value.trim().strip_prefix('"').ok_or("le libellé se met entre guillemets")?;
     let (label, rest) = rest.split_once('"').ok_or("guillemet fermant absent")?;
     let numbers: Vec<i32> = rest.split_whitespace().filter_map(|w| w.parse().ok()).collect();
-    let [x, y, z, sx, sy, sz] = numbers[..] else {
-        return Err("après le libellé : x y z puis largeur, profondeur, hauteur".into());
+    let (x, y, z, sx, sy, sz, ori) = match numbers[..] {
+        [x, y, z, sx, sy, sz] => (x, y, z, sx, sy, sz, 0),
+        [x, y, z, sx, sy, sz, ori] => (x, y, z, sx, sy, sz, ori),
+        _ => return Err("après le libellé : x y z, puis largeur, profondeur, hauteur, puis le sens (0 à 7)".into()),
     };
     if label.trim().is_empty() || sx < 1 || sy < 1 || sz < 1 {
         return Err("libellé vide ou taille nulle".into());
     }
-    Ok(Missing { label: label.trim().to_string(), pos: (x, y, z), size: (sx, sy, sz) })
+    if !(0..8).contains(&ori) {
+        return Err(format!("sens {ori} : de 0 à 7"));
+    }
+    Ok(Missing { label: label.trim().to_string(), pos: (x, y, z), size: (sx, sy, sz), ori: ori as u8 })
 }
 
 /// The cell of the plan a block of furniture is in, and its height above the floor of that cell.
@@ -437,6 +444,7 @@ impl RoomTemplate {
             }
             for m in &mut missing {
                 m.pos.0 = blocks - m.pos.0 - m.size.0;
+                m.ori = (8 - m.ori) % 8;
             }
         }
         for turn in 0..orientation % 4 {
@@ -449,6 +457,7 @@ impl RoomTemplate {
             for m in &mut missing {
                 m.pos = (blocks - m.pos.1 - m.size.1, m.pos.0, m.pos.2);
                 m.size = (m.size.1, m.size.0, m.size.2);
+                m.ori = (m.ori + 2) % 8;
             }
         }
         if orientation >= 4 {
@@ -646,7 +655,12 @@ mod tests {
             Furniture { sprite: "Barrel".into(), pos: (8, 7, 0), ori: 2, mirror: false },
             Furniture { sprite: "BenchWoodEnd".into(), pos: (12, 9, 1), ori: 3, mirror: true },
         ]);
-        assert_eq!(room.missing, [Missing { label: "trône".into(), pos: (14, 10, 0), size: (3, 2, 5) }]);
+        assert_eq!(room.missing, [Missing { label: "trône".into(), pos: (14, 10, 0), size: (3, 2, 5), ori: 0 }]);
+        // The way a missing model faces, after its size; it turns with the room.
+        let statue = RoomTemplate::parse("x", &FURNISHED.replace("3 2 5\n", "3 2 5 6\n")).unwrap();
+        assert_eq!(statue.missing[0].ori, 6);
+        assert_eq!(statue.oriented(1).unwrap().missing[0].ori, 0);
+        assert_eq!(statue.oriented(4).unwrap().missing[0].ori, 2);
         let wrong = |line: &str| {
             RoomTemplate::parse("x", &format!("@roles: hall\n{line}\n#####\n+.b.+\n#...#\n#####\n")).unwrap_err()
         };
@@ -657,6 +671,7 @@ mod tests {
         assert!(wrong("@meuble: Barrel 17 10 0 0").contains("case prise"), "au milieu de la case de la brute");
         assert!(wrong("@meuble: Barrel 10 10 0 0").contains("devant une porte"));
         assert!(wrong("@manque: trône 1 1 0 1 1 1").contains("guillemets"));
+        assert!(wrong("@manque: \"trône\" 8 8 0 1 1 1 9").contains("de 0 à 7"));
     }
 
     /// Icebreaker F.14 : the furniture turns with its room: it stays on the floor in every orientation, four
