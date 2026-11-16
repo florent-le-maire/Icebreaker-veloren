@@ -465,6 +465,12 @@ impl SessionState {
                 },
                 // Only on the character screen.
                 client::Event::IcebreakerFantome => {},
+                // Icebreaker FT.4 : le fantôme du village a un corps : la caméra le suit.
+                client::Event::IcebreakerCorpsFantome => {
+                    self.scene
+                        .camera_mut()
+                        .set_mode(crate::scene::camera::CameraMode::ThirdPerson);
+                },
                 client::Event::IcebreakerBaliseRecharge(reste) => {
                     crate::icebreaker_balise::recharge(reste);
                 },
@@ -2283,6 +2289,7 @@ impl PlayState for SessionState {
                             PresenceKind::Spectator => {
                                 unreachable!("HUD adaption in Spectator mode!")
                             },
+                            PresenceKind::IcebreakerFantome => None,
                             PresenceKind::Possessor => None,
                         };
 

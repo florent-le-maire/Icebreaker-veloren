@@ -109,7 +109,9 @@ impl<'a> System<'a> for Sys {
                                     map_marker.cloned(),
                                 ))
                             },
-                            PresenceKind::Spectator | PresenceKind::Possessor => None,
+                            PresenceKind::Spectator
+                            | PresenceKind::Possessor
+                            | PresenceKind::IcebreakerFantome => None,
                         },
                     ),
             );

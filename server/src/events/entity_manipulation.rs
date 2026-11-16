@@ -3659,7 +3659,11 @@ pub fn transform_entity(
                     .map(|presence| presence.kind)
                 {
                     // Transforming while the character is being loaded or is spectating is invalid!
-                    Some(PresenceKind::Spectator | PresenceKind::LoadingCharacter(_)) => {
+                    Some(
+                        PresenceKind::Spectator
+                        | PresenceKind::LoadingCharacter(_)
+                        | PresenceKind::IcebreakerFantome,
+                    ) => {
                         return Err(TransformEntityError::LoadingCharacter);
                     },
                     Some(PresenceKind::Character(_)) if !allow_players => {

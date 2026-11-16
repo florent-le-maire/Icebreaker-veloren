@@ -48,13 +48,17 @@ pub enum PresenceKind {
     LoadingCharacter(CharacterId),
     Character(CharacterId),
     Possessor,
+    /// Icebreaker FT.4 : le fantôme du village (décision 0021) : un joueur sans personnage, avec un
+    /// corps qu'il contrôle ; rien n'est sauvé.
+    IcebreakerFantome,
 }
 
 impl PresenceKind {
     /// Check if the presence represents a control of a character, and thus
     /// certain in-game messages from the client such as control inputs
     /// should be handled.
-    pub fn controlling_char(&self) -> bool { matches!(self, Self::Character(_) | Self::Possessor) }
+    pub fn controlling_char(&self) -> bool { matches!(self, Self::Character(_) | Self::Possessor | Self::IcebreakerFantome)
+    }
 
     pub fn character_id(&self) -> Option<CharacterId> {
         if let Self::Character(character_id) = self {
@@ -72,7 +76,7 @@ impl PresenceKind {
     pub fn sync_me(&self) -> bool {
         match self {
             Self::Spectator | Self::LoadingCharacter(_) => false,
-            Self::Character(_) | Self::Possessor => true,
+            Self::Character(_) | Self::Possessor | Self::IcebreakerFantome => true,
         }
     }
 }

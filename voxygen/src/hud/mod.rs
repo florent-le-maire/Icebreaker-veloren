@@ -1434,6 +1434,7 @@ impl Hud {
             PresenceKind::LoadingCharacter(id) => Some(id),
             PresenceKind::Spectator => None,
             PresenceKind::Possessor => None,
+            PresenceKind::IcebreakerFantome => None,
         };
 
         // Create a new HotbarState from the persisted slots.
@@ -4253,7 +4254,10 @@ impl Hud {
         // (fantôme, expédition), les messages du serveur et le panneau libre de la balise
         // (jalon N) : `hud/icebreaker.rs`.
         let icebreaker_fantome = crate::icebreaker_mort::registre()
-            && matches!(client.presence(), Some(PresenceKind::Spectator));
+            && matches!(
+                client.presence(),
+                Some(PresenceKind::Spectator | PresenceKind::IcebreakerFantome)
+            );
         // La fouille d'un sac de mort : sa part se lit dans l'état du personnage.
         let icebreaker_en_cours = icebreaker::EnCours {
             verrou: info.icebreaker_lock_avis,

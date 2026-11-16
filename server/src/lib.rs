@@ -39,6 +39,8 @@ pub mod icebreaker_slots;
 pub mod icebreaker_treasury;
 pub mod icebreaker_village;
 pub mod icebreaker_warehouse;
+// Icebreaker : le fantôme du village a un corps (jalon FT).
+pub mod icebreaker_fantome;
 pub mod input;
 pub mod location;
 pub mod lod;

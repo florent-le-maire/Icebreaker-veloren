@@ -418,6 +418,8 @@ pub(super) fn persist_entity(state: &mut State, entity: EcsEntity) -> EcsEntity 
             },
             PresenceKind::Spectator => { /* Do nothing, spectators do not need persisting */ },
             PresenceKind::Possessor => { /* Do nothing, possessor's are not persisted */ },
+            // Icebreaker FT.4 : le fantôme du village n'est pas sauvé.
+            PresenceKind::IcebreakerFantome => {},
         };
     }
     if let Some(nom) = icebreaker_mort {
@@ -499,7 +501,9 @@ pub fn handle_possess(
 
             if let Some(presence) = presences.get(possessor) {
                 delete_entity = match presence.kind {
-                    k @ (PresenceKind::LoadingCharacter(_) | PresenceKind::Spectator) => {
+                    k @ (PresenceKind::LoadingCharacter(_)
+                    | PresenceKind::Spectator
+                    | PresenceKind::IcebreakerFantome) => {
                         error!(?k, "Unexpected presence kind for a possessor.");
                         return;
                     },

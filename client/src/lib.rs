@@ -141,6 +141,8 @@ pub enum Event {
     IcebreakerTravel(u16),
     /// Icebreaker: the registry is open, enter as a ghost (jalon R).
     IcebreakerFantome,
+    /// Icebreaker FT.4 : le serveur a donné un corps au fantôme (au village).
+    IcebreakerCorpsFantome,
     /// Icebreaker: play this character of the registry, or become a ghost again.
     IcebreakerJouer(Option<CharacterId>),
     /// Icebreaker: the expedition being prepared at the village, or none.
@@ -2758,6 +2760,7 @@ impl Client {
                             PresenceKind::LoadingCharacter(_) => PresenceKind::Possessor,
                             PresenceKind::Character(_) => PresenceKind::Possessor,
                             PresenceKind::Possessor => PresenceKind::Possessor,
+                            PresenceKind::IcebreakerFantome => PresenceKind::Possessor,
                         });
                     }
                     // Clear pending trade
@@ -3140,7 +3143,15 @@ impl Client {
             ServerGeneral::CharacterEdited(character_id) => {
                 events.push(Event::CharacterEdited(character_id));
             },
-            ServerGeneral::CharacterSuccess => debug!("client is now in ingame state on server"),
+            ServerGeneral::CharacterSuccess => {
+                // Icebreaker FT.4 : entré en spectateur, le serveur répond comme pour un
+                // personnage : au village, le fantôme a un corps.
+                if self.presence == Some(PresenceKind::Spectator) {
+                    self.presence = Some(PresenceKind::IcebreakerFantome);
+                    events.push(Event::IcebreakerCorpsFantome);
+                }
+                debug!("client is now in ingame state on server")
+            },
             ServerGeneral::SpectatorSuccess(spawn_point) => {
                 events.push(Event::StartSpectate(spawn_point));
                 debug!("client is now in ingame state on server");

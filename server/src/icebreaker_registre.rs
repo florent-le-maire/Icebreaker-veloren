@@ -35,11 +35,14 @@ pub const GHOST_REFUSAL: &str =
 /// Whether the registry of the campaign is open.
 pub fn active() -> bool { std::env::var_os("ICEBREAKER_REGISTRE").is_some_and(|v| v == "1") }
 
-/// Whether `entity` is a ghost: in game without a character.
+/// Whether `entity` is a ghost: in game without a character (Veloren's spectator, or the ghost
+/// with a body of the village, FT.4).
 pub fn is_ghost(ecs: &World, entity: Entity) -> bool {
     ecs.read_storage::<Presence>()
         .get(entity)
-        .is_some_and(|presence| matches!(presence.kind, PresenceKind::Spectator))
+        .is_some_and(|presence| {
+            matches!(presence.kind, PresenceKind::Spectator | PresenceKind::IcebreakerFantome)
+        })
 }
 
 #[derive(Clone, Debug, Deserialize)]

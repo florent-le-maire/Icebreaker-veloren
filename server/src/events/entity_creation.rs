@@ -68,7 +68,12 @@ pub fn handle_initialize_character(server: &mut Server, ev: InitializeCharacterE
 
 pub fn handle_initialize_spectator(server: &mut Server, ev: InitializeSpectatorEvent) {
     let clamped_vds = ev.1.clamp(server.settings().max_view_distance);
-    server.state.initialize_spectator_data(ev.0, clamped_vds);
+    // Icebreaker FT.4 : avec le registre, le fantôme du village a un corps (décision 0021).
+    if crate::icebreaker_registre::active() {
+        crate::icebreaker_fantome::entrer(server, ev.0, clamped_vds);
+    } else {
+        server.state.initialize_spectator_data(ev.0, clamped_vds);
+    }
     // Correct client if its requested VD is too high.
     if ev.1.terrain != clamped_vds.terrain {
         server.notify_client(ev.0, ServerGeneral::SetViewDistance(clamped_vds.terrain));
