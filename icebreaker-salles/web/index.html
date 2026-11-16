@@ -89,6 +89,7 @@
   <textarea id="description" rows="3"></textarea>
   <h2>Plan</h2>
   <div class="ligne"><label>Agrandir</label><button data-rangee="n" title="Une rangée de cases au nord">N</button><button data-rangee="s">S</button><button data-rangee="o">O</button><button data-rangee="e">E</button></div>
+  <div class="ligne"><label>Réduire</label><button data-retirer="n" title="Retire la rangée de cases qui longe le mur du nord (le mur reste), avec les objets qui s'y trouvent">N</button><button data-retirer="s">S</button><button data-retirer="o">O</button><button data-retirer="e">E</button></div>
   <p class="sous-titre" id="mesures"></p>
   <h2>Modèles qui manquent ici</h2>
   <p class="sous-titre" id="manques">Aucun bloc « ? » dans cette salle.</p>
@@ -100,6 +101,7 @@
     <button data-outil="choisir" title="Sélectionner, déplacer (2)">Sélectionner</button>
     <button data-outil="cases" title="Peindre les cases du plan (3)">Cases</button>
     <button data-outil="manque" title="Bloc « ? » : un modèle qui manque (4)">Bloc ?</button>
+    <button data-outil="gomme" title="Retirer des objets : clic ou glisser dessus (5)">Gomme</button>
     <span class="sep"></span>
     <button id="annuler" title="Ctrl+Z">Annuler</button><button id="refaire" title="Ctrl+Y">Refaire</button>
     <span class="sep"></span>
@@ -582,6 +584,30 @@ for (const b of document.querySelectorAll('[data-rangee]')) b.onclick = () => {
   batirCoque(); batirObjets(); change();
 };
 
+// Une rangée de cases en moins : celle qui longe le mur du bord (le mur reste) ; les objets qui s'y trouvaient
+// partent avec elle, les autres suivent.
+for (const b of document.querySelectorAll('[data-retirer]')) b.onclick = () => {
+  const l = largeur(salle), p = profondeur(salle), cote = b.dataset.retirer;
+  const nord_sud = cote === 'n' || cote === 's';
+  if ((nord_sud ? p : l) <= 3) { message('La salle ne peut pas être plus petite.', 'erreur'); return; }
+  // La rangée retirée, en cases.
+  const rang = cote === 'n' || cote === 'o' ? 1 : (nord_sud ? p : l) - 2;
+  garder();
+  for (const e of salle.etages) {
+    if (nord_sud) e.lignes.splice(rang, 1);
+    else e.lignes = e.lignes.map((ligne) => { const pleine = ligne.padEnd(l, ' '); return (pleine.slice(0, rang) + pleine.slice(rang + 1)).replace(/\s+$/, ''); });
+  }
+  const place = (m) => Math.floor((nord_sud ? m.y : m.x) / C);
+  const avant = salle.meubles.length + salle.manques.length;
+  salle.meubles = salle.meubles.filter((m) => place(m) !== rang);
+  salle.manques = salle.manques.filter((m) => place(m) !== rang);
+  for (const m of [...salle.meubles, ...salle.manques]) if (place(m) > rang) { if (nord_sud) m.y -= C; else m.x -= C; }
+  const partis = avant - salle.meubles.length - salle.manques.length;
+  selection = null;
+  batirCoque(); batirObjets(); cadrer(false); change();
+  message('Rangée retirée' + (partis ? ', avec ' + partis + ' objet(s) qui s’y trouvaient' : '') + '. Ctrl+Z pour revenir.');
+};
+
 // ---------------------------------------------------------------------------------------------------------
 // Ouvrir, créer, enregistrer.
 // ---------------------------------------------------------------------------------------------------------
@@ -734,16 +760,17 @@ $('recherche').oninput = filtrer; $('categorie').onchange = filtrer; $('attendus
 let courant = 'poser';
 const fantome = { maille: null, orientation: 0, miroir: false, bloc: null, auto: true };
 const CASES = [
-  ['.', 'Sol'], ['#', 'Mur'], ['+', 'Porte possible'], ['O', 'Pilier'], ['*', 'Fosse possible'], ['$', 'Coffre'], [' ', 'Vide (roche)'],
+  ['.', 'Sol (efface pilier, coffre, créature)'], ['#', 'Mur'], [' ', 'Effacer la case (roche, hors de la salle)'], ['+', 'Porte possible'], ['O', 'Pilier'], ['*', 'Fosse possible'], ['$', 'Coffre'],
   ['b', 'Brute'], ['a', 'Archer'], ['g', 'Guetteur'], ['c', 'Chef'], ['B', 'Brute endormie'], ['A', 'Archer endormi'], ['G', 'Guetteur endormi'], ['S', 'Départ des joueurs'],
 ];
 let pinceau = '.';
 const manque = { libelle: 'trône', l: 3, p: 3, h: 4 };
 const AIDES = {
   poser: 'Clic : poser. R : tourner (Maj+R dans l’autre sens). M : miroir. Alt+clic sur un meuble : le prendre comme modèle. Clic droit : tourner la vue ; molette : zoom ; clic du milieu : glisser.',
-  choisir: 'Clic : sélectionner ; glisser : déplacer. Flèches, Page préc./suiv. : un bloc. R, M : tourner, miroir. Ctrl+D : dupliquer. Suppr : retirer.',
-  cases: 'Clic ou glisser : peindre les cases de l’étage affiché. « Agrandir » (à gauche) ajoute une rangée.',
+  choisir: 'Clic : sélectionner ; glisser : déplacer. Flèches, Page préc./suiv. : un bloc. R, M : tourner, miroir. Ctrl+D : dupliquer. Suppr ou « Supprimer l’objet » : retirer.',
+  cases: 'Clic ou glisser : peindre les cases de l’étage affiché. « Sol » efface un pilier ou une créature, « Effacer la case » retire la case. À gauche : « Agrandir » et « Réduire » d’une rangée.',
   manque: 'Clic : poser un bloc « ? » à l’endroit où il manque un modèle. Son libellé dit ce que ce serait.',
+  gomme: 'Clic sur un objet ou un bloc « ? » : le retirer. Glisser : retirer tout ce que la souris touche. Ctrl+Z : annuler.',
 };
 function outil(nom) {
   courant = nom;
@@ -756,6 +783,12 @@ function outil(nom) {
     o.innerHTML = `Ce serait : <input id="m-libelle" type="text" list="m-modeles" value="${manque.libelle}"><datalist id="m-modeles">${Object.values(PIECES.modeles).map((m) => `<option value="${m.nom.toLowerCase()}">`).join('')}</datalist>
       l <input id="m-l" type="number" min="1" max="21" value="${manque.l}"> p <input id="m-p" type="number" min="1" max="21" value="${manque.p}"> h <input id="m-h" type="number" min="1" max="6" value="${manque.h}"> blocs`;
     for (const k of ['libelle', 'l', 'p', 'h']) $('m-' + k).onchange = () => { manque[k] = k === 'libelle' ? $('m-' + k).value.trim() || '?' : Math.max(1, +$('m-' + k).value || 1); majFantome(); };
+  } else if (nom === 'choisir') {
+    o.innerHTML = '<button id="s-supprimer" title="Suppr">Supprimer l’objet</button><button id="s-dupliquer" title="Ctrl+D">Dupliquer</button><button id="s-tourner" title="R">Tourner</button><button id="s-miroir" title="M">Miroir</button>';
+    $('s-supprimer').onclick = supprimerSelection;
+    $('s-dupliquer').onclick = dupliquerSelection;
+    $('s-tourner').onclick = () => tourner(1);
+    $('s-miroir').onclick = miroirSelection;
   } else o.innerHTML = '';
   o.style.display = o.innerHTML ? '' : 'none';
   $('aide').textContent = AIDES[nom];
@@ -820,6 +853,7 @@ toile.addEventListener('pointermove', (e) => {
   const v = viser(e, glisse && objets.find((o) => o.userData.de === glisse.de));
   dire(v);
   if (courant === 'cases') { if (peint) peindre(v); return; }
+  if (courant === 'gomme') { if (gomme) gommer(v); return; }
   if (glisse && v) {
     const m = glisse.de;
     const [x, y, z] = v.bloc;
@@ -848,6 +882,7 @@ toile.addEventListener('pointerdown', (e) => {
   if (e.button !== 0 || !salle) return;
   const v = viser(e);
   if (courant === 'cases') { garder(); peint = true; toile.setPointerCapture(e.pointerId); peindre(v); return; }
+  if (courant === 'gomme') { gomme = { garde: false }; toile.setPointerCapture(e.pointerId); gommer(v); return; }
   if (!v) { if (courant === 'choisir') { selection = null; montrerSelection(); } return; }
   if (e.altKey && v.objet && v.objet.userData.de.sprite) {
     const m = v.objet.userData.de;
@@ -872,9 +907,39 @@ toile.addEventListener('pointerdown', (e) => {
 });
 toile.addEventListener('pointerup', () => {
   if (peint) { peint = false; }
+  if (gomme) { gomme = null; batirObjets(); }
   if (glisse) { const bouge = glisse.garde; glisse = null; if (bouge) { batirCoque(); change(); } montrerSelection(); }
 });
 
+function retirer(m) {
+  salle.meubles = salle.meubles.filter((x) => x !== m);
+  salle.manques = salle.manques.filter((x) => x !== m);
+  if (selection === m) selection = null;
+}
+function supprimerSelection() {
+  if (!selection) { message('Rien de sélectionné : cliquer d’abord un objet.', 'erreur'); return; }
+  garder(); retirer(selection); batirObjets(); batirCoque(); change();
+}
+function dupliquerSelection() {
+  if (!selection) return;
+  garder();
+  const double = { ...selection, x: selection.x + 1 };
+  (selection.sprite ? salle.meubles : salle.manques).push(double);
+  selection = double; batirObjets(); change();
+}
+function miroirSelection() {
+  if (!selection || !selection.sprite) return;
+  garder(); selection.miroir = !selection.miroir; batirObjets(); change();
+}
+// La gomme : retire l'objet sous la souris.
+let gomme = null;
+function gommer(v) {
+  if (!v || !v.objet) return;
+  if (!gomme.garde) { garder(); gomme.garde = true; }
+  retirer(v.objet.userData.de);
+  scene.remove(v.objet); objets = objets.filter((o) => o !== v.objet);
+  batirCoque(); change();
+}
 function tourner(pas) {
   if (courant === 'choisir' && selection) {
     garder();
@@ -892,29 +957,19 @@ window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && touche === 'z') { revenir(pile.avant, pile.apres); e.preventDefault(); return; }
   if (e.ctrlKey && touche === 'y') { revenir(pile.apres, pile.avant); e.preventDefault(); return; }
   if (e.ctrlKey && touche === 's') { $('enregistrer').click(); e.preventDefault(); return; }
-  if (e.ctrlKey && touche === 'd' && selection) {
-    garder();
-    const double = { ...selection, x: selection.x + 1 };
-    (selection.sprite ? salle.meubles : salle.manques).push(double);
-    selection = double; batirObjets(); change(); e.preventDefault(); return;
-  }
+  if (e.ctrlKey && touche === 'd' && selection) { dupliquerSelection(); e.preventDefault(); return; }
   if (e.ctrlKey) return;
-  const outils = { 1: 'poser', 2: 'choisir', 3: 'cases', 4: 'manque' };
+  const outils = { 1: 'poser', 2: 'choisir', 3: 'cases', 4: 'manque', 5: 'gomme' };
   if (outils[touche]) { outil(outils[touche]); return; }
   if (touche === 'r') { tourner(e.shiftKey ? -1 : 1); return; }
   if (touche === 'm') {
-    if (courant === 'choisir' && selection && selection.sprite) { garder(); selection.miroir = !selection.miroir; batirObjets(); change(); }
+    if (courant === 'choisir') miroirSelection();
     else if (courant === 'poser') { fantome.miroir = !fantome.miroir; if (fantome.maille) fantome.maille.scale.x = fantome.miroir ? -1 : 1; }
     return;
   }
   if (touche === 'escape') { selection = null; montrerSelection(); return; }
   if (!selection) return;
-  if (touche === 'delete' || touche === 'backspace') {
-    garder();
-    salle.meubles = salle.meubles.filter((m) => m !== selection);
-    salle.manques = salle.manques.filter((m) => m !== selection);
-    selection = null; batirObjets(); batirCoque(); change(); e.preventDefault(); return;
-  }
+  if (touche === 'delete' || touche === 'backspace') { supprimerSelection(); e.preventDefault(); return; }
   const pas = { arrowleft: [-1, 0, 0], arrowright: [1, 0, 0], arrowup: [0, 1, 0], arrowdown: [0, -1, 0], pageup: [0, 0, 1], pagedown: [0, 0, -1] }[touche];
   if (pas) {
     garder();
