@@ -3637,6 +3637,9 @@ dependencies = [
  "ron",
  "rust_xlsxwriter",
  "serde",
+ "serde_json",
+ "veloren-common",
+ "veloren-world",
 ]
 
 [[package]]

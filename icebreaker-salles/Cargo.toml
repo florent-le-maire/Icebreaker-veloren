@@ -1,4 +1,5 @@
-# Icebreaker : le tableur des salles de donjon (docs/icebreaker/design/donjon.md, « Décor des salles »).
+# Icebreaker : le tableur des salles de donjon (docs/icebreaker/design/donjon.md, « Décor des salles ») et
+# l'atelier des salles (F.15, bin atelier-salles).
 # `cargo run -p icebreaker-salles` depuis la racine du dépôt écrit docs/icebreaker/salles.xlsx.
 [package]
 name = "icebreaker-salles"
@@ -6,6 +7,7 @@ version = "0.1.0"
 edition.workspace = true
 license.workspace = true
 publish = false
+default-run = "icebreaker-salles"
 
 [lints]
 workspace = true
@@ -15,3 +17,7 @@ anyhow = "1"
 rust_xlsxwriter = "0.82"
 ron = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
+# L'atelier contrôle une salle avec le lecteur du jeu et liste les sprites de Veloren.
+common = { package = "veloren-common", path = "../common" }
+world = { package = "veloren-world", path = "../world" }

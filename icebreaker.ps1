@@ -16,6 +16,8 @@
 #   .\icebreaker.ps1 caverne                 (atelier des grottes, jalon U : compile le générateur pour le
 #                                             navigateur et sert l'atelier sur http://localhost:8096, où
 #                                             l'on enregistre des presets dans formes.ron)
+#   .\icebreaker.ps1 salles                  (atelier des salles, F.15 : http://localhost:8097, où l'on meuble
+#                                             les salles du donjon au bloc près avec les objets de Veloren)
 #
 # Chaque lieu génère son propre petit monde à chaque lancement (graine au hasard, ou -Seed).
 # Les personnages sont communs à tous les lieux : ils vivent dans la partie, userdata-icebreaker\parties\<nom>
@@ -23,7 +25,7 @@
 # Dans le jeu : Multijoueur, serveur « localhost:<port> », n'importe quel pseudo.
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("campagne", "village", "donjon", "route", "entrainement", "mod", "caverne")]
+    [ValidateSet("campagne", "village", "donjon", "route", "entrainement", "mod", "caverne", "salles")]
     [string]$Lieu,
     # Site autour duquel le lieu est généré (par défaut : Gnarling au donjon, Town au village).
     [string]$Site,
@@ -93,6 +95,18 @@ if ($Lieu -eq "caverne") {
     $atelier = Start-Process "$repo\target\release\atelier.exe" -WorkingDirectory $repo -NoNewWindow -PassThru
     Start-Sleep -Seconds 1
     Start-Process "http://localhost:8096"
+    $atelier | Wait-Process
+    exit 0
+}
+
+# L'atelier des salles (docs/icebreaker/PLAN-PLAYTEST.md, F.15 à F.17) : le serveur sert la page, les objets de
+# Veloren et les salles, et enregistre une salle (contrôle du jeu, fichier, commit).
+if ($Lieu -eq "salles") {
+    cargo build -p icebreaker-salles --bin atelier-salles
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    $atelier = Start-Process "$repo\target\debug\atelier-salles.exe" -WorkingDirectory $repo -NoNewWindow -PassThru
+    Start-Sleep -Seconds 2
+    Start-Process "http://localhost:8097"
     $atelier | Wait-Process
     exit 0
 }

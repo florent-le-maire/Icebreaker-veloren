@@ -5,6 +5,7 @@
 //! Lancer depuis la racine du dépôt : `cargo run -p icebreaker-salles [sortie.xlsx]`.
 
 use anyhow::{Context, Result};
+use icebreaker_salles::{Model, Pieces};
 use rust_xlsxwriter::{Color, Format, FormatAlign, FormatBorder, Workbook, Worksheet};
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -14,35 +15,6 @@ struct Symbol {
     sprite: String,
     label: String,
     at: String,
-}
-
-/// Le catalogue des pièces (`assets/icebreaker/donjons/pieces.ron`, F.10).
-#[derive(serde::Deserialize)]
-struct Pieces {
-    pieces: Vec<Piece>,
-    modeles: BTreeMap<String, Model>,
-}
-
-/// Une fonction de salle : ce qu'on s'attend à y voir, ce que Veloren a déjà, ce qui manque.
-#[derive(serde::Deserialize)]
-struct Piece {
-    id: String,
-    nom: String,
-    roles: Vec<String>,
-    themes: Vec<String>,
-    idee: String,
-    /// (meuble, sprite de Veloren).
-    meubles: Vec<(String, String)>,
-    /// Identifiants de `modeles`.
-    manques: Vec<String>,
-}
-
-/// Un modèle voxel à créer (F.13).
-#[derive(serde::Deserialize)]
-struct Model {
-    nom: String,
-    lot: u32,
-    idee: String,
 }
 
 struct Room {
@@ -192,9 +164,7 @@ fn main() -> Result<()> {
         }
     }
     rooms.sort_by(|a, b| a.id.cmp(&b.id));
-    let path = Path::new("assets/icebreaker/donjons/pieces.ron");
-    let pieces: Pieces = ron::from_str(&std::fs::read_to_string(path).with_context(|| path.display().to_string())?)
-        .with_context(|| path.display().to_string())?;
+    let pieces = Pieces::load().map_err(anyhow::Error::msg)?;
     check(&pieces, &rooms)?;
     write_workbook(&rooms, &symbols, &pieces, &out)?;
     println!("{} salles, {} pièces, {} modèles à créer dans {out}", rooms.len(), pieces.pieces.len(), pieces.modeles.len());
