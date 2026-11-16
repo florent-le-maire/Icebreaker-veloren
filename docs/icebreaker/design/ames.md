@@ -36,11 +36,12 @@ une progression dans le donjon : on les gagne en bas, sur les ennemis.
   le temps donné (**1 minute**), elle disparaît.
 - **On ne porte pas une âme** : elle ne va pas dans le sac. Soit on la lie tout de suite à un personnage qui a un
   emplacement libre, soit on la laisse. Seule une **compétence dédiée** permettra de les stocker (à concevoir,
-  `QUESTIONS.md` Q57).
+  plus tard).
 - **Lier** : on interagit avec l'âme au sol ; une fenêtre demande « Voulez-vous lier cette âme ? ». Oui : l'âme est
   **liée** au personnage (*soul bound*), dans un emplacement d'âme, **jusqu'à sa mort**. Une âme sert une seule fois.
-- **Emplacements d'âme** : une zone à part dans le build du personnage ; il en a **autant que son niveau**. Ce
-  qu'est ce niveau dans le prototype, qui n'a pas de niveau de personnage : Q57.
+- **Emplacements d'âme** : une zone à part dans le build du personnage ; il en a **autant que son niveau**.
+- **Niveau du personnage** (Flo, 2026-11-16) : de **1 à 6**, figé à 6 ; il gagne de l'expérience en battant des
+  monstres et en finissant des missions. Donc six âmes au plus (tâche AM.9).
 - **À la mort**, le personnage **perd ses âmes**.
 - **Connue ou inconnue** : une âme que le village connaît tombe avec **sa couleur et sa forme**, celles du glossaire ;
   une âme inconnue tombe **blanche**, sous une forme générique.

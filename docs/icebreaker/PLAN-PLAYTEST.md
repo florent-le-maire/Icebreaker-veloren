@@ -1,8 +1,9 @@
 # Avant le playtest avec les potes — feuille de route
 
-*Liste de Flo du 2026-11-16, mise en plan le même jour ; découpage **à valider** avant de coder.* Ce que le jeu doit
+*Liste de Flo du 2026-11-16, mise en plan le même jour ; ses réponses aux questions (Q55 à Q62) sont reportées ici.
+On code chantier par chantier, avec son accord.* Ce que le jeu doit
 avoir avant d'inviter tous les potes à tester. Ce fichier reprend chaque point de la liste, dit ce qui existe déjà,
-propose des tâches et renvoie les points flous à `QUESTIONS.md` (Q55 à Q62). Les règles des âmes sont dans
+propose des tâches ; restent ouvertes dans `QUESTIONS.md` : Q58 (le tableau des âmes) et Q61 (le craft). Les règles des âmes sont dans
 `design/ames.md`.
 
 Les tâches gardent la lettre de leur jalon (F donjon généré, U grottes, B boucles, E donjon à jouer, L combat, X
@@ -12,17 +13,18 @@ interface du village) et se cochent ici ; les âmes ouvrent le jalon **AM**.
 
 | # | Chantier | Tâches | Worktree | État |
 |---|---|---|---|---|
-| 1 | Donjon : des pièces travaillées | F.10 à F.13 | `Veloren-donjon` | à valider (Q60) |
-| 2 | Grotte : murs à casser, filons, salle au minerai | U.13 à U.15 | `Veloren-caverne` | à valider (Q59) |
-| 3 | Missions : sablier, zones, types de mission, boss | B.16 à B.20 | `Veloren-boucles` | à valider (Q55, Q56) |
-| 4 | Âmes | AM.1 à AM.8 | `Veloren-ames` | à valider (Q57, Q58) |
+| 1 | Donjon : des pièces travaillées | F.10 à F.13 | `Veloren-donjon` | tranché ; modèles dessinés par l'agent |
+| 2 | Grotte : murs à casser, filons, salle au minerai | U.13 à U.16 | `Veloren-caverne` | tranché |
+| 3 | Missions : sablier, zones, types de mission, boss | B.16 à B.20 | `Veloren-boucles` | tranché ; B.19 et B.20 peuvent suivre le premier playtest |
+| 4 | Âmes | AM.1 à AM.9 | `Veloren-ames` | attend le tableau de Sayanel (Q58) ; AM.6 peut suivre le premier playtest |
 | 5 | Améliorations : village sans dégâts, bouton Rentrer | L.6, X.18 | `Veloren-village` | prêt à coder |
-| 6 | Refonte des classes | — | `Veloren-classes` | à détailler par Flo |
-| 7 | Craft et objets à trouver | E.17, E.18 | `Veloren-donjon` | à valider (Q61) |
+| 6 | Refonte des classes | — | `Veloren-classes` | à détailler par Flo ; pas obligatoire avant le premier playtest |
+| 7 | Craft et objets à trouver | E.17, E.18 | `Veloren-donjon` | attend (Q61 : « on verra au moment ») |
 | 8 | Équilibrage | — | — | en dernier |
 | 9 | Le jour J : technique | — | `Veloren-serveur` | liste de contrôle |
 
-**Ordre proposé** (à confirmer, Q62) : le chantier 5 d'abord (quelques heures, évite de perdre des personnages au
+**Ordre proposé** (Flo, 2026-11-16 : le développement démarre quand on veut ; zones et boss, pouvoirs des ennemis
+et refonte des classes ne sont pas obligatoires avant le premier playtest) : le chantier 5 d'abord (quelques heures, évite de perdre des personnages au
 village) ; puis la grotte (2) et les missions B.16 et B.17 (3), qui donnent un but à chaque descente ; puis les âmes
 (4) ; les pièces du donjon (1) en parallèle, parce qu'elles demandent des dessins et des modèles ; le craft (7) ;
 l'équilibrage (8) quand le reste ne bouge plus ; la liste technique (9) la veille. Les chantiers 1, 2, 3 et 4
@@ -51,7 +53,7 @@ cela n'a été regardé dans le vrai client. Le décor vient des sprites de Velo
   rotation déjà faits.
   *Fin* : la même cuisine tirée cinq fois donne cinq salles différentes dans l'exemple de contrôle.
 - [ ] **F.13 Modèles voxel du donjon** — les modèles manquants de F.10, par lots de cinq environ (modèle `.vox`,
-  déclaration du sprite, symbole de décor). Qui les dessine : Q60.
+  déclaration du sprite, symbole de décor), dessinés par l'agent (Flo, 2026-11-16) ; Flo juge sur capture.
   *Fin* : chaque modèle du lot se pose par son symbole et se voit dans le vrai client.
 
 ## 2. Grotte : casser pour avancer, miner pour de bon (jalon U, suite)
@@ -63,12 +65,17 @@ rares.
 **Ce qui existe** : le générateur `icebreaker-caverne` (`PLAN-CAVERNE.md`) relie toutes les zones par un sentier
 praticable à pied ; les minerais sont des sprites minables posés un par un au pied des parois (`filons` de
 `grottes/grotte.ron`, déjà divisés par 8 en U.6) ; chaque classe a une pioche (K.4). Veloren sait déjà casser la
-roche tendre (`WeakRock`) à la pioche et à l'explosion ; la roche ordinaire ne se casse pas. Le todo « Ajouter la
+roche tendre (`WeakRock`) à la pioche et à l'explosion ; la roche ordinaire ne se casse pas. **Tranché (Flo,
+2026-11-16)** : la pioche casse aussi la roche dure, contre de l'énergie. Le todo « Ajouter la
 destructibilité » (2026-11-11) commence ici ; les matières et la foreuse restent dans `PLAN-DONJON.md` (E.5, E.6).
 
-- [ ] **U.13 Murs à casser** — une part réglable des liens entre deux zones est bouchée par un mur de roche tendre,
-  reconnaissable (couleur, fissures), d'une épaisseur réglable (`formes.ron`) ; le contrôle du sentier compte ces
-  murs comme franchissables ; la salle sûre et sa première zone restent ouvertes. Outil : Q59.
+- [ ] **U.16 La pioche casse la roche dure** (à faire avant U.13) — à la pioche, la roche ordinaire se casse aussi ;
+  chaque bloc coûte de l'énergie (coût et temps par matière dans `grotte.ron`) ; sans énergie, on ne creuse plus.
+  Jusqu'où ça vaut (grotte seule ou donjon généré aussi, roche du bord de l'emplacement) : à dire en prenant la tâche.
+  *Fin* : un personnage creuse un passage dans la roche tant qu'il a de l'énergie, et s'arrête à sec.
+- [ ] **U.13 Murs à casser** — une part réglable des liens entre deux zones est bouchée par un mur de roche,
+  d'une épaisseur réglable (`formes.ron`) ; le contrôle du sentier compte ces murs comme franchissables ; la salle
+  sûre et sa première zone restent ouvertes.
   *Fin* : dans l'exemple de contrôle, les zones murées ne s'atteignent qu'en cassant, et toutes s'atteignent en
   cassant ; un mur tombe à la pioche dans le temps réglé.
 - [ ] **U.14 Filons, et presque plus de pépites** — un filon est une traînée serrée de minerai le long d'une paroi
@@ -85,34 +92,42 @@ Reste du jalon U, inchangé : régler les profils dans l'atelier et voir une gro
 ## 3. Missions : quêtes et primes (jalon B, bloc 4)
 
 **Ce que Flo demande** :
-- un **compte à rebours de 20 minutes**, affiché en sablier (forme pas arrêtée) ; ce qui se passe au bout n'est pas
-  écrit dans la liste (Q55) ;
-- des **zones** qui proposent des types de mission ;
+- un **compte à rebours de 20 minutes**, affiché en sablier (forme pas arrêtée) ; au bout, **échec sec** : la mission
+  s'arrête et tous ceux qui ne sont pas rentrés perdent leur personnage (Flo, 2026-11-16) ;
+- des **zones** qui proposent des types de mission. Une zone est un lieu avec un thème : donjon humain, donjon elfe,
+  grotte au réglage 1 avec des gobelins, grotte au réglage 2 avec des nains… Son niveau monte avec les expéditions
+  qu'on y fait ;
 - des **types de mission** : explorer 80 % des pièces ; tuer 80 % des ennemis ; collecter une chose posée exprès pour
-  la mission ; battre un **boss**, mission qui se débloque quand on a passé des niveaux d'exploration de la zone ;
-- des boss à ajouter.
+  la mission (pour commencer : des **champignons violets**, à rapporter en nombre dans une caisse posée à l'arrivée) ;
+  battre un **boss** ;
+- des boss à ajouter : au niveau 2 de la zone on rencontre un boss, et on reste bloqué à ce niveau tant qu'il n'est
+  pas battu ; un autre au niveau 4 ; le dernier de la zone au niveau 6.
 
 **Ce qui existe** : une seule mission, tuer le chef (G.7, I.10), avec ses paramètres par emplacement (G.6) ; au
 panneau Départ on choisit un lieu, pas une mission. `design/mission.md` décrit déjà « explorer 80 % » et « nettoyer »
 pour l'ancien projet. Ce chantier remplace le tableau des contrats de `PLAN-BOUCLES.md` (B.9) : une mission tient le
-rôle du contrat. Les patrouilles toutes les 12 minutes (B.4) se discutent avec le sablier (Q55).
+rôle du contrat. Les patrouilles toutes les 12 minutes (B.4) restent à discuter (Q12).
 
 - [ ] **B.16 Le sablier** — durée de l'expédition en données (20 min), comptée par le serveur depuis l'arrivée,
-  affichée en sablier dans le HUD de donjon chez tous les membres ; annonces à 10, 5 et 1 minute ; au bout : la
-  conséquence tranchée en Q55.
-  *Fin* : le sablier se vide en 20 minutes chez deux joueurs à la fois, puis la conséquence arrive.
+  affichée en sablier dans le HUD de donjon chez tous les membres ; annonces à 10, 5 et 1 minute ; au bout : échec de
+  la mission, ceux qui sont rentrés gardent leur personnage, ceux qui sont encore en bas le perdent (comme une mort,
+  T.6) et reviennent au village en fantôme.
+  *Fin* : le sablier se vide en 20 minutes chez deux joueurs à la fois ; à zéro, le joueur resté en bas perd son
+  personnage, celui qui est rentré le garde.
 - [ ] **B.17 Explorer et nettoyer** — deux types de mission en plus de « tuer le chef » : explorer 80 % des pièces
   (des zones, dans la grotte), tuer 80 % des ennemis ; parts en données ; bandeau d'avancement (« Explorer : 5/10 »).
   *Fin* : chacun des trois types se gagne au client texte, dans un donjon généré et dans la grotte.
-- [ ] **B.18 Collecter** — une chose posée exprès pour la mission, à rapporter en N exemplaires (laquelle : Q56).
-  *Fin* : la mission est gagnée au N-ième objet ramassé, pas avant.
-- [ ] **B.19 Zones et choix de la mission** — le panneau Départ liste des zones ; chaque zone propose des missions
-  (type, lieu) ; réussir une mission monte le **niveau d'exploration** de la zone, gardé dans la campagne. Ce
-  qu'est une zone et comment son niveau monte : Q56.
-  *Fin* : une mission réussie monte le niveau de sa zone, encore affiché après une relance du serveur.
-- [ ] **B.20 Mission de boss** — proposée quand la zone atteint le niveau réglé ; un boss distinct du chef (lesquels :
-  Q56 ; « Plus tard » de `PLAN.md` en parlait déjà).
-  *Fin* : la mission de boss n'apparaît qu'au niveau voulu, et se gagne en tuant le boss.
+- [ ] **B.18 Collecter** — des champignons violets posés exprès dans le lieu (nombre posé et nombre demandé en
+  données) ; une caisse à l'arrivée ; la mission est gagnée quand le nombre demandé est déposé dans la caisse.
+  *Fin* : déposer le dernier champignon gagne la mission ; les avoir dans le sac ne suffit pas.
+- [ ] **B.19 Zones et choix de la mission** — les zones en données (lieu, thème : race, réglage de grotte) ; le panneau
+  Départ les liste, chacune avec son niveau et ses missions ; une expédition faite dans la zone monte son **niveau
+  d'exploration** (combien d'expéditions par niveau : réglage), gardé dans la campagne.
+  *Fin* : une expédition monte le niveau de sa zone, encore affiché après une relance du serveur.
+- [ ] **B.20 Boss de zone** — aux niveaux 2, 4 et 6 (réglage) la zone a un boss ; tant qu'il n'est pas battu, le niveau
+  de la zone ne monte plus ; le boss du niveau 6 est le dernier. Quelle créature pour chaque boss : à choisir en
+  prenant la tâche (« Plus tard » de `PLAN.md` parlait déjà d'un boss distinct du chef).
+  *Fin* : une zone au niveau 2 reste au niveau 2 après une expédition sans tuer le boss, et passe à 3 après.
 
 ## 4. Âmes (jalon AM)
 
@@ -127,16 +142,20 @@ rentre vivant, et entre au glossaire du village ; les ennemis ont eux aussi un p
 dont une âme peut se servir. Les ennemis par race et par rôle existent (jalon H).
 
 - [ ] **AM.1 Les âmes en données** — `assets/icebreaker/ames.ron` : par race et par rôle, les âmes (nom, effet), la
-  chance d'en lâcher une, la durée au sol, les formes et les couleurs possibles. Un premier lot suffit (lequel : Q58).
+  chance d'en lâcher une, la durée au sol, les formes et les couleurs possibles. D'après le tableau de Sayanel, que Flo donnera au moment de coder (Q58).
   *Fin* : le fichier se lit ; un test vérifie que chaque type d'ennemi du lot a ses âmes et qu'il y a assez de couples
   forme et couleur pour toutes.
 - [ ] **AM.2 L'âme tombe, puis s'éteint** — à la mort d'un ennemi, tirage dans sa table ; l'âme apparaît au sol,
   blanche si le village ne la connaît pas, avec sa forme et sa couleur sinon ; compte à rebours visible de tous
   (1 minute) ; elle disparaît au bout.
   *Fin* : une âme lâchée disparaît une minute après, au client texte.
+- [ ] **AM.9 Niveau du personnage** (à faire avant AM.3 ; Flo, 2026-11-16) — un personnage va du niveau 1 au niveau 6,
+  figé à 6 ; il gagne de l'expérience en battant des monstres et en finissant des missions (barème en données) ; le
+  niveau suit sa fiche au registre et se lit dans son build. La maîtrise d'arme (jalon A) reste à part.
+  *Fin* : un personnage passe au niveau 2 après assez de monstres ou une mission finie, et ne dépasse pas 6 (test).
 - [ ] **AM.3 Lier une âme** — interagir avec l'âme ouvre « Voulez-vous lier cette âme ? » ; oui : elle passe dans un
   emplacement libre du personnage, son effet s'applique, elle reste jusqu'à sa mort et suit sa fiche au registre ;
-  sans emplacement libre : refus. Elle ne va jamais dans le sac. Nombre d'emplacements : Q57.
+  sans emplacement libre : refus. Elle ne va jamais dans le sac. Autant d'emplacements que le niveau du personnage (AM.9).
   *Fin* : un personnage lié garde son âme et son effet après un retour au village et une relance ; il la perd en mourant.
 - [ ] **AM.4 Les emplacements dans le build** — une zone « Âmes » dans la fiche du personnage : emplacements, âmes
   liées, leur effet ; maquette d'abord, dans le canvas de l'interface.
@@ -154,7 +173,7 @@ dont une âme peut se servir. Les ennemis par race et par rôle existent (jalon 
   *Fin* : une âme de résistance au feu réduit d'autant une brûlure (test).
 - [ ] **AM.8 Wiki** — fiche « Âmes » : la règle, le glossaire, les réglages.
 
-Plus tard : la compétence qui permet de stocker des âmes (Q57), les âmes à effet actif si le premier lot n'en a pas.
+Plus tard : la compétence qui permet de stocker des âmes (à concevoir), les âmes à effet actif si le premier lot n'en a pas.
 
 ## 5. Améliorations
 
@@ -187,6 +206,8 @@ et, bientôt, les âmes (chantier 4).
 
 **Ce que Flo demande** : un système de fabrication et des objets à trouver dans les grottes et les donjons ; le todo
 du 2026-11-11 parlait de feuilles et d'ingrédients pour fabriquer des potions en bas.
+
+**En attente** (Flo, 2026-11-16 : « on verra au moment », Q61) : les deux tâches ci-dessous sont une première idée.
 
 **Ce qui existe** : le butin par profondeur (B.5, B.14, `butin.ron`) donne or, potions, matériaux, armes ; Veloren a
 des plantes à cueillir et des recettes (potions comprises) qu'on fabrique près d'une station. `PLAN-DONJON.md`
@@ -229,4 +250,5 @@ Ce qui fait échouer une soirée même si le jeu est prêt. Détail des commande
 
 ## Questions pour l'équipe
 
-Dans `QUESTIONS.md`, § 8 « Avant le playtest » (Q55 à Q62).
+`QUESTIONS.md`, § 8 « Avant le playtest » : Q58 (tableau des âmes) et Q61 (craft) restent ouvertes ; Q55, Q56, Q57,
+Q59, Q60 et Q62 sont tranchées (2026-11-16). Les patrouilles en plus du sablier : Q12.

@@ -32,7 +32,7 @@ Le jeu doit rester lançable après chaque tâche.
   (`PLAN-DONJON.md`, E.1 à E.16), mod (`PLAN-MOD.md`), piliers, menace et âmes (`design/`), idées (`IDEES.md`).
 - **Prochaine étape (Flo, 2026-11-16)** : la feuille de route d'avant playtest, `PLAN-PLAYTEST.md` : pièces
   travaillées du donjon, murs et filons de la grotte, missions et sablier, âmes, village sans dégâts, craft,
-  équilibrage. Découpage à valider (`QUESTIONS.md`, Q55 à Q62).
+  équilibrage. Réponses de Flo reportées (2026-11-16) ; restent Q58 (tableau des âmes) et Q61 (craft).
 - **Jalon U (2026-11-15)** : la grotte prend sa forme d'un nouveau générateur (`PLAN-CAVERNE.md`) : gouffre, plaine,
   chaos ou mixte selon la graine, zones plates à stalactites, zones pleines de bosses et de trous, puits, et un
   sentier toujours praticable à pied. Atelier web (`.\icebreaker.ps1 caverne`) pour régler les formes et
@@ -288,8 +288,8 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
 ## Avant le playtest avec les potes (Flo, 2026-11-16)
 
 Ce que le jeu doit avoir avant d'inviter tout le monde : `PLAN-PLAYTEST.md`. Ses tâches gardent la lettre de leur
-jalon et se cochent là-bas : F.10 à F.13 (pièces du donjon), U.13 à U.15 (grotte), B.16 à B.20 (missions), AM.1 à
-AM.8 (âmes), L.6 (plus de dégâts au village), X.18 (bouton « Rentrer »), E.17 et E.18 (craft).
+jalon et se cochent là-bas : F.10 à F.13 (pièces du donjon), U.13 à U.16 (grotte), B.16 à B.20 (missions), AM.1 à
+AM.9 (âmes), L.6 (plus de dégâts au village), X.18 (bouton « Rentrer »), E.17 et E.18 (craft).
 
 ## À vérifier en jeu
 

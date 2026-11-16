@@ -35,6 +35,7 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q11 Entretien du village** : coûte-t-il de l'or chaque jour de carte (pression permanente, façon Darkest
   Dungeon) ? *Proposé* : non pour la démo, à essayer après. Variante « tribut du seigneur » : `IDEES.md`, idée 8.
 - **Q12 Patrouilles toutes les 12 min** : trop punitif pour une première soirée ? *Proposé* : commencer à 20 min.
+  *2026-11-16* : le sablier de 20 minutes (B.16) finit en échec sec ; les patrouilles restent-elles en plus ?
 - **Q13** *(numéro réservé : « salle d'armes et arbre de compétences » est tranchée, voir plus bas, 2026-11-11).*
 - **Q14** *(numéro réservé : la question « PV entre deux lieux » est tranchée, voir plus bas, 2026-10-29).*
 
@@ -162,47 +163,23 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 
 ## 8. Avant le playtest (`PLAN-PLAYTEST.md`, liste de Flo du 2026-11-16)
 
-- **Q55 Le sablier de 20 minutes : que se passe-t-il au bout ?** La phrase de la liste s'arrête avant de le dire
-  (« au bout des… »). Options : (a) la mission échoue et tout le monde rentre ; (b) le danger monte : des renforts
-  entrent sans arrêt jusqu'à ce qu'on sorte (les patrouilles de B.4) ; (c) le butin non rapporté est perdu. Et la
-  forme : sablier, ou autre ? Les patrouilles toutes les 12 min de B.4 (Q12) restent-elles en plus ? *Origine* :
-  B.16. *Proposé* : (b), avec un signe avant, et pas de patrouille avant la fin du sablier. *Qui* : Flo.
-- **Q56 Zones, niveaux d'exploration et boss.** Qu'est-ce qu'une zone : une région de la carte avec ses lieux, une
-  race, un type de lieu ? Comment son niveau d'exploration monte (une mission réussie = un niveau ?), à quel niveau
-  la mission de boss s'ouvre, et quels boss (ceux de Veloren, ou un membre de la race en plus fort) ? Pour
-  « collecter » : quelle chose pose-t-on exprès (caisses marquées, minerai rare, objet de la race) ? Ces missions
-  remplacent-elles les contrats de `PLAN-BOUCLES.md` (B.9 : trois par jour, récompense à la caisse) ? *Origine* :
-  B.18 à B.20. *Proposé* : une zone par race, avec un donjon et une grotte ; une mission réussie = un niveau ; boss au
-  niveau 3, un membre de la race avec des capacités à lui ; les missions remplacent les contrats et paient la caisse.
-  *Qui* : Flo, Sayanel.
-- **Q57 Emplacements d'âme : quel niveau ?** La liste dit « autant que le niveau du personnage », mais le prototype
-  n'a pas de niveau de personnage (seulement des niveaux de compétence et des points d'arme, jalon A) ;
-  `design/ames.md` parlait d'un « niveau d'âme » à définir. Et la compétence qui stocke des âmes : pour quelle
-  classe, et avant le playtest ? *Origine* : AM.3. *Proposé* : un emplacement au départ, un de plus toutes les deux
-  expéditions dont le personnage rentre vivant, cinq au plus ; la compétence de stockage après le playtest. *Qui* :
-  Flo, Sayanel.
+- **Q55** *(numéro réservé : « le sablier de 20 minutes » est tranchée, voir plus bas, 2026-11-16).*
+- **Q56** *(numéro réservé : « zones, niveaux d'exploration et boss » est tranchée, voir plus bas, 2026-11-16).*
+- **Q57** *(numéro réservé : « emplacements d'âme : quel niveau » est tranchée, voir plus bas, 2026-11-16).*
 - **Q58 Quelles âmes pour le playtest, et qui les écrit ?** Le cap est de 54 âmes (3 par rôle et par race) ; aucune
   n'est écrite (Q37). Les ennemis tirent leur pouvoir de ces mêmes âmes (AM.6) : il faut donc des effets qui
   marchent aussi sur un ennemi. *Proposé* : un premier lot de 9 âmes (les trois rôles d'une seule race, ou une âme
   par rôle pour trois races), en bonus de stats de Veloren d'abord ; Sayanel écrit, l'agent met en données. *Qui* :
-  Sayanel, Flo.
-- **Q59 Casser les murs de la grotte : avec quoi ?** Veloren casse déjà la roche tendre à la pioche (chaque classe
-  en a une, K.4) et à l'explosion. Faut-il autre chose avant le playtest (bombes au butin, foreuse E.6), et la
-  destruction doit-elle valoir aussi dans le donjon généré (matières, E.5) ? *Origine* : U.13, todo « Ajouter la
-  destructibilité ». *Proposé* : pioche et bombes pour le playtest, grotte seulement ; foreuse et donjon après.
-  *Qui* : Flo.
-- **Q60 Modèles voxel du donjon : qui les dessine ?** Les pièces travaillées (F.10 à F.13) demandent du mobilier que
-  Veloren n'a peut-être pas. *Proposé* : d'abord tout ce que les sprites de Veloren permettent (F.10 en fait la
-  liste), puis les manques dessinés par Flo ou Sayanel dans MagicaVoxel ; l'agent les branche. *Qui* : Flo, Sayanel.
+  Sayanel, Flo. *2026-11-16 (Flo)* : le tableau de Sayanel sera donné au moment de coder les âmes.
+- **Q59** *(numéro réservé : « casser les murs de la grotte » est tranchée, voir plus bas, 2026-11-16).*
+- **Q60** *(numéro réservé : « modèles voxel du donjon » est tranchée, voir plus bas, 2026-11-16).*
 - **Q61 Le craft : quoi, et où ?** La liste dit « un système de craft et des objets à trouver ». Seulement des
   potions avec des ingrédients cueillis en bas (todo du 2026-11-11), ou aussi armes et armures (forge du village,
   B.11) ? On fabrique partout, à un chaudron trouvé dans une cuisine du donjon, ou au village seulement ?
   *Origine* : E.17, E.18. *Proposé* : potions seulement pour le playtest, avec les recettes de Veloren, à un
-  chaudron (cuisine du donjon, intendance du village). *Qui* : Flo.
-- **Q62 Tout avant le playtest ?** La liste fait neuf chantiers, plusieurs semaines de travail. Quel est l'ordre, et
-  qu'est-ce qui peut attendre un deuxième playtest ? *Proposé* : l'ordre de `PLAN-PLAYTEST.md` (village sans dégâts
-  et bouton Rentrer, grotte, sablier et missions simples, âmes, pièces du donjon, craft, équilibrage) ; zones et boss
-  (B.19, B.20), pouvoirs des ennemis (AM.6) et refonte des classes peuvent suivre le premier playtest. *Qui* : Flo.
+  chaudron (cuisine du donjon, intendance du village). *Qui* : Flo. *2026-11-16 (Flo)* : « on verra au moment » ;
+  E.17 et E.18 attendent.
+- **Q62** *(numéro réservé : « tout avant le playtest » est tranchée, voir plus bas, 2026-11-16).*
 
 ## Tranché
 
@@ -249,3 +226,14 @@ Petites décisions, par date ; les règles qui en sortent sont dans le fichier i
   de dégâts au village, sauf à l'aire d'entraînement (ex-Q48, tâche L.6) ; (3) règles des âmes précisées
   (`design/ames.md`) : âme au sol une minute, liée après confirmation, jamais portée, forme et couleur uniques fixées
   au premier retour vivant, ennemis qui ont un pouvoir de leurs âmes.
+- **2026-11-16 (Flo, réponses à Q55 à Q62, `PLAN-PLAYTEST.md`)** : (1) sablier (ex-Q55) : au bout des 20 minutes,
+  échec sec : la mission s'arrête, et tous ceux qui ne sont pas rentrés perdent leur personnage ; (2) zones
+  (ex-Q56) : une zone est un lieu avec un thème (donjon humain, donjon elfe, grotte au réglage 1 avec des gobelins,
+  grotte au réglage 2 avec des nains…) ; son niveau monte avec les expéditions qu'on y fait ; au niveau 2 on
+  rencontre un boss et on reste bloqué à ce niveau tant qu'il n'est pas battu, un autre au niveau 4, le dernier de la
+  zone au niveau 6 ; collecter : des champignons violets, à rapporter en nombre dans une caisse posée à l'arrivée ;
+  (3) niveau du personnage (ex-Q57, `design/ames.md`) : de 1 à 6, figé à 6 ; l'expérience vient des monstres battus
+  et des missions finies ; autant d'emplacements d'âme que de niveaux ; (4) pioche (ex-Q59) : elle casse aussi la
+  roche dure, contre de l'énergie ; (5) modèles voxel du donjon (ex-Q60) : dessinés par l'agent ; (6) ordre
+  (ex-Q62) : le développement démarre quand on veut ; zones et boss, pouvoirs des ennemis et refonte des classes ne
+  sont pas obligatoires avant le premier playtest.

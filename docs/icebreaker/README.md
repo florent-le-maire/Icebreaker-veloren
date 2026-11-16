@@ -64,7 +64,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | A | Armes, classes et compétences | `PLAN-CLASSES.md` | codé le 2026-11-11 pour les trois classes, ultimes refaits le 2026-11-15 (A.19 à A.23) ; reste l'avis sur les maquettes (A.2) et l'essai dans le vrai client | `Veloren-classes` |
 | O | Lieu d'entraînement et de playtest | `PLAN-ENTRAINEMENT.md` | O.1 à O.8 codés le 2026-11-14 ; reste l'essai à la main dans le vrai client | `Veloren-entrainement` |
 | U | Grottes organiques et atelier de réglage | `PLAN-CAVERNE.md` | U.1 à U.5 codés le 2026-11-15 ; profils à régler dans l'atelier, pas vu en jeu | `Veloren-caverne` |
-| AM | Âmes | `PLAN-PLAYTEST.md` (règles : `design/ames.md`) | proposition du 2026-11-16, à valider (Q57, Q58) | `Veloren-ames` (à créer) |
+| AM | Âmes | `PLAN-PLAYTEST.md` (règles : `design/ames.md`) | règles tranchées le 2026-11-16 ; attend le tableau de Sayanel (Q58) | `Veloren-ames` (à créer) |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 
