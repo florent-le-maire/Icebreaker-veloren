@@ -90,6 +90,8 @@ enum_iter! {
         NapalmShot = 73,
         NapalmPool = 74,
         ThornStake = 75,
+        // Icebreaker FT.1 : le fantôme du village (décision 0021).
+        IcebreakerFantome = 76,
     }
 }
 
@@ -185,6 +187,7 @@ impl Body {
             Body::NapalmShot => "napalm_shot",
             Body::NapalmPool => "napalm_pool",
             Body::ThornStake => "thorn_stake",
+            Body::IcebreakerFantome => "icebreaker_fantome",
         }
     }
 
@@ -294,6 +297,7 @@ impl Body {
             Body::LightningBolt | Body::SpearIcicle => 20000.0,
             Body::Portal | Body::PortalActive => 10.0, // I dont know really
             Body::Crux => 100.0,
+            Body::IcebreakerFantome => 60.0, // Icebreaker FT.1
         };
 
         Mass(m)
@@ -338,6 +342,7 @@ impl Body {
             Body::MinotaurAxe => Vec3::new(5.0, 5.0, 5.0),
             Body::Crux => Vec3::new(2.0, 2.0, 2.0),
             Body::ArrowHeavy | Body::ThornStake => Vec3::new(0.1, 0.9, 0.1),
+            Body::IcebreakerFantome => Vec3::new(1.0, 0.8, 1.9), // Icebreaker FT.1 : un humain
             // FIXME: this *must* be exhaustive match
             _ => Vec3::broadcast(0.5),
         }

@@ -16,7 +16,7 @@ impl Animation for IdleAnimation {
     #[cfg_attr(feature = "be-dyn-lib", unsafe(export_name = "object_idle"))]
     fn update_skeleton_inner(
         skeleton: &Self::Skeleton,
-        (_active_tool_kind, _second_tool_kind, _global_time): Self::Dependency<'_>,
+        (_active_tool_kind, _second_tool_kind, global_time): Self::Dependency<'_>,
         _anim_time: f32,
         _rate: &mut f32,
         s_a: &SkeletonAttr,
@@ -26,6 +26,13 @@ impl Animation for IdleAnimation {
         next.bone0.position = Vec3::new(s_a.bone0.0, s_a.bone0.1, s_a.bone0.2);
 
         next.bone1.position = Vec3::new(s_a.bone1.0, s_a.bone1.1, s_a.bone1.2);
+
+        // Icebreaker FT.1 : le fantôme flotte au-dessus du sol et ondule doucement.
+        if s_a.flotte {
+            next.bone0.position += Vec3::unit_z() * (3.0 + (global_time * 2.0).sin() * 1.2);
+            next.bone0.orientation = Quaternion::rotation_x((global_time * 1.3).sin() * 0.06)
+                * Quaternion::rotation_y((global_time * 0.9).cos() * 0.04);
+        }
 
         next
     }

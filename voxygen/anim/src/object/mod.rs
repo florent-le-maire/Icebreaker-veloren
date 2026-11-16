@@ -49,6 +49,8 @@ impl Skeleton for ObjectSkeleton {
 pub struct SkeletonAttr {
     bone0: (f32, f32, f32),
     bone1: (f32, f32, f32),
+    /// Icebreaker FT.1 : le fantôme du village flotte et ondule.
+    flotte: bool,
 }
 
 impl<'a> TryFrom<&'a comp::Body> for SkeletonAttr {
@@ -67,6 +69,7 @@ impl Default for SkeletonAttr {
         Self {
             bone0: (0.0, 0.0, 0.0),
             bone1: (0.0, 0.0, 0.0),
+            flotte: false,
         }
     }
 }
@@ -87,6 +90,7 @@ impl<'a> From<&'a Body> for SkeletonAttr {
                 HaniwaSentry => (0.0, 0.0, 3.0),
                 _ => (0.0, 0.0, 0.0),
             },
+            flotte: matches!(body, IcebreakerFantome),
         }
     }
 }

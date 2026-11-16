@@ -367,6 +367,17 @@
             central: ("armor.empty"),
         )
     ),
+    // Icebreaker FT.1 : le fantôme du village (modèle écrit par `common/examples/icebreaker_fantome_vox.rs`).
+    IcebreakerFantome: (
+        bone0: (
+            offset: (-7.5, -5.5, 0.0),
+            central: ("object.icebreaker_fantome"),
+        ),
+        bone1: (
+            offset: (0.0, 0.0, 0.0),
+            central: ("armor.empty"),
+        )
+    ),
     HaniwaSentry: (
         bone0: (
             offset: (-5.5, -4.5, -5.5),

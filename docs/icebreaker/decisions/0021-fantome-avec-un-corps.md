@@ -32,9 +32,11 @@ interagir avec les PNJ comme un joueur. **En expédition, rien ne change.**
   registre (modérateur qui observe), le spectateur de Veloren reste tel quel.
 - **« Est un fantôme »** (`icebreaker_registre::is_ghost`) vaut pour les deux sortes : les panneaux, la charrette
   et les refus (« Un fantôme ne peut pas faire ça ») gardent leurs règles.
-- **Corps** : une nouvelle espèce `Fantome` dans la famille `biped_small` (squelette simple, animations de marche,
-  d'attente et de saut déjà là), aux dimensions d'un humain. Modèle `.vox` produit par un petit programme, puis
-  retouchable dans MagicaVoxel : drapé bleu pâle, sans jambes, deux yeux.
+- **Corps** : un nouveau corps `IcebreakerFantome` dans la famille « objet » de Veloren (un modèle, un os), aux
+  dimensions d'un humain. Les petits bipèdes tirent leur apparence de pièces d'armure portées : trop lourd pour un
+  fantôme sans sac. Pas d'animation de marche : il glisse, flotte au-dessus du sol et ondule. Modèle `.vox` écrit
+  par `common/examples/icebreaker_fantome_vox.rs`, puis retouchable dans MagicaVoxel : drapé bleu pâle, sans
+  jambes, deux yeux.
 - **Transparence** : le rendu des créatures est opaque et ne sait pas mélanger. On ajoute un drapeau « fantôme » aux
   données de la figure et le shader des créatures écarte un pixel sur deux en damier (tramage, déjà utilisé
   ailleurs dans ce shader). Ni tri ni nouvelle passe de rendu.
@@ -60,6 +62,6 @@ Choix de l'agent, à corriger si besoin :
   (le compilateur les liste).
 - Le client entre en jeu comme avec un personnage (caméra à la troisième personne, touches), avec une interface
   allégée : pas de barre de vie ni de compétences, le bandeau du fantôme reste.
-- Une nouvelle espèce touche les fichiers de Veloren qui énumèrent les espèces (masse, taille, sons, nom, manifestes
-  du modèle) : changements marqués « Icebreaker », regroupés.
+- Le nouveau corps touche `common/src/comp/body/object.rs`, le manifeste des objets et l'animation des objets :
+  changements marqués « Icebreaker ».
 - Les fiches du wiki `charrette` et `mort` sont à mettre à jour.
