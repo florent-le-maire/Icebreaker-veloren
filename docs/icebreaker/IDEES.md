@@ -6,7 +6,8 @@ plan concerné (`PLAN.md`, `PLAN-BOUCLES.md`) et sort d'ici. Effort sur Veloren 
 ## Âmes des monstres (Sayanel, 2026-11-03)
 
 Âme lâchée rarement par un monstre, inconnue (blanche) jusqu'à ce qu'on la lie à son personnage, puis reconnue
-(verte) ; Codex au village. Races, classes d'ennemis et stats de Veloren : `design/ames.md`.
+(en couleur) ; Codex au village. *Retenue le 2026-11-16* : règles dans `design/ames.md`, tâches AM.1 à AM.8 dans
+`PLAN-PLAYTEST.md`.
 
 ## Boucles de jeu (lectures de game design, 2026-11-02)
 

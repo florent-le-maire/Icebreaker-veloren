@@ -30,8 +30,9 @@ Le jeu doit rester lançable après chaque tâche.
   client faits (S.2, S.3). Le contenu de la démo est à confirmer ou à réduire : `QUESTIONS.md`, Q1.
 - **Propositions en attente de l'équipe** : boucles de jeu (`PLAN-BOUCLES.md`, B.1 à B.13), mécaniques du donjon
   (`PLAN-DONJON.md`, E.1 à E.16), mod (`PLAN-MOD.md`), piliers, menace et âmes (`design/`), idées (`IDEES.md`).
-- **Prochaine étape proposée** : une session de test dans le vrai client sur la liste « À vérifier en jeu », puis le
-  bloc 1 des boucles (B.1 à B.4) (à plusieurs sur le VPS, `QUESTIONS.md`, Q7).
+- **Prochaine étape (Flo, 2026-11-16)** : la feuille de route d'avant playtest, `PLAN-PLAYTEST.md` : pièces
+  travaillées du donjon, murs et filons de la grotte, missions et sablier, âmes, village sans dégâts, craft,
+  équilibrage. Découpage à valider (`QUESTIONS.md`, Q55 à Q62).
 - **Jalon U (2026-11-15)** : la grotte prend sa forme d'un nouveau générateur (`PLAN-CAVERNE.md`) : gouffre, plaine,
   chaos ou mixte selon la graine, zones plates à stalactites, zones pleines de bosses et de trous, puits, et un
   sentier toujours praticable à pied. Atelier web (`.\icebreaker.ps1 caverne`) pour régler les formes et
@@ -283,6 +284,12 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
   capture du menu ; connexion à deux au VPS pas encore vérifiée.
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
   avec Sayanel (`0015`). Contenu à confirmer (`QUESTIONS.md`, Q1).
+
+## Avant le playtest avec les potes (Flo, 2026-11-16)
+
+Ce que le jeu doit avoir avant d'inviter tout le monde : `PLAN-PLAYTEST.md`. Ses tâches gardent la lettre de leur
+jalon et se cochent là-bas : F.10 à F.13 (pièces du donjon), U.13 à U.15 (grotte), B.16 à B.20 (missions), AM.1 à
+AM.8 (âmes), L.6 (plus de dégâts au village), X.18 (bouton « Rentrer »), E.17 et E.18 (craft).
 
 ## À vérifier en jeu
 

@@ -13,6 +13,8 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   pillage sur la route (P.1 à P.4, pas commencé) ; S.2 et S.3 (VPS, client pour les potes) ne sont pas faits non plus.
   *Origine* : `PLAN.md`, jalon 4. *Qui* : Flo et Sayanel. *Proposé* : une démo sans route (village, donjon Gnarling,
   donjon généré, grotte), après une session de test dans le vrai client ; la route après, si Veloren est gardé.
+  *2026-11-16* : la liste de Flo (`PLAN-PLAYTEST.md`) dit ce que le jeu doit avoir avant le playtest ; la route n'y est
+  pas.
 - **Q2 Le moteur après la démo** : Veloren ou Godot (`decisions/0015`). *Qui* : Flo et Sayanel, après D.1.
 - **Q3 Quand passer en mod** (`PLAN-MOD.md`, M.2 et suivantes). *Qui* : équipe. *Proposé* : après D.1, si Veloren
   est gardé ; sinon au moins faire les nouvelles fonctions directement dans le plugin pour ne pas grossir l'écart.
@@ -22,10 +24,7 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   *Origine* : `PLAN-MOD.md`. *Qui* : équipe.
 - **Q6 Garder la vue de dessus (V.6)** malgré le code client qu'elle impose au mod ? *Origine* : `PLAN-MOD.md`.
   *Proposé* : oui, elle est au cœur du village (`0018`).
-- **Q7 Le prochain jalon.** En attente : B (boucles, proposition), E (mécaniques du donjon, proposition), P (route),
-  C.4 à C.6, IA G.11 à G.16, F.7. *Qui* : Flo. *Proposé* : (1) session de test dans le vrai client sur la liste
-  « À vérifier en jeu » de `PLAN.md` ; (2) bloc 1 des boucles, B.1 à B.4, ce qui fait peser l'expédition ; (3) S.2 et
-  S.3 pour jouer à plusieurs ; la route et l'IA ensuite.
+- **Q7** *(numéro réservé : « le prochain jalon » est tranchée, voir plus bas, 2026-11-16).*
 
 ## 2. Boucle de jeu (`PLAN-BOUCLES.md`)
 
@@ -64,7 +63,8 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q54 Remonter d'une grotte** (jalon U, `PLAN-CAVERNE.md`) : le générateur pose un sentier qu'on peut toujours
   suivre à pied, à l'aller comme au retour (lacets le long des puits) ; falaises et trous sont à côté. Garder ce
   sentier garanti, ou vouloir de vraies chutes sans retour à pied quand les cordes (E.7) existeront ? Lié à Q15.
-  *Proposé* : garder le sentier tant qu'il n'y a pas de cordes. *Qui* : Flo, Sayanel.
+  *Proposé* : garder le sentier tant qu'il n'y a pas de cordes. *Qui* : Flo, Sayanel. *2026-11-16* : Flo veut des
+  murs à casser entre les zones (U.13) : le sentier reste, mais il passe par des murs.
 
 ## 4. Village et personnages (jalon R, `design/village.md`)
 
@@ -93,7 +93,8 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   trois classes, refaites par le jalon A (`decisions/0020` : jeux d'armes, ultime, passif, maîtrise). Restent ouverts :
   les six autres classes et les combos de zones. *Qui* : Flo.
 - **Q37 Les âmes** (`design/ames.md`) : Sayanel conçoit ; restent à définir le niveau d'âme (comment il monte) et les
-  couleurs redistribuées à chaque partie.
+  couleurs redistribuées à chaque partie. *2026-11-16* : règles précisées par Flo (`design/ames.md`) ; le niveau
+  devient Q57, le contenu des âmes Q58.
 - **Q38 Les idées** (`IDEES.md`) : lesquelles passent en tâches ? *Proposé* : curiosités (3) (relever un allié, 1, est fait : jalon T),
   dépouilles de chef (4) avec bâtiments débloqués (7), puis tribut (8) et mémorial (10).
 - **Q40** *(numéro réservé : « l'interface Icebreaker » est tranchée, voir plus bas, 2026-11-11 ; Q39 était déjà
@@ -105,7 +106,7 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q42 Mourir au village** (`PLAN-INTERFACE.md`, N.7) : l'écran de mort dit « Mort en expédition » et « perdu pour
   de bon » même au village, où le personnage reste pourtant au registre (vu à l'essai avec `/kill`). Peut-on mourir
   au village en vrai jeu ? Si oui, que dit l'écran, et le personnage est-il perdu ? *Proposé* : non perdu, un texte
-  à part. *Qui* : Flo.
+  à part. *Qui* : Flo. *2026-11-16* : avec L.6 (plus de dégâts au village), on n'y meurt plus au combat.
 
 ## 6. Armes, classes et compétences (`PLAN-CLASSES.md`, jalon A)
 
@@ -124,11 +125,8 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q46 La suite des armes** : bascule entre deux jeux d'armes en combat (façon Guild Wars 2 ; la pioche irait dans le
   sac, voir Q25), et les jeux « deux épées » et « hache + épée » du guerrier (en données ; la hache à une main
   n'existe qu'en arme forgée). *Proposé* : après le jalon A. *Qui* : Flo.
-- **Q48 Les compétences blessent les habitants du village.** Vu à l'essai du 2026-11-11 : un séisme lancé sur la
-  place touche les recrues debout devant la charrette ; elles ripostent et tuent le personnage suivant dès son
-  arrivée. Voisin de Q42 (mourir au village). *Proposé* : pas de dégâts au village hors des mannequins (zone sûre),
-  ou des recrues qui n'attaquent jamais. *Qui* : Flo. *2026-11-15* : le Séisme frappe maintenant tout autour et bien
-  plus fort (A.20), l'Envol et la Volée mortelle touchent aussi tout ce qui n'est pas du groupe : la question pèse plus.
+- **Q48** *(numéro réservé : « les compétences blessent les habitants du village » est tranchée, voir plus bas,
+  2026-11-16).*
 - **Q47 Maquettes du jalon A** (A.2) : la barre de compétences et les panneaux de la charrette et de la salle d'armes
   (rangée 4 du canvas) conviennent-ils ? L'interface a été codée d'après elles sans attendre (A.6, A.8, A.11,
   A.12) : un avis contraire se corrige dans le code. Points à regarder : le passif en case ronde, posé à gauche de la
@@ -161,6 +159,50 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q53 Quels alliés à l'entraînement ?** Des créatures de Veloren dans le camp du joueur (garde de village,
   loup… liste dans `assets/icebreaker/arene.ron`), qui le suivent. Quelles créatures proposer, et faut-il un jour des
   alliés qui jouent nos classes (une IA pour nos compétences, un jalon à lui seul) ? *Qui* : Flo.
+
+## 8. Avant le playtest (`PLAN-PLAYTEST.md`, liste de Flo du 2026-11-16)
+
+- **Q55 Le sablier de 20 minutes : que se passe-t-il au bout ?** La phrase de la liste s'arrête avant de le dire
+  (« au bout des… »). Options : (a) la mission échoue et tout le monde rentre ; (b) le danger monte : des renforts
+  entrent sans arrêt jusqu'à ce qu'on sorte (les patrouilles de B.4) ; (c) le butin non rapporté est perdu. Et la
+  forme : sablier, ou autre ? Les patrouilles toutes les 12 min de B.4 (Q12) restent-elles en plus ? *Origine* :
+  B.16. *Proposé* : (b), avec un signe avant, et pas de patrouille avant la fin du sablier. *Qui* : Flo.
+- **Q56 Zones, niveaux d'exploration et boss.** Qu'est-ce qu'une zone : une région de la carte avec ses lieux, une
+  race, un type de lieu ? Comment son niveau d'exploration monte (une mission réussie = un niveau ?), à quel niveau
+  la mission de boss s'ouvre, et quels boss (ceux de Veloren, ou un membre de la race en plus fort) ? Pour
+  « collecter » : quelle chose pose-t-on exprès (caisses marquées, minerai rare, objet de la race) ? Ces missions
+  remplacent-elles les contrats de `PLAN-BOUCLES.md` (B.9 : trois par jour, récompense à la caisse) ? *Origine* :
+  B.18 à B.20. *Proposé* : une zone par race, avec un donjon et une grotte ; une mission réussie = un niveau ; boss au
+  niveau 3, un membre de la race avec des capacités à lui ; les missions remplacent les contrats et paient la caisse.
+  *Qui* : Flo, Sayanel.
+- **Q57 Emplacements d'âme : quel niveau ?** La liste dit « autant que le niveau du personnage », mais le prototype
+  n'a pas de niveau de personnage (seulement des niveaux de compétence et des points d'arme, jalon A) ;
+  `design/ames.md` parlait d'un « niveau d'âme » à définir. Et la compétence qui stocke des âmes : pour quelle
+  classe, et avant le playtest ? *Origine* : AM.3. *Proposé* : un emplacement au départ, un de plus toutes les deux
+  expéditions dont le personnage rentre vivant, cinq au plus ; la compétence de stockage après le playtest. *Qui* :
+  Flo, Sayanel.
+- **Q58 Quelles âmes pour le playtest, et qui les écrit ?** Le cap est de 54 âmes (3 par rôle et par race) ; aucune
+  n'est écrite (Q37). Les ennemis tirent leur pouvoir de ces mêmes âmes (AM.6) : il faut donc des effets qui
+  marchent aussi sur un ennemi. *Proposé* : un premier lot de 9 âmes (les trois rôles d'une seule race, ou une âme
+  par rôle pour trois races), en bonus de stats de Veloren d'abord ; Sayanel écrit, l'agent met en données. *Qui* :
+  Sayanel, Flo.
+- **Q59 Casser les murs de la grotte : avec quoi ?** Veloren casse déjà la roche tendre à la pioche (chaque classe
+  en a une, K.4) et à l'explosion. Faut-il autre chose avant le playtest (bombes au butin, foreuse E.6), et la
+  destruction doit-elle valoir aussi dans le donjon généré (matières, E.5) ? *Origine* : U.13, todo « Ajouter la
+  destructibilité ». *Proposé* : pioche et bombes pour le playtest, grotte seulement ; foreuse et donjon après.
+  *Qui* : Flo.
+- **Q60 Modèles voxel du donjon : qui les dessine ?** Les pièces travaillées (F.10 à F.13) demandent du mobilier que
+  Veloren n'a peut-être pas. *Proposé* : d'abord tout ce que les sprites de Veloren permettent (F.10 en fait la
+  liste), puis les manques dessinés par Flo ou Sayanel dans MagicaVoxel ; l'agent les branche. *Qui* : Flo, Sayanel.
+- **Q61 Le craft : quoi, et où ?** La liste dit « un système de craft et des objets à trouver ». Seulement des
+  potions avec des ingrédients cueillis en bas (todo du 2026-11-11), ou aussi armes et armures (forge du village,
+  B.11) ? On fabrique partout, à un chaudron trouvé dans une cuisine du donjon, ou au village seulement ?
+  *Origine* : E.17, E.18. *Proposé* : potions seulement pour le playtest, avec les recettes de Veloren, à un
+  chaudron (cuisine du donjon, intendance du village). *Qui* : Flo.
+- **Q62 Tout avant le playtest ?** La liste fait neuf chantiers, plusieurs semaines de travail. Quel est l'ordre, et
+  qu'est-ce qui peut attendre un deuxième playtest ? *Proposé* : l'ordre de `PLAN-PLAYTEST.md` (village sans dégâts
+  et bouton Rentrer, grotte, sablier et missions simples, âmes, pièces du donjon, craft, équilibrage) ; zones et boss
+  (B.19, B.20), pouvoirs des ennemis (AM.6) et refonte des classes peuvent suivre le premier playtest. *Qui* : Flo.
 
 ## Tranché
 
@@ -202,3 +244,8 @@ Petites décisions, par date ; les règles qui en sortent sont dans le fichier i
   transforment) ; recrues tirées avec un lot au hasard, puis tout s'apprend ; changement d'arme libre en bas ;
   guerrier d'abord, puis mage et archer ; maquettes avant l'interface. Ex-Q13 : l'arbre de compétences de Veloren est
   coupé pour les personnages du registre, on ne dépense qu'à la salle d'armes.
+- **2026-11-16 (Flo, `PLAN-PLAYTEST.md`)** : (1) le prochain jalon est la feuille de route d'avant playtest : donjon
+  à pièces travaillées, grotte à murs et filons, missions, âmes, améliorations, craft, équilibrage (ex-Q7) ; (2) plus
+  de dégâts au village, sauf à l'aire d'entraînement (ex-Q48, tâche L.6) ; (3) règles des âmes précisées
+  (`design/ames.md`) : âme au sol une minute, liée après confirmation, jamais portée, forme et couleur uniques fixées
+  au premier retour vivant, ennemis qui ont un pouvoir de leurs âmes.

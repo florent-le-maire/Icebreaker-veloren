@@ -101,6 +101,8 @@ images (dessus, côté) ; `-- stats` compte les grottes réussies au premier ess
 
 ## Reste
 
+- **Suite demandée par Flo (2026-11-16)** : murs à casser entre les zones, filons, bien moins de pépites, salle au
+  minerai : U.13 à U.15 dans `PLAN-PLAYTEST.md` (chantier 2) ; outil pour casser : `QUESTIONS.md`, Q59.
 - **Régler les profils** dans l'atelier (Flo), puis les voir en jeu : allure avec le vrai rendu, lumière, caméra dans
   les zones basses, plaisir de parcours, densité des sprites et des créatures dans de très grandes zones.
 - Des îlots de roche flottants peuvent rester dans les zones chaotiques à fort bruit (le générateur retire les

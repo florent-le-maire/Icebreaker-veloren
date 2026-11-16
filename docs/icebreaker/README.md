@@ -9,7 +9,8 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 2. `PLAN.md` : état du projet, tâches restantes, ce qui est à vérifier en jeu.
 3. `QUESTIONS.md` : questions ouvertes (avec la proposition en cours) et petites décisions tranchées. Avec
    `A-FAIRE.md`, c'est la boîte de l'équipe : réponses et todos saisis sur le wiki local, à traiter en premier.
-4. Le `PLAN-*.md` de la piste sur laquelle on travaille.
+4. Le `PLAN-*.md` de la piste sur laquelle on travaille. Ce qui reste avant le playtest avec les potes, tous
+   jalons confondus : `PLAN-PLAYTEST.md`.
 5. Le fichier de `design/` du domaine utile seulement (voir la colonne « Pour Veloren » de `GAME_DESIGN.md`).
 
 ## Les fichiers
@@ -27,6 +28,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | `PLAN-WIKI.md` | Le wiki de l'équipe : site généré depuis ces docs et `assets/icebreaker/` (jalon W) |
 | `PLAN-INTERFACE.md` | Refonte de l'interface ajoutée par Icebreaker : maquettes, charte, règles (jalon N) |
 | `PLAN-CLASSES.md` | Armes, classes et compétences : jeux d'armes, ultime, passif, maîtrise, salle d'armes (jalon A) |
+| `PLAN-PLAYTEST.md` | Feuille de route d'avant playtest (liste de Flo, 2026-11-16) : neuf chantiers, leurs tâches (F.10+, U.13+, B.16+, AM, L.6, X.18, E.17+) |
 | `A-FAIRE.md` | Todos de l'équipe (wiki local) : « Ouvert » à traiter en début de session, puis « Pris en compte » |
 | `MAINTENANCE.md` | Lancer le jeu et le serveur, faire le zip du client, déployer sur le VPS |
 | `IDEES.md` | Boîte à idées non décidées, avec leur effort |
@@ -62,6 +64,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | A | Armes, classes et compétences | `PLAN-CLASSES.md` | codé le 2026-11-11 pour les trois classes, ultimes refaits le 2026-11-15 (A.19 à A.23) ; reste l'avis sur les maquettes (A.2) et l'essai dans le vrai client | `Veloren-classes` |
 | O | Lieu d'entraînement et de playtest | `PLAN-ENTRAINEMENT.md` | O.1 à O.8 codés le 2026-11-14 ; reste l'essai à la main dans le vrai client | `Veloren-entrainement` |
 | U | Grottes organiques et atelier de réglage | `PLAN-CAVERNE.md` | U.1 à U.5 codés le 2026-11-15 ; profils à régler dans l'atelier, pas vu en jeu | `Veloren-caverne` |
+| AM | Âmes | `PLAN-PLAYTEST.md` (règles : `design/ames.md`) | proposition du 2026-11-16, à valider (Q57, Q58) | `Veloren-ames` (à créer) |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 

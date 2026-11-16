@@ -2,7 +2,8 @@
 
 *Idée de Sayanel, notée le 2026-11-03, règles de principe fixées le même jour ; à concevoir par Sayanel.* Ce fichier
 rassemble ce qu'il faut pour la concevoir : l'idée, ses règles, les races et classes d'ennemis possibles, et ce que
-Veloren sait déjà des créatures (stats, résistances). Rien n'est codé.
+Veloren sait déjà des créatures (stats, résistances). Rien n'est codé ; tâches proposées : `PLAN-PLAYTEST.md`, jalon AM
+(2026-11-16).
 
 ## L'idée
 
@@ -16,32 +17,44 @@ Lien avec les piliers (`piliers.md`) : l'âme **vient du monde** (prise sur un m
 (liée au personnage, inscrite au Codex). Le choix d'équiper une âme inconnue est un pari : on la lie sans savoir ce
 qu'elle fait.
 
-## Règles (Flo et Sayanel, 2026-11-03)
+## Règles (Flo et Sayanel, 2026-11-03 ; précisées par Flo le 2026-11-16)
 
-Les chiffres viendront plus tard ; ce qui suit fixe le principe.
+Les chiffres viendront plus tard ; ce qui suit fixe le principe. Tâches : `PLAN-PLAYTEST.md`, jalon AM. Les âmes sont
+une progression dans le donjon : on les gagne en bas, sur les ennemis.
 
 - **Ce que donne une âme** : soit un **bonus** permanent (vitesse d'attaque, vitesse de déplacement, déplacement
   silencieux…), soit un **actif** (une capacité à déclencher).
-- **Une âme par type de monstre** : ce que donne l'âme dépend de la race **et** du rôle du monstre. Exemples :
-  assassin gnarling → bruit réduit ; assassin humain → coup critique dans le dos ×2 ; guerrier gnarling →
-  consommation d'endurance réduite.
-- **Combien d'âmes existent** : **3 âmes par classe de chaque race**, soit 3 × 3 classes (guerrier, archer, mage) × 6
-  races = 54 au départ. Nombre susceptible d'évoluer.
-- **Emplacements d'âme** : leur nombre dépend d'un **niveau d'âme** propre au personnage (niveau 1 : une âme, niveau
-  2 : deux âmes…). Comment ce niveau monte : à définir plus tard.
-- **Équiper** : une âme est **à usage unique** : l'équiper la place dans un emplacement d'âme du personnage, et elle y
-  est **liée pour toujours**.
+- **Des âmes par type d'ennemi** : chaque type (une race **et** un rôle) a ses âmes, en nombre fixé par type ; au
+  départ **3 par type**, soit 3 × 3 rôles (guerrier, archer, mage) × 6 races = 54. Exemples : assassin gnarling →
+  bruit réduit ; guerrier orc → boule de feu, 30 % de résistance au feu, 30 % de dégâts de feu (exemples, pas des
+  choix). Nombre susceptible d'évoluer.
+- **L'ennemi a les pouvoirs de ses âmes** : chaque ennemi a **un** des effets des âmes de son type, tiré au hasard
+  (un guerrier orc sur trois lance une boule de feu). Ce tirage est **sans lien** avec l'âme qu'il lâchera.
+- **Chance d'obtenir une âme** : un ennemi tué par un joueur peut lâcher **une** des âmes de son type, selon un
+  tableau de chances (une chance par âme) ; faible en général, **plus forte sur les monstres forts et les boss**.
+- **Au sol** : l'âme lâchée reste au sol avec un **compte à rebours visible** de tous ; si personne ne la prend dans
+  le temps donné (**1 minute**), elle disparaît.
+- **On ne porte pas une âme** : elle ne va pas dans le sac. Soit on la lie tout de suite à un personnage qui a un
+  emplacement libre, soit on la laisse. Seule une **compétence dédiée** permettra de les stocker (à concevoir,
+  `QUESTIONS.md` Q57).
+- **Lier** : on interagit avec l'âme au sol ; une fenêtre demande « Voulez-vous lier cette âme ? ». Oui : l'âme est
+  **liée** au personnage (*soul bound*), dans un emplacement d'âme, **jusqu'à sa mort**. Une âme sert une seule fois.
+- **Emplacements d'âme** : une zone à part dans le build du personnage ; il en a **autant que son niveau**. Ce
+  qu'est ce niveau dans le prototype, qui n'a pas de niveau de personnage : Q57.
 - **À la mort**, le personnage **perd ses âmes**.
-- **Chance d'obtenir une âme** : faible en général, **plus forte sur les monstres forts et les boss**.
-- **Découvrir** : équiper une âme inconnue révèle ce qu'elle fait au joueur. La découverte n'est **validée** que si le
-  personnage **rentre vivant** de l'expédition : alors **tout le village** connaît cette âme et sa couleur (Codex).
-  Mort avant le retour : la découverte est perdue avec l'âme.
-- **Retrouver une âme connue** : un autre exemplaire de la même âme peut être équipé par un autre joueur (ou un autre
-  personnage) ; la connaissance, elle, ne change pas.
-- **Couleurs** : une âme inconnue est **blanche** ; une fois découverte, elle prend **sa propre couleur**, propre à
-  cette âme, pour la reconnaître d'un coup d'œil. Les couleurs sont **redistribuées à chaque partie** (une partie se
-  termine quand le village est achevé ou le boss final battu) : d'une partie à l'autre, il faut redécouvrir quelle
-  couleur correspond à quelle âme (comme les potions non identifiées des rogue-likes). Détails à discuter plus tard.
+- **Connue ou inconnue** : une âme que le village connaît tombe avec **sa couleur et sa forme**, celles du glossaire ;
+  une âme inconnue tombe **blanche**, sous une forme générique.
+- **Découvrir** : il faut lier l'âme inconnue à un personnage **et** que ce personnage **rentre vivant** au village.
+  À son retour l'âme prend sa forme et sa couleur, et **tout le village** la connaît (glossaire du village, le
+  « Codex »). Mort avant le retour : la découverte est perdue avec l'âme. Lier une âme inconnue reste un pari : son
+  porteur voit ce qu'elle fait, le village non.
+- **Une forme et une couleur par âme** : deux âmes n'ont jamais le même couple forme et couleur. Si deux expéditions
+  rapportent la même âme l'une après l'autre, la première fixe la forme et la couleur ; la seconde ne change rien.
+- **Retrouver une âme connue** : un autre exemplaire peut être lié par un autre personnage ; la connaissance ne
+  change pas.
+- **D'une partie à l'autre** : formes et couleurs sont **redistribuées à chaque partie** (une partie se termine quand
+  le village est achevé ou le boss final battu) : il faut redécouvrir quelle apparence correspond à quelle âme (comme
+  les potions non identifiées des rogue-likes). Détails à discuter plus tard.
 - **Résistances** : selon les âmes que Sayanel imaginera (voir « Résistances » plus bas).
 
 ## Les races

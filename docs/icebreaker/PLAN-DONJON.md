@@ -184,6 +184,10 @@ Chaque tâche : quelques heures, un critère de fin, testable sur le donjon actu
 Bloc 1 et bloc 2 peuvent avancer en parallèle (deux worktrees). Les monstres attendent le combat (bloc 1) ; l'étreigneur
 et l'essaim attendent les trous (bloc 3).
 
+**Suite du bloc 2 (Flo, 2026-11-16)** — ingrédients à cueillir et potion à fabriquer : E.17 et E.18 dans
+`PLAN-PLAYTEST.md` (chantier 7, `QUESTIONS.md` Q61). La destruction commence par les murs à casser de la grotte (U.13,
+même fichier, Q59) ; E.5 et E.6 viennent après.
+
 ## Questions pour l'équipe
 
 Dans `QUESTIONS.md`, § 3 « Donjon généré et grotte » (Q16 à Q20).

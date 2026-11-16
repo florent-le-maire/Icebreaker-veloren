@@ -206,6 +206,7 @@ Chaque tâche = quelques heures, un critère de fin, le jeu reste lançable. Les
 - [ ] **B.9 Tableau des contrats** — 3 contrats par jour de carte chez le chef d'expédition ; le contrat donne ses
   paramètres à l'emplacement ; réussite = récompense à la caisse.
   *Fin* : réussir un contrat « tuer le chef » remplit la caisse.
+  *2026-11-16* : Flo demande des missions par zone (B.19) ; elles tiennent le rôle des contrats (`QUESTIONS.md`, Q56).
 - [ ] **B.10 Blessures et infirmerie** — blessure au retour (< 30 % PV ou mort), soignée à l'infirmerie (or + heures de carte).
   *Fin* : un blessé a moins de PV max jusqu'à l'infirmerie.
 - [ ] **B.11 Forge** — réparer ; recettes de Veloren permises selon le niveau de la forge.
@@ -214,6 +215,9 @@ Chaque tâche = quelques heures, un critère de fin, le jeu reste lançable. Les
   d'arme dépensés à la salle d'armes, arbre de compétences de Veloren coupé pour les personnages du registre.
 - [ ] **B.13 Taverne et bilan** — rumeurs sur les contrats selon le niveau ; bilan complet au retour et chronique.
   *Fin* : la taverne niveau 2 affiche la menace exacte d'un contrat.
+
+**Bloc 4 — missions (Flo, 2026-11-16)** — sablier de 20 minutes, explorer, nettoyer, collecter, zones et niveaux
+d'exploration, mission de boss : B.16 à B.20 dans `PLAN-PLAYTEST.md` (chantier 3, `QUESTIONS.md` Q55 et Q56).
 
 Bloc 1 et bloc 2 peuvent avancer en parallèle (worktree `Veloren-boucles` et `Veloren-donjon`) ; le bloc 3 dépend de
 B.6 pour les reliques. Entrepôt à 54/72 places et objectif « piller » / « sauver » : après une première soirée.

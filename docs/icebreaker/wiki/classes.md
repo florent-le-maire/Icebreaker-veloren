@@ -115,7 +115,7 @@ Questions ouvertes pour l'équipe : les chiffres de départ, tous à régler en 
 confirmer, dont un jeu d'armes non appris qui ne donne que les attaques de base (Q44) ; un ultime lancé avec une arme
 qui n'est pas celle de son geste (Q45) ; la bascule entre deux jeux d'armes et les jeux « deux épées » et « hache +
 épée » (Q46) ; les maquettes de la barre et des panneaux (Q47) ; les compétences qui blessent les habitants du
-village (Q48).
+village (tranché le 2026-11-16 : plus de dégâts au village, tâche L.6 de `PLAN-PLAYTEST.md`).
 
 ## Sous le capot
 
