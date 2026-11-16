@@ -35,16 +35,16 @@ L'expédition ne change pas.
 ## Tâches
 
 - [x] **FT.1 Le modèle et le corps** — corps de la famille « objet » (et non petit bipède : note 0021), modèle écrit
-  par programme, flotte et ondule. Vu au lieu d'entraînement. — 9203f7e395
+  par programme, flotte et ondule. Vu au lieu d'entraînement. — 61d240d7b9
 - [x] **FT.2 Transparence** — tramage sur le seul fantôme, opacité dans `fantome.ron`. Vu en jeu : le décor se voit
-  au travers. — f7b307b2b6
+  au travers. — 943e12a9a9
 - [x] **FT.3 Planer** — gravité réduite, chute plafonnée, saut, accélération. Test ciblé vert ; chute lente vue après
-  `/jump`. Marche et saut au clavier pas essayés. — f7b307b2b6
+  `/jump`. Marche et saut au clavier pas essayés. — 943e12a9a9
 - [x] **FT.4 Entrer au village en fantôme avec un corps** — présence `IcebreakerFantome`, rien en base, `is_ghost`
   couvre les deux sortes. Vu en jeu : arrivée, bandeau, un second fantôme visible. Le pseudo au-dessus du fantôme
-  n'apparaît pas dans les captures. — 528e55abe4
+  n'apparaît pas dans les captures. — bb6784cd67
 - [x] **FT.5 Fantôme ↔ personnage** — engager puis rendre ramène au fantôme (vu en jeu) ; pas de barre de vie ni de
-  compétences pour le fantôme. Mort et retour d'expédition pas essayés. — 528e55abe4
+  compétences pour le fantôme. Mort et retour d'expédition pas essayés. — bb6784cd67
 - [ ] **FT.6 Interactions et docs** — l'invite d'interaction d'un animal s'affiche pour le fantôme (vu) ; reste à
   essayer à la main : parler à un PNJ, vérifier qu'il ne peut ni attaquer ni ramasser ; afficher le pseudo
   au-dessus du fantôme ; une capture pour la fiche `charrette` du wiki.
