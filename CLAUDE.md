@@ -73,6 +73,11 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   curseurs sur http://localhost:8096 ; « Enregistrer le preset » écrit le profil dans
   `assets/icebreaker/grottes/formes.ron` et committe ; en campagne : `/expedition 3 <preset>`. En jeu : `donjon -Site Grotte -Profil gouffre`.
   Sans la page : `cargo run --release -p icebreaker-caverne --example coupes -- <profil> <graine> <dossier>`.
+- Atelier des salles (F.14 à F.17, `docs/icebreaker/PLAN-PLAYTEST.md`) : `.\icebreaker.ps1 salles` sert sur
+  http://localhost:8097 l'éditeur où l'on meuble les salles du donjon au bloc près avec les objets de Veloren
+  (`?salle=<nom>` ouvre une salle) ; « Enregistrer » contrôle la salle comme le jeu, écrit
+  `assets/icebreaker/donjons/salles/<nom>.txt` (`@meuble:`, `@manque:` pour un modèle qui manque) et committe. En
+  jeu : `donjon -Site Genere -Salle <nom>`.
 - Lieu d'entraînement (jalon O, `docs/icebreaker/PLAN-ENTRAINEMENT.md`) : `.icebreaker.ps1 entrainement` (port
   14150) ; tout s'y règle par `/entrainement` (classe, arme, niveau, ennemi, allie, nettoyer, soin…) ou par les deux
   cases du plan (touche U). Sans registre : `ICEBREAKER_AUTO_PERSONNAGE=1` fait entrer le vrai client dans le monde

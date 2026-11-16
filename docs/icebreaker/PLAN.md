@@ -297,6 +297,12 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 `PLAN-GROTTE.md`). À parcourir dans le vrai client, en campagne, à deux si possible ; barrer ce qui est vu, ouvrir une
 tâche pour ce qui casse.
 
+**Atelier des salles (F.14 à F.17, `PLAN-PLAYTEST.md`)**
+- `.\icebreaker.ps1 salles` : ouvrir une salle, la meubler, l'enregistrer, puis la voir par `donjon -Site Genere
+  -Salle <nom>` : chaque meuble est à la place et dans le sens montrés par l'atelier (surtout les meubles adossés
+  à un mur et ceux en miroir).
+- Une salle meublée sort tournée ou en miroir dans un donjon entier, ses meubles avec elle.
+
 **Clavier (X.16)**
 - Cliquer « Clavier QWERTY » puis « Clavier AZERTY » dans Réglages > Contrôles ; le choix tient après relance.
 

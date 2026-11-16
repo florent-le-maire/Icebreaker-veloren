@@ -152,3 +152,16 @@ Dans un plan de salle, des symboles de décor (sol avec un objet dessus ; liste 
 En-têtes : `@theme: militaire, culte…` (style de donjon ; aucun = va partout) et `@poids: 2` (tirage, 1 par défaut).
 Chaque donjon tire un thème dominant de sa graine ; ses salles pèsent `assembly.theme_bias` fois plus.
 Le tableur `docs/icebreaker/salles.xlsx` liste les salles et leur plan : `cargo run -p icebreaker-salles`.
+
+**Meubles au bloc près (F.14) et atelier des salles (F.15 à F.17).** Une case fait 7 blocs : un symbole par case
+laisse la salle vide. Une salle porte donc ses meubles un par un, en blocs comptés depuis le coin de son plan (x
+vers l'est, y dans le sens des lignes du plan, z 0 = posé sur le sol de l'étage 0, 7 de plus par étage) :
+`@meuble: <sprite> x y z ori [miroir]` (ori de 0 à 7, huitièmes de tour : un meuble adossé au mur de la première
+ligne du plan et tourné vers la salle a 2) et `@manque: "libellé" x y z largeur profondeur hauteur` pour un modèle
+que Veloren n'a pas (rien n'est dessiné en jeu : c'est la liste des modèles à faire). Les meubles tournent avec la
+salle. Refusé à la lecture : un meuble dans un mur, une porte, un pilier ou le plafond, au milieu d'une case prise
+(créature, coffre, échelle) ou de la case devant une porte. Une salle qui a des `@meuble` ne reçoit plus le décor
+tiré par rôle. `@fonction: <id>` dit quelle pièce c'est (catalogue `assets/icebreaker/donjons/pieces.ron`).
+On n'écrit pas ces lignes à la main : `.\icebreaker.ps1 salles` ouvre l'atelier (http://localhost:8097), où l'on
+pose les objets de Veloren en 3D, où un bloc « ? » marque un modèle qui manque, et qui enregistre la salle après
+le contrôle du jeu, avec un commit.

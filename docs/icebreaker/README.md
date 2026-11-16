@@ -47,7 +47,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | C | Le village qui grandit | `PLAN.md` | C.1 à C.3 faits ; C.4 à C.6 restent | — (supprimé) |
 | P | Pillage sur la route | `PLAN.md` | pas commencé | à créer |
 | G | Donjon généré | `PLAN.md` | G.1 à G.10 faits ; IA G.11 à G.16 restent | `Veloren-donjon` |
-| F | Forme et vie du donjon généré | `PLAN.md` | F.1 à F.6 faits ; F.7 si besoin | `Veloren-donjon` |
+| F | Forme et vie du donjon généré | `PLAN.md`, suite dans `PLAN-PLAYTEST.md` | F.1 à F.10 faits ; atelier des salles fait (F.14 à F.17, 2026-11-16) ; salles à meubler (F.18), puis F.11 à F.13 | `Veloren-donjon` |
 | L | Combat létal | `HISTORIQUE.md` | fait | — (supprimé) |
 | R | Charrette et registre commun | `HISTORIQUE.md` | fait | — (supprimé) |
 | X | Interface du village | `HISTORIQUE.md` | fait, vu en jeu | — (supprimé) |

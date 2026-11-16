@@ -13,7 +13,7 @@ interface du village) et se cochent ici ; les âmes ouvrent le jalon **AM**.
 
 | # | Chantier | Tâches | Worktree | État |
 |---|---|---|---|---|
-| 1 | Donjon : des pièces travaillées | F.10 à F.13 | `Veloren-donjon` | tranché ; modèles dessinés par l'agent |
+| 1 | Donjon : des pièces travaillées | F.10 à F.18 | `Veloren-donjon` | catalogue et atelier des salles faits (F.10, F.14 à F.17) ; salles à meubler dans l'atelier (F.18), puis F.11 à F.13 |
 | 2 | Grotte : murs à casser, filons, salle au minerai | U.13 à U.16 | `Veloren-caverne` | tranché |
 | 3 | Missions : sablier, zones, types de mission, boss | B.16 à B.20 | `Veloren-boucles` | tranché ; B.19 et B.20 peuvent suivre le premier playtest |
 | 4 | Âmes | AM.1 à AM.9 | `Veloren-ames` | attend le tableau de Sayanel (Q58) ; AM.6 peut suivre le premier playtest |
@@ -49,21 +49,22 @@ marque un modèle qui manque. D'où F.14 à F.17, avant F.11 à F.13.
 - [x] **F.10 Catalogue des pièces** — `assets/icebreaker/donjons/pieces.ron` : 18 pièces, leur mobilier chez Veloren,
   31 modèles à créer en cinq lots ; feuilles « Pièces » et « Modèles » de `salles.xlsx` ; `@fonction:` sur 22
   salles. La liste reste à relire par Flo et Sayanel (colonne « Retours »). `42a2c5e0a9`
-- [ ] **F.14 Meubles au bloc près** — une salle porte des `@meuble: <sprite> x y z ori [miroir]` (blocs depuis le
-  coin de la salle) et des `@manque: "libellé" x y z l p h` ; le générateur les pose, les tourne avec la salle, et
-  ne tire plus de décor par rôle dans une salle meublée à la main.
-  *Fin* : une salle d'essai meublée à la main se voit dans le vrai client, chaque meuble à sa place.
-- [ ] **F.15 Atelier des salles : serveur et objets** — `.\icebreaker.ps1 salles` (port 8097) : sert la page, la
-  liste de tous les objets de Veloren avec leurs modèles, les salles ; enregistre une salle après le contrôle du
-  jeu, avec un commit.
-  *Fin* : une salle refusée par le jeu n'est jamais écrite ; une salle valide est committée.
-- [ ] **F.16 Atelier : vue 3D et pose** — la salle en 3D, recherche parmi les objets, poser, tourner, déplacer,
-  dupliquer, supprimer, annuler ; bloc « ? » avec son libellé et sa taille.
-  *Fin* : la cuisine s'ouvre avec ses anciens symboles devenus des meubles ; on la remplit et on la retrouve en jeu.
-- [ ] **F.17 Atelier : plan, fiche, enregistrement** — peindre les cases (mur, sol, porte, pilier, fosse, coffre,
-  créatures), fiche de la salle (rôles, fonction, styles, poids), nouvelle salle ; les `@manque` remontent dans la
-  feuille « Modèles ».
-  *Fin* : une salle neuve faite dans l'atelier sort dans un donjon généré.
+- [x] **F.14 Meubles au bloc près** — `@meuble: <sprite> x y z ori [miroir]` et `@manque: "libellé" x y z l p h`
+  (format : `design/donjon.md`) ; posés par le générateur, tournés avec la salle, plus de décor par rôle dans une
+  salle meublée. Cuisine meublée à la main, vue en salle seule dans le vrai client. Pas vu : une salle meublée
+  tournée ou en miroir dans un donjon entier. `36b4b95b1c`
+- [x] **F.15 Atelier des salles : serveur et objets** — `.\icebreaker.ps1 salles` (port 8097) : objets de Veloren
+  et leurs modèles, salles (anciens symboles convertis en meubles), enregistrement après le contrôle du jeu, avec
+  un commit ; une salle refusée n'est pas écrite. `cbc461ae0a`
+- [x] **F.16 Atelier : vue 3D et pose** — salle en 3D, recherche (anglais et français), poser, tourner, miroir,
+  déplacer, dupliquer, supprimer, annuler ; bloc « ? ». Essayé dans Edge sans fenêtre, pas encore à la main ; le
+  sens de chaque objet n'a pas été comparé un à un avec le jeu. `f6595cfb2c`
+- [x] **F.17 Atelier : plan, fiche, enregistrement** — cases à peindre, rangées à ajouter, fiche, nouvelle salle,
+  copie, suppression ; les blocs « ? » remontent dans la feuille « Modèles ». Escaliers, échelles et étages ne
+  s'éditent pas encore dans la page (ceux des salles existantes sont gardés). `f6595cfb2c`
+- [ ] **F.18 Meubler les salles** (Flo, Sayanel, dans l'atelier) — chaque pièce du catalogue a au moins une salle
+  meublée ; les blocs « ? » posés donnent la liste de F.13.
+  *Fin* : un donjon généré ne montre plus de salle vide.
 - [ ] **F.11 Une fonction par pièce** — chaque salle porte `@fonction:` ; deux ou trois plans par fonction, décorés
   avec ce qui existe ; le tirage varie les fonctions (pas deux fois la même à la suite, celles d'un thème ensemble).
   *Fin* : l'exemple de contrôle montre, pour dix graines, au moins cinq fonctions différentes par donjon.
