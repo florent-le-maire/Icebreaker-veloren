@@ -555,6 +555,25 @@ impl Structure for IcebreakerDungeon {
                         }
                     }
                 },
+                // Icebreaker F.14 : placed by hand in the rooms workshop, block by block.
+                dungeon::DecorPlacement::Block { pos, ori, mirror } => {
+                    let pos = min + Vec3::new(pos.0, pos.1, pos.2 + 1);
+                    let block = Block::empty().with_sprite(kind);
+                    let block = block.with_ori(*ori % 8).unwrap_or(block);
+                    let block = if *mirror {
+                        block.with_attr(common::terrain::sprite::MirrorX(true)).unwrap_or(block)
+                    } else {
+                        block
+                    };
+                    let fill = match self.decor_loot(kind) {
+                        Some(loot_table) => Fill::CfgSprite(block, SpriteCfg {
+                            loot_table: Some(loot_table),
+                            ..SpriteCfg::default()
+                        }),
+                        None => Fill::Sprite(block),
+                    };
+                    painter.aabb(Aabb { min: pos, max: pos + 1 }).fill(fill);
+                },
                 dungeon::DecorPlacement::Scatter { chance } => {
                     let noise = RandomField::new(13);
                     for x in 1..c - 1 {

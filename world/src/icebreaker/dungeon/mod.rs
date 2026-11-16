@@ -125,6 +125,7 @@ fn place_lights(
     rooms: &[(&str, Vec<Cell>)],
     keys: &[(Cell, settings::KeySettings)],
     lighting: &settings::LightingSettings,
+    furnished: &std::collections::BTreeSet<Cell>,
     seed: u64,
 ) -> Vec<(Cell, Option<(i32, i32)>)> {
     use rand::{RngExt, SeedableRng};
@@ -154,6 +155,10 @@ fn place_lights(
             .filter(|(dx, dy)| plan.get(cell.offset(*dx, *dy, 0)) == '#')
             .collect();
         let torch = !walls.is_empty() && rng.random_bool(lighting.wall_torches.clamp(0.0, 1.0) as f64);
+        // Icebreaker F.14 : no brazier in a cell that holds furniture placed by hand.
+        if !torch && furnished.contains(cell) {
+            continue;
+        }
         lights.push((*cell, torch.then(|| walls[rng.random_range(0..walls.len())])));
     }
     lights
@@ -174,6 +179,36 @@ pub enum DecorPlacement {
     Wall((i32, i32)),
     Center { around: Option<String> },
     Scatter { chance: f32 },
+    /// Icebreaker F.14 : placed by hand (`@meuble:`), `pos` in blocks from the corner of the cell (z 0 = standing
+    /// on its floor), with its orientation (0 to 7) and its mirror.
+    Block { pos: (i32, i32, i32), ori: u8, mirror: bool },
+}
+
+/// Icebreaker F.14 : the furniture placed by hand of a room, with the cell of the dungeon its blocks are counted
+/// from (the corner of its plan, level 0).
+pub type HandFurniture<'a> = Option<(Cell, &'a [rooms::Furniture])>;
+
+fn hand_furniture(template: &rooms::RoomTemplate, to_dungeon: impl Fn(Cell) -> Cell) -> HandFurniture<'_> {
+    let (min_x, _, min_y, _) = template.plan.bounds()?;
+    (!template.furniture.is_empty()).then(|| (to_dungeon(Cell::new(min_x, min_y, 0)), &template.furniture[..]))
+}
+
+/// The cell a block of hand-placed furniture is in, and whether it stands in the middle of it (where a key, a
+/// creature or a chest would be).
+fn furniture_spot(corner: Cell, (x, y, z): (i32, i32, i32)) -> (Cell, bool) {
+    let (c, h) = (rooms::FURNITURE_CELL, rooms::FURNITURE_LEVEL);
+    let cell = corner.offset(x.div_euclid(c), y.div_euclid(c), z.div_euclid(h));
+    let near = |v: i32| (v.rem_euclid(c) - c / 2).abs() <= 1;
+    (cell, near(x) && near(y) && z.rem_euclid(h) < 3)
+}
+
+/// The cells that hold hand-placed furniture.
+fn furnished_cells(furnished: &[HandFurniture]) -> std::collections::BTreeSet<Cell> {
+    furnished
+        .iter()
+        .flatten()
+        .flat_map(|(corner, items)| items.iter().map(|f| furniture_spot(*corner, f.pos).0))
+        .collect()
 }
 
 /// The decor of a dungeon by the role of its rooms (Icebreaker F.6), on the
@@ -182,6 +217,7 @@ pub enum DecorPlacement {
 fn place_decor(
     plan: &Plan,
     rooms: &[(&str, Vec<Cell>)],
+    furnished: &[HandFurniture],
     taken: &std::collections::BTreeSet<Cell>,
     decor: &settings::DecorSettings,
     seed: u64,
@@ -214,9 +250,32 @@ fn place_decor(
             place,
         });
     }
+    // Icebreaker F.14 : the furniture placed by hand, block by block; not where a key or a light already is.
+    for (corner, items) in furnished.iter().flatten() {
+        for item in *items {
+            let (cell, centered) = furniture_spot(*corner, item.pos);
+            if centered && taken.contains(&cell) {
+                continue;
+            }
+            placed.push(Decor {
+                cell: *corner,
+                sprite: item.sprite.clone(),
+                place: DecorPlacement::Block {
+                    pos: item.pos,
+                    ori: item.ori,
+                    mirror: item.mirror,
+                },
+            });
+        }
+    }
     let empty = Vec::new();
+    // A room furnished by hand gets nothing more by its role.
+    let by_hand = |i: usize| furnished.get(i).is_some_and(|f| f.is_some());
     let sets = rooms
         .iter()
+        .enumerate()
+        .filter(|(i, _)| !by_hand(*i))
+        .map(|(_, room)| room)
         .map(|(role, cells)| (decor.roles.get(*role).unwrap_or(&empty), cells))
         .chain(std::iter::once((&decor.corridors, &corridors)));
     for (items, cells) in sets {
@@ -320,9 +379,10 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
     let role = room.roles.first().map_or("hall", |r| r.name());
     let cells: Vec<Cell> = room.plan.cells.keys().copied().collect();
     let rooms = [(role, cells)];
-    let lights = place_lights(&plan, &rooms, &[], &settings.lighting, 0);
+    let furnished = [hand_furniture(room, |c| c)];
+    let lights = place_lights(&plan, &rooms, &[], &settings.lighting, &furnished_cells(&furnished), 0);
     let taken = lights.iter().map(|(c, _)| *c).collect();
-    let decor = place_decor(&plan, &rooms, &taken, &settings.decor, 0);
+    let decor = place_decor(&plan, &rooms, &furnished, &taken, &settings.decor, 0);
     Ok(Dungeon {
         plan,
         tunnel,
@@ -413,9 +473,18 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 .iter()
                 .map(|r| (graph.rooms[r.graph_room].role.name(), r.footprint().collect()))
                 .collect();
-            let lights = place_lights(&assembled.plan, &room_cells, &keys, &settings.lighting, seed);
+            let furnished: Vec<HandFurniture> =
+                assembled.rooms.iter().map(|r| hand_furniture(&r.template, |c| r.to_dungeon(c))).collect();
+            let lights = place_lights(
+                &assembled.plan,
+                &room_cells,
+                &keys,
+                &settings.lighting,
+                &furnished_cells(&furnished),
+                seed,
+            );
             let taken = keys.iter().map(|(c, _)| *c).chain(lights.iter().map(|(c, _)| *c)).collect();
-            let decor = place_decor(&assembled.plan, &room_cells, &taken, &settings.decor, seed);
+            let decor = place_decor(&assembled.plan, &room_cells, &furnished, &taken, &settings.decor, seed);
             // Icebreaker B.5: the tier of each chest and creature.
             let paliers = place_tiers(&assembled.plan, &assembled.rooms, &graph, &butin);
             let chests_by_tier: Vec<String> = (1..=butin.paliers())
@@ -585,7 +654,7 @@ mod tests {
             }
             rooms.push((role, cells));
         }
-        let lights = place_lights(&plan, &rooms, &[], &settings.lighting, 7);
+        let lights = place_lights(&plan, &rooms, &[], &settings.lighting, &Default::default(), 7);
         let in_room = |r: i32| lights.iter().filter(|(c, _)| c.x / 22 == r).count();
         assert_eq!(in_room(0), 0, "un nid éclairé");
         assert!(in_room(1) > 2 * in_room(2), "salle habitée {} / vide {}", in_room(1), in_room(2));
@@ -673,8 +742,8 @@ mod tests {
             rooms.push((role, cells));
         }
         let taken = std::collections::BTreeSet::from([Cell::new(5, 5, 0)]);
-        let decor = place_decor(&plan, &rooms, &taken, &settings.decor, 7);
-        let of = |r: i32| decor.iter().filter(move |d| d.cell.x / 14 == r);
+        let decor = place_decor(&plan, &rooms, &[], &taken, &settings.decor, 7);
+        let of =|r: i32| decor.iter().filter(move |d| d.cell.x / 14 == r);
         assert!(of(0).any(|d| d.sprite == "CookingPot" && matches!(d.place, DecorPlacement::Center { .. })));
         assert!(of(0).any(|d| matches!(&d.place, DecorPlacement::Center { around: Some(c) } if c == "ChairWoodWoodland")));
         assert!(of(1).any(|d| d.sprite == "Bones" && matches!(d.place, DecorPlacement::Scatter { .. })));
@@ -697,6 +766,34 @@ mod tests {
             .collect();
         let distinct: std::collections::BTreeSet<Cell> = furniture.iter().copied().collect();
         assert_eq!(furniture.len(), distinct.len());
+    }
+
+    /// Icebreaker F.14 : a room furnished by hand shows its furniture where it was put, and nothing drawn by its
+    /// role; no brazier in a cell that holds furniture, and nothing on a key.
+    #[test]
+    fn hand_furniture_replaces_the_decor_of_the_role() {
+        let settings = Settings::load().unwrap();
+        let text = "@roles: kitchen\n@meuble: Barrel 8 8 0 2\n@meuble: CookingPot 24 17 0 0\n@meuble: Shelf 15 7 0 \
+                    2\n#####\n+...+\n#...#\n#####\n";
+        let room = rooms::RoomTemplate::parse("essai", text).unwrap();
+        let dungeon = single_room(&settings, &room).unwrap();
+        let blocks: Vec<&Decor> =
+            dungeon.decor.iter().filter(|d| matches!(d.place, DecorPlacement::Block { .. })).collect();
+        assert_eq!(blocks.len(), 3);
+        assert_eq!(dungeon.decor.len(), 3, "du décor de cuisine en plus : {:?}", dungeon.decor);
+        assert!(blocks.iter().all(|d| d.cell == Cell::new(0, 0, 0)));
+        let furnished = [hand_furniture(&room, |c| c)];
+        let cells = furnished_cells(&furnished);
+        assert_eq!(cells, [Cell::new(1, 1, 0), Cell::new(3, 2, 0), Cell::new(2, 1, 0)].into());
+        for (cell, torch) in &dungeon.lights {
+            assert!(torch.is_some() || !cells.contains(cell), "brasero sur un meuble : {cell:?}");
+        }
+        // The pot is in the middle of its cell: a key there wins.
+        let taken = [Cell::new(3, 2, 0)].into();
+        let rooms = [("kitchen", room.plan.cells.keys().copied().collect())];
+        let decor = place_decor(&room.plan, &rooms, &furnished, &taken, &settings.decor, 0);
+        assert!(!decor.iter().any(|d| d.sprite == "CookingPot"));
+        assert_eq!(decor.len(), 2);
     }
 
     /// Icebreaker B.5: every chest and creature has a tier; the chests of the

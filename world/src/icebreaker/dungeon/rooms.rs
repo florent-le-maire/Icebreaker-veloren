@@ -95,6 +95,107 @@ impl Connector {
     }
 }
 
+/// Icebreaker F.14 : blocks per cell and per level the furniture of the rooms is written for (`@meuble:` counts in
+/// blocks). The same as `render.cell_size` and `render.level_height` of `generation.ron` (a test says so).
+pub const FURNITURE_CELL: i32 = 7;
+pub const FURNITURE_LEVEL: i32 = 7;
+
+/// Icebreaker F.14 : a piece of furniture placed by hand in a room (`@meuble: Barrel 12 8 0 2 miroir`, written
+/// by the rooms workshop): a sprite of Veloren, its block from the corner of the room (x east, y south, z 0 = the
+/// block standing on the floor of level 0; a level is `FURNITURE_LEVEL` blocks higher), its orientation (0 to 7,
+/// eighths of a turn) and whether its model is mirrored.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Furniture {
+    pub sprite: String,
+    pub pos: (i32, i32, i32),
+    pub ori: u8,
+    pub mirror: bool,
+}
+
+/// Icebreaker F.14 : a model the room wants and Veloren doesn't have (`@manque: "trône" 30 20 0 3 3 5`): its
+/// name, the block of its lowest corner and its size in blocks. Nothing is drawn in the game; it is the list of
+/// models to make (F.13).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Missing {
+    pub label: String,
+    pub pos: (i32, i32, i32),
+    pub size: (i32, i32, i32),
+}
+
+/// `Barrel 12 8 0 2 miroir`.
+fn parse_furniture(value: &str) -> Result<Furniture, String> {
+    let mut words = value.split_whitespace();
+    let sprite = words.next().ok_or("il manque le sprite")?.to_string();
+    if super::settings::sprite_kind(&sprite).is_none() {
+        return Err(format!("sprite inconnu « {sprite} »"));
+    }
+    let mut number = |name: &str| -> Result<i32, String> {
+        words.next().and_then(|w| w.parse().ok()).ok_or(format!("il manque {name} (un nombre entier)"))
+    };
+    let pos = (number("x")?, number("y")?, number("z")?);
+    let ori = number("l'orientation")?;
+    if !(0..8).contains(&ori) {
+        return Err(format!("orientation {ori} : de 0 à 7"));
+    }
+    let mirror = match words.next() {
+        None => false,
+        Some("miroir") => true,
+        Some(other) => return Err(format!("« {other} » en trop (seul « miroir » peut suivre)")),
+    };
+    Ok(Furniture { sprite, pos, ori: ori as u8, mirror })
+}
+
+/// `"trône" 30 20 0 3 3 5`.
+fn parse_missing(value: &str) -> Result<Missing, String> {
+    let rest = value.trim().strip_prefix('"').ok_or("le libellé se met entre guillemets")?;
+    let (label, rest) = rest.split_once('"').ok_or("guillemet fermant absent")?;
+    let numbers: Vec<i32> = rest.split_whitespace().filter_map(|w| w.parse().ok()).collect();
+    let [x, y, z, sx, sy, sz] = numbers[..] else {
+        return Err("après le libellé : x y z puis largeur, profondeur, hauteur".into());
+    };
+    if label.trim().is_empty() || sx < 1 || sy < 1 || sz < 1 {
+        return Err("libellé vide ou taille nulle".into());
+    }
+    Ok(Missing { label: label.trim().to_string(), pos: (x, y, z), size: (sx, sy, sz) })
+}
+
+/// The cell of the plan a block of furniture is in, and its height above the floor of that cell.
+fn furniture_cell(plan: &Plan, (x, y, z): (i32, i32, i32)) -> (Cell, i32) {
+    let (min_x, _, min_y, _) = plan.bounds().unwrap_or((0, 0, 0, 0));
+    let cell = Cell::new(
+        min_x + x.div_euclid(FURNITURE_CELL),
+        min_y + y.div_euclid(FURNITURE_CELL),
+        z.div_euclid(FURNITURE_LEVEL),
+    );
+    (cell, z.rem_euclid(FURNITURE_LEVEL))
+}
+
+/// What is wrong with a block of furniture: out of the floor of the room, in the ceiling, or in the middle of a
+/// cell that must stay free (a creature, a chest, a ladder, the way in from a door).
+fn furniture_error(plan: &Plan, pos: (i32, i32, i32)) -> Option<&'static str> {
+    let (cell, height) = furniture_cell(plan, pos);
+    let symbol = plan.get(cell);
+    if !plan::is_walkable(symbol) || matches!(symbol, 'D' | 'O' | '*' | '~') {
+        return Some("hors du sol de la salle (mur, porte, pilier, fosse ou vide)");
+    }
+    if height > FURNITURE_LEVEL - 2 {
+        return Some("dans le plafond");
+    }
+    let middle = FURNITURE_CELL / 2;
+    let centered = (pos.0.rem_euclid(FURNITURE_CELL) - middle).abs() <= 1
+        && (pos.1.rem_euclid(FURNITURE_CELL) - middle).abs() <= 1
+        && height < 3;
+    let reserved = symbol != '.' && !plan::is_decor_symbol(symbol);
+    let doorway = DIRECTIONS.into_iter().any(|(dx, dy)| plan.get(cell.offset(dx, dy, 0)) == '+');
+    if centered && reserved {
+        return Some("au milieu d'une case prise (créature, coffre, départ, échelle)");
+    }
+    if centered && doorway {
+        return Some("au milieu de la case devant une porte : le passage doit rester libre");
+    }
+    None
+}
+
 /// A hand-written room.
 #[derive(Clone, Debug)]
 pub struct RoomTemplate {
@@ -108,6 +209,10 @@ pub struct RoomTemplate {
     /// Icebreaker : what the room is for (`@fonction:`, an entry of `donjons/pieces.ron`; none for entrances and
     /// halls). Finer than the role: the role says who lives there, the function what the room looks like.
     pub function: Option<String>,
+    /// Icebreaker F.14 : the furniture placed by hand (`@meuble:`) and the models it lacks (`@manque:`). A room
+    /// with furniture gets no decor drawn by its role.
+    pub furniture: Vec<Furniture>,
+    pub missing: Vec<Missing>,
     pub plan: Plan,
     pub connectors: Vec<Connector>,
 }
@@ -125,6 +230,8 @@ impl RoomTemplate {
         let mut themes = Vec::new();
         let mut weight = 1.0;
         let mut function = None;
+        let mut furniture = Vec::new();
+        let mut missing = Vec::new();
         for (i, line) in text.lines().enumerate() {
             let Some(setting) = line.strip_prefix('@') else {
                 continue;
@@ -143,6 +250,14 @@ impl RoomTemplate {
                 "boss" => bosses.extend(names.map(String::from)),
                 "theme" => themes.extend(names.map(|n| n.to_lowercase())),
                 "fonction" => function = Some(value.trim().to_lowercase()).filter(|f| !f.is_empty()),
+                "meuble" => match parse_furniture(value) {
+                    Ok(f) => furniture.push((i + 1, f)),
+                    Err(e) => errors.push(format!("ligne {} : « @meuble » : {e}", i + 1)),
+                },
+                "manque" => match parse_missing(value) {
+                    Ok(m) => missing.push(m),
+                    Err(e) => errors.push(format!("ligne {} : « @manque » : {e}", i + 1)),
+                },
                 "poids" => match value.trim().parse::<f64>() {
                     Ok(w) if w > 0.0 => weight = w,
                     _ => errors.push(format!("ligne {} : « @poids » doit être un nombre positif", i + 1)),
@@ -162,7 +277,20 @@ impl RoomTemplate {
         }
 
         let plan = Plan::parse(text).map_err(|e| format!("salle « {id} » : {e}"))?;
-        Self::from_plan(id, roles, bosses, errors, plan).map(|room| Self { themes, weight, function, ..room })
+        for (line, f) in &furniture {
+            if let Some(e) = furniture_error(&plan, f.pos) {
+                errors.push(format!("ligne {line} : « @meuble {} » {e}", f.sprite));
+            }
+        }
+        let furniture = furniture.into_iter().map(|(_, f)| f).collect();
+        Self::from_plan(id, roles, bosses, errors, plan).map(|room| Self {
+            themes,
+            weight,
+            function,
+            furniture,
+            missing,
+            ..room
+        })
     }
 
     /// Checks a plan and finds its connectors (`errors`: those of the header,
@@ -267,6 +395,8 @@ impl RoomTemplate {
             themes: Vec::new(),
             weight: 1.0,
             function: None,
+            furniture: Vec::new(),
+            missing: Vec::new(),
             plan,
             connectors,
         })
@@ -294,6 +424,33 @@ impl RoomTemplate {
             .iter()
             .map(|(c, s)| (Cell::new(c.x - min_x, c.y - min_y, c.level), *s))
             .collect();
+        // Icebreaker F.14 : the furniture turns with the room, in blocks; a mirror turns a model the other way
+        // and flips it, a quarter turn adds two eighths.
+        let mut furniture = self.furniture.clone();
+        let mut missing = self.missing.clone();
+        if orientation >= 4 {
+            let blocks = width * FURNITURE_CELL;
+            for f in &mut furniture {
+                f.pos.0 = blocks - 1 - f.pos.0;
+                f.ori = (8 - f.ori) % 8;
+                f.mirror = !f.mirror;
+            }
+            for m in &mut missing {
+                m.pos.0 = blocks - m.pos.0 - m.size.0;
+            }
+        }
+        for turn in 0..orientation % 4 {
+            // The depth of the room before this turn.
+            let blocks = (if turn % 2 == 0 { depth } else { width }) * FURNITURE_CELL;
+            for f in &mut furniture {
+                f.pos = (blocks - 1 - f.pos.1, f.pos.0, f.pos.2);
+                f.ori = (f.ori + 2) % 8;
+            }
+            for m in &mut missing {
+                m.pos = (blocks - m.pos.1 - m.size.1, m.pos.0, m.pos.2);
+                m.size = (m.size.1, m.size.0, m.size.2);
+            }
+        }
         if orientation >= 4 {
             for (c, s) in &mut cells {
                 c.x = width - 1 - c.x;
@@ -324,6 +481,8 @@ impl RoomTemplate {
             themes: self.themes.clone(),
             weight: self.weight,
             function: self.function.clone(),
+            furniture,
+            missing,
             ..room
         })
     }
@@ -472,6 +631,65 @@ mod tests {
         assert!(e.contains("@poids"), "{e}");
         let catalog = RoomCatalog::load().unwrap();
         assert!(catalog.themes().len() >= 3, "{:?}", catalog.themes());
+    }
+
+    const FURNISHED: &str = "@roles: hall\n@meuble: Barrel 8 7 0 2\n@meuble: BenchWoodEnd 12 9 1 3 miroir\n@manque: \
+                             \"trône\" 14 10 0 3 2 5\n#####\n+...+\n#...#\n#####\n";
+
+    /// Icebreaker F.14 : the furniture placed by hand is read, and what is wrong with it is said.
+    #[test]
+    fn furniture_is_read_and_checked() {
+        let settings = super::super::Settings::load().unwrap();
+        assert_eq!((settings.render.cell_size, settings.render.level_height), (FURNITURE_CELL, FURNITURE_LEVEL));
+        let room = RoomTemplate::parse("x", FURNISHED).unwrap();
+        assert_eq!(room.furniture, [
+            Furniture { sprite: "Barrel".into(), pos: (8, 7, 0), ori: 2, mirror: false },
+            Furniture { sprite: "BenchWoodEnd".into(), pos: (12, 9, 1), ori: 3, mirror: true },
+        ]);
+        assert_eq!(room.missing, [Missing { label: "trône".into(), pos: (14, 10, 0), size: (3, 2, 5) }]);
+        let wrong = |line: &str| {
+            RoomTemplate::parse("x", &format!("@roles: hall\n{line}\n#####\n+.b.+\n#...#\n#####\n")).unwrap_err()
+        };
+        assert!(wrong("@meuble: Tonneau 8 7 0 0").contains("sprite inconnu"));
+        assert!(wrong("@meuble: Barrel 8 7 0 9").contains("de 0 à 7"));
+        assert!(wrong("@meuble: Barrel 3 7 0 0").contains("hors du sol"));
+        assert!(wrong("@meuble: Barrel 8 7 6 0").contains("plafond"));
+        assert!(wrong("@meuble: Barrel 17 10 0 0").contains("case prise"), "au milieu de la case de la brute");
+        assert!(wrong("@meuble: Barrel 10 10 0 0").contains("devant une porte"));
+        assert!(wrong("@manque: trône 1 1 0 1 1 1").contains("guillemets"));
+    }
+
+    /// Icebreaker F.14 : the furniture turns with its room: it stays on the floor in every orientation, four
+    /// quarter turns and two mirrors give the room back, and a piece against a wall still faces the room.
+    #[test]
+    fn furniture_turns_with_the_room() {
+        let room = RoomTemplate::parse("x", FURNISHED).unwrap();
+        for orientation in 0..8 {
+            let turned = room.oriented(orientation).unwrap();
+            for f in &turned.furniture {
+                assert_eq!(furniture_error(&turned.plan, f.pos), None, "orientation {orientation} : {f:?}");
+            }
+        }
+        let mut turned = room.clone();
+        for _ in 0..4 {
+            turned = turned.oriented(1).unwrap();
+        }
+        assert_eq!((&turned.furniture, &turned.missing), (&room.furniture, &room.missing));
+        let mirrored = room.oriented(4).unwrap().oriented(4).unwrap();
+        assert_eq!((&mirrored.furniture, &mirrored.missing), (&room.furniture, &room.missing));
+        // The barrel is on the first row of blocks of the room, facing +y (ori 2): after a quarter turn it is
+        // on the last column, facing -x (ori 4).
+        let quarter = room.oriented(1).unwrap();
+        assert_eq!(quarter.furniture[0], Furniture { sprite: "Barrel".into(), pos: (4 * 7 - 1 - 7, 8, 0), ori: 4, mirror: false });
+        let flipped = room.oriented(4).unwrap();
+        assert_eq!(flipped.furniture[1], Furniture { sprite: "BenchWoodEnd".into(), pos: (5 * 7 - 1 - 12, 9, 1), ori: 5, mirror: false });
+        assert_eq!(flipped.missing[0].pos, (5 * 7 - 14 - 3, 10, 0));
+        // The rooms of the game, in every orientation.
+        for room in RoomCatalog::load().unwrap().with_orientations(8).unwrap().rooms {
+            for f in &room.furniture {
+                assert_eq!(furniture_error(&room.plan, f.pos), None, "{} : {f:?}", room.id);
+            }
+        }
     }
 
     /// Icebreaker : the decor drawn in the rooms never blocks a door or stairs, and a wall piece has its wall.
