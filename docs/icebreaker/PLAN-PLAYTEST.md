@@ -4,7 +4,7 @@
 On code chantier par chantier, avec son accord.* Ce que le jeu doit
 avoir avant d'inviter tous les potes à tester. Ce fichier reprend chaque point de la liste, dit ce qui existe déjà,
 propose des tâches ; restent ouvertes dans `QUESTIONS.md` : Q58 (le tableau des âmes) et Q61 (le craft). Les règles des âmes sont dans
-`design/ames.md`.
+`design/ames.md`. Sur le wiki : page « Feuille de route » (W.18).
 
 Les tâches gardent la lettre de leur jalon (F donjon généré, U grottes, B boucles, E donjon à jouer, L combat, X
 interface du village) et se cochent ici ; les âmes ouvrent le jalon **AM**.

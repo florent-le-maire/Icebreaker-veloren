@@ -88,6 +88,9 @@ CSS maison, pas de framework ; fonctionne sans JS sauf recherche et repli.
 - [x] **W.17 Compétences** — rubrique de dix pages (vue d'ensemble, six armes à arbre, autres armes, créatures et PNJ,
   instruments et objets) lue dans le manifeste des compétences de Veloren : 606 compétences, touche, condition, déblocage,
   type, chiffres, porteurs, classe d'Icebreaker ; vu en capture Edge seulement. 0572361690
+- [x] **W.18 Feuille de route** — page des Repères rendue depuis `PLAN-PLAYTEST.md` : chantiers d'avant playtest,
+  jauge et état de chacun, ses tâches, ce qui le retient ; tuile sur le tableau de bord ; vu en capture Edge, pas dans
+  un vrai navigateur. 6446391d7e
 
 Hors périmètre pour l'instant : accès public, édition dans le navigateur (sauf questions et todos en local, W.12 et
 W.13), mise à jour automatique à chaque push, historique des valeurs des réglages dans le temps (`IDEES.md`).

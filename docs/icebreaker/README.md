@@ -58,7 +58,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | M | Mod Veloren | `PLAN-MOD.md` | M.1 fait ; la suite après la démo | `Veloren-mod` |
 | T | À terre, mort et sac du mort | `PLAN.md` | T.1 à T.6 faits, à voir en jeu | `Veloren-mort` |
 | J | Balise lumineuse | `HISTORIQUE.md` | fait, vu en jeu | — (supprimé) |
-| W | Wiki de l'équipe | `PLAN-WIKI.md` | W.1 à W.6 et W.8 à W.17 faits ; W.7 (VPS) à lancer | `Veloren-wiki` |
+| W | Wiki de l'équipe | `PLAN-WIKI.md` | W.1 à W.6 et W.8 à W.18 faits ; W.7 (VPS) à lancer | `Veloren-wiki` |
 | N | Interface Icebreaker | `HISTORIQUE.md` (charte et règles : `PLAN-INTERFACE.md`) | fait, vu en jeu | — (supprimé) |
 | Y | Une identité par race ennemie | `PLAN.md` | Y.1 à Y.3 et Y.9 codés (2026-11-14) ; Y.4 à Y.8 restent | — (supprimé) |
 | A | Armes, classes et compétences | `PLAN-CLASSES.md` | codé le 2026-11-11 pour les trois classes, ultimes refaits le 2026-11-15 (A.19 à A.23) ; reste l'avis sur les maquettes (A.2) et l'essai dans le vrai client | `Veloren-classes` |
