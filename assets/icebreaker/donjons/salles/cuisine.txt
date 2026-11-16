@@ -18,33 +18,33 @@
 @meuble: JugClayM 34 7 0 2
 @meuble: JugClayM 35 7 0 2
 @meuble: BasketWovenM 37 7 0 2
+@meuble: Shelf 55 12 0 4
+@meuble: Shelf 55 13 0 4
 @meuble: CookingPot 28 19 0 0
 @meuble: CookingPot 32 19 0 0
 @meuble: BucketWoodM 30 21 0 0
-@meuble: DiningtableWoodWoodlandRound 18 27 0 0
-@meuble: ChairWoodWoodland 17 27 0 0
-@meuble: ChairWoodWoodland 19 27 0 4
 @meuble: ChairWoodWoodland 18 26 0 2
-@meuble: ChairWoodWoodland 18 28 0 6
-@meuble: DiningtableWoodWoodlandRound 40 27 0 0
-@meuble: ChairWoodWoodland 39 27 0 0
-@meuble: ChairWoodWoodland 41 27 0 4
 @meuble: ChairWoodWoodland 40 26 0 2
+@meuble: ChairWoodWoodland 17 27 0 0
+@meuble: DiningtableWoodWoodlandRound 18 27 0 0
+@meuble: ChairWoodWoodland 19 27 0 4
+@meuble: ChairWoodWoodland 39 27 0 0
+@meuble: DiningtableWoodWoodlandRound 40 27 0 0
+@meuble: ChairWoodWoodland 41 27 0 4
+@meuble: ChairWoodWoodland 18 28 0 6
 @meuble: ChairWoodWoodland 40 28 0 6
 @meuble: Cauldron 7 34 0 0
+@meuble: BarrelWoodWater 55 34 0 4
 @meuble: SackLeatherM 9 41 0 6
 @meuble: SackLeatherM 10 41 0 6
 @meuble: CrateBlock 12 41 0 6
 @meuble: CrateBlock 13 41 0 6
-@meuble: CrateBlock 13 41 1 6
 @meuble: Barrel 15 41 0 6
 @meuble: BasketWovenM 40 41 0 6
 @meuble: JugClayM 42 41 0 6
 @meuble: SackLeatherM 44 41 0 6
-@meuble: Shelf 55 12 0 4
-@meuble: Shelf 55 13 0 4
 @meuble: CarpenterToolsWall 55 16 1 4
-@meuble: BarrelWoodWater 55 34 0 4
+@meuble: CrateBlock 13 41 1 6
 @manque: "billot de boucher" 24 30 0 2 1 2
 #######+#
 #.......#
