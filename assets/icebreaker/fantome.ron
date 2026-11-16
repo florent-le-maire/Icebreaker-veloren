@@ -1,0 +1,16 @@
+// Icebreaker : le fantôme du village (jalon FT, décision 0021). Au village, un joueur sans personnage a
+// un corps : un fantôme bleu un peu transparent, qui marche, saute haut et retombe lentement.
+// Lu une fois au lancement (client et serveur) : relancer pour voir un changement.
+(
+    // Part des pixels du fantôme qui sont dessinés (0 : invisible, 1 : opaque). Le décor se voit dans
+    // les pixels qui manquent.
+    opacite: 0.6,
+    // Part de la gravité qui s'applique au fantôme (1 : comme tout le monde).
+    gravite: 0.35,
+    // Vitesse de chute au plus, en blocs par seconde (un humain dépasse 30).
+    chute_max: 5.0,
+    // Élan du saut, en multiple de celui d'un humain.
+    saut: 1.0,
+    // Accélération au sol (un humain : 100).
+    acceleration: 80.0,
+)

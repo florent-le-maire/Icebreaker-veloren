@@ -8574,6 +8574,12 @@ impl<S: Skeleton, D: FigureData> FigureState<S, D> {
             self.last_light,
             self.last_glow,
         );
+        // Icebreaker FT.2 : le fantôme du village est un peu transparent.
+        let locals = if body.as_ref().is_some_and(common::icebreaker_fantome::est_fantome) {
+            locals.icebreaker_opacite(common::icebreaker_fantome::config().opacite)
+        } else {
+            locals
+        };
         renderer.update_consts(&mut self.meta.bound.0, &[locals]);
 
         self.computed_skeleton = anim::compute_matrices(&self.skeleton, mat, buf, skel_body);

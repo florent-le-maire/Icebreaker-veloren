@@ -134,6 +134,8 @@ impl Body {
                 biped_small::Species::Gnarling => 70.0,
                 _ => 80.0,
             },
+            // Icebreaker FT.3 : le fantôme du village se déplace.
+            Body::Object(object::Body::IcebreakerFantome) => crate::icebreaker_fantome::config().acceleration,
             Body::Object(_) => 0.0,
             Body::Item(_) => 0.0,
             Body::Golem(body) => match body.species {
@@ -370,6 +372,10 @@ impl Body {
     /// Returns jump impulse if the body type can jump, otherwise None
     pub fn jump_impulse(&self) -> Option<f32> {
         match self {
+            // Icebreaker FT.3 : le fantôme du village saute (0,4 : l'élan d'un humain).
+            Body::Object(object::Body::IcebreakerFantome) => {
+                Some(0.4 * crate::icebreaker_fantome::config().saut * self.mass().0)
+            },
             Body::Object(_) | Body::Ship(_) | Body::Item(_) => None,
             Body::BipedLarge(_) | Body::Dragon(_) => Some(0.6 * self.mass().0),
             Body::Golem(_) | Body::QuadrupedLow(_) => Some(0.4 * self.mass().0),

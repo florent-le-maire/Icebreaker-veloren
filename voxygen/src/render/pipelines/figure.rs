@@ -51,6 +51,13 @@ impl Locals {
             flags,
         }
     }
+
+    /// Icebreaker FT.2 : la figure n'est dessinée qu'en partie (`opacite` de 0 à 1), en tramage : le
+    /// décor se voit au travers. Rangé dans les bits 8 à 15 de `flags` (0 : opaque).
+    pub fn icebreaker_opacite(mut self, opacite: f32) -> Self {
+        self.flags |= ((opacite.clamp(0.0, 1.0) * 255.0) as u32).max(1) << 8;
+        self
+    }
 }
 
 impl Default for Locals {

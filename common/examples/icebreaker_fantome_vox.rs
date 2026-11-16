@@ -16,21 +16,21 @@ const HAUTEUR: i32 = 21;
 /// Hauteur des épaules : au-dessus, la tête en dôme ; au-dessous, le drapé.
 const EPAULES: f32 = 14.0;
 
-// Indices de palette (dans le fichier : indice + 1). Veloren lit 13 à 15 comme « lumineux » et
-// 8 à 21 comme matières spéciales : le drapé reste au-dessus.
+// Indices de palette (dans le fichier : indice + 1). Veloren lit 8 à 21 comme des matières spéciales
+// (brillant, lumineux…) : tout reste au-dessus. Des yeux lumineux éblouissent : ils sont sombres.
 const DRAPE: u8 = 30; // 30 (haut, clair) à 35 (bas, soutenu)
-const YEUX: u8 = 14;
+const YEUX: u8 = 41;
 const BOUCHE: u8 = 40;
 
 fn couleur(indice: u8) -> Option<[u8; 3]> {
     match indice {
-        30 => Some([198, 230, 255]),
-        31 => Some([176, 216, 255]),
-        32 => Some([152, 200, 252]),
-        33 => Some([128, 182, 246]),
-        34 => Some([106, 164, 238]),
-        35 => Some([86, 144, 228]),
-        YEUX => Some([210, 245, 255]),
+        30 => Some([150, 205, 255]),
+        31 => Some([130, 190, 252]),
+        32 => Some([110, 174, 248]),
+        33 => Some([92, 158, 242]),
+        34 => Some([76, 142, 234]),
+        35 => Some([62, 126, 226]),
+        YEUX => Some([24, 40, 96]),
         BOUCHE => Some([32, 54, 120]),
         _ => None,
     }

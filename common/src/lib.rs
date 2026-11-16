@@ -30,6 +30,8 @@ pub mod icebreaker_competences;
 pub mod icebreaker_races;
 // Icebreaker : le lieu d'entraînement (jalon O).
 pub mod icebreaker_arene;
+// Icebreaker : le fantôme du village (jalon FT).
+pub mod icebreaker_fantome;
 pub mod comp;
 pub mod consts;
 pub mod resources;

@@ -50,6 +50,7 @@ uniform u_locals {
     vec3 model_pos;
     // bit 0 - is player
     // bit 1-31 - unused
+    // Icebreaker FT.2 : bits 8-15 - opacité de la figure (0 : opaque, sinon 1 à 255)
     int flags;
 };
 
@@ -67,6 +68,22 @@ layout(location = 0) out vec4 tgt_color;
 layout(location = 1) out uvec4 tgt_mat;
 
 void main() {
+    // Icebreaker FT.2 : une figure un peu transparente (le fantôme du village) n'est dessinée qu'en
+    // partie, en tramage 4x4 : le décor se voit dans les pixels écartés.
+    int icebreaker_opacite = (flags >> 8) & 255;
+    if (icebreaker_opacite > 0) {
+        const float icebreaker_trame[16] = float[16](
+            1.0, 9.0, 3.0, 11.0,
+            13.0, 5.0, 15.0, 7.0,
+            4.0, 12.0, 2.0, 10.0,
+            16.0, 8.0, 14.0, 6.0
+        );
+        ivec2 icebreaker_pixel = ivec2(gl_FragCoord.xy) & 3;
+        if (float(icebreaker_opacite) / 255.0 < icebreaker_trame[icebreaker_pixel.y * 4 + icebreaker_pixel.x] / 17.0) {
+            discard;
+        }
+    }
+
     #ifdef EXPERIMENTAL_DISCARDTRANSPARENCY
     if ((flags & 1) == 1) {
         if (int(cam_mode) == 1) {

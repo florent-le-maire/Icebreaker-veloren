@@ -762,9 +762,11 @@ impl PhysicsData<'_> {
                         // to lag (as observed in the 0.9 release party).
                         let dt = DeltaTime(read.dt.0.min(0.1));
 
+                        // Icebreaker FT.3 : le fantôme du village plane (gravité réduite, chute plafonnée).
+                        let gravite = common::icebreaker_fantome::gravite(body, GRAVITY);
                         match physics_state.in_fluid {
                             None => {
-                                vel.0.z -= dt.0 * GRAVITY;
+                                vel.0.z -= dt.0 * gravite;
                             },
                             Some(fluid) => {
                                 let wings = match character_state {
@@ -788,12 +790,13 @@ impl PhysicsData<'_> {
                                     density,
                                     mass,
                                     &fluid,
-                                    GRAVITY,
+                                    gravite,
                                     scale.copied(),
                                 )
                                 .0
                             },
                         }
+                        vel.0.z = common::icebreaker_fantome::chute(body, vel.0.z);
                     }
                 },
             );
