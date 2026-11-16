@@ -21,6 +21,10 @@ struct Room {
     id: String,
     /// `@fonction:` : identifiant d'une pièce du catalogue.
     function: Option<String>,
+    /// Meubles posés au bloc près (`@meuble:`, F.14) : combien.
+    furniture: usize,
+    /// Modèles demandés par un bloc « ? » de l'atelier (`@manque:`) : libellé, taille « l × p × h ».
+    missing: Vec<(String, String)>,
     description: String,
     roles: Vec<String>,
     themes: Vec<String>,
@@ -248,6 +252,8 @@ fn read_room(id: &str, text: &str, symbols: &BTreeMap<char, Symbol>) -> Room {
     let mut room = Room {
         id: id.to_string(),
         function: None,
+        furniture: 0,
+        missing: Vec::new(),
         description: String::new(),
         roles: Vec::new(),
         themes: Vec::new(),
@@ -278,6 +284,15 @@ fn read_room(id: &str, text: &str, symbols: &BTreeMap<char, Symbol>) -> Room {
                 "theme" => room.themes = list(value),
                 "boss" => room.bosses = list(value),
                 "fonction" => room.function = Some(value.trim().to_lowercase()).filter(|f| !f.is_empty()),
+                "meuble" => room.furniture += 1,
+                // `"trône" x y z l p h`
+                "manque" => {
+                    let mut parts = value.trim().trim_start_matches('"').splitn(2, '"');
+                    let label = parts.next().unwrap_or("?").trim().to_string();
+                    let numbers: Vec<&str> = parts.next().unwrap_or("").split_whitespace().collect();
+                    let size = numbers.get(3..6).map_or(String::new(), |s| s.join(" × "));
+                    room.missing.push((label, size));
+                },
                 _ => {},
             }
         } else if let Some(header) = line.strip_prefix('[') {
@@ -362,6 +377,12 @@ fn card(room: &Room, symbols: &BTreeMap<char, Symbol>, pieces: &Pieces) -> Strin
     }
     if !inside.is_empty() {
         text.push_str(&format!("\nDedans : {}\n", inside.join(", ")));
+    }
+    if room.furniture > 0 {
+        text.push_str(&format!("\nMeublée à l'atelier : {} meuble(s) posés au bloc près (non dessinés ici)\n", room.furniture));
+    }
+    for (label, size) in &room.missing {
+        text.push_str(&format!("Modèle qui manque : {label} ({size} blocs)\n"));
     }
     if !room.decor.is_empty() {
         let decor: Vec<String> = room
@@ -489,7 +510,7 @@ fn write_workbook(rooms: &[Room], symbols: &BTreeMap<char, Symbol>, pieces: &Pie
     pieces_table(pieces_sheet, pieces, rooms, &head, &cell, &feedback)?;
     let models_sheet = book.add_worksheet();
     models_sheet.set_name("Modèles")?;
-    models_table(models_sheet, pieces, &head, &cell, &feedback)?;
+    models_table(models_sheet, pieces, rooms, &head, &cell, &feedback)?;
 
     let legend_sheet = book.add_worksheet();
     legend_sheet.set_name("Légende")?;
@@ -601,7 +622,14 @@ fn pieces_table(
 }
 
 /// Feuille « Modèles » : les modèles voxel à créer, par lot, avec les pièces qui les demandent.
-fn models_table(sheet: &mut Worksheet, pieces: &Pieces, head: &Format, cell: &Format, feedback: &Format) -> Result<()> {
+fn models_table(
+    sheet: &mut Worksheet,
+    pieces: &Pieces,
+    rooms: &[Room],
+    head: &Format,
+    cell: &Format,
+    feedback: &Format,
+) -> Result<()> {
     let columns =
         [("Lot", 6.0), ("Modèle", 24.0), ("L'idée", 70.0), ("Pour quelles pièces", 44.0), ("Retours (à remplir)", 50.0)];
     for (c, (label, width)) in columns.iter().enumerate() {
@@ -622,6 +650,20 @@ fn models_table(sheet: &mut Worksheet, pieces: &Pieces, head: &Format, cell: &Fo
         sheet.write_string_with_format(r, 2, &model.idee, cell)?;
         sheet.write_string_with_format(r, 3, wanted.join(", "), cell)?;
         sheet.write_string_with_format(r, 4, "", feedback)?;
+    }
+    // Icebreaker F.17 : ce que l'équipe a demandé dans l'atelier, par un bloc « ? » posé dans une salle.
+    let mut r = models.len() as u32 + 2;
+    sheet.write_string_with_format(r, 1, "Demandé dans l'atelier", head)?;
+    sheet.write_string_with_format(r, 2, "Taille voulue (largeur × profondeur × hauteur, en blocs)", head)?;
+    sheet.write_string_with_format(r, 3, "Dans la salle", head)?;
+    for room in rooms {
+        for (label, size) in &room.missing {
+            r += 1;
+            sheet.write_string_with_format(r, 1, label, cell)?;
+            sheet.write_string_with_format(r, 2, size, cell)?;
+            sheet.write_string_with_format(r, 3, title(&room.id), cell)?;
+            sheet.write_string_with_format(r, 4, "", feedback)?;
+        }
     }
     Ok(())
 }

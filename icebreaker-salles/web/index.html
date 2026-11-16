@@ -1,0 +1,938 @@
+<!doctype html>
+<!-- Icebreaker : l'atelier des salles (docs/icebreaker/PLAN-PLAYTEST.md, F.15 à F.17). Ouvert par
+     `.\icebreaker.ps1 salles`, qui lance le serveur icebreaker-salles (bin atelier-salles) : il donne à cette page
+     les objets de Veloren et leurs modèles, les salles et le catalogue des pièces, et enregistre une salle.
+     La 3D vient de three.js, chargé depuis jsdelivr (il faut être en ligne). -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier des salles</title>
+<style>
+  :root {
+    --fond: #14171c; --panneau: #1c2027; --bord: #2c323c; --texte: #e6e8ec; --discret: #9aa3b0;
+    --accent: #f0be46; --alerte: #ff6b5e; --bon: #5fd16a;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; background: var(--fond); color: var(--texte); font: 14px/1.4 system-ui, "Segoe UI", sans-serif; overflow: hidden; }
+  aside { width: 310px; flex: none; overflow-y: auto; background: var(--panneau); padding: 12px 12px 24px; }
+  #fiche { border-right: 1px solid var(--bord); }
+  #palette { border-left: 1px solid var(--bord); display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+  h1 { font-size: 17px; margin: 0 0 2px; }
+  h2 { font-size: 13px; margin: 14px 0 6px; color: var(--discret); text-transform: uppercase; letter-spacing: .04em; }
+  .sous-titre { color: var(--discret); margin: 0 0 10px; font-size: 12.5px; }
+  .ligne { display: flex; gap: 6px; align-items: center; margin-bottom: 7px; }
+  .ligne > label { flex: none; width: 70px; color: var(--discret); }
+  input[type=number], input[type=text], input[type=search], select, textarea, button {
+    background: var(--fond); color: var(--texte); border: 1px solid var(--bord); border-radius: 6px; padding: 5px 8px; font: inherit;
+  }
+  input[type=number], input[type=text], input[type=search], select, textarea { flex: 1; min-width: 0; }
+  textarea { width: 100%; resize: vertical; min-height: 54px; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; border-color: var(--bord); }
+  button.principal { background: var(--accent); color: #1b1505; border-color: var(--accent); font-weight: 600; }
+  button.actif { border-color: var(--accent); color: var(--accent); }
+  #roles { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; margin-bottom: 8px; font-size: 12.5px; }
+  #roles label { display: flex; gap: 5px; align-items: center; }
+  #message { min-height: 1.3em; font-size: 12.5px; margin: 6px 0; white-space: pre-wrap; }
+  #message.erreur { color: var(--alerte); }
+  #message.bon { color: var(--bon); }
+  #scene { flex: 1; position: relative; min-width: 0; }
+  canvas#toile { display: block; width: 100%; height: 100%; }
+  .barre { position: absolute; display: flex; gap: 6px; align-items: center; background: #1c2027e6; border: 1px solid var(--bord); border-radius: 8px; padding: 6px 8px; }
+  #outils { top: 10px; left: 10px; flex-wrap: wrap; max-width: calc(100% - 20px); }
+  #outils .sep { width: 1px; align-self: stretch; background: var(--bord); margin: 0 2px; }
+  #options { top: 58px; left: 10px; flex-wrap: wrap; font-size: 12.5px; max-width: calc(100% - 20px); }
+  #options input[type=number] { width: 52px; flex: none; padding: 3px 5px; }
+  #options input[type=text] { width: 150px; flex: none; padding: 3px 6px; }
+  #options select { flex: none; padding: 3px 6px; }
+  #etat { left: 10px; right: 10px; bottom: 10px; display: block; font-size: 12.5px; }
+  #etat b { color: var(--accent); font-weight: 600; }
+  #aide { color: var(--discret); }
+  #erreur { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; padding: 30px; text-align: center; color: var(--alerte); }
+  #liste { flex: 1; overflow-y: auto; margin: 6px -12px 0; padding: 0 8px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; align-content: start; }
+  .objet { border: 1px solid var(--bord); border-radius: 6px; padding: 3px 2px 4px; text-align: center; cursor: pointer; background: var(--fond); min-width: 0; }
+  .objet:hover, .objet.choisi { border-color: var(--accent); }
+  .objet canvas { width: 64px; height: 64px; display: block; margin: 0 auto; }
+  .objet span { display: block; font-size: 10.5px; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .objet span.fr { color: var(--accent); }
+  #choix { font-size: 12.5px; min-height: 2.6em; margin: 6px 0 0; }
+  #choix b { color: var(--accent); }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<aside id="fiche">
+  <h1>Atelier des salles</h1>
+  <p class="sous-titre">Les murs par cases de 7 blocs, les meubles au bloc près. Ce qui est enregistré ici sort dans les donjons générés.</p>
+  <div class="ligne"><label for="salles">Salle</label><select id="salles"></select></div>
+  <div class="ligne"><button id="nouvelle" style="flex:1">Nouvelle</button><button id="dupliquer" style="flex:1">Dupliquer</button><button id="supprimer">Supprimer</button></div>
+  <div class="ligne"><button id="enregistrer" class="principal" style="flex:1" title="Contrôle la salle comme le jeu, écrit son fichier et le committe">Enregistrer</button></div>
+  <p id="message"></p>
+  <h2>Fiche</h2>
+  <div class="ligne"><label for="id">Nom</label><input id="id" type="text" maxlength="40" placeholder="a-z, 0-9 et _"></div>
+  <div class="ligne"><label for="fonction" title="Ce qu'on reconnaît en entrant (catalogue des pièces)">Pièce</label><select id="fonction"></select></div>
+  <p id="idee" class="sous-titre"></p>
+  <label class="sous-titre" title="Où le générateur peut mettre cette salle, et qui y vit">Sert de</label>
+  <div id="roles"></div>
+  <div class="ligne"><label for="themes" title="Styles de donjon, séparés par des virgules ; vide : va partout">Styles</label><input id="themes" type="text" placeholder="militaire, culte, bestial, artisan"></div>
+  <div class="ligne"><label for="poids" title="Chance d'être tirée, 1 par défaut">Poids</label><input id="poids" type="number" min="0.1" step="0.1" value="1"></div>
+  <div class="ligne" id="ligne-boss"><label for="boss">Boss</label><input id="boss" type="text" placeholder="orcchief"></div>
+  <label class="sous-titre" for="description">Description</label>
+  <textarea id="description" rows="3"></textarea>
+  <h2>Plan</h2>
+  <div class="ligne"><label>Agrandir</label><button data-rangee="n" title="Une rangée de cases au nord">N</button><button data-rangee="s">S</button><button data-rangee="o">O</button><button data-rangee="e">E</button></div>
+  <p class="sous-titre" id="mesures"></p>
+  <h2>Modèles qui manquent ici</h2>
+  <p class="sous-titre" id="manques">Aucun bloc « ? » dans cette salle.</p>
+</aside>
+<main id="scene">
+  <canvas id="toile"></canvas>
+  <div id="outils" class="barre">
+    <button data-outil="poser" title="Poser l'objet choisi (1)">Poser</button>
+    <button data-outil="choisir" title="Sélectionner, déplacer (2)">Sélectionner</button>
+    <button data-outil="cases" title="Peindre les cases du plan (3)">Cases</button>
+    <button data-outil="manque" title="Bloc « ? » : un modèle qui manque (4)">Bloc ?</button>
+    <span class="sep"></span>
+    <button id="annuler" title="Ctrl+Z">Annuler</button><button id="refaire" title="Ctrl+Y">Refaire</button>
+    <span class="sep"></span>
+    <button data-vue="perspective">Perspective</button><button data-vue="dessus">Dessus</button>
+    <label title="Des murs d'un bloc pour voir dedans ; décocher pour poser contre un mur, en hauteur"><input id="murs-bas" type="checkbox" checked> Murs bas</label>
+    <label>Étage <select id="etage"></select></label>
+  </div>
+  <div id="options" class="barre"></div>
+  <div id="etat" class="barre"><span id="lieu"></span> <span id="aide"></span></div>
+  <div id="erreur"></div>
+</main>
+<aside id="palette">
+  <h1>Objets de Veloren</h1>
+  <div class="ligne" style="margin-top:8px"><input id="recherche" type="search" placeholder="Chercher : tonneau, table, bed…"></div>
+  <div class="ligne"><select id="categorie"></select></div>
+  <label class="sous-titre"><input id="attendus" type="checkbox"> Attendus dans cette pièce</label>
+  <p id="choix"></p>
+  <div id="liste"></div>
+</aside>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const erreur = (texte) => { $('erreur').style.display = 'flex'; $('erreur').textContent = texte; };
+
+let THREE, OrbitControls;
+try {
+  THREE = await import('three');
+  ({ OrbitControls } = await import('three/addons/controls/OrbitControls.js'));
+} catch (e) {
+  erreur("three.js n'a pas pu être chargé (il faut être en ligne) : " + e.message);
+  throw e;
+}
+// Les couleurs des modèles et des blocs telles quelles, sans correction.
+THREE.ColorManagement.enabled = false;
+
+const lire = async (chemin) => {
+  const r = await fetch(chemin);
+  if (!r.ok) throw new Error(`${chemin} : ${await r.text()}`);
+  return r.json();
+};
+let OBJETS, PIECES, REGLAGES, SALLES;
+try {
+  [OBJETS, PIECES, REGLAGES, SALLES] = await Promise.all([lire('/objets'), lire('/pieces'), lire('/reglages'), lire('/salles')]);
+} catch (e) {
+  erreur("Le serveur de l'atelier ne répond pas : lancer .\\icebreaker.ps1 salles depuis la racine du dépôt. (" + e.message + ')');
+  throw e;
+}
+const C = REGLAGES.case, H = REGLAGES.etage;
+const PAR_NOM = new Map(OBJETS.map((o) => [o.nom, o]));
+
+// ---------------------------------------------------------------------------------------------------------
+// Le fichier d'une salle : en-têtes, plan par cases, meubles au bloc près (docs/icebreaker/design/donjon.md).
+// ---------------------------------------------------------------------------------------------------------
+function lireSalle(id, texte) {
+  const s = { id, description: [], roles: [], fonction: '', themes: '', poids: 1, boss: '', autres: [], etages: [], meubles: [], manques: [] };
+  const liste = (v) => v.split(',').map((x) => x.trim()).filter(Boolean);
+  for (const brute of texte.split('\n')) {
+    const ligne = brute.replace(/\r$/, '');
+    if (ligne.startsWith(';')) { s.description.push(ligne.slice(1).trim()); continue; }
+    if (ligne.startsWith('@')) {
+      const i = ligne.indexOf(':');
+      const cle = (i < 0 ? ligne.slice(1) : ligne.slice(1, i)).trim();
+      const valeur = i < 0 ? '' : ligne.slice(i + 1).trim();
+      if (cle === 'roles') s.roles = liste(valeur);
+      else if (cle === 'fonction') s.fonction = valeur.toLowerCase();
+      else if (cle === 'theme') s.themes = liste(valeur).join(', ');
+      else if (cle === 'poids') s.poids = parseFloat(valeur) || 1;
+      else if (cle === 'boss') s.boss = valeur;
+      else if (cle === 'meuble') {
+        const m = valeur.split(/\s+/);
+        s.meubles.push({ sprite: m[0], x: +m[1], y: +m[2], z: +m[3], ori: +m[4] || 0, miroir: m[5] === 'miroir' });
+      } else if (cle === 'manque') {
+        const m = valeur.match(/^"([^"]*)"\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
+        if (m) s.manques.push({ libelle: m[1], x: +m[2], y: +m[3], z: +m[4], l: +m[5], p: +m[6], h: +m[7] });
+      } else s.autres.push(ligne);
+      continue;
+    }
+    const section = ligne.match(/^\[\s*étage\s+(-?\d+)\s*\]/);
+    if (section) { s.etages.push({ n: +section[1], lignes: [] }); continue; }
+    if (!s.etages.length) { if (!ligne.trim()) continue; s.etages.push({ n: 0, lignes: [] }); }
+    s.etages[s.etages.length - 1].lignes.push(ligne);
+  }
+  for (const e of s.etages) while (e.lignes.length && !e.lignes[e.lignes.length - 1].trim()) e.lignes.pop();
+  if (!s.etages.length) s.etages.push({ n: 0, lignes: ['###', '+.+', '###'] });
+  s.description = s.description.join('\n');
+  return s;
+}
+
+// Largeur et profondeur du plan, en cases.
+const largeur = (s) => Math.max(1, ...s.etages.flatMap((e) => e.lignes.map((l) => l.length)));
+const profondeur = (s) => Math.max(1, ...s.etages.map((e) => e.lignes.length));
+const caseDe = (s, x, y, n) => {
+  const e = s.etages.find((e) => e.n === n);
+  return (e && e.lignes[y] && e.lignes[y][x]) || ' ';
+};
+function poserCase(s, x, y, n, symbole) {
+  let e = s.etages.find((e) => e.n === n);
+  if (!e) { e = { n, lignes: [] }; s.etages.push(e); }
+  while (e.lignes.length <= y) e.lignes.push('');
+  const ligne = e.lignes[y].padEnd(x + 1, ' ');
+  e.lignes[y] = ligne.slice(0, x) + symbole + ligne.slice(x + 1);
+}
+
+// Le plan calé sur son coin : les rangées et colonnes vides du nord et de l'ouest retirées, les meubles décalés
+// d'autant (leurs blocs se comptent depuis le coin du plan).
+function caler(s) {
+  const occupe = (l) => l.trim().length > 0;
+  let haut = Infinity, gauche = Infinity;
+  for (const e of s.etages) e.lignes.forEach((l, y) => {
+    if (!occupe(l)) return;
+    haut = Math.min(haut, y);
+    gauche = Math.min(gauche, l.search(/\S/));
+  });
+  if (!isFinite(haut)) return;
+  for (const e of s.etages) {
+    e.lignes = e.lignes.slice(haut).map((l) => l.slice(gauche).replace(/\s+$/, ''));
+    while (e.lignes.length && !e.lignes[e.lignes.length - 1]) e.lignes.pop();
+  }
+  s.etages = s.etages.filter((e) => e.lignes.some(occupe));
+  for (const m of [...s.meubles, ...s.manques]) { m.x -= gauche * C; m.y -= haut * C; }
+}
+
+function ecrireSalle(s) {
+  const lignes = [];
+  for (const d of s.description.split('\n').map((d) => d.trim()).filter(Boolean)) lignes.push(`; ${d}`);
+  lignes.push(`@roles: ${s.roles.join(', ')}`);
+  if (s.fonction) lignes.push(`@fonction: ${s.fonction}`);
+  if (s.themes.trim()) lignes.push(`@theme: ${s.themes.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean).join(', ')}`);
+  if (s.poids && s.poids !== 1) lignes.push(`@poids: ${s.poids}`);
+  if (s.boss.trim()) lignes.push(`@boss: ${s.boss.trim()}`);
+  lignes.push(...s.autres);
+  const ordre = (a, b) => a.z - b.z || a.y - b.y || a.x - b.x;
+  for (const m of [...s.meubles].sort(ordre)) lignes.push(`@meuble: ${m.sprite} ${m.x} ${m.y} ${m.z} ${m.ori}${m.miroir ? ' miroir' : ''}`);
+  for (const m of [...s.manques].sort(ordre)) lignes.push(`@manque: "${m.libelle.replace(/"/g, "'")}" ${m.x} ${m.y} ${m.z} ${m.l} ${m.p} ${m.h}`);
+  const seul = s.etages.length === 1 && s.etages[0].n === 0;
+  for (const e of s.etages) {
+    if (!seul) lignes.push(`[étage ${e.n}]`);
+    lignes.push(...e.lignes);
+  }
+  return lignes.join('\n') + '\n';
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Les modèles de Veloren : fichiers .vox (chunks SIZE, XYZI, RGBA), 11 voxels par bloc.
+// ---------------------------------------------------------------------------------------------------------
+function lireVox(tampon) {
+  const vue = new DataView(tampon);
+  const nom = (i) => String.fromCharCode(vue.getUint8(i), vue.getUint8(i + 1), vue.getUint8(i + 2), vue.getUint8(i + 3));
+  if (nom(0) !== 'VOX ') throw new Error('pas un fichier .vox');
+  let taille = null, voxels = null, palette = null;
+  let i = 8;
+  while (i + 12 <= vue.byteLength) {
+    const id = nom(i), contenu = vue.getUint32(i + 4, true);
+    const debut = i + 12;
+    if (id === 'MAIN') { i = debut + contenu; continue; }
+    if (id === 'SIZE' && !taille) taille = [vue.getUint32(debut, true), vue.getUint32(debut + 4, true), vue.getUint32(debut + 8, true)];
+    else if (id === 'XYZI' && !voxels) voxels = new Uint8Array(tampon, debut + 4, vue.getUint32(debut, true) * 4);
+    else if (id === 'RGBA') palette = new Uint8Array(tampon, debut, 1024);
+    i = debut + contenu + vue.getUint32(i + 8, true);
+  }
+  if (!taille || !voxels) throw new Error('modèle vide');
+  const [sx, sy, sz] = taille;
+  const grille = new Uint8Array(sx * sy * sz);
+  for (let k = 0; k < voxels.length; k += 4) grille[voxels[k] + sx * (voxels[k + 1] + sy * voxels[k + 2])] = voxels[k + 3];
+  return { sx, sy, sz, grille, palette };
+}
+
+const FACES = [
+  // direction, quatre coins (sens direct vu de dehors), ombre
+  [[1, 0, 0], [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]], 0.82],
+  [[-1, 0, 0], [[0, 1, 0], [0, 0, 0], [0, 0, 1], [0, 1, 1]], 0.7],
+  [[0, 1, 0], [[1, 1, 0], [0, 1, 0], [0, 1, 1], [1, 1, 1]], 0.76],
+  [[0, -1, 0], [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]], 0.88],
+  [[0, 0, 1], [[0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]], 1],
+  [[0, 0, -1], [[0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, 0]], 0.55],
+];
+
+// Un tas de faces : positions, couleurs, indices.
+class Tas {
+  constructor() { this.p = []; this.c = []; this.i = []; }
+  // La face `f` (une de FACES) de la boîte de coin `o` et de taille `t`, de couleur `rvb` (0 à 255).
+  face(f, o, t, rvb) {
+    const base = this.p.length / 3;
+    for (const coin of f[1]) {
+      this.p.push(o[0] + coin[0] * t[0], o[1] + coin[1] * t[1], o[2] + coin[2] * t[2]);
+      this.c.push(rvb[0] / 255 * f[2], rvb[1] / 255 * f[2], rvb[2] / 255 * f[2]);
+    }
+    this.i.push(base, base + 1, base + 2, base, base + 2, base + 3);
+  }
+  boite(o, t, rvb) { for (const f of FACES) this.face(f, o, t, rvb); }
+  geometrie() {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
+    g.setIndex(this.i);
+    g.computeBoundingBox();
+    g.computeBoundingSphere();
+    return g;
+  }
+}
+
+// Le maillage d'un modèle : ses faces visibles, en blocs, décalées comme le fait Voxygen (offset du manifeste).
+function maillerVox(vox, offset) {
+  const { sx, sy, sz, grille, palette } = vox;
+  const plein = (x, y, z) => x >= 0 && y >= 0 && z >= 0 && x < sx && y < sy && z < sz && grille[x + sx * (y + sy * z)] !== 0;
+  const tas = new Tas();
+  const u = 1 / 11;
+  for (let z = 0; z < sz; z++) for (let y = 0; y < sy; y++) for (let x = 0; x < sx; x++) {
+    const indice = grille[x + sx * (y + sy * z)];
+    if (!indice) continue;
+    const k = (indice - 1) * 4;
+    const rvb = palette ? [palette[k], palette[k + 1], palette[k + 2]] : [160, 160, 160];
+    for (const f of FACES) {
+      if (plein(x + f[0][0], y + f[0][1], z + f[0][2])) continue;
+      tas.face(f, [(x + offset[0]) * u, (y + offset[1]) * u, (z + offset[2]) * u], [u, u, u], rvb);
+    }
+  }
+  return tas.geometrie();
+}
+
+const MODELES = new Map();
+const INCONNU = (() => { const t = new Tas(); t.boite([-0.4, -0.4, 0], [0.8, 0.8, 0.8], [230, 60, 200]); return t.geometrie(); })();
+// La géométrie du premier modèle d'un objet (en jeu, un objet à plusieurs modèles en tire un au hasard).
+function modele(nom) {
+  if (!MODELES.has(nom)) {
+    const objet = PAR_NOM.get(nom);
+    MODELES.set(nom, !objet ? Promise.resolve(INCONNU) : fetch('/vox/' + objet.modeles[0].vox)
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then((t) => maillerVox(lireVox(t), objet.modeles[0].offset))
+      .catch(() => INCONNU));
+  }
+  return MODELES.get(nom);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// La scène. Repère du jeu : x vers l'est, y vers le sud du plan, z vers le haut ; un bloc = 1.
+// z 0 = le dessus du sol de l'étage 0 (un meuble posé au sol a z 0).
+// ---------------------------------------------------------------------------------------------------------
+const toile = $('toile');
+const rendu = new THREE.WebGLRenderer({ canvas: toile, antialias: true });
+rendu.outputColorSpace = THREE.LinearSRGBColorSpace;
+rendu.setPixelRatio(window.devicePixelRatio);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x14171c);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.5, 2000);
+camera.up.set(0, 0, 1);
+const orbite = new OrbitControls(camera, toile);
+// Le clic gauche est à l'outil ; on tourne au clic droit, on glisse au clic du milieu, on zoome à la molette.
+orbite.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE };
+orbite.maxPolarAngle = Math.PI / 2 - 0.02;
+toile.addEventListener('contextmenu', (e) => e.preventDefault());
+
+const MATIERE = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+const FANTOME = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthWrite: false });
+const MANQUE = new THREE.MeshBasicMaterial({ color: 0xe04fd0, transparent: true, opacity: 0.45, depthWrite: false });
+const MANQUE_BORD = new THREE.LineBasicMaterial({ color: 0xff9af2 });
+
+let salle = null;          // la salle ouverte
+let enregistree = '';      // son texte tel qu'enregistré
+let coque = null;          // le maillage des murs et des sols
+let objets = [];           // les maillages des meubles et des blocs « ? », userData.de = l'entrée de la salle
+let selection = null;      // l'entrée sélectionnée (meuble ou manque)
+let cadre = null;          // son contour
+let etage = 0;
+const pile = { avant: [], apres: [] };
+
+const teinte = (rvb, k) => rvb.map((v) => Math.max(0, Math.min(255, v * k)));
+const MARQUES = {
+  '$': [[241, 194, 50], 1, 1], S: [[110, 200, 120], 1, 0.2], m: [[150, 150, 150], 1, 2], x: [[150, 60, 200], 2, 3], X: [[190, 140, 220], 2, 3],
+};
+const marque = (s) => MARQUES[s] || (/[a-z]/.test(s) ? [[204, 30, 30], 1, 2] : /[A-Z]/.test(s) ? [[234, 150, 150], 1, 2] : null);
+const ESCALIER = { '^': [0, -1], '>': [1, 0], v: [0, 1], '<': [-1, 0] };
+
+// Les murs et les sols de la salle, d'après son plan ; les étages au-dessus de celui qu'on regarde sont cachés.
+function batirCoque() {
+  if (coque) { scene.remove(coque); coque.geometry.dispose(); }
+  const tas = new Tas();
+  const bas = $('murs-bas').checked;
+  const mur = REGLAGES.mur, sol = REGLAGES.sol;
+  for (const e of salle.etages) {
+    if (e.n > etage) continue;
+    const z0 = e.n * H;
+    e.lignes.forEach((ligne, y) => [...ligne].forEach((s, x) => {
+      if (s === ' ' || s === '_') return;
+      const o = [x * C, y * C];
+      if (s === '#' || s === '+') {
+        const haut = bas && e.n === etage ? 1 : H - 1;
+        tas.boite([o[0], o[1], z0 - 1], [C, C, haut + 1], s === '+' ? [200, 130, 50] : teinte(mur, 1 + ((x * 7 + y * 13) % 5) * 0.03));
+        return;
+      }
+      // Du sol : une dalle, et son dessus bloc par bloc pour voir la grille.
+      const couleur = s === '*' ? [40, 70, 120] : sol;
+      for (const f of FACES) if (f[0][2] !== 1) tas.face(f, [o[0], o[1], z0 - 1], [C, C, 1], teinte(couleur, 0.8));
+      for (let i = 0; i < C; i++) for (let j = 0; j < C; j++) {
+        const bord = i === 0 || j === 0 ? 0.8 : 1;
+        tas.face(FACES[4], [o[0] + i, o[1] + j, z0 - 1], [1, 1, 1], teinte(couleur, ((i + j) % 2 ? 1.3 : 1.38) * bord));
+      }
+      const milieu = Math.floor(C / 2);
+      if (s === 'O') tas.boite([o[0] + milieu - 1, o[1] + milieu - 1, z0], [3, 3, bas && e.n === etage ? 2 : H - 1], teinte(mur, 1.2));
+      else if (s === 'H') tas.boite([o[0] + milieu, o[1] + milieu + 0.35, z0], [1, 0.3, H], [150, 105, 60]);
+      else if (s === 'D') for (const d of [0, C - 1]) tas.boite([o[0] + d, o[1] + d, z0], [1, 1, 3], [120, 125, 135]);
+      else if (ESCALIER[s]) {
+        const [dx, dy] = ESCALIER[s];
+        for (let k = 0; k < C; k++) {
+          const pas = dx + dy > 0 ? k : C - 1 - k;
+          tas.boite(dx ? [o[0] + pas, o[1], z0] : [o[0], o[1] + pas, z0], dx ? [1, C, k + 1] : [C, 1, k + 1], teinte(mur, 1.35));
+        }
+      } else {
+        const m = marque(s);
+        if (m) tas.boite([o[0] + milieu + (1 - m[1]) / 2, o[1] + milieu + (1 - m[1]) / 2, z0], [m[1], m[1], m[2]], m[0]);
+      }
+    }));
+  }
+  coque = new THREE.Mesh(tas.geometrie(), MATIERE);
+  scene.add(coque);
+  $('mesures').textContent = `${largeur(salle)} × ${profondeur(salle)} cases (${largeur(salle) * C} × ${profondeur(salle) * C} blocs), ${salle.etages.length} étage(s), ${salle.meubles.length} meuble(s).`;
+}
+
+function etiquette(texte) {
+  const toile = document.createElement('canvas');
+  const c = toile.getContext('2d');
+  c.font = '600 28px system-ui, sans-serif';
+  toile.width = Math.ceil(c.measureText(texte).width) + 20; toile.height = 40;
+  c.font = '600 28px system-ui, sans-serif';
+  c.fillStyle = '#000a'; c.fillRect(0, 0, toile.width, toile.height);
+  c.fillStyle = '#ffd6fb'; c.textBaseline = 'middle'; c.fillText(texte, 10, 21);
+  const image = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(toile), depthTest: false }));
+  image.scale.set(toile.width / 40 * 1.2, 1.2, 1);
+  image.raycast = () => {};
+  return image;
+}
+
+// Place le maillage d'un meuble comme le jeu : au milieu de son bloc, miroir puis rotation d'un huitième de tour.
+function placer(maille, m) {
+  maille.position.set(m.x + 0.5, m.y + 0.5, m.z);
+  maille.rotation.set(0, 0, (m.ori || 0) * Math.PI / 4);
+  maille.scale.set(m.miroir ? -1 : 1, 1, 1);
+}
+function boiteManque(m) {
+  const groupe = new THREE.Mesh(new THREE.BoxGeometry(m.l, m.p, m.h), MANQUE);
+  groupe.add(new THREE.LineSegments(new THREE.EdgesGeometry(groupe.geometry), MANQUE_BORD));
+  groupe.children[0].raycast = () => {};
+  const texte = etiquette('? ' + m.libelle);
+  texte.position.set(0, 0, m.h / 2 + 0.9);
+  groupe.add(texte);
+  groupe.position.set(m.x + m.l / 2, m.y + m.p / 2, m.z + m.h / 2);
+  return groupe;
+}
+
+let generation = 0;
+// Refait les maillages des meubles et des blocs « ? » de la salle.
+async function batirObjets() {
+  const moi = ++generation;
+  const geometries = await Promise.all(salle.meubles.map((m) => modele(m.sprite)));
+  if (moi !== generation) return;
+  for (const o of objets) scene.remove(o);
+  objets = [];
+  salle.meubles.forEach((m, k) => {
+    if (Math.floor(m.z / H) > etage) return;
+    const maille = new THREE.Mesh(geometries[k], MATIERE);
+    placer(maille, m);
+    maille.userData.de = m;
+    objets.push(maille); scene.add(maille);
+  });
+  for (const m of salle.manques) {
+    if (Math.floor(m.z / H) > etage) continue;
+    const maille = boiteManque(m);
+    maille.userData.de = m;
+    objets.push(maille); scene.add(maille);
+  }
+  montrerSelection();
+  const manques = salle.manques.map((m) => `« ${m.libelle} » (${m.l} × ${m.p} × ${m.h})`);
+  $('manques').textContent = manques.length ? manques.join(', ') : 'Aucun bloc « ? » dans cette salle.';
+}
+
+function montrerSelection() {
+  if (cadre) { scene.remove(cadre); cadre = null; }
+  const maille = objets.find((o) => o.userData.de === selection);
+  if (!maille) { if (selection && !salle.meubles.includes(selection) && !salle.manques.includes(selection)) selection = null; dire(); return; }
+  cadre = new THREE.BoxHelper(maille, 0xf0be46);
+  cadre.raycast = () => {};
+  scene.add(cadre);
+  dire();
+}
+
+function cadrer(dessus) {
+  const l = largeur(salle) * C, p = profondeur(salle) * C;
+  const centre = new THREE.Vector3(l / 2, p / 2, etage * H);
+  orbite.target.copy(centre);
+  const recul = Math.max(l, p * 1.3) * (dessus ? 1.35 : 1.15);
+  // Vu du nord du plan, vers le sud : x à droite, comme la carte du jeu vue par quelqu'un qui regarde vers +y.
+  camera.position.copy(centre).add(dessus ? new THREE.Vector3(0, -0.01, recul) : new THREE.Vector3(0, -recul * 0.55, recul * 0.85));
+  orbite.update();
+}
+
+function taille() {
+  const { clientWidth: l, clientHeight: h } = $('scene');
+  rendu.setSize(l, h, false);
+  camera.aspect = l / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', taille);
+taille();
+rendu.setAnimationLoop(() => { if (cadre) cadre.update(); rendu.render(scene, camera); });
+
+// ---------------------------------------------------------------------------------------------------------
+// L'historique et le message.
+// ---------------------------------------------------------------------------------------------------------
+const copie = (s) => JSON.parse(JSON.stringify(s));
+function message(texte, sorte = '') { $('message').textContent = texte; $('message').className = sorte; }
+// À appeler avant de changer la salle.
+function garder() { pile.avant.push(copie(salle)); if (pile.avant.length > 200) pile.avant.shift(); pile.apres = []; }
+function change() {
+  const modifiee = ecrireSalle(salle) !== enregistree;
+  document.title = (modifiee ? '● ' : '') + 'Atelier des salles';
+  $('enregistrer').textContent = modifiee ? 'Enregistrer ●' : 'Enregistrer';
+  $('annuler').disabled = !pile.avant.length; $('refaire').disabled = !pile.apres.length;
+}
+function revenir(de, vers) {
+  if (!de.length) return;
+  vers.push(copie(salle));
+  salle = de.pop(); selection = null;
+  remplirFiche(); batirCoque(); batirObjets(); change();
+}
+$('annuler').onclick = () => revenir(pile.avant, pile.apres);
+$('refaire').onclick = () => revenir(pile.apres, pile.avant);
+window.addEventListener('beforeunload', (e) => { if (salle && ecrireSalle(salle) !== enregistree) e.preventDefault(); });
+
+// ---------------------------------------------------------------------------------------------------------
+// La fiche de la salle.
+// ---------------------------------------------------------------------------------------------------------
+const NOMS_ROLES = {
+  entrance: 'Entrée', hall: 'Passage', guardRoom: 'Salle de garde', barracks: 'Caserne', storage: 'Réserve', kitchen: 'Cuisine',
+  nest: 'Nid de bêtes', treasure: 'Trésor', chiefLair: 'Antre du chef', prison: 'Prison', vault: 'Chambre forte', sanctum: 'Sanctuaire', bossLair: 'Antre de boss',
+};
+$('roles').innerHTML = REGLAGES.roles.map((r) => `<label><input type="checkbox" value="${r}"> ${NOMS_ROLES[r] || r}</label>`).join('');
+$('fonction').innerHTML = '<option value="">— (entrée, passage)</option>' + PIECES.pieces.map((p) => `<option value="${p.id}">${p.nom}</option>`).join('');
+
+function remplirFiche() {
+  $('id').value = salle.id;
+  $('fonction').value = salle.fonction;
+  for (const c of $('roles').querySelectorAll('input')) c.checked = salle.roles.includes(c.value);
+  $('themes').value = salle.themes; $('poids').value = salle.poids; $('boss').value = salle.boss;
+  $('description').value = salle.description;
+  $('ligne-boss').style.display = salle.roles.includes('bossLair') ? '' : 'none';
+  const piece = PIECES.pieces.find((p) => p.id === salle.fonction);
+  $('idee').textContent = piece ? piece.idee : '';
+  const etages = [...new Set(salle.etages.map((e) => e.n))].sort((a, b) => a - b);
+  if (!etages.includes(etage)) etage = etages[etages.length - 1];
+  $('etage').innerHTML = etages.map((n) => `<option value="${n}"${n === etage ? ' selected' : ''}>${n}</option>`).join('');
+  filtrer();
+}
+function champ(id, ecrire) {
+  $(id).addEventListener('change', () => { garder(); ecrire($(id).value); remplirFiche(); change(); });
+}
+champ('id', (v) => { salle.id = v.trim(); });
+champ('fonction', (v) => { salle.fonction = v; });
+champ('themes', (v) => { salle.themes = v; });
+champ('poids', (v) => { salle.poids = parseFloat(v) || 1; });
+champ('boss', (v) => { salle.boss = v; });
+champ('description', (v) => { salle.description = v; });
+$('roles').addEventListener('change', () => {
+  garder();
+  salle.roles = [...$('roles').querySelectorAll('input:checked')].map((c) => c.value);
+  remplirFiche(); change();
+});
+$('etage').onchange = () => { etage = +$('etage').value; batirCoque(); batirObjets(); cadrer(false); };
+$('murs-bas').onchange = () => batirCoque();
+for (const b of document.querySelectorAll('[data-vue]')) b.onclick = () => cadrer(b.dataset.vue === 'dessus');
+
+// Une rangée de cases de plus, de roche : au nord et à l'ouest, les meubles reculent d'une case.
+for (const b of document.querySelectorAll('[data-rangee]')) b.onclick = () => {
+  garder();
+  const l = largeur(salle), cote = b.dataset.rangee;
+  for (const e of salle.etages) {
+    if (cote === 'n') e.lignes.unshift('#'.repeat(l));
+    else if (cote === 's') e.lignes.push('#'.repeat(l));
+    else e.lignes = e.lignes.map((ligne) => cote === 'o' ? '#' + ligne.padEnd(l, ' ') : ligne.padEnd(l, ' ') + '#');
+  }
+  for (const m of [...salle.meubles, ...salle.manques]) { if (cote === 'n') m.y += C; if (cote === 'o') m.x += C; }
+  batirCoque(); batirObjets(); change();
+};
+
+// ---------------------------------------------------------------------------------------------------------
+// Ouvrir, créer, enregistrer.
+// ---------------------------------------------------------------------------------------------------------
+function listerSalles(choisie) {
+  $('salles').innerHTML = SALLES.map((s) => `<option value="${s.id}">${s.id}${s.convertie ? ' (à convertir)' : ''}</option>`).join('');
+  if (choisie) $('salles').value = choisie;
+}
+function ouvrir(id, texte, neuve = false) {
+  salle = lireSalle(id, texte);
+  enregistree = neuve ? '' : ecrireSalle(salle);
+  selection = null; pile.avant = []; pile.apres = []; etage = salle.etages.some((e) => e.n === 0) ? 0 : salle.etages[0].n;
+  remplirFiche(); batirCoque(); batirObjets(); cadrer(false); change();
+}
+function ouvrirListee(id) {
+  const s = SALLES.find((s) => s.id === id);
+  if (!s) return;
+  ouvrir(s.id, s.texte);
+  if (s.convertie) { enregistree = ''; change(); message('Ancienne salle : ses symboles de décor sont devenus des meubles. Enregistrer pour garder.', ''); }
+  else message('');
+}
+const quitter = () => !salle || ecrireSalle(salle) === enregistree || confirm('La salle ouverte a des changements non enregistrés. Les abandonner ?');
+$('salles').onchange = () => { if (quitter()) ouvrirListee($('salles').value); else $('salles').value = SALLES.some((s) => s.id === salle.id) ? salle.id : $('salles').value; };
+$('nouvelle').onclick = () => {
+  if (!quitter()) return;
+  const id = (prompt('Nom de la nouvelle salle (minuscules, chiffres, _) :', 'nouvelle_salle') || '').trim();
+  if (!id) return;
+  const mur = '#'.repeat(7);
+  ouvrir(id, ['; Nouvelle salle.', '@roles: hall', mur, '#.....#', '+.....+', '#.....#', mur].join('\n') + '\n', true);
+  message('Nouvelle salle : pas encore enregistrée.');
+};
+$('dupliquer').onclick = () => {
+  const id = (prompt('Nom de la copie :', salle.id + '_2') || '').trim();
+  if (!id) return;
+  garder(); salle.id = id; enregistree = ''; remplirFiche(); change();
+  message('Copie : pas encore enregistrée.');
+};
+async function envoyer(chemin, corps) {
+  const r = await fetch(chemin, { method: 'POST', body: corps });
+  const texte = await r.text();
+  if (!r.ok) throw new Error(texte);
+}
+$('enregistrer').onclick = async () => {
+  caler(salle);
+  const texte = ecrireSalle(salle);
+  try {
+    await envoyer('/salle', salle.id + '\n' + texte);
+    enregistree = texte;
+    SALLES = await lire('/salles');
+    listerSalles(salle.id);
+    batirCoque(); batirObjets(); change();
+    message(`Salle « ${salle.id} » enregistrée et committée.`, 'bon');
+  } catch (e) { message(e.message, 'erreur'); }
+};
+$('supprimer').onclick = async () => {
+  if (!SALLES.some((s) => s.id === salle.id)) { message("Cette salle n'est pas encore enregistrée.", 'erreur'); return; }
+  if (!confirm(`Supprimer la salle « ${salle.id} » du jeu ?`)) return;
+  try {
+    await envoyer('/salle/supprimer', salle.id);
+    SALLES = await lire('/salles');
+    listerSalles(); ouvrirListee(SALLES[0].id);
+    message('Salle retirée.', 'bon');
+  } catch (e) { message(e.message, 'erreur'); }
+};
+
+// ---------------------------------------------------------------------------------------------------------
+// La palette des objets.
+// ---------------------------------------------------------------------------------------------------------
+// Quelques mots français vers les noms anglais de Veloren.
+const MOTS = {
+  tonneau: 'barrel', caisse: 'crate', coffre: 'chest', table: 'table', chaise: 'chair', banc: 'bench', lit: 'bed', couchage: 'bedroll',
+  etagere: 'shelf', bibliotheque: 'bookshelf', livre: 'book', armoire: 'wardrobe', commode: 'drawer', buffet: 'cupboard', miroir: 'mirror',
+  lampe: 'lamp', lanterne: 'lantern', bougie: 'candle', torche: 'sconce', applique: 'sconce', feu: 'fire', brasero: 'firebowl', four: 'oven',
+  atre: 'hearth', cheminee: 'hearth', marmite: 'cookingpot', chaudron: 'cauldron', cruche: 'jug', panier: 'basket', sac: 'sack', seau: 'bucket',
+  corde: 'rope', chaine: 'chain', barreaux: 'bars', grille: 'bars', porte: 'door', fenetre: 'window', enclume: 'anvil', forge: 'forge',
+  etabli: 'bench', outil: 'tools', outils: 'tools', os: 'bone', ossements: 'bones', tombe: 'grave', crane: 'skull', toile: 'web',
+  champignon: 'mushroom', fleur: 'flower', plante: 'plant', pot: 'pot', pierre: 'stone', cristal: 'crystal', statue: 'statue', cloche: 'bell',
+  paille: 'hay', tente: 'tent', panneau: 'sign', comptoir: 'counter', tapis: 'carpet', coussin: 'cushion', canape: 'canape', fontaine: 'fountain',
+  trophee: 'trophy', balai: 'broom', pelle: 'shovel', charrette: 'cart', orbe: 'orb', sceau: 'seal', piege: 'trap', minerai: 'ore', herbe: 'grass',
+};
+const simple = (t) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+let choisi = OBJETS.find((o) => o.nom === 'Barrel') || OBJETS[0];
+const categories = [...new Set(OBJETS.map((o) => o.categorie))];
+const NOMS_CATEGORIES = { Furniture: 'Mobilier', Decor: 'Décor', Structural: 'Structure', Lamp: 'Lumières', Container: 'Coffres', Plant: 'Plantes', Resource: 'Ressources', Misc: 'Divers', Modular: 'Modulaire', Void: 'Vide' };
+$('categorie').innerHTML = '<option value="">Toutes les catégories</option>' + categories.map((c) => `<option value="${c}">${NOMS_CATEGORIES[c] || c}</option>`).join('');
+$('categorie').value = categories.includes('Furniture') ? 'Furniture' : '';
+
+// Les vignettes : un petit rendu à part, fait quand l'objet arrive à l'écran.
+const petit = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+petit.outputColorSpace = THREE.LinearSRGBColorSpace;
+petit.setSize(128, 128, false);
+const petiteScene = new THREE.Scene();
+const petiteCamera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+petiteCamera.up.set(0, 0, 1);
+async function vignette(toile, nom) {
+  const g = await modele(nom);
+  const maille = new THREE.Mesh(g, MATIERE);
+  petiteScene.add(maille);
+  const boite = g.boundingBox, centre = boite.getCenter(new THREE.Vector3());
+  const rayon = Math.max(0.5, boite.getSize(new THREE.Vector3()).length() / 2);
+  petiteCamera.position.copy(centre).add(new THREE.Vector3(0.8, -1.5, 1.1).normalize().multiplyScalar(rayon / Math.sin(15 * Math.PI / 180)));
+  petiteCamera.lookAt(centre);
+  petit.render(petiteScene, petiteCamera);
+  toile.getContext('2d').drawImage(petit.domElement, 0, 0, toile.width, toile.height);
+  petiteScene.remove(maille);
+}
+const aVoir = new IntersectionObserver((entrees) => {
+  for (const e of entrees) if (e.isIntersecting) { aVoir.unobserve(e.target); vignette(e.target.querySelector('canvas'), e.target.dataset.nom); }
+}, { root: $('liste'), rootMargin: '200px' });
+
+function filtrer() {
+  const mots = simple($('recherche').value).split(/\s+/).filter(Boolean).map((m) => [m, MOTS[m]]);
+  const categorie = $('categorie').value;
+  const piece = PIECES.pieces.find((p) => p.id === (salle && salle.fonction));
+  const attendus = $('attendus').checked && piece ? new Set(piece.meubles.map((m) => m[1])) : null;
+  const trouves = OBJETS.filter((o) => {
+    if (attendus) return attendus.has(o.nom);
+    if (categorie && !mots.length && o.categorie !== categorie) return false;
+    const ou = simple(o.nom + ' ' + (o.libelle || ''));
+    return mots.every(([m, anglais]) => ou.includes(m) || (anglais && ou.includes(anglais)));
+  });
+  aVoir.disconnect();
+  $('liste').replaceChildren(...trouves.map((o) => {
+    const div = document.createElement('div');
+    div.className = 'objet' + (o === choisi ? ' choisi' : '');
+    div.dataset.nom = o.nom;
+    div.title = o.nom + (o.libelle ? ` — ${o.libelle}` : '') + (o.modeles.length > 1 ? `\n${o.modeles.length} modèles : le jeu en tire un au hasard` : '');
+    div.innerHTML = `<canvas width="64" height="64"></canvas><span>${o.nom}</span>${o.libelle ? `<span class="fr">${o.libelle}</span>` : ''}`;
+    div.onclick = () => { choisir(o); outil('poser'); };
+    aVoir.observe(div);
+    return div;
+  }));
+  if (!trouves.length) $('liste').textContent = attendus ? 'Rien dans le catalogue pour cette pièce.' : 'Aucun objet.';
+}
+function choisir(o) {
+  choisi = o;
+  for (const d of $('liste').children) d.classList?.toggle('choisi', d.dataset.nom === o.nom);
+  const notes = [];
+  if (!o.ori) notes.push('ne se tourne pas (le jeu le tourne au hasard)');
+  if (o.modeles.length > 1) notes.push(`${o.modeles.length} modèles, tirés au hasard en jeu`);
+  if (o.hauteur === null) notes.push('on passe à travers');
+  $('choix').innerHTML = `<b>${o.nom}</b>${o.libelle ? ` — ${o.libelle}` : ''}<br>${notes.join(' ; ')}`;
+  fantome.orientation = 0; fantome.miroir = false; fantome.auto = true;
+  majFantome();
+}
+$('recherche').oninput = filtrer; $('categorie').onchange = filtrer; $('attendus').onchange = filtrer;
+
+// ---------------------------------------------------------------------------------------------------------
+// Les outils.
+// ---------------------------------------------------------------------------------------------------------
+let courant = 'poser';
+const fantome = { maille: null, orientation: 0, miroir: false, bloc: null, auto: true };
+const CASES = [
+  ['.', 'Sol'], ['#', 'Mur'], ['+', 'Porte possible'], ['O', 'Pilier'], ['*', 'Fosse possible'], ['$', 'Coffre'], [' ', 'Vide (roche)'],
+  ['b', 'Brute'], ['a', 'Archer'], ['g', 'Guetteur'], ['c', 'Chef'], ['B', 'Brute endormie'], ['A', 'Archer endormi'], ['G', 'Guetteur endormi'], ['S', 'Départ des joueurs'],
+];
+let pinceau = '.';
+const manque = { libelle: 'trône', l: 3, p: 3, h: 4 };
+const AIDES = {
+  poser: 'Clic : poser. R : tourner (Maj+R dans l’autre sens). M : miroir. Alt+clic sur un meuble : le prendre comme modèle. Clic droit : tourner la vue ; molette : zoom ; clic du milieu : glisser.',
+  choisir: 'Clic : sélectionner ; glisser : déplacer. Flèches, Page préc./suiv. : un bloc. R, M : tourner, miroir. Ctrl+D : dupliquer. Suppr : retirer.',
+  cases: 'Clic ou glisser : peindre les cases de l’étage affiché. « Agrandir » (à gauche) ajoute une rangée.',
+  manque: 'Clic : poser un bloc « ? » à l’endroit où il manque un modèle. Son libellé dit ce que ce serait.',
+};
+function outil(nom) {
+  courant = nom;
+  for (const b of document.querySelectorAll('[data-outil]')) b.classList.toggle('actif', b.dataset.outil === nom);
+  const o = $('options');
+  if (nom === 'cases') {
+    o.innerHTML = 'Case : <select id="pinceau">' + CASES.map(([s, n]) => `<option value="${s}"${s === pinceau ? ' selected' : ''}>${n}</option>`).join('') + '</select>';
+    $('pinceau').onchange = () => { pinceau = $('pinceau').value; };
+  } else if (nom === 'manque') {
+    o.innerHTML = `Ce serait : <input id="m-libelle" type="text" list="m-modeles" value="${manque.libelle}"><datalist id="m-modeles">${Object.values(PIECES.modeles).map((m) => `<option value="${m.nom.toLowerCase()}">`).join('')}</datalist>
+      l <input id="m-l" type="number" min="1" max="21" value="${manque.l}"> p <input id="m-p" type="number" min="1" max="21" value="${manque.p}"> h <input id="m-h" type="number" min="1" max="6" value="${manque.h}"> blocs`;
+    for (const k of ['libelle', 'l', 'p', 'h']) $('m-' + k).onchange = () => { manque[k] = k === 'libelle' ? $('m-' + k).value.trim() || '?' : Math.max(1, +$('m-' + k).value || 1); majFantome(); };
+  } else o.innerHTML = '';
+  o.style.display = o.innerHTML ? '' : 'none';
+  $('aide').textContent = AIDES[nom];
+  if (nom !== 'choisir') { selection = null; montrerSelection(); }
+  majFantome();
+}
+for (const b of document.querySelectorAll('[data-outil]')) b.onclick = () => outil(b.dataset.outil);
+
+async function majFantome() {
+  if (fantome.maille) { scene.remove(fantome.maille); fantome.maille = null; }
+  if (courant === 'poser') {
+    const nom = choisi.nom, g = await modele(nom);
+    if (courant !== 'poser' || choisi.nom !== nom) return;
+    if (fantome.maille) scene.remove(fantome.maille);
+    fantome.maille = new THREE.Mesh(g, FANTOME);
+  } else if (courant === 'manque') {
+    fantome.maille = boiteManque({ ...manque, x: 0, y: 0, z: 0 });
+  } else return;
+  fantome.maille.raycast = () => {};
+  fantome.maille.traverse((o) => { o.raycast = () => {}; });
+  fantome.maille.visible = false;
+  scene.add(fantome.maille);
+}
+
+const rayon = new THREE.Raycaster();
+// Ce que la souris vise : le bloc libre contre la face touchée (sol, mur, dessus d'un meuble), et ce qui est touché.
+function viser(e, sauf = null) {
+  const r = toile.getBoundingClientRect();
+  rayon.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), camera);
+  const touche = rayon.intersectObjects([coque, ...objets.filter((o) => o !== sauf)], false)[0];
+  if (!touche) return null;
+  const normale = touche.face.normal.clone().transformDirection(touche.object.matrixWorld);
+  const p = touche.point.clone().addScaledVector(normale, 0.2);
+  return { bloc: [Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)], normale, objet: touche.object === coque ? null : touche.object, point: touche.point };
+}
+// L'orientation d'un meuble adossé au mur touché : face à la salle.
+const faceA = (n) => Math.abs(n.z) > 0.5 ? null : Math.abs(n.x) > Math.abs(n.y) ? (n.x > 0 ? 0 : 4) : (n.y > 0 ? 2 : 6);
+
+function dire(vise) {
+  const lieu = vise ? `Bloc <b>${vise.bloc.join(', ')}</b> — case ${Math.floor(vise.bloc[0] / C) + 1}, ${Math.floor(vise.bloc[1] / C) + 1}.` : '';
+  let quoi = '';
+  if (selection) quoi = selection.sprite ? ` Sélection : <b>${selection.sprite}</b> en ${selection.x}, ${selection.y}, ${selection.z}, orientation ${selection.ori}${selection.miroir ? ', miroir' : ''}.`
+    : ` Sélection : bloc « ${selection.libelle} » en ${selection.x}, ${selection.y}, ${selection.z}.`;
+  $('lieu').innerHTML = lieu + quoi;
+}
+
+let glisse = null;      // { de, depart } : le meuble qu'on déplace
+let peint = false;
+function peindre(v) {
+  // La case sous la souris, sur le sol de l'étage affiché.
+  const sol = new THREE.Plane(new THREE.Vector3(0, 0, 1), -etage * H);
+  const p = rayon.ray.intersectPlane(sol, new THREE.Vector3());
+  if (!p) return;
+  const x = Math.floor(p.x / C), y = Math.floor(p.y / C);
+  if (x < 0 || y < 0 || x > 40 || y > 40 || caseDe(salle, x, y, etage) === pinceau) return;
+  poserCase(salle, x, y, etage, pinceau);
+  batirCoque(); change();
+}
+
+toile.addEventListener('pointermove', (e) => {
+  if (!salle) return;
+  const v = viser(e, glisse && objets.find((o) => o.userData.de === glisse.de));
+  dire(v);
+  if (courant === 'cases') { if (peint) peindre(v); return; }
+  if (glisse && v) {
+    const m = glisse.de;
+    const [x, y, z] = v.bloc;
+    if (m.x !== x || m.y !== y || m.z !== z) {
+      if (!glisse.garde) { garder(); glisse.garde = true; }
+      Object.assign(m, { x, y, z });
+      const maille = objets.find((o) => o.userData.de === m);
+      if (m.sprite) placer(maille, m); else maille.position.set(x + m.l / 2, y + m.p / 2, z + m.h / 2);
+    }
+    return;
+  }
+  if (!fantome.maille) return;
+  fantome.maille.visible = !!v;
+  if (!v) return;
+  fantome.bloc = v.bloc;
+  if (courant === 'poser') {
+    // Contre un mur, le meuble se tourne vers la salle, tant qu'on ne l'a pas tourné soi-même.
+    const mur = v.objet ? null : faceA(v.normale);
+    if (mur !== null && choisi.ori && fantome.auto) fantome.orientation = mur;
+    placer(fantome.maille, { x: v.bloc[0], y: v.bloc[1], z: v.bloc[2], ori: fantome.orientation, miroir: fantome.miroir });
+  } else fantome.maille.position.set(v.bloc[0] + manque.l / 2, v.bloc[1] + manque.p / 2, v.bloc[2] + manque.h / 2);
+});
+toile.addEventListener('pointerleave', () => { if (fantome.maille) fantome.maille.visible = false; });
+
+toile.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0 || !salle) return;
+  const v = viser(e);
+  if (courant === 'cases') { garder(); peint = true; toile.setPointerCapture(e.pointerId); peindre(v); return; }
+  if (!v) { if (courant === 'choisir') { selection = null; montrerSelection(); } return; }
+  if (e.altKey && v.objet && v.objet.userData.de.sprite) {
+    const m = v.objet.userData.de;
+    if (PAR_NOM.has(m.sprite)) { choisir(PAR_NOM.get(m.sprite)); fantome.orientation = m.ori; fantome.miroir = m.miroir; fantome.auto = false; outil('poser'); }
+    return;
+  }
+  const [x, y, z] = v.bloc;
+  if (courant === 'poser') {
+    garder();
+    const m = { sprite: choisi.nom, x, y, z, ori: choisi.ori ? fantome.orientation : 0, miroir: choisi.miroir && fantome.miroir };
+    salle.meubles.push(m);
+    batirObjets(); batirCoque(); change();
+  } else if (courant === 'manque') {
+    garder();
+    salle.manques.push({ ...manque, x, y, z });
+    batirObjets(); change();
+  } else if (courant === 'choisir') {
+    selection = v.objet ? v.objet.userData.de : null;
+    montrerSelection();
+    if (selection) { glisse = { de: selection, garde: false }; toile.setPointerCapture(e.pointerId); }
+  }
+});
+toile.addEventListener('pointerup', () => {
+  if (peint) { peint = false; }
+  if (glisse) { const bouge = glisse.garde; glisse = null; if (bouge) { batirCoque(); change(); } montrerSelection(); }
+});
+
+function tourner(pas) {
+  if (courant === 'choisir' && selection) {
+    garder();
+    if (selection.sprite) selection.ori = (selection.ori + pas + 8) % 8;
+    else [selection.l, selection.p] = [selection.p, selection.l];
+    batirObjets(); change();
+  } else if (courant === 'poser') {
+    fantome.orientation = (fantome.orientation + pas + 8) % 8; fantome.auto = false;
+    if (fantome.maille && fantome.bloc) fantome.maille.rotation.z = fantome.orientation * Math.PI / 4;
+  }
+}
+window.addEventListener('keydown', (e) => {
+  if (!salle || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  const touche = e.key.toLowerCase();
+  if (e.ctrlKey && touche === 'z') { revenir(pile.avant, pile.apres); e.preventDefault(); return; }
+  if (e.ctrlKey && touche === 'y') { revenir(pile.apres, pile.avant); e.preventDefault(); return; }
+  if (e.ctrlKey && touche === 's') { $('enregistrer').click(); e.preventDefault(); return; }
+  if (e.ctrlKey && touche === 'd' && selection) {
+    garder();
+    const double = { ...selection, x: selection.x + 1 };
+    (selection.sprite ? salle.meubles : salle.manques).push(double);
+    selection = double; batirObjets(); change(); e.preventDefault(); return;
+  }
+  if (e.ctrlKey) return;
+  const outils = { 1: 'poser', 2: 'choisir', 3: 'cases', 4: 'manque' };
+  if (outils[touche]) { outil(outils[touche]); return; }
+  if (touche === 'r') { tourner(e.shiftKey ? -1 : 1); return; }
+  if (touche === 'm') {
+    if (courant === 'choisir' && selection && selection.sprite) { garder(); selection.miroir = !selection.miroir; batirObjets(); change(); }
+    else if (courant === 'poser') { fantome.miroir = !fantome.miroir; if (fantome.maille) fantome.maille.scale.x = fantome.miroir ? -1 : 1; }
+    return;
+  }
+  if (touche === 'escape') { selection = null; montrerSelection(); return; }
+  if (!selection) return;
+  if (touche === 'delete' || touche === 'backspace') {
+    garder();
+    salle.meubles = salle.meubles.filter((m) => m !== selection);
+    salle.manques = salle.manques.filter((m) => m !== selection);
+    selection = null; batirObjets(); batirCoque(); change(); e.preventDefault(); return;
+  }
+  const pas = { arrowleft: [-1, 0, 0], arrowright: [1, 0, 0], arrowup: [0, 1, 0], arrowdown: [0, -1, 0], pageup: [0, 0, 1], pagedown: [0, 0, -1] }[touche];
+  if (pas) {
+    garder();
+    selection.x += pas[0]; selection.y += pas[1]; selection.z += pas[2];
+    batirObjets(); change(); e.preventDefault();
+  }
+});
+
+// ---------------------------------------------------------------------------------------------------------
+listerSalles();
+const demandee = new URLSearchParams(location.search).get('salle');
+ouvrirListee(SALLES.some((s) => s.id === demandee) ? demandee : (SALLES.find((s) => s.id === 'cuisine') || SALLES[0]).id);
+$('salles').value = salle.id;
+choisir(choisi);
+outil('poser');
+// Pour les essais sans les mains : l'état de la page.
+window.atelier = { get salle() { return salle; }, ecrireSalle, lireSalle, objets: () => objets.length, OBJETS };
+document.body.dataset.pret = '1';
+</script>
+</body>
+</html>
