@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block contenu %}
+{% set f = extra %}
+<article class="article article-large">
+<header class="entete-page">
+  <div class="entete-texte">
+    <p class="fil">Repères</p>
+    <h1>Feuille de route</h1>
+    <p class="resume">Ce que le jeu doit avoir avant le playtest avec les potes, chantier par chantier.</p>
+  </div>
+</header>
+
+<div class="tuiles">
+  <div class="tuile"><div class="tuile-chiffre">{{ f.nb_faites }}<span class="tuile-sur">/{{ f.nb_total }}</span></div><div class="tuile-nom">tâches faites</div><div class="jauge jauge-tuile"><div class="jauge-plein" style="width: {{ (100 * f.nb_faites / f.nb_total) if f.nb_total else 0 }}%"></div></div></div>
+  <div class="tuile"><div class="tuile-chiffre">{{ f.nb_finis }}<span class="tuile-sur">/{{ f.chantiers | length }}</span></div><div class="tuile-nom">chantiers finis</div></div>
+  <div class="tuile"><div class="tuile-chiffre">{{ f.nb_en_cours }}</div><div class="tuile-nom">chantiers en cours</div></div>
+</div>
+
+{% if f.ordre_html %}<div class="intention">{{ f.ordre_html | safe }}</div>{% endif %}
+
+<h2>Les chantiers</h2>
+<div class="cadre-table">
+<table class="jalons">
+<thead><tr><th></th><th>Chantier</th><th>Avancement</th><th>Où ça en est</th></tr></thead>
+<tbody>
+{% for c in f.chantiers %}
+<tr>
+  <td class="lettre-cellule"><span class="lettre">{{ c.numero }}</span></td>
+  <td><a href="#chantier-{{ c.numero }}">{{ c.titre }}</a></td>
+  <td class="cellule-jauge">
+    {% if c.nb_total %}<div class="jauge"><div class="jauge-plein" style="width: {{ 100 * c.nb_faites / c.nb_total }}%"></div></div>
+    <span class="chiffre">{{ c.nb_faites }}/{{ c.nb_total }}</span>{% endif %}
+    <span class="badge badge-{{ c.statut }}">{{ c.statut_nom }}</span>
+  </td>
+  <td>{{ c.etat_html | safe }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+{% for c in f.chantiers %}
+<h2 id="chantier-{{ c.numero }}"><span class="lettre">{{ c.numero }}</span> {{ c.titre }}</h2>
+<div class="encart-ligne">
+  {% if c.nb_total %}<div class="jauge" title="{{ c.nb_faites }} tâches faites sur {{ c.nb_total }}"><div class="jauge-plein" style="width: {{ 100 * c.nb_faites / c.nb_total }}%"></div></div>
+  <span class="chiffre">{{ c.nb_faites }}/{{ c.nb_total }} faites</span>{% endif %}
+  <span class="badge badge-{{ c.statut }}">{{ c.statut_nom }}</span>
+  <span class="badge">{{ c.etat_html | safe }}</span>
+  {% if c.worktree and c.worktree != "—" %}<span class="badge badge-sobre">{{ c.worktree }}</span>{% endif %}
+</div>
+{% if c.taches %}
+<ol class="taches compactes">
+{% for x in c.taches %}
+{% set t = x.tache %}
+  <li class="tache {{ 'faite' if t.fait else 'reste' }}">
+    <div class="tache-tete">
+      <span class="coche"><svg class="ic" aria-hidden="true"><use href="{{ '#i-coche' if t.fait else '#i-rond' }}"/></svg></span>
+      <span class="id">{{ t.id }}</span>
+      <a href="{{ x.url | safe }}"><strong>{{ t.titre }}</strong></a>
+      {% if t.en_cours %}<span class="badge badge-en-cours">en cours : {{ t.en_cours }}</span>{% endif %}
+      {% if t.a_voir_en_jeu %}<a class="badge badge-a-voir" href="a-voir.html#{{ t.id }}">à voir en jeu</a>{% endif %}
+      {% for k in t.commits %}{% if k.url %}<a class="hash" href="{{ k.url | safe }}">{{ k.court }}</a>{% else %}<span class="hash">{{ k.court }}</span>{% endif %}{% endfor %}
+    </div>
+    <div class="tache-detail">{{ t.detail_html | safe }}</div>
+  </li>
+{% endfor %}
+</ol>
+{% endif %}
+{% if c.contexte_html %}
+<details class="detail-design"{% if not c.taches %} open{% endif %}>
+<summary><svg class="ic chevron" aria-hidden="true"><use href="#i-chevron"/></svg> <strong>Ce qui est demandé, ce qui existe</strong></summary>
+<div style="padding: 0 1rem 1rem">{{ c.contexte_html | safe }}</div>
+</details>
+{% endif %}
+{% endfor %}
+
+<footer class="source">Source : <a href="{{ f.plan_url | safe }}"><code>docs/icebreaker/PLAN-PLAYTEST.md</code></a> (tableau « Vue d'ensemble » et tâches de chaque chantier)</footer>
+</article>
+{% endblock %}

@@ -12,6 +12,7 @@
 </header>
 
 <div class="tuiles">
+  {% if a.playtest %}<a class="tuile" href="feuille-de-route.html"><div class="tuile-chiffre">{{ a.playtest.nb_faites }}<span class="tuile-sur">/{{ a.playtest.nb_total }}</span></div><div class="tuile-nom">avant le playtest : feuille de route</div><div class="jauge jauge-tuile"><div class="jauge-plein" style="width: {{ (100 * a.playtest.nb_faites / a.playtest.nb_total) if a.playtest.nb_total else 0 }}%"></div></div></a>{% endif %}
   <div class="tuile"><div class="tuile-chiffre">{{ a.nb_faites }}<span class="tuile-sur">/{{ a.nb_total }}</span></div><div class="tuile-nom">tâches faites</div><div class="jauge jauge-tuile"><div class="jauge-plein" style="width: {{ (100 * a.nb_faites / a.nb_total) if a.nb_total else 0 }}%"></div></div></div>
   <a class="tuile tuile-attention" href="a-voir.html"><div class="tuile-chiffre tuile-alerte">{{ a.nb_a_voir }}</div><div class="tuile-nom">à voir dans le vrai client</div></a>
   {% if a.nb_reponses %}<a class="tuile tuile-attention" href="QUESTIONS.html"><div class="tuile-chiffre tuile-alerte">{{ a.nb_reponses }}</div><div class="tuile-nom">réponses à traiter par l'agent</div></a>{% endif %}

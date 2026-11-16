@@ -183,6 +183,10 @@ table.jalons td { vertical-align: middle; }
 .badge-a-voir { background: rgba(242, 182, 98, .14); color: var(--alerte); border-color: rgba(242, 182, 98, .45); }
 .badge-en-cours { background: rgba(127, 212, 255, .12); color: var(--accent); border-color: rgba(127, 212, 255, .45); }
 .badge-sobre { color: var(--texte-2); }
+/* Icebreaker : W.18, état d'un chantier de la feuille de route. */
+.badge-fini { background: rgba(120, 200, 140, .14); color: var(--ok); border-color: var(--ok); }
+.badge-a-faire, .badge-sans-tache { color: var(--texte-2); }
+h2 .lettre { margin-right: .4rem; }
 .encart-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: .5rem 0 0; }
 .intention { background: var(--fond-2); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: .7rem 1.1rem; margin: 1rem 0; }
 .intention p { margin: .3rem 0; }

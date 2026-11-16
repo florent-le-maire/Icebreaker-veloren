@@ -10,6 +10,7 @@ mod competences; // Icebreaker : W.17
 mod creatures; // Icebreaker : W.15
 mod decisions;
 mod edition;
+mod feuille_route; // Icebreaker : W.18
 mod fiches;
 mod icones;
 mod markdown;
@@ -109,8 +110,9 @@ impl Rubrique {
 }
 
 /// Les fichiers repères, dans l'ordre de la barre latérale, avec leur nom court.
-const REPERES: [(&str, &str); 10] = [
+const REPERES: [(&str, &str); 11] = [
     ("", "Tableau de bord"),
+    ("feuille-de-route", "Feuille de route"), // Icebreaker : W.18
     ("README.md", "Lire les docs"),
     ("PLAN.md", "Plan"),
     ("a-voir", "À voir en jeu"),
@@ -249,6 +251,13 @@ pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
         pages.push(todo::page(texte));
     }
     pages.push(decisions::page_index(&fichiers));
+    // Icebreaker : la feuille de route d'avant playtest (W.18), et son compte sur le tableau de bord.
+    let mut playtest = serde_json::Value::Null;
+    if let Some((_, texte)) = fichiers.iter().find(|(f, _)| f == feuille_route::SOURCE) {
+        let page = feuille_route::page(texte, &jalons);
+        playtest = serde_json::json!({ "nb_faites": page.extra["nb_faites"], "nb_total": page.extra["nb_total"] });
+        pages.push(page);
+    }
     for (source, texte) in fichiers.iter().filter(|(f, _)| f.starts_with("wiki/")) {
         pages.push(fiches::page(
             racine,
@@ -287,6 +296,7 @@ pub fn collecter(racine: &Path, docs: &Path) -> Result<Vec<Page>> {
         accueil.extra["mecaniques"] = serde_json::Value::Array(mecaniques);
         accueil.extra["nb_reponses"] = nb_reponses.into();
         accueil.extra["nb_todos"] = nb_todos.into();
+        accueil.extra["playtest"] = playtest;
     }
     Ok(pages)
 }

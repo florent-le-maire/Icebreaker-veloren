@@ -18,6 +18,7 @@ const GABARIT_QUESTIONS: &str = include_str!("../gabarits/questions.html");
 const GABARIT_DECISIONS: &str = include_str!("../gabarits/decisions.html");
 const GABARIT_TODO: &str = include_str!("../gabarits/todo.html");
 const GABARIT_A_VOIR: &str = include_str!("../gabarits/a-voir.html");
+const GABARIT_FEUILLE_ROUTE: &str = include_str!("../gabarits/feuille-route.html"); // Icebreaker : W.18
 const GABARIT_CREATURES: &str = include_str!("../gabarits/creatures.html"); // Icebreaker : W.15
 const GABARIT_COMPETENCES: &str = include_str!("../gabarits/competences.html"); // Icebreaker : W.17
 const GABARIT_CLASSES: &str = include_str!("../gabarits/classes.html"); // Icebreaker : A.18
@@ -56,6 +57,7 @@ fn environnement() -> Result<Environment<'static>> {
     env.add_template("questions.html", GABARIT_QUESTIONS)?;
     env.add_template("decisions.html", GABARIT_DECISIONS)?;
     env.add_template("todo.html", GABARIT_TODO)?;
+    env.add_template("feuille-route.html", GABARIT_FEUILLE_ROUTE)?;
     env.add_template("a-voir.html", GABARIT_A_VOIR)?;
     env.add_template("creatures.html", GABARIT_CREATURES)?;
     env.add_template("competences.html", GABARIT_COMPETENCES)?;
