@@ -425,6 +425,8 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
     let missing: Vec<&str> = std::iter::once(RoomRole::Entrance)
         .chain([resolved.goal, resolved.fallback, RoomRole::Hall, RoomRole::GuardRoom])
         .chain(resolved.weights.keys().copied())
+        // Icebreaker F.20 : and the rooms every dungeon has.
+        .chain(resolved.specials.iter().filter(|(_, s)| s.min > 0).map(|(role, _)| *role))
         .filter(|role| catalog.with_role(*role).is_empty())
         .map(RoomRole::name)
         .collect();

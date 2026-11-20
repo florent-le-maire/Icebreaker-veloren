@@ -106,6 +106,27 @@ pub struct Settings {
     pub decor: DecorSettings,
     /// Where the dungeon may lie in the world (Icebreaker F.8).
     pub placement: PlacementSettings,
+    /// Icebreaker F.20 : the rooms every dungeon has (portal, altar), by role.
+    pub special_rooms: BTreeMap<String, SpecialRoom>,
+}
+
+/// Icebreaker F.20 : a room every dungeon has (`special_rooms`): `min` of them always, up to `max` when the dice
+/// say so, hooked `min_distance_from_entrance` passages at least from the entrance.
+#[derive(Clone, Debug, Deserialize)]
+pub struct SpecialRoom {
+    pub min: usize,
+    pub max: usize,
+    pub min_distance_from_entrance: usize,
+    pub extra: ExtraChance,
+}
+
+/// The chance of each room past `min`: `base`, plus `per_room` for each room of the dungeon and `per_level` for
+/// each of its levels (a bigger dungeon has more of them, and they stay rare).
+#[derive(Copy, Clone, Debug, Deserialize)]
+pub struct ExtraChance {
+    pub base: f64,
+    pub per_room: f64,
+    pub per_level: f64,
 }
 
 /// Icebreaker F.8: a dungeon that goes past the edge of the world cannot be
@@ -289,6 +310,13 @@ impl Settings {
                 }
             }
         }
+        for (name, special) in &settings.special_rooms {
+            role(name, &mut errors);
+            let chances = [special.extra.base, special.extra.per_room, special.extra.per_level];
+            if special.min > special.max || chances.iter().any(|c| *c < 0.0) {
+                errors.push(format!("special_rooms.{name} : il faut min ≤ max et des chances ≥ 0"));
+            }
+        }
         if settings.corridors.per_cells == 0 {
             errors.push("corridors : per_cells doit être au moins 1".into());
         }
@@ -457,6 +485,8 @@ impl Settings {
                 })
             })
             .collect();
+        // Icebreaker F.20 : in the order of their names, so a seed gives the same dungeon.
+        let specials = self.special_rooms.iter().map(|(name, s)| (role(name, &mut errors), s.clone())).collect();
         let fallback = role(&self.rules.fallback, &mut errors);
         let population = self
             .population
@@ -509,6 +539,7 @@ impl Settings {
             weights,
             rules,
             guard_before_locks: self.rules.guard_before_locks,
+            specials,
             fallback,
             population,
             corridors,
@@ -649,6 +680,8 @@ pub struct Resolved {
     /// Weight of each role of the branches.
     pub weights: BTreeMap<RoomRole, f64>,
     pub rules: BTreeMap<RoomRole, ResolvedRule>,
+    /// Icebreaker F.20 : the rooms every dungeon has (portal, altar).
+    pub specials: Vec<(RoomRole, SpecialRoom)>,
     pub guard_before_locks: bool,
     pub fallback: RoomRole,
     pub population: BTreeMap<RoomRole, RoomPopulation>,

@@ -376,6 +376,39 @@ pub fn generate(settings: &Resolved, seed: u64) -> MissionGraph {
         b.connect(from, to, Some(PassageKind::Drop));
     }
 
+    // 5. Icebreaker F.20 : the rooms every dungeon has (portal, altar), each a dead end hooked on a room that has
+    // few passages, far enough from the entrance. Their own dice: the graph above is the one the seed always gave.
+    let mut rng = ChaCha8Rng::seed_from_u64(seed ^ 0x5BEC_1A1);
+    let goal = main[main_count - 1];
+    let rooms = b.rooms.len() as f64;
+    let levels = b.rooms.iter().map(|r| r.level).max().unwrap_or(0) as f64 + 1.0;
+    for (role, special) in &settings.specials {
+        let extra = special.extra;
+        let chance = (extra.base + extra.per_room * rooms + extra.per_level * levels).clamp(0.0, 1.0);
+        let count = special.min + (special.min..special.max).filter(|_| rng.random_bool(chance)).count();
+        for _ in 0..count {
+            let distances = b.distances(main[0]);
+            // The tunnel to the surface takes a door of the entrance.
+            let passages = |room: usize| {
+                b.passages.iter().filter(|p| p.from == room || p.to == room).count() + usize::from(room == main[0])
+            };
+            let anchors = |min_distance: usize| -> Vec<usize> {
+                let free = |r: &&MissionRoom| {
+                    r.id != goal && !RoomRole::SPECIAL.contains(&r.role) && distances[r.id] + 1 >= min_distance
+                };
+                let fewest = b.rooms.iter().filter(free).map(|r| passages(r.id)).min();
+                b.rooms.iter().filter(free).filter(|r| Some(passages(r.id)) == fewest).map(|r| r.id).collect()
+            };
+            let mut found = anchors(special.min_distance_from_entrance);
+            if found.is_empty() {
+                found = anchors(0);
+            }
+            let anchor = found[rng.random_range(0..found.len())];
+            let room = b.add_room(*role, b.level(anchor), false, b.zone[anchor]);
+            b.connect(anchor, room, None);
+        }
+    }
+
     MissionGraph {
         rooms: b.rooms,
         passages: b.passages,
@@ -406,6 +439,16 @@ mod tests {
                 assert!(graph.rooms.iter().all(|r| r.level <= goal.level));
                 assert_eq!(graph.rooms.iter().filter(|r| r.role == RoomRole::ChiefLair).count(), 1);
 
+                // Icebreaker F.20 : the rooms every dungeon has, each a dead end off the goal.
+                for (role, special) in &resolved.specials {
+                    let placed: Vec<&MissionRoom> = graph.rooms.iter().filter(|r| r.role == *role).collect();
+                    assert!((special.min..=special.max).contains(&placed.len()), "{size} {seed} : {} {}", placed.len(), role.name());
+                    for room in placed {
+                        let doors: Vec<&Passage> = graph.passages.iter().filter(|p| p.from == room.id || p.to == room.id).collect();
+                        assert_eq!(doors.len(), 1, "{size} {seed} : {} n'est pas un cul-de-sac", role.name());
+                        assert_ne!(doors[0].other(room.id), graph.goal);
+                    }
+                }
                 // Believable inhabitants.
                 for (role, rule) in &resolved.rules {
                     let count = graph.rooms.iter().filter(|r| r.role == *role).count();
@@ -433,6 +476,36 @@ mod tests {
                     );
                 }
             }
+        }
+    }
+
+    #[test]
+    /// Icebreaker F.20 : a second portal or altar is rare, less so in a large dungeon; and the rooms every dungeon
+    /// has leave the rest of its graph as the seed always made it.
+    fn extra_special_rooms_are_rare() {
+        let settings = Settings::load().unwrap();
+        let count = |size: &str| {
+            let resolved = settings.resolve(&Mission { size: size.into(), ..Mission::default() }).unwrap();
+            let (mut rooms, mut extras) = (0, 0);
+            for seed in 0..1000 {
+                let graph = generate(&resolved, seed);
+                let special = graph.rooms.iter().filter(|r| RoomRole::SPECIAL.contains(&r.role)).count();
+                rooms += graph.rooms.len();
+                extras += special - resolved.specials.iter().map(|(_, s)| s.min).sum::<usize>();
+            }
+            println!("{size} : {extras} salles spéciales en plus sur 1000 donjons, {:.1} salles en moyenne", rooms as f32 / 1000.0);
+            extras
+        };
+        let (small, large) = (count("small"), count("large"));
+        assert!(small < large && large < 300, "en plus : {small} (petits), {large} (grands)");
+
+        let resolved = settings.resolve(&Mission::default()).unwrap();
+        let mut bare = resolved.clone();
+        bare.specials.clear();
+        for seed in 0..50 {
+            let (with, without) = (generate(&resolved, seed), generate(&bare, seed));
+            let kept = with.rooms.iter().zip(&without.rooms).all(|(a, b)| a.role == b.role && a.level == b.level);
+            assert!(kept && without.rooms.len() < with.rooms.len(), "graine {seed}");
         }
     }
 

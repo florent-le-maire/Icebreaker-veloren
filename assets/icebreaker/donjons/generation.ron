@@ -62,6 +62,15 @@
             "treasure": (max: Some(1)),
         },
     ),
+    // Salles que chaque donjon a (F.20, `docs/icebreaker/design/donjon.md`, « Portail et autel ») : le portail du
+    // retour au village et l'autel de résurrection. min : toujours autant ; max : jamais plus ; chaque salle au-delà
+    // de min a une chance base + per_room × salles du donjon + per_level × étages (un petit : ~2 %, un grand : ~6 %).
+    // Chacune est un cul-de-sac accroché à une salle peu chargée en portes, à min_distance_from_entrance passages au
+    // moins de l'entrée (plus près s'il n'y a pas le choix), jamais sur la salle de l'objectif.
+    special_rooms: {
+        "portal": (min: 1, max: 2, min_distance_from_entrance: 3, extra: (base: 0.0, per_room: 0.002, per_level: 0.005)),
+        "altar": (min: 1, max: 2, min_distance_from_entrance: 2, extra: (base: 0.0, per_room: 0.002, per_level: 0.005)),
+    },
     // Salle au bout du chemin principal selon l'objectif de la mission.
     goal_roles: {
         "killChief": "chiefLair",
