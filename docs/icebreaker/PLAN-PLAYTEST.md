@@ -80,11 +80,16 @@ marque un modèle qui manque. D'où F.14 à F.17, avant F.11 à F.13.
 Portail et autel (Flo, 2026-11-20, `design/donjon.md`, « Portail et autel ») : deux salles qui portent un objet du
 jeu ; la suite (allumer, traverser, cristal, résurrection) est sous le jalon T de `PLAN.md` (T.10 à T.12).
 
-- [ ] **F.19 Rôles et salles du portail et de l'autel** — *en cours : Veloren-donjon, 2026-11-20*
-- [ ] **F.20 Au moins une de chaque par donjon** — placement dans le graphe, salles en plus très rares selon la
-  taille (`special_rooms` de `generation.ron`).
-- [ ] **F.21 Modèles voxel : portail (éteint, allumé), autel, cristal** — par script, d'après les images de Flo.
-- [ ] **F.22 Le donjon fait apparaître le portail et l'autel** — à la place dite par la salle.
+- [x] **F.19 Rôles et salles du portail et de l'autel** — rôles `portal` et `altar`, salles `salle_portail` et
+  `salle_autel` ; l'objet se place par `@manque: "portail"` ou `"autel de résurrection"`. Tests verts. f70843906e
+- [x] **F.20 Au moins une de chaque par donjon** — cul-de-sac accroché à une salle peu chargée, jamais à l'objectif ;
+  une salle en plus dans ~4 % des petits donjons et ~12 % des grands (`special_rooms` de `generation.ron`). Tests
+  verts ; pas parcouru dans un donjon entier. 012a872883
+- [x] **F.21 Modèles voxel : portail (éteint, allumé), autel, cristal** — écrits par
+  `common/examples/icebreaker_portail_vox.rs`. Portail éteint et autel vus en capture ; portail allumé et cristal
+  vus sur l'image de contrôle seulement. 8a678167de
+- [x] **F.22 Le donjon fait apparaître le portail et l'autel** — entité immobile à la place dite par la salle, avec
+  une lueur (`portail.ron`). Vu en capture dans les deux salles seules. 727467233f, 6350a54f3a, bc044191f9
 
 ## 2. Grotte : casser pour avancer, miner pour de bon (jalon U, suite)
 

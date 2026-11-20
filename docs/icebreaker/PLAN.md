@@ -48,6 +48,10 @@ Le jeu doit rester lançable après chaque tâche.
   retiré, Envol à la place de Fureur, Fournaise en laser, Volée mortelle en pluie visée, Séisme, Bénédiction et Œil
   d'aigle renforcés. Vus partir dans le vrai client ; équilibre et relève à essayer à la main. Le protocole change
   encore.
+- **Portail, cristal et autel (2026-11-20)** : chaque donjon généré a une salle du portail (allumé en 5 s, puis
+  traversé pour rentrer, chacun pour soi) et une salle de l'autel (relève les morts dont on porte le cristal, pour la
+  moitié de la vie du moment). La mort n'est définitive que si le mort quitte le donjon ou si plus aucun vivant n'y
+  reste (`design/donjon.md`). Le protocole a changé : client et serveur à recompiler ensemble, VPS à redéployer.
 
 ## Architecture visée
 
@@ -221,9 +225,15 @@ tombe, tous rentrent. Le personnage mort est perdu : il quitte le registre et il
 Portail, cristal et autel (Flo, 2026-11-20, `design/donjon.md`) : la mort n'est plus définitive tant que le mort
 reste en bas avec un vivant. Salles et modèles : F.19 à F.22 de `PLAN-PLAYTEST.md` ; worktree `Veloren-donjon`.
 
-- [ ] **T.10 Allumer le portail et rentrer en le traversant** — 5 s d'interaction, puis chacun pour soi.
-- [ ] **T.11 Le cristal du mort** — à son nom, dans son sac ; disparaît au retour au village.
-- [ ] **T.12 L'autel** — consomme les cristaux portés, relève leurs morts à 25 %, coûte la moitié de la vie du moment.
+- [x] **T.10 Allumer le portail et rentrer en le traversant** — 5 s d'interaction (E), puis chacun pour soi
+  (`portail.ron`). Client texte : allumé, puis retour ; vrai client : traverser ramène sur la place avec le bilan.
+  Pas vus : la jauge, le libellé « Allumer », l'annulation par un coup. 3df46f71fa
+- [x] **T.11 Le cristal du mort** — à son nom, en première place de son sac ; retiré au retour au village. Client
+  texte à deux : « cristal de Beta » porté par Alpha, disparu après `/rentrer`. Un cristal porté à la déconnexion
+  revient sans nom ; nom pas vu dans l'inventaire du vrai client. 9d53db33a2
+- [x] **T.12 L'autel** — consomme les cristaux portés, relève leurs morts près de l'autel à 25 %, coûte la moitié
+  de la vie du moment (`mort.ron`, `autel`). Client texte à deux : refus à 1 PV, puis Beta relevé. Pas vus : PV
+  exacts, plusieurs morts d'un coup, écran de mort et retour de « regarder un allié ». 55bf68888b
 
 ## Jalon A — Armes, classes et compétences (Flo, 2026-11-11)
 
@@ -303,6 +313,14 @@ AM.9 (âmes), L.6 (plus de dégâts au village), X.18 (bouton « Rentrer »), E.
 Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (détail dans `HISTORIQUE.md` et
 `PLAN-GROTTE.md`). À parcourir dans le vrai client, en campagne, à deux si possible ; barrer ce qui est vu, ouvrir une
 tâche pour ce qui casse.
+
+**Portail, cristal et autel (F.19 à F.22, T.10 à T.12)**
+- Un donjon généré entier : trouver la salle du portail et celle de l'autel, voir qu'elles ne gênent pas le chemin.
+- Portail : « Allumer » (E), la jauge de 5 s, l'annulation par un coup ; le portail allumé de face (surface bleue,
+  chevrons lumineux) ; le traverser à deux, l'un après l'autre ; le dernier vivant parti, les morts sont renvoyés.
+- Mort : le texte de l'écran de mort ; le sac contient « Cristal de <nom> » (bulle et inventaire).
+- Autel : « Relever les morts » (E) avec deux cristaux ; les relevés ont 25 % de vie, le prieur la moitié de la
+  sienne ; un mort qui regardait un allié retrouve son personnage ; refus à 1 PV.
 
 **Atelier des salles (F.14 à F.17, `PLAN-PLAYTEST.md`)**
 - `.\icebreaker.ps1 salles` : ouvrir une salle, la meubler, l'enregistrer, puis la voir par `donjon -Site Genere
