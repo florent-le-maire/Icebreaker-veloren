@@ -1535,6 +1535,18 @@ impl PlayState for SessionState {
                 }
             }
 
+            // Icebreaker T.12 : relevé à l'autel pendant qu'il regardait un allié, le joueur
+            // retrouve son personnage.
+            if self.viewpoint_entity.is_some()
+                && crate::icebreaker_mort::registre()
+                && !self.client.borrow().is_dead()
+                && self.client.borrow().presence().is_some_and(|p| matches!(p, PresenceKind::Character(_)))
+            {
+                self.client.borrow_mut().stop_spectate_entity();
+                self.viewpoint_entity = None;
+                self.scene.camera_mut().set_mode(CameraMode::ThirdPerson);
+            }
+
             if let Some(viewpoint_entity) = self.viewpoint_entity
                 && !self
                     .client
