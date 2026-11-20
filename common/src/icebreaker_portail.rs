@@ -24,7 +24,8 @@ pub struct IcebreakerPortail {
     /// La lumière du portail allumé : couleur (rouge, vert, bleu, de 0 à 1) et force.
     pub lumiere: (f32, f32, f32),
     pub force_lumiere: f32,
-    /// La lueur du portail éteint (même couleur) : assez pour le voir dans une salle sombre.
+    /// La lueur du portail éteint (couleur et force) : assez pour le voir dans une salle sombre.
+    pub lumiere_eteint: (f32, f32, f32),
     pub force_eteint: f32,
     /// La lueur de l'autel : couleur et force.
     pub lumiere_autel: (f32, f32, f32),
@@ -39,7 +40,8 @@ impl Default for IcebreakerPortail {
             hauteur_traversee: 3.0,
             lumiere: (0.3, 0.6, 1.0),
             force_lumiere: 6.0,
-            force_eteint: 2.0,
+            lumiere_eteint: (0.9, 0.85, 0.8),
+            force_eteint: 4.0,
             lumiere_autel: (1.0, 0.75, 0.45),
             force_autel: 3.0,
         }
@@ -55,7 +57,7 @@ impl IcebreakerPortail {
     /// La lumière que donne un de nos objets : couleur (rouge, vert, bleu) et force.
     pub fn lumiere_de(&self, body: &Body) -> Option<((f32, f32, f32), f32)> {
         match *body {
-            PORTAIL => Some((self.lumiere, self.force_eteint)),
+            PORTAIL => Some((self.lumiere_eteint, self.force_eteint)),
             PORTAIL_ACTIF => Some((self.lumiere, self.force_lumiere)),
             AUTEL => Some((self.lumiere_autel, self.force_autel)),
             _ => None,
