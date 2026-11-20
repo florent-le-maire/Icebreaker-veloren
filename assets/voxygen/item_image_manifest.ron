@@ -3744,6 +3744,11 @@
         "voxel.item.mineral.gem.diamond",
         (0.0, 0.0, 0.0), (-55.0, 30.0, 20.0), 0.6,
     ),
+    // Icebreaker : cristal d'un mort (T.11)
+    Simple("common.items.icebreaker.cristal"): VoxTrans(
+        "voxel.item.icebreaker.cristal",
+        (0.0, 0.0, 0.0), (-60.0, 30.0, 15.0), 0.8,
+    ),
     // Icebreaker : sac du mort (T.3)
     Simple("common.items.icebreaker.sac_du_mort"): VoxTrans(
         "voxel.armor.misc.bag.reliable_backpack",

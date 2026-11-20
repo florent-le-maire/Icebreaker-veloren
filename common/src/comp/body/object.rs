@@ -92,6 +92,11 @@ enum_iter! {
         ThornStake = 75,
         // Icebreaker FT.1 : le fantôme du village (décision 0021).
         IcebreakerFantome = 76,
+        // Icebreaker F.21 : le portail du retour au village (éteint, allumé) et l'autel de résurrection
+        // (modèles écrits par `common/examples/icebreaker_portail_vox.rs`).
+        IcebreakerPortail = 77,
+        IcebreakerPortailActif = 78,
+        IcebreakerAutel = 79,
     }
 }
 
@@ -188,6 +193,9 @@ impl Body {
             Body::NapalmPool => "napalm_pool",
             Body::ThornStake => "thorn_stake",
             Body::IcebreakerFantome => "icebreaker_fantome",
+            Body::IcebreakerPortail => "icebreaker_portail",
+            Body::IcebreakerPortailActif => "icebreaker_portail_actif",
+            Body::IcebreakerAutel => "icebreaker_autel",
         }
     }
 
@@ -298,6 +306,8 @@ impl Body {
             Body::Portal | Body::PortalActive => 10.0, // I dont know really
             Body::Crux => 100.0,
             Body::IcebreakerFantome => 60.0, // Icebreaker FT.1
+            // Icebreaker F.21 : de la pierre ; l'autel repousse qui marche dessus, le portail se traverse.
+            Body::IcebreakerPortail | Body::IcebreakerPortailActif | Body::IcebreakerAutel => 2000.0,
         };
 
         Mass(m)
@@ -343,6 +353,7 @@ impl Body {
             Body::Crux => Vec3::new(2.0, 2.0, 2.0),
             Body::ArrowHeavy | Body::ThornStake => Vec3::new(0.1, 0.9, 0.1),
             Body::IcebreakerFantome => Vec3::new(1.0, 0.8, 1.9), // Icebreaker FT.1 : un humain
+            Body::IcebreakerAutel => Vec3::new(3.0, 2.0, 1.1), // Icebreaker F.21 : 3 × 2 × 1 blocs
             // FIXME: this *must* be exhaustive match
             _ => Vec3::broadcast(0.5),
         }

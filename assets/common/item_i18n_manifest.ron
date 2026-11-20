@@ -1519,6 +1519,10 @@
         Simple(
             "common.items.icebreaker.balise_lumineuse",
         ): "icebreaker-balise_lumineuse",
+        // Icebreaker : cristal d'un mort (T.11)
+        Simple(
+            "common.items.icebreaker.cristal",
+        ): "icebreaker-cristal",
         // Icebreaker : sac du mort (T.3)
         Simple(
             "common.items.icebreaker.sac_du_mort",

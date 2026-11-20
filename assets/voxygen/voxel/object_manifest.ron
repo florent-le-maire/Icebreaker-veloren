@@ -367,6 +367,38 @@
             central: ("armor.empty"),
         )
     ),
+    // Icebreaker F.21 : le portail du retour au village, éteint puis allumé, et l'autel de résurrection (modèles
+    // écrits par `common/examples/icebreaker_portail_vox.rs`) ; le décalage centre le modèle sur l'entité.
+    IcebreakerPortail: (
+        bone0: (
+            offset: (-29.5, -16.5, 0.0),
+            central: ("object.icebreaker_portail"),
+        ),
+        bone1: (
+            offset: (0.0, 0.0, 0.0),
+            central: ("armor.empty"),
+        )
+    ),
+    IcebreakerPortailActif: (
+        bone0: (
+            offset: (-29.5, -16.5, 0.0),
+            central: ("object.icebreaker_portail_actif"),
+        ),
+        bone1: (
+            offset: (0.0, 0.0, 0.0),
+            central: ("armor.empty"),
+        )
+    ),
+    IcebreakerAutel: (
+        bone0: (
+            offset: (-16.5, -11.0, 0.0),
+            central: ("object.icebreaker_autel"),
+        ),
+        bone1: (
+            offset: (0.0, 0.0, 0.0),
+            central: ("armor.empty"),
+        )
+    ),
     // Icebreaker FT.1 : le fantôme du village (modèle écrit par `common/examples/icebreaker_fantome_vox.rs`).
     IcebreakerFantome: (
         bone0: (

@@ -953,6 +953,8 @@
     Simple("common.items.armor.misc.bag.reliable_backpack"): "voxel.armor.misc.bag.reliable_backpack",
     // Icebreaker : balise lumineuse (jalon J)
     Simple("common.items.icebreaker.balise_lumineuse"): "voxel.item.mineral.gem.diamond",
+    // Icebreaker : cristal d'un mort (T.11)
+    Simple("common.items.icebreaker.cristal"): "voxel.item.icebreaker.cristal",
     // Icebreaker : sac du mort (T.3)
     Simple("common.items.icebreaker.sac_du_mort"): "voxel.armor.misc.bag.reliable_backpack",
     Simple("common.items.armor.misc.bag.reliable_leather_pack"): "voxel.armor.misc.bag.reliable_leather_pack",

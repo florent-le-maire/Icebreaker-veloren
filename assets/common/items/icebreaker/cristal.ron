@@ -1,0 +1,10 @@
+// Icebreaker : le cristal d'un joueur mort en expédition (jalon T, T.11). Il apparaît dans son sac, à son nom ; un
+// allié le prend et le porte à l'autel de résurrection, qui le consomme pour relever ce joueur (T.12). Il disparaît
+// au retour au village.
+ItemDef(
+    legacy_name: "Crystal of the dead",
+    legacy_description: "Take it to an altar to bring your companion back.",
+    kind: Quest,
+    quality: High,
+    tags: [],
+)
