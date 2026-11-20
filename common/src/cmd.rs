@@ -443,6 +443,8 @@ pub enum ServerChatCommand {
     ReloadChunks,
     RemoveLights,
     /// Icebreaker: leave an encounter instance for the village, with a summary.
+    /// Icebreaker : `/aller autel|portail`, devant l'autel ou le portail le plus proche (essais).
+    Aller,
     Rentrer,
     RepairEquipment,
     ResetRecipes,
@@ -942,6 +944,11 @@ impl ServerChatCommand {
                 Content::localized("command-remove_lights-desc"),
                 Some(Admin),
             ),
+            ServerChatCommand::Aller => cmd(
+                vec![Enum("lieu", vec!["autel".to_string(), "portail".to_string()], Required)],
+                Content::localized("command-aller-desc"),
+                Some(Admin),
+            ),
             ServerChatCommand::Rentrer => {
                 cmd(vec![], Content::localized("command-rentrer-desc"), None)
             },
@@ -1316,6 +1323,7 @@ impl ServerChatCommand {
             ServerChatCommand::Registre => "registre",
             ServerChatCommand::ReloadChunks => "reload_chunks",
             ServerChatCommand::RemoveLights => "remove_lights",
+            ServerChatCommand::Aller => "aller",
             ServerChatCommand::Rentrer => "rentrer",
             ServerChatCommand::RevokeBuild => "revoke_build",
             ServerChatCommand::RevokeBuildAll => "revoke_build_all",

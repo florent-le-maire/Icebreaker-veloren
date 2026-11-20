@@ -62,3 +62,44 @@ fn allumer(server: &mut Server, cible: common::uid::Uid) {
         ecs.read_resource::<EventBus<Outcome>>().emit_now(Outcome::PortalActivated { pos: pos.0 });
     }
 }
+
+/// Icebreaker : `/aller autel|portail` (admin, pour les essais) : devant l'autel ou le portail le plus
+/// proche, parmi ceux de tous les donjons générés du monde.
+pub(crate) fn handle_aller(
+    server: &mut Server,
+    client: specs::Entity,
+    _target: specs::Entity,
+    args: Vec<String>,
+    _action: &common::cmd::ServerChatCommand,
+) -> Result<(), common::comp::Content> {
+    use common::comp::Content;
+    let role = match args.first().map(String::as_str) {
+        Some("autel") => "altar",
+        Some("portail") => "portal",
+        _ => return Err(Content::Plain("/aller autel ou /aller portail".to_string())),
+    };
+    let ici = server
+        .state
+        .ecs()
+        .read_storage::<comp::Pos>()
+        .get(client)
+        .map(|pos| pos.0)
+        .ok_or_else(|| Content::Plain("Il faut être en jeu.".to_string()))?;
+    let devant = server
+        .index
+        .sites
+        .iter()
+        .flat_map(|(_, site)| world::icebreaker::dungeon_specials(site))
+        .filter(|(nom, _, _)| *nom == role)
+        .map(|(_, _, devant)| devant)
+        .min_by(|a, b| a.distance_squared(ici).total_cmp(&b.distance_squared(ici)))
+        .ok_or_else(|| Content::Plain(format!("Aucun {} dans les donjons de ce monde.", args[0])))?;
+    server
+        .state
+        .mut_resource::<EventBus<common::event::TeleportToPositionEvent>>()
+        .emit_now(common::event::TeleportToPositionEvent {
+            entity: client,
+            position: devant,
+        });
+    Ok(())
+}

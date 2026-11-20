@@ -1,5 +1,6 @@
 ## Icebreaker
 
+command-aller-desc = Essais : va devant l'autel ou le portail le plus proche (autel, portail)
 command-rentrer-desc = Quitter le donjon pour le village, avec le bilan de ce qu'on rapporte
 icebreaker-bilan-item = { $amount } × { $item }
 gameinput-icebreaker-topview = Vue du village de dessus

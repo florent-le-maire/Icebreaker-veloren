@@ -166,6 +166,19 @@ pub fn grotte_presets() -> Vec<String> {
         .map_or_else(Vec::new, |formes| formes.profils.keys().cloned().collect())
 }
 
+/// Icebreaker : the objects of the special rooms of the dungeon of `site` (`/aller`): the role of the room
+/// (`portal`, `altar`), where the object stands, and a place in front of it.
+pub fn dungeon_specials(site: &Site) -> Vec<(&'static str, vek::Vec3<f32>, vek::Vec3<f32>)> {
+    site.plots()
+        .filter_map(|plot| match plot.kind() {
+            PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get().special_places()),
+            _ => None,
+        })
+        .flatten()
+        .map(|(role, center, front)| (role.name(), center, front))
+        .collect()
+}
+
 pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
     site.plots().find_map(|plot| match plot.kind() {
         PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get().entrance()),

@@ -220,6 +220,7 @@ fn do_command(
         ServerChatCommand::Registre => crate::icebreaker_registre::handle_registre,
         ServerChatCommand::ReloadChunks => handle_reload_chunks,
         ServerChatCommand::RemoveLights => handle_remove_lights,
+        ServerChatCommand::Aller => crate::icebreaker_portail::handle_aller,
         ServerChatCommand::Rentrer => crate::icebreaker_return::handle_rentrer,
         ServerChatCommand::Respawn => handle_respawn,
         ServerChatCommand::RevokeBuild => handle_revoke_build,

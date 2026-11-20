@@ -253,6 +253,28 @@ impl IcebreakerDungeon {
         self.spot(cell) + Vec3::unit_z() * ((self.render.level_height - 2) / 2)
     }
 
+    /// Icebreaker F.22 : where the object of a special room stands: in the middle of the place its room gives it,
+    /// on its floor.
+    fn special_center(&self, special: &dungeon::Special) -> Vec3<f32> {
+        let (pos, size) = (special.pos, special.size);
+        self.cell_min(special.corner).as_::<f32>()
+            + Vec3::new(pos.0 as f32 + size.0 as f32 / 2.0, pos.1 as f32 + size.1 as f32 / 2.0, pos.2 as f32 + 1.0)
+    }
+
+    /// Icebreaker : the objects of the special rooms (`/aller`): the role of the room, where the object stands,
+    /// and a place three blocks in front of it.
+    pub fn special_places(&self) -> Vec<(dungeon::rooms::RoomRole, Vec3<f32>, Vec3<f32>)> {
+        self.dungeon
+            .speciaux
+            .iter()
+            .map(|special| {
+                let center = self.special_center(special);
+                let angle = f32::from(special.ori) * std::f32::consts::FRAC_PI_4;
+                (special.role, center, center + Vec3::new(angle.cos(), angle.sin(), 0.0) * 3.0)
+            })
+            .collect()
+    }
+
     /// Where the creature of a marker cell appears.
     pub fn spawn_pos(&self, cell: plan::Cell) -> Vec3<f32> {
         let min = self.cell_min(cell);
@@ -658,10 +680,7 @@ impl Structure for IcebreakerDungeon {
         // Icebreaker F.22 : the objects of the special rooms (the portal, the altar), in the middle of the place
         // their room gives them, standing on its floor.
         for special in &self.dungeon.speciaux {
-            let min = self.cell_min(special.corner);
-            let (pos, size) = (special.pos, special.size);
-            let center = min.as_::<f32>()
-                + Vec3::new(pos.0 as f32 + size.0 as f32 / 2.0, pos.1 as f32 + size.1 as f32 / 2.0, pos.2 as f32 + 1.0);
+            let center = self.special_center(special);
             // The painter's area includes its far edge, shared with the next chunk: spawn there only once.
             let (area, block) = (painter.render_aabr(), center.xy().map(|e| e.floor() as i32));
             if block.x == area.max.x || block.y == area.max.y {
