@@ -622,12 +622,17 @@ pub fn handle_create_special_entity(server: &mut Server, ev: CreateSpecialEntity
         SpecialEntity::IcebreakerObjet { body, ori } => {
             let angle = f32::from(ori) * std::f32::consts::FRAC_PI_4;
             let facing = vek::Vec3::new(angle.cos(), angle.sin(), 0.0);
-            server
+            let mut objet = server
                 .state
                 .create_object(Pos(ev.pos), body)
                 .with(comp::Ori::from_unnormalized_vec(facing).unwrap_or_default())
-                .with(comp::Immovable)
-                .build();
+                .with(comp::Immovable);
+            // Une lueur, pour le voir dans une salle sombre (portail.ron).
+            let reglages = common::icebreaker_portail::IcebreakerPortail::actuel();
+            if let Some(lumiere) = crate::icebreaker_portail::lumiere_de(&reglages, &comp::Body::Object(body)) {
+                objet = objet.with(lumiere);
+            }
+            objet.build();
         },
         SpecialEntity::ArenaTotem { range } => {
             server

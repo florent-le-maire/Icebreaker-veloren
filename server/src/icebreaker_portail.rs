@@ -29,6 +29,17 @@ pub fn handle_rituel(server: &mut Server, ev: IcebreakerRituelEvent) {
     }
 }
 
+/// La lumière d'un de nos objets (portail éteint ou allumé, autel), d'après `portail.ron`.
+pub fn lumiere_de(reglages: &IcebreakerPortail, body: &comp::Body) -> Option<comp::LightEmitter> {
+    reglages.lumiere_de(body).map(|((r, g, b), force)| comp::LightEmitter {
+        col: Rgb::new(r, g, b),
+        strength: force,
+        flicker: 0.3,
+        animated: true,
+        dir: None,
+    })
+}
+
 /// Le portail éteint `cible` s'allume : son corps change, il éclaire, et il le reste.
 fn allumer(server: &mut Server, cible: common::uid::Uid) {
     let ecs = server.state.ecs();
@@ -44,14 +55,9 @@ fn allumer(server: &mut Server, cible: common::uid::Uid) {
         new_body: PORTAIL_ACTIF,
         permanent_change: None,
     });
-    let (r, g, b) = reglages.lumiere;
-    let _ = ecs.write_storage::<comp::LightEmitter>().insert(portail, comp::LightEmitter {
-        col: Rgb::new(r, g, b),
-        strength: reglages.force_lumiere,
-        flicker: 0.3,
-        animated: true,
-        dir: None,
-    });
+    if let Some(lumiere) = lumiere_de(&reglages, &PORTAIL_ACTIF) {
+        let _ = ecs.write_storage::<comp::LightEmitter>().insert(portail, lumiere);
+    }
     if let Some(pos) = ecs.read_storage::<comp::Pos>().get(portail) {
         ecs.read_resource::<EventBus<Outcome>>().emit_now(Outcome::PortalActivated { pos: pos.0 });
     }

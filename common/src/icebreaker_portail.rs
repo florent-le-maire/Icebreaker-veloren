@@ -24,6 +24,11 @@ pub struct IcebreakerPortail {
     /// La lumière du portail allumé : couleur (rouge, vert, bleu, de 0 à 1) et force.
     pub lumiere: (f32, f32, f32),
     pub force_lumiere: f32,
+    /// La lueur du portail éteint (même couleur) : assez pour le voir dans une salle sombre.
+    pub force_eteint: f32,
+    /// La lueur de l'autel : couleur et force.
+    pub lumiere_autel: (f32, f32, f32),
+    pub force_autel: f32,
 }
 
 impl Default for IcebreakerPortail {
@@ -34,6 +39,9 @@ impl Default for IcebreakerPortail {
             hauteur_traversee: 3.0,
             lumiere: (0.3, 0.6, 1.0),
             force_lumiere: 6.0,
+            force_eteint: 2.0,
+            lumiere_autel: (1.0, 0.75, 0.45),
+            force_autel: 3.0,
         }
     }
 }
@@ -42,6 +50,16 @@ impl IcebreakerPortail {
     /// Réglages lus dans `assets/icebreaker/portail.ron` (valeurs par défaut si le fichier manque).
     pub fn actuel() -> Self {
         Ron::<Self>::load("icebreaker.portail").map_or_else(|_| Self::default(), |p| p.read().0.clone())
+    }
+
+    /// La lumière que donne un de nos objets : couleur (rouge, vert, bleu) et force.
+    pub fn lumiere_de(&self, body: &Body) -> Option<((f32, f32, f32), f32)> {
+        match *body {
+            PORTAIL => Some((self.lumiere, self.force_eteint)),
+            PORTAIL_ACTIF => Some((self.lumiere, self.force_lumiere)),
+            AUTEL => Some((self.lumiere_autel, self.force_autel)),
+            _ => None,
+        }
     }
 
     /// Un joueur en `pos` traverse le portail allumé posé en `portail`.
