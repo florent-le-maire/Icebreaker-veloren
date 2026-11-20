@@ -211,6 +211,12 @@ pub enum SpecialEntity {
     ArenaTotem {
         range: f32,
     },
+    /// Icebreaker F.22 : an object of ours standing in a special room of the dungeon (the portal, the altar),
+    /// facing `ori` (0 to 7, eighths of a turn like a sprite: 0 toward +x, 2 toward +y).
+    IcebreakerObjet {
+        body: crate::comp::object::Body,
+        ori: u8,
+    },
 }
 
 #[derive(Clone)]

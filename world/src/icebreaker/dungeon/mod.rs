@@ -68,6 +68,8 @@ pub struct Dungeon {
     pub paliers: BTreeMap<Cell, usize>,
     /// Icebreaker Y.3: the rounds of its race, if it makes some.
     pub rondes: Vec<rondes::PlannedRound>,
+    /// Icebreaker F.22 : the objects of its special rooms (portal, altar).
+    pub speciaux: Vec<Special>,
 }
 
 /// Icebreaker B.5: the tier of each chest and creature of `plan` by its
@@ -202,12 +204,46 @@ fn furniture_spot(corner: Cell, (x, y, z): (i32, i32, i32)) -> (Cell, bool) {
     (cell, near(x) && near(y) && z.rem_euclid(h) < 3)
 }
 
-/// The cells that hold hand-placed furniture.
-fn furnished_cells(furnished: &[HandFurniture]) -> std::collections::BTreeSet<Cell> {
+/// Icebreaker F.22 : the object of a special room (the portal, the altar): the corner of its room in the dungeon
+/// (level 0), its lowest block from that corner (z 0 = standing on the floor), its size in blocks and the way it
+/// faces (0 to 7, like a sprite).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Special {
+    pub role: RoomRole,
+    pub corner: Cell,
+    pub pos: (i32, i32, i32),
+    pub size: (i32, i32, i32),
+    pub ori: u8,
+}
+
+impl Special {
+    /// The cell its middle stands in.
+    pub fn cell(&self) -> Cell {
+        furniture_spot(self.corner, (self.pos.0 + self.size.0 / 2, self.pos.1 + self.size.1 / 2, self.pos.2)).0
+    }
+}
+
+/// The objects a room places for `roles` (those of its place in the graph; alone, its own).
+fn special_objects(
+    template: &rooms::RoomTemplate,
+    roles: &[RoomRole],
+    to_dungeon: impl Fn(Cell) -> Cell,
+) -> Vec<Special> {
+    let Some((min_x, _, min_y, _)) = template.plan.bounds() else { return Vec::new() };
+    let corner = to_dungeon(Cell::new(min_x, min_y, 0));
+    let placed = |role: &RoomRole| {
+        template.special(*role).map(|m| Special { role: *role, corner, pos: m.pos, size: m.size, ori: m.ori })
+    };
+    roles.iter().filter_map(placed).collect()
+}
+
+/// The cells that hold hand-placed furniture, or the object of a special room (no brazier there).
+fn furnished_cells(furnished: &[HandFurniture], speciaux: &[Special]) -> std::collections::BTreeSet<Cell> {
     furnished
         .iter()
         .flatten()
         .flat_map(|(corner, items)| items.iter().map(|f| furniture_spot(*corner, f.pos).0))
+        .chain(speciaux.iter().map(Special::cell))
         .collect()
 }
 
@@ -380,7 +416,8 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
     let cells: Vec<Cell> = room.plan.cells.keys().copied().collect();
     let rooms = [(role, cells)];
     let furnished = [hand_furniture(room, |c| c)];
-    let lights = place_lights(&plan, &rooms, &[], &settings.lighting, &furnished_cells(&furnished), 0);
+    let speciaux = special_objects(room, &room.roles, |c| c);
+    let lights = place_lights(&plan, &rooms, &[], &settings.lighting, &furnished_cells(&furnished, &speciaux), 0);
     let taken = lights.iter().map(|(c, _)| *c).collect();
     let decor = place_decor(&plan, &rooms, &furnished, &taken, &settings.decor, 0);
     Ok(Dungeon {
@@ -403,6 +440,7 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
         butin: Butin::load()?,
         paliers: BTreeMap::new(),
         rondes: Vec::new(),
+        speciaux,
     })
 }
 
@@ -477,12 +515,18 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 .collect();
             let furnished: Vec<HandFurniture> =
                 assembled.rooms.iter().map(|r| hand_furniture(&r.template, |c| r.to_dungeon(c))).collect();
+            // Icebreaker F.22 : the objects of the special rooms, by the role the graph gave each.
+            let speciaux: Vec<Special> = assembled
+                .rooms
+                .iter()
+                .flat_map(|r| special_objects(&r.template, &[graph.rooms[r.graph_room].role], |c| r.to_dungeon(c)))
+                .collect();
             let lights = place_lights(
                 &assembled.plan,
                 &room_cells,
                 &keys,
                 &settings.lighting,
-                &furnished_cells(&furnished),
+                &furnished_cells(&furnished, &speciaux),
                 seed,
             );
             let taken = keys.iter().map(|(c, _)| *c).chain(lights.iter().map(|(c, _)| *c)).collect();
@@ -523,6 +567,7 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 butin,
                 paliers,
                 rondes,
+                speciaux,
             });
         }
     }
@@ -534,6 +579,29 @@ mod tests {
     use super::*;
     use super::rooms::RoomCatalog;
     use std::collections::BTreeSet;
+
+    #[test]
+    /// Icebreaker F.22 : a special room places its object, alone or in a dungeon, on a free floor cell that gets
+    /// no brazier.
+    fn special_rooms_place_their_objects() {
+        let settings = Settings::load().unwrap();
+        let catalog = RoomCatalog::load().unwrap();
+        let alone = single_room(&settings, catalog.get("salle_portail").unwrap()).unwrap();
+        let [portal] = &alone.speciaux[..] else { panic!("{:?}", alone.speciaux) };
+        assert_eq!((portal.role, portal.pos, portal.ori), (RoomRole::Portal, (22, 17, 0), 2));
+        assert_eq!(alone.plan.get(portal.cell()), '.');
+        for seed in 0..20 {
+            let dungeon = generate(&settings, &Mission { seed, ..Mission::default() }).unwrap();
+            for role in RoomRole::SPECIAL {
+                assert!(dungeon.speciaux.iter().any(|s| s.role == role), "graine {seed} : pas de {}", role.name());
+            }
+            for special in &dungeon.speciaux {
+                let cell = special.cell();
+                assert_eq!(dungeon.plan.get(cell), '.', "graine {seed} : {special:?}");
+                assert!(!dungeon.lights.iter().any(|(c, torch)| *c == cell && torch.is_none()), "graine {seed}");
+            }
+        }
+    }
 
     #[test]
     fn settings_load() { Settings::load().unwrap(); }
@@ -785,7 +853,7 @@ mod tests {
         assert_eq!(dungeon.decor.len(), 3, "du décor de cuisine en plus : {:?}", dungeon.decor);
         assert!(blocks.iter().all(|d| d.cell == Cell::new(0, 0, 0)));
         let furnished = [hand_furniture(&room, |c| c)];
-        let cells = furnished_cells(&furnished);
+        let cells = furnished_cells(&furnished, &[]);
         assert_eq!(cells, [Cell::new(1, 1, 0), Cell::new(3, 2, 0), Cell::new(2, 1, 0)].into());
         for (cell, torch) in &dungeon.lights {
             assert!(torch.is_some() || !cells.contains(cell), "brasero sur un meuble : {cell:?}");

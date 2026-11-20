@@ -654,6 +654,32 @@ impl Structure for IcebreakerDungeon {
                 ..SpriteCfg::default()
             });
         }
+
+        // Icebreaker F.22 : the objects of the special rooms (the portal, the altar), in the middle of the place
+        // their room gives them, standing on its floor.
+        for special in &self.dungeon.speciaux {
+            let min = self.cell_min(special.corner);
+            let (pos, size) = (special.pos, special.size);
+            let center = min.as_::<f32>()
+                + Vec3::new(pos.0 as f32 + size.0 as f32 / 2.0, pos.1 as f32 + size.1 as f32 / 2.0, pos.2 as f32 + 1.0);
+            // The painter's area includes its far edge, shared with the next chunk: spawn there only once.
+            let (area, block) = (painter.render_aabr(), center.xy().map(|e| e.floor() as i32));
+            if block.x == area.max.x || block.y == area.max.y {
+                continue;
+            }
+            painter.spawn(EntityInfo::at(center).into_special(common::generation::SpecialEntity::IcebreakerObjet {
+                body: special_body(special.role),
+                ori: special.ori,
+            }));
+        }
+    }
+}
+
+/// Icebreaker F.22 : the object a special room holds (the portal starts unlit).
+fn special_body(role: dungeon::rooms::RoomRole) -> common::comp::object::Body {
+    match role {
+        dungeon::rooms::RoomRole::Altar => common::comp::object::Body::IcebreakerAutel,
+        _ => common::comp::object::Body::IcebreakerPortail,
     }
 }
 
@@ -734,6 +760,9 @@ impl IcebreakerDungeon {
         }
         for (cell, key) in &self.dungeon.keys {
             info!(chest = ?self.spot(*cell), key = key.item, "Icebreaker dungeon key");
+        }
+        for special in &self.dungeon.speciaux {
+            info!(role = special.role.name(), at = ?self.spawn_pos(special.cell()), "Icebreaker dungeon special room");
         }
         let lights = &self.dungeon.lights;
         let torches = lights.iter().filter(|(_, t)| t.is_some()).count();

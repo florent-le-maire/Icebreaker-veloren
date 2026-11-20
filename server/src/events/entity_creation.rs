@@ -618,6 +618,17 @@ pub fn handle_create_special_entity(server: &mut Server, ev: CreateSpecialEntity
                 .create_teleporter(comp::Pos(ev.pos), portal)
                 .build();
         },
+        // Icebreaker F.22 : the portal or the altar of a special room of the dungeon; it stays where it is.
+        SpecialEntity::IcebreakerObjet { body, ori } => {
+            let angle = f32::from(ori) * std::f32::consts::FRAC_PI_4;
+            let facing = vek::Vec3::new(angle.cos(), angle.sin(), 0.0);
+            server
+                .state
+                .create_object(Pos(ev.pos), body)
+                .with(comp::Ori::from_unnormalized_vec(facing).unwrap_or_default())
+                .with(comp::Immovable)
+                .build();
+        },
         SpecialEntity::ArenaTotem { range } => {
             server
                 .state
