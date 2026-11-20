@@ -237,3 +237,11 @@ Petites décisions, par date ; les règles qui en sortent sont dans le fichier i
   roche dure, contre de l'énergie ; (5) modèles voxel du donjon (ex-Q60) : dessinés par l'agent ; (6) ordre
   (ex-Q62) : le développement démarre quand on veut ; zones et boss, pouvoirs des ennemis et refonte des classes ne
   sont pas obligatoires avant le premier playtest.
+- **2026-11-20 (Flo, `design/donjon.md`, `PLAN-PLAYTEST.md` F.19 à F.22, `PLAN.md` T.10 à T.12)** : (1) la mort
+  n'est définitive (T.6) que si le mort quitte le donjon (touche R, déconnexion) ou si plus aucun vivant n'y reste ;
+  tant qu'il reste en bas, un allié peut le ressusciter à l'**autel** ; (2) chaque mort laisse dans son sac un
+  **cristal à son nom** ; à l'autel, un vivant consomme tous les cristaux qu'il porte, leurs morts reviennent près de
+  l'autel (25 % des PV), et il perd la moitié de sa vie du moment, une seule fois (refusé à 1 PV) ; (3) un
+  **portail** éteint s'allume en 5 s d'interaction ; allumé, qui le traverse rentre au village, chacun pour soi ;
+  (4) chaque donjon généré a au moins une salle de chaque, les salles en plus sont très rares et dépendent de sa
+  taille. Remplace la résurrection au cimetière du village (`design/village.md`), qui garde le mémorial.

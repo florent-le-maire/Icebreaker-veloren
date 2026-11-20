@@ -13,6 +13,24 @@ Index des règles : [`docs/GAME_DESIGN.md`](../GAME_DESIGN.md).
 - **Verticalité** : plusieurs étages, mezzanines et fosses ; on peut sauter ; la charge du guerrier fait tomber dans les
   trous (ADR 0004).
 
+## Portail et autel (Flo, 2026-11-20)
+
+Deux salles du donjon généré, au moins une de chaque par donjon ; des salles en plus sont très rares, d'autant plus
+probables que le donjon est grand (`special_rooms` de `generation.ron`).
+
+- **Portail** : un grand anneau de pierre, éteint. Un joueur interagit 5 secondes (`portail.ron`) ; un coup reçu,
+  un saut ou une roulade annulent. Allumé, il le reste : qui le traverse rentre au village, **chacun pour soi**.
+  `/rentrer` et le bouton « Rentrer » restent.
+- **Cristal** : à sa mort, un joueur laisse dans son sac un cristal à son nom (« Cristal de Sayanel »). Il ne sert
+  qu'à l'autel et disparaît au retour au village.
+- **Autel** : un vivant qui porte des cristaux l'utilise. Tous ses cristaux sont consommés, les morts encore en bas
+  reviennent près de l'autel avec 25 % de leurs PV, et lui perd la moitié de sa vie du moment, une seule fois quel
+  que soit le nombre de morts ; refusé sous 2 PV. Le sac du ressuscité reste où il est tombé (`mort.ron`, `autel`).
+- **Mort définitive** : seulement quand le mort quitte le donjon (touche R, déconnexion) ou quand plus aucun vivant
+  n'y reste (le dernier est tombé, ou il a pris le portail).
+- Dans une salle dessinée, l'objet se place par `@manque: "portail" x y z l p h sens` ou
+  `@manque: "autel de résurrection" …` (libellés réservés aux salles de rôle `portal` et `altar`).
+
 ## Étages
 
 - Un étage fait 4 m. Le sol d'un étage est le plafond de celui du dessous.

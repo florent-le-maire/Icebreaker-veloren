@@ -77,6 +77,15 @@ marque un modèle qui manque. D'où F.14 à F.17, avant F.11 à F.13.
   déclaration du sprite, symbole de décor), dessinés par l'agent (Flo, 2026-11-16) ; Flo juge sur capture.
   *Fin* : chaque modèle du lot se pose par son symbole et se voit dans le vrai client.
 
+Portail et autel (Flo, 2026-11-20, `design/donjon.md`, « Portail et autel ») : deux salles qui portent un objet du
+jeu ; la suite (allumer, traverser, cristal, résurrection) est sous le jalon T de `PLAN.md` (T.10 à T.12).
+
+- [ ] **F.19 Rôles et salles du portail et de l'autel** — *en cours : Veloren-donjon, 2026-11-20*
+- [ ] **F.20 Au moins une de chaque par donjon** — placement dans le graphe, salles en plus très rares selon la
+  taille (`special_rooms` de `generation.ron`).
+- [ ] **F.21 Modèles voxel : portail (éteint, allumé), autel, cristal** — par script, d'après les images de Flo.
+- [ ] **F.22 Le donjon fait apparaître le portail et l'autel** — à la place dite par la salle.
+
 ## 2. Grotte : casser pour avancer, miner pour de bon (jalon U, suite)
 
 **Ce que Flo demande** : des grottes séparées par des murs, pour obliger les joueurs à se servir de la destruction ;

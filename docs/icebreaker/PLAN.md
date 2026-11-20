@@ -218,6 +218,13 @@ tombe, tous rentrent. Le personnage mort est perdu : il quitte le registre et il
 - [x] **T.9 Une barre de vie à terre** — à terre avec 90 % des PV max (`pv_a_terre`, ~3 coups) au lieu de 1 PV ;
   le décompte s'arrête pendant la relève. Client texte à deux ; coups réels et barre pas vus en jeu. c988dcc9f8
 
+Portail, cristal et autel (Flo, 2026-11-20, `design/donjon.md`) : la mort n'est plus définitive tant que le mort
+reste en bas avec un vivant. Salles et modèles : F.19 à F.22 de `PLAN-PLAYTEST.md` ; worktree `Veloren-donjon`.
+
+- [ ] **T.10 Allumer le portail et rentrer en le traversant** — 5 s d'interaction, puis chacun pour soi.
+- [ ] **T.11 Le cristal du mort** — à son nom, dans son sac ; disparaît au retour au village.
+- [ ] **T.12 L'autel** — consomme les cristaux portés, relève leurs morts à 25 %, coûte la moitié de la vie du moment.
+
 ## Jalon A — Armes, classes et compétences (Flo, 2026-11-11)
 
 Le jeu d'armes en mains donne 2 compétences d'arme, la classe un ultime et un passif ; jouer une arme en expédition

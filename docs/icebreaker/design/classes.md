@@ -24,7 +24,9 @@ données qui font foi). Le reste de ce fichier est la proposition d'octobre pour
   passif, les armes qui vont avec) ; ensuite tout s'apprend.
 - **En expédition** : on change d'arme librement par l'inventaire, les compétences suivent ce qu'on tient ; un jeu
   d'armes non appris ne donne que les attaques de base. Pas de montée de niveau en bas (pilier).
-- **Mort** : définitive (T.6), maîtrise et niveaux perdus avec le personnage.
+- **Mort** : définitive (T.6) dès que le mort quitte le donjon ou que plus aucun vivant n'y reste ; tant qu'il reste
+  en bas, un allié peut le relever à l'autel avec son cristal (`design/donjon.md`). Maîtrise et niveaux perdus avec
+  le personnage.
 - Trois classes pour commencer : **guerrier** (tenir la ligne), **mage** (frapper de loin), **archer** (tenir la
   distance). Les combos de zones décrits plus bas ne sont pas dans ce jalon (Q36).
 - **Ultimes** (retours de Flo, 2026-11-15) : un ultime doit se voir et peser. Guerrier : Envol (bond ailé, dégâts de

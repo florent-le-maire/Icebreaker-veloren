@@ -103,8 +103,8 @@ Aujourd'hui les fioles et bombes sont gratuites et comptées par donjon ; avec l
 - **Blessures** : un personnage revenu à terre ou très abîmé garde une blessure (moins de PV max, moins
   d'endurance…) jusqu'à ce qu'il soit soigné. Soigner prend du temps de carte : le joueur prend un autre personnage
   du registre en attendant.
-- **Mort** : le corps reste en bas. Le ramener au cimetière ouvre la résurrection (chère, avec une séquelle). Sinon :
-  nécromancien (plus tard) ou un autre personnage du registre.
+- **Mort** : le corps reste en bas. La résurrection se fait dans le donjon, à l'autel (Flo, 2026-11-20,
+  `design/donjon.md`) ; sinon un autre personnage du registre. Le cimetière garde le mémorial.
 - **Registre** : **commun à tout le monde** ; n'importe quel joueur peut prendre n'importe quel personnage disponible.
   Nombre de places limité (le relais l'agrandit). On peut renvoyer un personnage pour faire de la place. Plus tard,
   peut-être un système de partage (personnage attitré, prêté, réservé) : à prévoir sans le faire tout de suite.
@@ -181,6 +181,7 @@ réglages de départ, à ajuster en jouant.
   carte) ; il revient avec une **séquelle** pour toujours (Froid de la tombe, Regard vide, Mains tremblantes). On peut
   aussi l'enterrer : il quitte le registre et son nom va au mémorial. Un corps resté en bas ne se relève pas (on ira
   peut-être le chercher plus tard). Le nécromancien viendra avec le second lot de bâtiments.
+  *(2026-11-20 : la résurrection passe à l'autel du donjon, sans séquelle ; le cimetière ne garde que le mémorial.)*
 - **Bâtiments** : construire ou agrandir se paie avec l'or de la **caisse commune** et les matériaux et reliques de
   l'entrepôt, et prend des heures de carte (6 h à 2 jours) ; pendant les travaux, le bâtiment sert à son niveau d'avant.
   Au départ, relais, entrepôt, intendance et infirmerie sont au niveau 1 ; forge et cimetière sont à construire, et
