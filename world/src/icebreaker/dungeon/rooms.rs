@@ -26,10 +26,26 @@ pub enum RoomRole {
     Sanctum,
     /// The arena of a boss; the room tells which bosses (`@boss:`).
     BossLair,
+    /// Icebreaker F.19 : the room of the portal back to the village, and the room of the altar that raises the
+    /// dead. Each tells where its object stands by a `@manque:` of the reserved label (`special_label`).
+    Portal,
+    Altar,
 }
 
 impl RoomRole {
-    pub const ALL: [RoomRole; 13] = [
+    /// Icebreaker F.19 : the roles whose room holds an object of the game (portal, altar).
+    pub const SPECIAL: [RoomRole; 2] = [RoomRole::Portal, RoomRole::Altar];
+
+    /// Icebreaker F.19 : the label of the `@manque:` that places the object of a special room.
+    pub fn special_label(self) -> Option<&'static str> {
+        match self {
+            RoomRole::Portal => Some("portail"),
+            RoomRole::Altar => Some("autel de résurrection"),
+            _ => None,
+        }
+    }
+
+    pub const ALL: [RoomRole; 15] = [
         RoomRole::Entrance,
         RoomRole::Hall,
         RoomRole::GuardRoom,
@@ -43,6 +59,8 @@ impl RoomRole {
         RoomRole::Vault,
         RoomRole::Sanctum,
         RoomRole::BossLair,
+        RoomRole::Portal,
+        RoomRole::Altar,
     ];
 
     /// The name of the role in the data files (`guardRoom`, `barracks`…).
@@ -61,6 +79,8 @@ impl RoomRole {
             RoomRole::Vault => "vault",
             RoomRole::Sanctum => "sanctum",
             RoomRole::BossLair => "bossLair",
+            RoomRole::Portal => "portal",
+            RoomRole::Altar => "altar",
         }
     }
 
@@ -289,6 +309,27 @@ impl RoomTemplate {
                 errors.push(format!("ligne {line} : « @meuble {} » {e}", f.sprite));
             }
         }
+        // Icebreaker F.19 : a special room places its object once, on its floor; the label is kept for it.
+        for role in RoomRole::SPECIAL {
+            let label = role.special_label().unwrap_or_default();
+            let placed: Vec<&Missing> = missing.iter().filter(|m| m.label == label).collect();
+            if roles.contains(&role) {
+                match placed[..] {
+                    [m] => {
+                        let middle = (m.pos.0 + m.size.0 / 2, m.pos.1 + m.size.1 / 2, m.pos.2);
+                        if let Some(e) = furniture_error(&plan, middle) {
+                            errors.push(format!("« @manque \"{label}\" » {e}"));
+                        }
+                    },
+                    _ => errors.push(format!(
+                        "une salle « {} » place son objet une fois (« @manque: \"{label}\" x y z l p h sens »)",
+                        role.name()
+                    )),
+                }
+            } else if !placed.is_empty() {
+                errors.push(format!("le libellé « {label} » est réservé aux salles de rôle « {} »", role.name()));
+            }
+        }
         let furniture = furniture.into_iter().map(|(_, f)| f).collect();
         Self::from_plan(id, roles, bosses, errors, plan).map(|room| Self {
             themes,
@@ -414,6 +455,12 @@ impl RoomTemplate {
     }
 
     pub fn door_count(&self) -> usize { self.doors().count() }
+
+    /// Icebreaker F.19 : where the object of a special room stands (none: not a room of this role).
+    pub fn special(&self, role: RoomRole) -> Option<&Missing> {
+        let label = role.special_label()?;
+        self.roles.contains(&role).then(|| self.missing.iter().find(|m| m.label == label)).flatten()
+    }
 
     /// The room turned (Icebreaker F.2, `RoomOrientation.Transform` of the
     /// project): 0 to 3 = quarter turns clockwise (seen from above, north up),
@@ -586,7 +633,7 @@ mod tests {
     #[test]
     fn all_rooms_are_valid() {
         let catalog = RoomCatalog::load().unwrap_or_else(|e| panic!("{e}"));
-        assert_eq!(catalog.rooms.len(), 30);
+        assert_eq!(catalog.rooms.len(), 32);
         // Every role of a branch or of the main path has a room.
         for role in RoomRole::ALL {
             assert!(!catalog.with_role(role).is_empty(), "aucune salle pour {}", role.name());
@@ -672,6 +719,32 @@ mod tests {
         assert!(wrong("@meuble: Barrel 10 10 0 0").contains("devant une porte"));
         assert!(wrong("@manque: trône 1 1 0 1 1 1").contains("guillemets"));
         assert!(wrong("@manque: \"trône\" 8 8 0 1 1 1 9").contains("de 0 à 7"));
+    }
+
+    /// Icebreaker F.19 : a special room places its object once, on its floor, and it turns with the room.
+    #[test]
+    fn special_rooms_place_their_object() {
+        let room = |lines: &str| {
+            RoomTemplate::parse("x", &format!("@roles: portal\n{lines}#####\n+...+\n#...#\n#####\n"))
+        };
+        let portal = room("@manque: \"portail\" 15 10 0 5 1 6 2\n").unwrap();
+        let placed = portal.special(RoomRole::Portal).unwrap();
+        assert_eq!((placed.pos, placed.ori), ((15, 10, 0), 2));
+        assert!(portal.special(RoomRole::Altar).is_none());
+        assert_eq!(portal.oriented(1).unwrap().special(RoomRole::Portal).unwrap().ori, 4);
+        assert!(room("").unwrap_err().contains("une fois"));
+        let twice = "@manque: \"portail\" 15 10 0 5 1 6\n@manque: \"portail\" 15 12 0 5 1 6\n";
+        assert!(room(twice).unwrap_err().contains("une fois"));
+        assert!(room("@manque: \"portail\" 1 1 0 3 1 6\n").unwrap_err().contains("hors du sol"));
+        let hall = "@roles: hall\n@manque: \"portail\" 15 10 0 5 1 6\n#####\n+...+\n#...#\n#####\n";
+        let e = RoomTemplate::parse("x", hall).unwrap_err();
+        assert!(e.contains("réservé"), "{e}");
+        let catalog = RoomCatalog::load().unwrap();
+        for role in RoomRole::SPECIAL {
+            for room in catalog.with_role(role) {
+                assert!(room.special(role).is_some(), "{}", room.id);
+            }
+        }
     }
 
     /// Icebreaker F.14 : the furniture turns with its room: it stays on the floor in every orientation, four

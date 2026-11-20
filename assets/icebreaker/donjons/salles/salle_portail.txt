@@ -1,0 +1,11 @@
+; Salle du portail : un grand anneau de pierre au milieu, tourné vers la porte du bas. Éteint, il s'allume en cinq
+; secondes ; allumé, qui le traverse rentre au village (F.19, T.10).
+@roles: portal
+@fonction: portail
+@manque: "portail" 22 17 0 5 1 6 2
+#######
+#(...(#
+#.....#
++.....#
+#(...(#
+###+###

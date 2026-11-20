@@ -1,0 +1,9 @@
+; Salle de l'autel : un autel de pierre au milieu, où l'on relève les morts avec leurs cristaux (F.19, T.12).
+@roles: altar
+@fonction: autel_resurrection
+@manque: "autel de résurrection" 23 17 0 3 2 1 2
+#######
+#!.9.!#
++.....#
+#!...!#
+###+###

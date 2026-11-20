@@ -299,6 +299,31 @@
             ],
             manques: ["pile_cranes"],
         ),
+        // Icebreaker F.19 : les deux salles qui portent un objet du jeu, posé par `@manque: "portail"` et
+        // `@manque: "autel de résurrection"` (libellés réservés : le jeu y met le portail et l'autel).
+        (
+            id: "portail",
+            nom: "Salle du portail",
+            roles: ["portal"],
+            themes: [],
+            idee: "Un grand anneau de pierre sur son socle : on l'allume, puis on le traverse pour rentrer au village.",
+            meubles: [
+                ("applique", "WallSconce"),
+            ],
+            manques: [],
+        ),
+        (
+            id: "autel_resurrection",
+            nom: "Salle de l'autel",
+            roles: ["altar"],
+            themes: [],
+            idee: "Un autel de pierre gravé, au milieu : on y relève les morts avec leurs cristaux.",
+            meubles: [
+                ("bougie", "Candle"),
+                ("pierre tombale", "Gravestone"),
+            ],
+            manques: [],
+        ),
     ],
 
     // Les modèles voxel à créer (F.13), par lots de cinq environ : le lot 1 d'abord.

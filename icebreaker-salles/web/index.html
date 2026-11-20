@@ -630,6 +630,7 @@ window.addEventListener('beforeunload', (e) => { if (salle && ecrireSalle(salle)
 const NOMS_ROLES = {
   entrance: 'Entrée', hall: 'Passage', guardRoom: 'Salle de garde', barracks: 'Caserne', storage: 'Réserve', kitchen: 'Cuisine',
   nest: 'Nid de bêtes', treasure: 'Trésor', chiefLair: 'Antre du chef', prison: 'Prison', vault: 'Chambre forte', sanctum: 'Sanctuaire', bossLair: 'Antre de boss',
+  portal: 'Portail', altar: 'Autel de résurrection',
 };
 $('roles').innerHTML = REGLAGES.roles.map((r) => `<label><input type="checkbox" value="${r}"> ${NOMS_ROLES[r] || r}</label>`).join('');
 $('fonction').innerHTML = '<option value="">— (entrée, passage)</option>' + PIECES.pieces.map((p) => `<option value="${p.id}">${p.nom}</option>`).join('');
