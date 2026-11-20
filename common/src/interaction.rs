@@ -8,7 +8,7 @@ use specs::{
 };
 
 use crate::{
-    comp::{Alignment, CharacterState, Health, PickupItem, Pos},
+    comp::{Alignment, Body, CharacterState, Health, PickupItem, Pos},
     consts::{MAX_INTERACT_RANGE, MAX_MOUNT_RANGE, MAX_PICKUP_RANGE},
     link::{Is, Link, LinkHandle, Role},
     uid::{IdMaps, Uid},
@@ -48,6 +48,9 @@ pub enum InteractionKind {
     Pet,
     /// Icebreaker : fouiller le sac d'un mort (T.3).
     IcebreakerFouillerSac,
+    /// Icebreaker : allumer le portail du retour au village (T.10), prier à l'autel de résurrection (T.12).
+    IcebreakerAllumerPortail,
+    IcebreakerAutel,
 }
 
 // TODO: Do we want to use this for sprite interactions too?
@@ -99,6 +102,8 @@ impl Link for Interaction {
         ReadStorage<'a, Pos>,
         ReadStorage<'a, Alignment>,
         ReadStorage<'a, PickupItem>,
+        // Icebreaker : le portail et l'autel se reconnaissent à leur corps (T.10).
+        ReadStorage<'a, Body>,
     );
     type DeleteData<'a> = (
         Read<'a, IdMaps>,
@@ -117,6 +122,7 @@ impl Link for Interaction {
         ReadStorage<'a, Pos>,
         ReadStorage<'a, Alignment>,
         ReadStorage<'a, PickupItem>,
+        ReadStorage<'a, Body>,
     );
 
     fn create(
@@ -130,6 +136,7 @@ impl Link for Interaction {
             positions,
             alignments,
             pickup_items,
+            bodies,
         ): &mut Self::CreateData<'_>,
     ) -> Result<(), Self::Error> {
         let entity = |uid: Uid| id_maps.uid_entity(uid);
@@ -154,6 +161,9 @@ impl Link for Interaction {
                     InteractionKind::Pet => can_pet(*pos, *target_pos, alignments.get(target)),
                     InteractionKind::IcebreakerFouillerSac => {
                         can_fouiller_sac(*pos, *target_pos, pickup_items.get(target))
+                    },
+                    InteractionKind::IcebreakerAllumerPortail | InteractionKind::IcebreakerAutel => {
+                        crate::icebreaker_portail::peut_faire(this.kind, *pos, *target_pos, bodies.get(target))
                     },
                 }
             {
@@ -209,6 +219,7 @@ impl Link for Interaction {
             positions,
             alignments,
             pickup_items,
+            bodies,
         ): &mut Self::PersistData<'_>,
     ) -> bool {
         let entity = |uid: Uid| id_maps.uid_entity(uid);
@@ -231,6 +242,9 @@ impl Link for Interaction {
                 InteractionKind::Pet => can_pet(*pos, *target_pos, alignments.get(target)),
                 InteractionKind::IcebreakerFouillerSac => {
                     can_fouiller_sac(*pos, *target_pos, pickup_items.get(target))
+                },
+                InteractionKind::IcebreakerAllumerPortail | InteractionKind::IcebreakerAutel => {
+                    crate::icebreaker_portail::peut_faire(this.kind, *pos, *target_pos, bodies.get(target))
                 },
             }
             && let Some(CharacterState::Interact(crate::states::interact::Data {

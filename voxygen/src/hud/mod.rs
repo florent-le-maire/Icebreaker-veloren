@@ -2451,6 +2451,21 @@ impl Hud {
                     EntityInteraction::CampfireSit => {
                         ("hud-crafting-campfire", "hud-waypoint_interact")
                     },
+                    // Icebreaker : notre portail éteint et notre autel (T.10, T.12).
+                    EntityInteraction::ActivatePortal
+                        if let Some(rituel) = client
+                            .state()
+                            .ecs()
+                            .read_storage::<comp::Body>()
+                            .get(entity)
+                            .and_then(common::icebreaker_portail::rituel_de) =>
+                    {
+                        if rituel == common::interaction::InteractionKind::IcebreakerAutel {
+                            ("icebreaker-autel", "icebreaker-autel-prier")
+                        } else {
+                            ("icebreaker-portail", "icebreaker-portail-allumer")
+                        }
+                    },
                     EntityInteraction::ActivatePortal => ("hud-portal", "hud-activate"),
                     _ => unreachable!(),
                 };
@@ -4259,14 +4274,16 @@ impl Hud {
                 Some(PresenceKind::Spectator | PresenceKind::IcebreakerFantome)
             );
         // La fouille d'un sac de mort : sa part se lit dans l'état du personnage.
+        let icebreaker_rituel = client
+            .state()
+            .ecs()
+            .read_storage::<comp::CharacterState>()
+            .get(info.viewpoint_entity)
+            .and_then(icebreaker::fouille_de);
         let icebreaker_en_cours = icebreaker::EnCours {
             verrou: info.icebreaker_lock_avis,
-            fouille: client
-                .state()
-                .ecs()
-                .read_storage::<comp::CharacterState>()
-                .get(info.viewpoint_entity)
-                .and_then(icebreaker::fouille_de),
+            fouille: icebreaker_rituel.map(|(part, _)| part),
+            quoi: icebreaker_rituel.map(|(_, quoi)| quoi),
         };
         // À terre, mort, allié regardé : le point de vue n'est plus le personnage du joueur quand
         // un mort regarde un allié.

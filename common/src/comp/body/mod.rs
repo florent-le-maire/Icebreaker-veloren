@@ -336,10 +336,11 @@ impl Body {
     pub fn is_campfire(&self) -> bool { matches!(self, Body::Object(object::Body::CampfireLit)) }
 
     pub fn is_portal(&self) -> bool {
+        // Icebreaker : notre portail éteint et notre autel s'activent par la même touche (T.10, T.12).
         matches!(
             self,
             Body::Object(object::Body::Portal | object::Body::PortalActive)
-        )
+        ) || crate::icebreaker_portail::rituel_de(self).is_some()
     }
 
     pub fn bleeds(&self) -> bool {

@@ -76,6 +76,11 @@ pub(crate) fn handle_rentrer(
     _args: Vec<String>,
     _action: &ServerChatCommand,
 ) -> Result<(), Content> {
+    rentrer(server, client)
+}
+
+/// Icebreaker : `client` rentre au village, par `/rentrer` ou en traversant un portail allumé (T.10).
+pub fn rentrer(server: &mut Server, client: EcsEntity) -> Result<(), Content> {
     let ecs = server.state.ecs();
     // In the campaign (decision 0016), from a dungeon slot of this server.
     let campaign = world::icebreaker::is_campaign();

@@ -17,6 +17,33 @@ pub struct IcebreakerMort {
     pub pv_releve: f32,
     /// Secondes pour fouiller le sac d'un mort.
     pub duree_fouille: f32,
+    /// Icebreaker T.12 : l'autel de résurrection (`docs/icebreaker/design/donjon.md`, « Portail et autel »).
+    #[serde(default)]
+    pub autel: Autel,
+}
+
+/// Icebreaker T.12 : l'autel relève les morts dont le prieur porte le cristal.
+#[derive(Clone, Debug, Deserialize)]
+pub struct Autel {
+    /// Secondes d'interaction.
+    pub duree: f32,
+    /// Part des PV maximum rendue à chaque ressuscité (0 à 1).
+    pub pv_resurrection: f32,
+    /// Part de sa vie du moment que perd le prieur, une seule fois (0 à 1).
+    pub part_vie_perdue: f32,
+    /// PV qu'il faut au moins pour prier.
+    pub pv_minimum: f32,
+}
+
+impl Default for Autel {
+    fn default() -> Self {
+        Self {
+            duree: 5.0,
+            pv_resurrection: 0.25,
+            part_vie_perdue: 0.5,
+            pv_minimum: 2.0,
+        }
+    }
 }
 
 impl Default for IcebreakerMort {
@@ -26,6 +53,7 @@ impl Default for IcebreakerMort {
             pv_a_terre: pv_a_terre_defaut(),
             pv_releve: 0.25,
             duree_fouille: 3.0,
+            autel: Autel::default(),
         }
     }
 }

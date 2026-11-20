@@ -227,6 +227,35 @@ fn main() {
                     },
                     None => println!("Aucune cible"),
                 }
+            } else if msg == "!portail" || msg == "!autel" {
+                // Icebreaker : allumer le portail ou prier à l'autel le plus proche (T.10, T.12).
+                use veloren_client::{Join, WorldExt};
+                let cible = {
+                    let ecs = client.state().ecs();
+                    let me = client.position().unwrap_or_default();
+                    let voulu = if msg == "!autel" {
+                        common::interaction::InteractionKind::IcebreakerAutel
+                    } else {
+                        common::interaction::InteractionKind::IcebreakerAllumerPortail
+                    };
+                    (&ecs.entities(), &ecs.read_storage::<comp::Pos>(), &ecs.read_storage::<comp::Body>())
+                        .join()
+                        .inspect(|(_, p, b)| {
+                            if matches!(b, comp::Body::Object(_)) {
+                                println!("Objet {b:?} à {:.1} blocs", p.0.distance(me));
+                            }
+                        })
+                        .filter(|(_, _, b)| common::icebreaker_portail::rituel_de(b) == Some(voulu))
+                        .min_by_key(|(_, p, _)| (p.0.distance(me) * 100.0) as i64)
+                        .map(|(e, p, _)| (e, p.0.distance(me)))
+                };
+                match cible {
+                    Some((e, d)) => {
+                        println!("Cible à {d:.1} blocs");
+                        client.activate_portal(e);
+                    },
+                    None => println!("Aucune cible"),
+                }
             } else if msg == "!balises" || msg == "!ramasser" {
                 // Icebreaker : les balises lumineuses posées (couleur, distance) ; « !ramasser »
                 // ramasse la plus proche, comme E (jalon J).

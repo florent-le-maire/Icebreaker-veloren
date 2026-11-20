@@ -10,4 +10,13 @@
     pv_a_terre: 0.9,
     pv_releve: 0.25,
     duree_fouille: 3.0,
+    // T.12 : l'autel de résurrection d'une salle du donjon. Un vivant y prie `duree` secondes ; tous les cristaux
+    // qu'il porte sont consommés, leurs morts encore en bas reviennent près de l'autel avec `pv_resurrection` de
+    // leurs PV maximum, et il perd `part_vie_perdue` de sa vie du moment, une seule fois. Refusé sous `pv_minimum` PV.
+    autel: (
+        duree: 5.0,
+        pv_resurrection: 0.25,
+        part_vie_perdue: 0.5,
+        pv_minimum: 2.0,
+    ),
 )

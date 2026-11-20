@@ -166,6 +166,18 @@ impl CharacterBehavior for Data {
                                             InventoryManip::IcebreakerFouillerSac(target),
                                         ));
                                     },
+                                    // Icebreaker : le rituel est fini, le serveur en fait l'effet (T.10, T.12).
+                                    crate::interaction::InteractionKind::IcebreakerAllumerPortail
+                                    | crate::interaction::InteractionKind::IcebreakerAutel => {
+                                        output_events.emit_server(crate::event::IcebreakerRituelEvent {
+                                            acteur: data.entity,
+                                            rituel: if kind == crate::interaction::InteractionKind::IcebreakerAutel {
+                                                crate::event::IcebreakerRituel::Autel(target)
+                                            } else {
+                                                crate::event::IcebreakerRituel::AllumerPortail(target)
+                                            },
+                                        });
+                                    },
                                 },
                                 InteractKind::Sprite { pos, kind } => {
                                     let inv_manip = InventoryManip::Collect {
@@ -249,6 +261,7 @@ impl crate::interaction::InteractionKind {
             Self::HelpDowned => Some(0.1),
             Self::Pet => Some(0.7),
             Self::IcebreakerFouillerSac => Some(0.1),
+            Self::IcebreakerAllumerPortail | Self::IcebreakerAutel => Some(0.1),
         }
     }
 
@@ -269,6 +282,21 @@ impl crate::interaction::InteractionKind {
                 Duration::from_secs_f32(0.0),
                 Some(Duration::from_secs_f32(
                     crate::icebreaker_mort::IcebreakerMort::actuel().duree_fouille,
+                )),
+                Duration::from_secs_f32(0.0),
+            ),
+            // Icebreaker : durées dans `portail.ron` et `mort.ron` (T.10, T.12).
+            Self::IcebreakerAllumerPortail => (
+                Duration::from_secs_f32(0.0),
+                Some(Duration::from_secs_f32(
+                    crate::icebreaker_portail::IcebreakerPortail::actuel().duree_allumage,
+                )),
+                Duration::from_secs_f32(0.0),
+            ),
+            Self::IcebreakerAutel => (
+                Duration::from_secs_f32(0.0),
+                Some(Duration::from_secs_f32(
+                    crate::icebreaker_mort::IcebreakerMort::actuel().autel.duree,
                 )),
                 Duration::from_secs_f32(0.0),
             ),

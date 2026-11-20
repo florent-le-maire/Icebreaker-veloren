@@ -2049,6 +2049,22 @@ impl Client {
 
     pub fn activate_portal(&mut self, portal: EcsEntity) {
         if let Some(portal_uid) = self.state.read_component_copied(portal) {
+            // Icebreaker : notre portail éteint s'allume, notre autel se prie, par une interaction de
+            // quelques secondes (T.10, T.12).
+            let rituel = self
+                .state
+                .read_storage::<comp::Body>()
+                .get(portal)
+                .and_then(common::icebreaker_portail::rituel_de);
+            if let Some(kind) = rituel {
+                if !self.is_dead() {
+                    self.send_msg(ClientGeneral::ControlEvent(ControlEvent::InteractWith {
+                        target: portal_uid,
+                        kind,
+                    }));
+                }
+                return;
+            }
             self.send_msg(ClientGeneral::ControlEvent(ControlEvent::ActivatePortal(
                 portal_uid,
             )));

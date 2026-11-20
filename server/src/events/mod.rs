@@ -168,6 +168,8 @@ impl Server {
         self.handle_serial_events(handle_summon_beam_pillars);
         // Icebreaker : pluie de projectiles sur une zone (A.23).
         self.handle_serial_events(crate::sys::icebreaker_pluie::handle_icebreaker_pluie);
+        // Icebreaker : portail allumé ou traversé, autel prié (T.10, T.12).
+        self.handle_serial_events(crate::icebreaker_portail::handle_rituel);
         self.handle_serial_events(handle_delete);
 
         self.handle_serial_events(handle_character_delete);

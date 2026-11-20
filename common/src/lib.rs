@@ -20,6 +20,7 @@ pub mod icebreaker_combat;
 pub mod icebreaker_mort;
 // Icebreaker : pluie de projectiles sur une zone visée (A.23).
 pub mod icebreaker_pluie;
+pub mod icebreaker_portail;
 // Icebreaker : balise lumineuse (jalon J).
 pub mod icebreaker_balise;
 // Icebreaker : panneau typé de l'interface (jalon N).

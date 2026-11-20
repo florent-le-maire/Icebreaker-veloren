@@ -376,6 +376,20 @@ pub struct IcebreakerReleveZoneEvent {
     pub rayon: f32,
 }
 
+/// Icebreaker : un rituel du donjon est accompli par `acteur` (jalon T, T.10 et T.12) : le portail
+/// est allumé au bout de son interaction, l'autel a été prié jusqu'au bout, ou un joueur traverse le
+/// portail allumé.
+pub struct IcebreakerRituelEvent {
+    pub acteur: EcsEntity,
+    pub rituel: IcebreakerRituel,
+}
+
+pub enum IcebreakerRituel {
+    AllumerPortail(Uid),
+    Autel(Uid),
+    Traverser,
+}
+
 /// Icebreaker : une pluie de projectiles sur le cercle de centre `centre`
 /// (ultime « Volée mortelle », A.23, `icebreaker_pluie`).
 pub struct IcebreakerPluieEvent {

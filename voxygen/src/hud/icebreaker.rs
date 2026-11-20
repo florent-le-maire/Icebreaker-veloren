@@ -446,6 +446,8 @@ pub struct EnCours {
     pub verrou: Avis,
     /// La part de la fouille d'un sac de mort faite (0 à 1), si le joueur fouille.
     pub fouille: Option<f32>,
+    /// Ce qui se fait : la fouille d'un sac, ou un rituel du donjon (portail, autel : T.10, T.12).
+    pub quoi: Option<InteractionKind>,
 }
 
 /// Ce que la zone montre : une seule chose à la fois, la fouille d'abord.
@@ -478,23 +480,29 @@ pub fn part_fouille(timer: std::time::Duration, duree: std::time::Duration) -> f
     }
 }
 
-/// La part de fouille faite, si l'état du personnage est la fouille d'un sac de mort.
-pub fn fouille_de(etat: &comp::CharacterState) -> Option<f32> {
+/// La part faite et ce qui se fait, si le personnage fouille un sac de mort, allume un portail ou prie à un
+/// autel (des interactions de quelques secondes).
+pub fn fouille_de(etat: &comp::CharacterState) -> Option<(f32, InteractionKind)> {
     let comp::CharacterState::Interact(interaction) = etat else {
         return None;
     };
     let donnees = &interaction.static_data;
-    if !matches!(donnees.interact, InteractKind::Entity {
-        kind: InteractionKind::IcebreakerFouillerSac,
+    let InteractKind::Entity {
+        kind:
+            kind @ (InteractionKind::IcebreakerFouillerSac
+            | InteractionKind::IcebreakerAllumerPortail
+            | InteractionKind::IcebreakerAutel),
         ..
-    }) {
+    } = donnees.interact
+    else {
         return None;
-    }
-    Some(match (interaction.stage_section, donnees.use_duration) {
+    };
+    let part = match (interaction.stage_section, donnees.use_duration) {
         (StageSection::Buildup, _) => 0.0,
         (StageSection::Action, Some(duree)) => part_fouille(interaction.timer, duree),
         _ => 1.0,
-    })
+    };
+    Some((part, kind))
 }
 
 /// L'icône du HUD appelée `nom` dans les données (`vue_village.ron`, `classes.ron`).
@@ -918,7 +926,7 @@ pub struct Interface {
     mots: Option<[String; 3]>,
     /// Les textes de la zone « action en cours » (rappel des touches, cible perdue, fouille),
     /// préparés une fois.
-    textes_action: Option<[String; 3]>,
+    textes_action: Option<[String; 5]>,
     /// Les textes de l'état à terre, mort et allié regardé.
     textes_vie: Option<TextesVie>,
     vivants: TextesVivants,
@@ -1423,7 +1431,7 @@ impl Interface {
         let Some(zone) = en_cours.zone() else {
             return;
         };
-        let [rappel, perdue, fouille] = self.textes_action.get_or_insert_with(|| {
+        let [rappel, perdue, fouille, portail, autel] = self.textes_action.get_or_insert_with(|| {
             let touche = controls
                 .get_binding(GameInput::IcebreakerLockTarget)
                 .map_or_else(String::new, |touche| touche.display_string());
@@ -1434,6 +1442,8 @@ impl Interface {
                 .into_owned(),
                 i18n.get_msg("icebreaker-verrou-perdue").into_owned(),
                 i18n.get_msg("icebreaker-fouille-sac").into_owned(),
+                i18n.get_msg("icebreaker-portail-allumage").into_owned(),
+                i18n.get_msg("icebreaker-autel-priere").into_owned(),
             ]
         });
         // Le panneau libre de la balise occupe le même bas d'écran : la zone passe au-dessus.
@@ -1444,7 +1454,11 @@ impl Interface {
         };
         let fond = self.ids.action_fond;
         let (dimensions, bord, texte, couleur) = match zone {
-            Zone::Fouille(_) => ([ACTION_JAUGE_W + 40.0, 64.0], BORDURE, &*fouille, TEXTE),
+            Zone::Fouille(_) => ([ACTION_JAUGE_W + 40.0, 64.0], BORDURE, match en_cours.quoi {
+                Some(InteractionKind::IcebreakerAllumerPortail) => &*portail,
+                Some(InteractionKind::IcebreakerAutel) => &*autel,
+                _ => &*fouille,
+            }, TEXTE),
             Zone::Perdue => ([220.0, ACTION_BANDEAU_H], MAUVAIS, &*perdue, MAUVAIS),
             Zone::Rappel => ([ACTION_W, ACTION_BANDEAU_H], BORDURE, &*rappel, CLAIR),
         };
@@ -2625,14 +2639,14 @@ mod tests {
 
     #[test]
     fn la_zone_action_montre_une_seule_chose() {
-        let rien = EnCours { verrou: Avis::Rien, fouille: None };
+        let rien = EnCours { verrou: Avis::Rien, fouille: None, quoi: None };
         assert_eq!(rien.zone(), None);
-        let rappel = EnCours { verrou: Avis::Rappel, fouille: None };
+        let rappel = EnCours { verrou: Avis::Rappel, fouille: None, quoi: None };
         assert_eq!(rappel.zone(), Some(Zone::Rappel));
-        let perdue = EnCours { verrou: Avis::Perdue, fouille: None };
+        let perdue = EnCours { verrou: Avis::Perdue, fouille: None, quoi: None };
         assert_eq!(perdue.zone(), Some(Zone::Perdue));
         // La fouille l'emporte sur le verrouillage, et sa part reste dans [0, 1].
-        let fouille = EnCours { verrou: Avis::Rappel, fouille: Some(1.4) };
+        let fouille = EnCours { verrou: Avis::Rappel, fouille: Some(1.4), quoi: None };
         assert_eq!(fouille.zone(), Some(Zone::Fouille(1.0)));
     }
 

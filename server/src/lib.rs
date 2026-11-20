@@ -30,6 +30,8 @@ pub mod icebreaker_expedition;
 pub mod icebreaker_maitrise;
 pub mod icebreaker_mission;
 pub mod icebreaker_mort;
+pub mod icebreaker_portail;
+pub mod icebreaker_autel;
 pub mod icebreaker_panneaux;
 pub mod icebreaker_registre;
 pub mod icebreaker_return;
@@ -761,6 +763,8 @@ impl Server {
 
         // Icebreaker : à terre et mort (jalon T).
         state.ecs_mut().insert(sys::icebreaker_mort::IcebreakerATerre::default());
+        // Icebreaker : qui vient de traverser un portail (T.10).
+        state.ecs_mut().insert(sys::icebreaker_portail::IcebreakerTraversees::default());
         // Icebreaker : pluies de projectiles en cours (A.23).
         state.ecs_mut().insert(sys::icebreaker_pluie::IcebreakerPluies::default());
         // Icebreaker O : les morts du lieu d'entraînement, qui réapparaissent à l'entrée.

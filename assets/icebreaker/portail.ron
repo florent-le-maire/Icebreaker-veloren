@@ -1,0 +1,13 @@
+// Icebreaker : le portail du retour au village (jalon T, T.10, `common/src/icebreaker_portail.rs`,
+// `docs/icebreaker/design/donjon.md`, « Portail et autel »).
+// Le portail d'une salle du donjon est éteint. Un joueur interagit (E) `duree_allumage` secondes pour l'allumer ;
+// un coup reçu, un saut ou une roulade annulent. Allumé, il le reste : un joueur vivant et debout qui passe à moins
+// de `rayon_traversee` blocs de son axe (et à `hauteur_traversee` blocs au plus de son pied) rentre au village,
+// chacun pour soi. `lumiere` : la couleur (rouge, vert, bleu) de la lueur du portail allumé, `force_lumiere` sa force.
+(
+    duree_allumage: 5.0,
+    rayon_traversee: 1.5,
+    hauteur_traversee: 3.0,
+    lumiere: (0.3, 0.6, 1.0),
+    force_lumiere: 6.0,
+)

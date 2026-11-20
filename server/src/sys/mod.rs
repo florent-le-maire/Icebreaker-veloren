@@ -13,6 +13,7 @@ pub mod icebreaker_focus;
 pub mod icebreaker_arene;
 pub mod icebreaker_mort;
 pub mod icebreaker_pluie;
+pub mod icebreaker_portail;
 pub mod icebreaker_panneaux;
 pub mod icebreaker_rondes;
 pub mod icebreaker_sleep;
@@ -63,6 +64,8 @@ pub fn add_server_systems(dispatch_builder: &mut DispatcherBuilder) {
     dispatch::<icebreaker_mort::Sys>(dispatch_builder, &[]);
     // Icebreaker : pluies de projectiles sur une zone (A.23).
     dispatch::<icebreaker_pluie::Sys>(dispatch_builder, &[]);
+    // Icebreaker : traverser le portail allumé (T.10).
+    dispatch::<icebreaker_portail::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_arene::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_balise::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_panneaux::Sys>(dispatch_builder, &[]);

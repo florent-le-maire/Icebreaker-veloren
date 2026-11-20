@@ -6,7 +6,7 @@ pub use common::event::{
     CreateSpecialEntityEvent, CreateSpriteEvent, DeleteCharacterEvent, DeleteEvent, DestroyEvent,
     DialogueEvent, DownedEvent, EnergyChangeEvent, EntityAttackedHookEvent, EventBus,
     ExitIngameEvent, ExplosionEvent, GroupManipEvent, HealthChangeEvent, HelpDownedEvent,
-    IcebreakerPluieEvent, IcebreakerReleveZoneEvent,
+    IcebreakerPluieEvent, IcebreakerReleveZoneEvent, IcebreakerRituelEvent,
     InitializeCharacterEvent, InitializeSpectatorEvent, InitiateInviteEvent, InventoryManipEvent,
     InviteResponseEvent, KillEvent, KnockbackEvent, LandOnGroundEvent, MakeAdminEvent,
     MineBlockEvent, MountEvent, NpcInteractEvent, ParryHookEvent, PoiseChangeEvent, PossessEvent,
@@ -43,6 +43,7 @@ macro_rules! server_events {
             HelpDownedEvent
             IcebreakerReleveZoneEvent
             IcebreakerPluieEvent
+            IcebreakerRituelEvent
             DownedEvent
             PoiseChangeEvent
             DeleteEvent
