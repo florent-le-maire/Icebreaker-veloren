@@ -289,7 +289,9 @@ fn main() {
                 let inventories = client.state().ecs().read_storage::<comp::Inventory>();
                 if let Some(inventory) = inventories.get(client.entity()) {
                     for item in inventory.slots().flatten() {
-                        println!("Sac : {} x {:?}", item.amount(), item.item_definition_id());
+                        // T.11 : le cristal d'un mort dit de qui il est.
+                        let de = item.icebreaker_proprietaire().map(|(_, nom)| format!(" de {nom}")).unwrap_or_default();
+                        println!("Sac : {} x {:?}{de}", item.amount(), item.item_definition_id());
                     }
                     for item in inventory.equipped_items() {
                         println!("Équipé : {:?}", item.item_definition_id());

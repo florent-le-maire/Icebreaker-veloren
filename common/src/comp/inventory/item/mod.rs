@@ -490,6 +490,10 @@ pub struct Item {
     /// converted into the items durability. Only tracked for tools and armor
     /// currently.
     durability_lost: Option<u32>,
+    /// Icebreaker T.11 : le joueur mort dont cet objet est le cristal (son entité, son nom). Envoyé au
+    /// client pour le nom de l'objet, jamais sauvé en base ; deux cristaux de morts différents ne sont
+    /// pas égaux, donc ne s'empilent pas.
+    icebreaker_proprietaire: Option<(crate::uid::Uid, String)>,
 }
 
 /// Newtype around [`Item`] used for frontend events to prevent it accidentally
@@ -941,6 +945,8 @@ impl PartialEq for Item {
             (ItemBase::Modular(our_base), ItemBase::Modular(other_base)) => our_base == other_base,
             _ => false,
         }) && self.components() == other.components()
+            // Icebreaker T.11 : deux cristaux de morts différents ne sont pas le même objet.
+            && self.icebreaker_proprietaire == other.icebreaker_proprietaire
     }
 }
 
@@ -1023,6 +1029,7 @@ impl Item {
             item_config: None,
             hash: 0,
             durability_lost: None,
+            icebreaker_proprietaire: None,
         };
         item.durability_lost = item.has_durability().then_some(0);
         item.update_item_state(ability_map, msm);
@@ -1112,6 +1119,16 @@ impl Item {
         FrontendItem(self.duplicate(ability_map, msm))
     }
 
+    /// Icebreaker T.11 : fait de cet objet le cristal du joueur mort `uid`, nommé `nom`.
+    pub fn icebreaker_lier(&mut self, uid: crate::uid::Uid, nom: String) {
+        self.icebreaker_proprietaire = Some((uid, nom));
+    }
+
+    /// Icebreaker T.11 : le joueur mort dont cet objet est le cristal (son entité, son nom).
+    pub fn icebreaker_proprietaire(&self) -> Option<(crate::uid::Uid, &str)> {
+        self.icebreaker_proprietaire.as_ref().map(|(uid, nom)| (*uid, nom.as_str()))
+    }
+
     /// Duplicates an item, creating an exact copy but with a new item ID
     #[must_use]
     pub fn duplicate(&self, ability_map: &AbilityMap, msm: &MaterialStatManifest) -> Self {
@@ -1140,6 +1157,8 @@ impl Item {
                     .map(|old_item| old_item.duplicate(ability_map, msm));
             },
         );
+        // Icebreaker T.11 : la copie reste le cristal du même mort.
+        new_item.icebreaker_proprietaire = self.icebreaker_proprietaire.clone();
         new_item
     }
 
@@ -1793,6 +1812,9 @@ pub trait ItemDesc {
     fn durability_lost(&self) -> Option<u32>;
     fn stats_durability_multiplier(&self) -> DurabilityMultiplier;
 
+    /// Icebreaker T.11 : le nom du joueur mort dont cet objet est le cristal.
+    fn icebreaker_proprietaire(&self) -> Option<&str> { None }
+
     fn tool_info(&self) -> Option<ToolKind> {
         if let ItemKind::Tool(tool) = &*self.kind() {
             Some(tool.kind)
@@ -1812,6 +1834,11 @@ pub trait ItemDesc {
                 Content::Plain(String::new()),
             )
         });
+        // Icebreaker T.11 : « Cristal de Sayanel ».
+        let name = match self.icebreaker_proprietaire() {
+            Some(nom) => Content::localized("icebreaker-cristal-de").with_arg("nom", nom.to_string()),
+            None => name,
+        };
 
         let b = |x| Box::new(x);
         if let ItemKey::ModularWeapon((comp_id, ing_id, hands)) = item_key {
@@ -1896,6 +1923,10 @@ impl ItemDesc for Item {
     fn stats_durability_multiplier(&self) -> DurabilityMultiplier {
         self.stats_durability_multiplier()
     }
+
+    fn icebreaker_proprietaire(&self) -> Option<&str> {
+        Item::icebreaker_proprietaire(self).map(|(_, nom)| nom)
+    }
 }
 
 impl ItemDesc for FrontendItem {
@@ -1926,6 +1957,10 @@ impl ItemDesc for FrontendItem {
 
     fn stats_durability_multiplier(&self) -> DurabilityMultiplier {
         self.0.stats_durability_multiplier()
+    }
+
+    fn icebreaker_proprietaire(&self) -> Option<&str> {
+        Item::icebreaker_proprietaire(&self.0).map(|(_, nom)| nom)
     }
 }
 
@@ -1993,6 +2028,10 @@ impl ItemDesc for PickupItem {
     fn stats_durability_multiplier(&self) -> DurabilityMultiplier {
         self.item().stats_durability_multiplier()
     }
+
+    fn icebreaker_proprietaire(&self) -> Option<&str> {
+        Item::icebreaker_proprietaire(self.item()).map(|(_, nom)| nom)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -2042,6 +2081,8 @@ impl<T: ItemDesc + ?Sized> ItemDesc for &T {
     fn stats_durability_multiplier(&self) -> DurabilityMultiplier {
         (*self).stats_durability_multiplier()
     }
+
+    fn icebreaker_proprietaire(&self) -> Option<&str> { (*self).icebreaker_proprietaire() }
 }
 
 /// Returns all item asset specifiers

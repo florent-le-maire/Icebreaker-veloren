@@ -96,6 +96,25 @@ pub fn est_sac(item: &crate::comp::Item) -> bool {
     )
 }
 
+/// Le cristal d'un joueur mort en expédition (T.11) : dans son sac, à son nom ; l'autel le consomme
+/// pour relever ce joueur (T.12).
+pub const CRISTAL: &str = "common.items.icebreaker.cristal";
+
+/// `item` est le cristal d'un mort.
+pub fn est_cristal(item: &crate::comp::Item) -> bool {
+    matches!(
+        item.item_definition_id(),
+        crate::comp::item::ItemDefinitionId::Simple(id) if id == CRISTAL
+    )
+}
+
+/// Le cristal du joueur mort `uid`, nommé `nom`.
+pub fn cristal_de(uid: crate::uid::Uid, nom: &str) -> crate::comp::Item {
+    let mut cristal = crate::comp::Item::new_from_asset_expect(CRISTAL);
+    cristal.icebreaker_lier(uid, nom.to_string());
+    cristal
+}
+
 impl IcebreakerMort {
     /// Réglages lus dans `assets/icebreaker/mort.ron` (valeurs par défaut si le fichier manque).
     pub fn actuel() -> Self {
@@ -126,6 +145,27 @@ mod tests {
         // Debout, ou hors du rayon : rien.
         assert!(!dans_la_releve_de_zone(centre, 8.0, pres, false));
         assert!(!dans_la_releve_de_zone(centre, 8.0, loin, true));
+    }
+
+    #[test]
+    fn un_cristal_par_mort() {
+        use crate::comp::item::{ItemDesc, ItemI18n};
+        let uid = |n| crate::uid::Uid(std::num::NonZeroU64::new(n).unwrap());
+        let (a, b) = (cristal_de(uid(1), "Flo"), cristal_de(uid(2), "Sayanel"));
+        assert!(est_cristal(&a) && !est_sac(&a));
+        assert_eq!(a.icebreaker_proprietaire(), Some((uid(1), "Flo")));
+        // Deux cristaux de morts différents ne s'empilent pas ; deux du même, si.
+        assert!(!a.can_merge(&b));
+        assert!(a.can_merge(&cristal_de(uid(1), "Flo")));
+        // La copie (envoi au client, partage) garde son mort ; le nom affiché le dit.
+        let msm = crate::comp::item::MaterialStatManifest::load().read();
+        let abilities = crate::comp::item::tool::AbilityMap::load().read();
+        assert_eq!(b.duplicate(&abilities, &msm).icebreaker_proprietaire(), Some((uid(2), "Sayanel")));
+        let (nom, _) = b.i18n(&ItemI18n::new_expect());
+        assert!(format!("{nom:?}").contains("icebreaker-cristal-de") && format!("{nom:?}").contains("Sayanel"), "{nom:?}");
+        // Un objet ordinaire n'a pas de propriétaire.
+        let (nom, _) = crate::comp::Item::new_from_asset_expect(CRISTAL).i18n(&ItemI18n::new_expect());
+        assert!(!format!("{nom:?}").contains("cristal-de"), "{nom:?}");
     }
 
     #[test]

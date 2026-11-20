@@ -98,7 +98,9 @@ impl<'a> System<'a> for Sys {
                     .filter(|(_, item, pos)| {
                         // Icebreaker : les sacs des morts et les balises lumineuses (jalon J).
                         (common::icebreaker_mort::est_sac(item.item())
-                            || common::icebreaker_balise::est_balise(item.item()))
+                            || common::icebreaker_balise::est_balise(item.item())
+                            // Icebreaker T.11 : et les cristaux posés au sol.
+                            || common::icebreaker_mort::est_cristal(item.item()))
                             && slot.holds(pos.0.xy())
                     })
                 {

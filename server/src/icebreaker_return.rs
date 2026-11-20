@@ -96,6 +96,10 @@ pub fn rentrer(server: &mut Server, client: EcsEntity) -> Result<(), Content> {
     if !away {
         return Err(Content::Plain("Tu es déjà au village.".to_string()));
     }
+    // Icebreaker T.11 : les cristaux des morts ne sortent pas du donjon.
+    if let Some(mut inventory) = ecs.write_storage::<Inventory>().get_mut(client) {
+        crate::icebreaker_mort::prendre_cristaux(&mut inventory);
+    }
     let (Some(arrival), Some(inventory)) = (
         ecs.read_storage::<Arrival>().get(client).cloned(),
         ecs.read_storage::<Inventory>().get(client).cloned(),

@@ -1320,7 +1320,13 @@ impl ServerEvent for DestroyEvent {
                 if let Some(pos) = data.positions.get(ev.entity).copied()
                     && data.icebreaker_slots.at(pos.0.xy()).is_some()
                     && let Some(mut inventory) = data.inventories.get_mut(ev.entity)
-                    && let Some(sac) = crate::icebreaker_mort::remplir_sac(&mut inventory)
+                    // Icebreaker T.11 : avec son cristal, à son nom.
+                    && let Some(sac) = crate::icebreaker_mort::remplir_sac(
+                        &mut inventory,
+                        data.uids.get(ev.entity).zip(data.players.get(ev.entity)).map(|(uid, player)| {
+                            common::icebreaker_mort::cristal_de(*uid, &player.alias)
+                        }),
+                    )
                 {
                     emitters.emit(CreateItemDropEvent {
                         pos,
