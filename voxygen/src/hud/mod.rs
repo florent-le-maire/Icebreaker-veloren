@@ -10,7 +10,7 @@ mod esc_menu;
 mod group;
 mod hotbar;
 // Icebreaker : l'interface ajoutée au HUD (jalon N).
-mod icebreaker;
+pub(crate) mod icebreaker;
 mod loot_scroller;
 mod map;
 mod minimap;

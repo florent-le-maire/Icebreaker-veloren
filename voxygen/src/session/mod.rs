@@ -1915,6 +1915,24 @@ impl PlayState for SessionState {
                             .borrow_mut()
                             .handle_input(InputKind::Ability(n), appuyee, None, None);
                     },
+                    icebreaker_auto::Pas::Lanterne => self.client.borrow_mut().enable_lantern(),
+                    icebreaker_auto::Pas::Rituel => {
+                        // Comme la touche d'interaction devant le portail éteint ou l'autel (T.10, T.12).
+                        let mut client = self.client.borrow_mut();
+                        let cible = {
+                            use specs::Join;
+                            let ecs = client.state().ecs();
+                            let ici = client.position().unwrap_or_default();
+                            (&ecs.entities(), &ecs.read_storage::<Pos>(), &ecs.read_storage::<comp::Body>())
+                                .join()
+                                .filter(|(_, _, body)| common::icebreaker_portail::rituel_de(body).is_some())
+                                .min_by_key(|(_, pos, _)| (pos.0.distance(ici) * 100.0) as i64)
+                                .map(|(entity, _, _)| entity)
+                        };
+                        if let Some(cible) = cible {
+                            client.activate_portal(cible);
+                        }
+                    },
                     icebreaker_auto::Pas::Regarder => {
                         // Comme le clic gauche d'un mort (T.4).
                         let mut client = self.client.borrow_mut();

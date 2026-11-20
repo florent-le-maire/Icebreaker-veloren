@@ -1934,7 +1934,11 @@ impl FigureMgr {
                         )
                     },
                     CharacterState::Interact(s) => {
-                        let stage_time = s.timer.as_secs_f32();
+                        // Icebreaker : une étape de durée nulle (fouille du sac, portail, autel) donnait
+                        // 0 / 0 : squelette en NaN, donc la lumière de la lanterne aussi : écran noir, puis plantage des ombres.
+                        let part = |duree: std::time::Duration| {
+                            crate::hud::icebreaker::part_fouille(s.timer, duree)
+                        };
                         let interact_pos = match s.static_data.interact {
                             interact::InteractKind::Invalid => pos.0,
                             interact::InteractKind::Entity { target, .. } => read_data
@@ -1947,11 +1951,11 @@ impl FigureMgr {
                         };
                         let stage_progress = match s.stage_section {
                             StageSection::Buildup => {
-                                stage_time / s.static_data.buildup_duration.as_secs_f32()
+                                part(s.static_data.buildup_duration)
                             },
                             StageSection::Action => s.timer.as_secs_f32(),
                             StageSection::Recover => {
-                                stage_time / s.static_data.recover_duration.as_secs_f32()
+                                part(s.static_data.recover_duration)
                             },
                             _ => 0.0,
                         };

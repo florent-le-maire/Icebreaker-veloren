@@ -41,6 +41,10 @@ pub enum Pas {
     Fermer,
     /// Mort, regarder l'allié suivant (le clic gauche).
     Regarder,
+    /// Allumer le portail ou prier à l'autel le plus proche, comme la touche d'interaction (`rituel`, T.10, T.12).
+    Rituel,
+    /// Allumer la lanterne (`lanterne`), pour voir une salle sombre.
+    Lanterne,
     /// Appuyer (`true`) ou relâcher (`false`) la touche de compétence `n` (comptée depuis zéro).
     Touche(usize, bool),
     /// Cliquer le bâtiment de cette sorte.
@@ -100,6 +104,8 @@ impl Auto {
                 },
                 None if sorte == "fermer" => Pas::Fermer,
                 None if sorte == "regarder" => Pas::Regarder,
+                None if sorte == "rituel" => Pas::Rituel,
+                None if sorte == "lanterne" => Pas::Lanterne,
                 None if sorte == "controles" => Pas::Controles,
                 None => Pas::Cliquer(sorte.to_string()),
             });
