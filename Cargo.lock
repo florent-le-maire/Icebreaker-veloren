@@ -3630,6 +3630,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "icebreaker-modeles"
+version = "0.1.0"
+dependencies = [
+ "dot_vox",
+ "image",
+]
+
+[[package]]
 name = "icebreaker-salles"
 version = "0.1.0"
 dependencies = [

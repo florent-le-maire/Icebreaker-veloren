@@ -31,6 +31,8 @@ members = [
     "icebreaker-salles",
     # Icebreaker : la forme des grottes et son atelier (docs/icebreaker/PLAN-CAVERNE.md)
     "icebreaker-caverne",
+    # Icebreaker : nos modèles voxel, générés par du code (docs/icebreaker/PLAN-PLAYTEST.md, F.23)
+    "icebreaker-modeles",
 ]
 
 ### PACKAGE ###
