@@ -5,13 +5,12 @@ use crate::{
     icebreaker_panneaux::{self, IcebreakerPanneaux, PERIODE},
     icebreaker_registre::IcebreakerRegistre,
     icebreaker_salle,
-    icebreaker_services::IcebreakerServices,
     icebreaker_treasury::IcebreakerTreasury,
     icebreaker_village::{self, IcebreakerVillage},
     icebreaker_warehouse::IcebreakerWarehouse,
 };
 use common::{
-    comp::{Health, Inventory, ItemKey, Player, Pos, Presence, PresenceKind},
+    comp::{Inventory, ItemKey, Player, Pos, Presence, PresenceKind},
     icebreaker_competences::{IcebreakerCompetences, SalleArmes},
     resources::{Time, TimeOfDay},
     uid::Uid,
@@ -36,7 +35,6 @@ impl<'a> System<'a> for Sys {
         Read<'a, IcebreakerBuildings>,
         Read<'a, IcebreakerWarehouse>,
         Read<'a, IcebreakerTreasury>,
-        Read<'a, IcebreakerServices>,
         Read<'a, IcebreakerVillage>,
         Write<'a, IcebreakerRegistre>,
         ReadStorage<'a, Client>,
@@ -45,7 +43,6 @@ impl<'a> System<'a> for Sys {
         ReadStorage<'a, Player>,
         ReadStorage<'a, Pos>,
         ReadStorage<'a, Inventory>,
-        ReadStorage<'a, Health>,
         ReadStorage<'a, IcebreakerCompetences>,
         // Icebreaker O : ce qui est en piste au lieu d'entraînement.
         ReadStorage<'a, common::comp::Agent>,
@@ -66,7 +63,6 @@ impl<'a> System<'a> for Sys {
             buildings,
             warehouse,
             treasury,
-            services,
             village,
             mut registre,
             clients,
@@ -75,7 +71,6 @@ impl<'a> System<'a> for Sys {
             players,
             positions,
             inventories,
-            healths,
             competences,
             agents,
             alignements,
@@ -93,7 +88,6 @@ impl<'a> System<'a> for Sys {
         let places = buildings.places(village.open_plots());
         let pieces = crate::icebreaker_services::coins();
         let salle = SalleArmes::actuel();
-        let prix_soin = u64::from(services.heal_price());
         let inscrits = icebreaker_expedition::resume(now).map(|expedition| expedition.membres.len());
 
         for (&entity, ouvert) in panneaux.ouverts.iter_mut() {
@@ -116,7 +110,6 @@ impl<'a> System<'a> for Sys {
                     &village,
                     &config,
                     treasury.coins(),
-                    prix_soin,
                     registre.charrette().len(),
                     inscrits,
                     carte,
@@ -166,14 +159,7 @@ impl<'a> System<'a> for Sys {
                 Place::Building(Building::Intendance) => {
                     icebreaker_panneaux::intendance(bourse, fantome)
                 },
-                Place::Building(Building::Infirmary) => icebreaker_panneaux::infirmerie(
-                    prix_soin,
-                    bourse,
-                    healths
-                        .get(entity)
-                        .filter(|_| !fantome)
-                        .map(|health| (health.current(), health.maximum())),
-                ),
+                Place::Building(Building::Forge) => icebreaker_panneaux::forge(),
                 Place::Building(Building::Departure) => {
                     let Some(uid) = uids.get(entity) else {
                         continue;

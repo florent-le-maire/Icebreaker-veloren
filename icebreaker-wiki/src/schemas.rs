@@ -452,7 +452,7 @@ fn plan_village(village: &Fichier) -> Schema {
     let prix = nombre(village, "prix_maison", 300.0);
     let heures = nombre(village, "heures_chantier", 6.0);
     let habitants = nombre(village, "habitants_par_maison", 2.0);
-    let batiments = ["entrepôt", "caisse", "intendance", "infirmerie", "départ", "charrette", "salle d'armes"];
+    let batiments = ["entrepôt", "caisse", "intendance", "forge", "départ", "charrette", "salle d'armes"];
     let (cx, cy) = (360.0, 170.0);
     let mut c = String::new();
     c += &format!("<circle cx=\"{cx}\" cy=\"{cy}\" r=\"46\" class=\"sch-place\"/>");

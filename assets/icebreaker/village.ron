@@ -2,9 +2,11 @@
 //
 // La ville complète est prévue dès le départ ; ses maisons sont rangées de la plus
 // proche à la plus éloignée de la place. Les 7 premières tiennent les bâtiments
-// (entrepôt, caisse, intendance, infirmerie, départ, charrette, salle d'armes) et sont toujours bâties. Les autres
+// (entrepôt, caisse, intendance, forge, départ, charrette, salle d'armes) et sont toujours bâties. Les autres
 // sont des terrains à bâtir. Ce qui est bâti est gardé dans la campagne
 // (`campagne/village.ron`).
+// Icebreaker VF : au village fixe (`village_plan.ron`, décision 0022), les bâtiments sont les lieux
+// de même id du plan (la caisse dans la Guilde, avec la charrette), puis les lieux à palier.
 (
     // Maisons bâties au début de la campagne (bâtiments compris).
     maisons_au_depart: 8,
@@ -22,7 +24,7 @@
         "entrepot": ["Crate", "Barrel", "Crate", "Barrel"],
         "caisse": ["Chest", "Lantern", "Chest", "Lantern"],
         "intendance": ["Crate", "Lantern", "Barrel", "Crate"],
-        "infirmerie": ["Cauldron", "Bedroll", "Lantern", "Bedroll"],
+        "forge": ["Anvil", "Barrel", "Lantern", "Crate"],
         "depart": ["Sign", "Tent", "Lantern", "Sign"],
         "charrette": ["Crate", "Barrel", "Sign", "Crate"],
         "salle_armes": ["Anvil", "Lantern", "Barrel", "Anvil"],

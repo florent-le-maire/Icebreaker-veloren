@@ -129,8 +129,16 @@ pub fn caisse(caisse: u64, bourse: u64, prix_maison: u64) -> Panneau {
     }
 }
 
+/// Icebreaker VF : la forge (décision 0022), où l'on n'a rien à faire pour
+/// l'instant.
+pub fn forge() -> Panneau {
+    Panneau::nouveau("outils", "Forge", "Bientôt : améliorer et réparer l'équipement.")
+}
+
 /// L'infirmerie : la vie du joueur (`vie` : actuelle et maximale ; aucune pour
 /// un fantôme), le prix, et le soin, grisé avec sa raison s'il est impossible.
+/// Icebreaker VF : le bâtiment est supprimé du village (décision 0022) ; le soin
+/// est gardé pour plus tard.
 pub fn infirmerie(prix: u64, bourse: u64, vie: Option<(f32, f32)>) -> Panneau {
     let mut panneau = Panneau::nouveau("potion", "Infirmerie", "Un soin complet contre de l'or.");
     let blesse = vie.is_some_and(|(actuelle, maximale)| actuelle < maximale);

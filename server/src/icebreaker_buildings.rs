@@ -26,7 +26,9 @@ pub enum Building {
     Warehouse,
     Treasury,
     Intendance,
-    Infirmary,
+    /// Icebreaker VF : la forge (décision 0022), à la place de l'infirmerie, supprimée ; rien
+    /// à y faire pour l'instant.
+    Forge,
     /// Where the expeditions leave from (V.7).
     Departure,
     /// Where the recruits wait, and the common registry (jalon R).
@@ -41,7 +43,7 @@ impl Building {
         Building::Warehouse,
         Building::Treasury,
         Building::Intendance,
-        Building::Infirmary,
+        Building::Forge,
         Building::Departure,
         Building::Charrette,
         Building::SalleArmes,
@@ -54,7 +56,7 @@ impl Building {
             Building::Warehouse => "entrepot",
             Building::Treasury => "caisse",
             Building::Intendance => "intendance",
-            Building::Infirmary => "infirmerie",
+            Building::Forge => "forge",
             Building::Departure => "depart",
             Building::Charrette => "charrette",
             Building::SalleArmes => "salle_armes",
@@ -66,7 +68,7 @@ impl Building {
             Building::Warehouse => "Entrepôt",
             Building::Treasury => "Caisse",
             Building::Intendance => "Intendance",
-            Building::Infirmary => "Infirmerie",
+            Building::Forge => "Forge",
             Building::Departure => "Départ",
             Building::Charrette => "Charrette",
             Building::SalleArmes => "Salle d'armes",
@@ -181,7 +183,7 @@ fn place_at(places: &[(Place, Aabr<i32>, i32)], wpos: Vec2<f32>) -> Option<Place
 pub(crate) fn hours_left(fin: f64, now: f64) -> f64 { ((fin - now) / 3600.0).max(0.0) }
 
 /// Icebreaker : les bâtiments et les terrains du plan (jalon N), chacun avec ce
-/// qu'il faut en savoir sans l'ouvrir : l'or de la caisse, le prix du soin, les
+/// qu'il faut en savoir sans l'ouvrir : l'or de la caisse, les
 /// recrues du jour, les inscrits au départ, le prix d'un terrain, la fin d'un
 /// chantier.
 pub fn liste(
@@ -189,7 +191,6 @@ pub fn liste(
     village: &IcebreakerVillage,
     config: &VillageConfig,
     caisse: u64,
-    prix_soin: u64,
     recrues: usize,
     inscrits: Option<usize>,
     now: f64,
@@ -205,7 +206,7 @@ pub fn liste(
                             String::new()
                         },
                         Building::Treasury => format!("{caisse} or"),
-                        Building::Infirmary => format!("Soin : {prix_soin} or"),
+                        Building::Forge => "Bientôt".to_string(),
                         Building::Departure => inscrits
                             .map_or_else(|| "Personne".to_string(), |n| pluriel(n, "inscrit")),
                         Building::Charrette => pluriel(recrues, "recrue"),
@@ -367,7 +368,7 @@ mod tests {
         let at = |x, y| place_at(&places, Vec2::new(x, y));
         assert_eq!(at(5.5, 5.0), Some(Place::Building(Building::Warehouse)));
         assert_eq!(at(25.0, 9.9), Some(Place::Building(Building::Intendance)));
-        assert_eq!(at(45.0, 1.0), Some(Place::Building(Building::Infirmary)));
+        assert_eq!(at(45.0, 1.0), Some(Place::Building(Building::Forge)));
         assert_eq!(at(65.0, 1.0), Some(Place::Plot(7)));
         assert_eq!(at(15.0, 5.0), None);
     }
@@ -398,7 +399,7 @@ mod tests {
     fn the_weapons_hall_is_the_seventh_building_and_the_others_keep_their_rank() {
         use Building::*;
         assert_eq!(Building::ALL, [
-            Warehouse, Treasury, Intendance, Infirmary, Departure, Charrette, SalleArmes
+            Warehouse, Treasury, Intendance, Forge, Departure, Charrette, SalleArmes
         ]);
         assert_eq!(SalleArmes.id(), "salle_armes");
         assert_eq!(SalleArmes.name(), "Salle d'armes");
@@ -436,7 +437,7 @@ mod tests {
         let places = buildings.places([(7, square(200), 0)]);
         let config = crate::icebreaker_village::config();
         let village = IcebreakerVillage::default();
-        let liste = liste(&places, &village, &config, 420, 60, 3, None, 0.0);
+        let liste = liste(&places, &village, &config, 420, 3, None, 0.0);
         let etat = |sorte: &str| {
             liste
                 .iter()
@@ -445,7 +446,7 @@ mod tests {
                 .unwrap_or_else(|| panic!("no {sorte} in {liste:?}"))
         };
         assert_eq!(etat("caisse"), texte("420 or"));
-        assert_eq!(etat("infirmerie"), texte("Soin : 60 or"));
+        assert_eq!(etat("forge"), texte("Bientôt"));
         assert_eq!(etat("charrette"), texte("3 recrues"));
         assert_eq!(etat("depart"), texte("Personne"));
         assert_eq!(etat("entrepot"), texte(""));
@@ -453,7 +454,7 @@ mod tests {
         let terrain = liste.iter().find(|b| b.sorte == "terrain").unwrap();
         assert_eq!(terrain.nom, texte("Terrain"));
 
-        let seul = super::liste(&places, &village, &config, 0, 60, 1, Some(1), 0.0);
+        let seul = super::liste(&places, &village, &config, 0, 1, Some(1), 0.0);
         let etat = |sorte: &str| seul.iter().find(|b| b.sorte == sorte).unwrap().etat.clone();
         assert_eq!(etat("charrette"), texte("1 recrue"));
         assert_eq!(etat("depart"), texte("1 inscrit"));

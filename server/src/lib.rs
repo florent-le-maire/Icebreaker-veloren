@@ -546,6 +546,11 @@ impl Server {
                     Some(town.tile_center_wpos(town.plot(plaza).root_tile()))
                 })
                 .inspect(|spawn| info!(?spawn, "Icebreaker village spawn"));
+            // Icebreaker VF : le sol de la place du village fixe, pour ne pas apparaître dans une grotte
+            // en dessous (la recherche part du bas).
+            let village_sol = instance_site
+                .filter(|_| world::icebreaker::is_village())
+                .and_then(|site| world::icebreaker::village_sol(&index.sites[site]));
             // Icebreaker: in a dungeon instance, players start in front of its
             // dungeon (out of the entrance tunnel of a dungeon of our generator).
             let instance_spawn = village_square.or_else(|| {
@@ -580,13 +585,14 @@ impl Server {
                 .and_then(|site| world::icebreaker::dungeon_arrival_under(&index.sites[site]))
                 .map(|under| world.find_accessible_pos_above(index, under.xy(), under.z - 1))
                 .inspect(|spawn| info!(?spawn, "Icebreaker cave spawn, in the safe room"))
+                .or_else(|| village_sol.map(|alt| world.find_accessible_pos_above(index, spawn_wpos, alt - 2)))
                 .unwrap_or_else(|| world.find_accessible_pos(index, spawn_wpos, false))
         });
         #[cfg(not(feature = "worldgen"))]
         let spawn_point = SpawnPoint::default();
 
         // Icebreaker: the village buildings (warehouse, treasury, intendance,
-        // infirmary, departure, cart, in `Building::ALL` order) are the houses nearest
+        // forge, departure, cart, in `Building::ALL` order) are the houses nearest
         // to the square, their NPC standing inside, just past the door (X.5; the
         // cart's stays out, at the door); on the square, at the setting's offset
         // from the spawn point, if the town lacks houses.
@@ -596,15 +602,20 @@ impl Server {
                 settings.icebreaker.storekeeper_offset,
                 settings.icebreaker.treasurer_offset,
                 settings.icebreaker.intendant_offset,
+                // Icebreaker VF : la forge reprend la place du soigneur.
                 settings.icebreaker.healer_offset,
                 settings.icebreaker.departure_offset,
                 settings.icebreaker.charrette_offset,
                 settings.icebreaker.salle_offset,
             ];
             let square = spawn_point.0.xy().as_::<i32>();
+            // Icebreaker VF : au village fixe, chaque bâtiment est le lieu de même id du plan.
             let houses = instance_site
                 .filter(|_| world::icebreaker::is_village())
-                .map(|site| world::icebreaker::village_houses(&index.sites[site], square));
+                .map(|site| {
+                    icebreaker_village::houses_du_plan(&world::icebreaker::village_lieux(&index.sites[site]))
+                        .unwrap_or_else(|| world::icebreaker::village_houses(&index.sites[site], square))
+                });
             // Icebreaker: only some of the town's houses stand (jalon C).
             let village = match (instance_site, &houses) {
                 (Some(site), Some(houses)) => {
@@ -706,7 +717,8 @@ impl Server {
             .insert(icebreaker_services::IcebreakerServices::new(
                 village_npc_pos(2),
                 town_economy,
-                village_npc_pos(3),
+                // Icebreaker VF : plus d'infirmerie (décision 0022), donc pas de soigneur.
+                None,
                 settings.icebreaker.heal_price,
             ));
         // Icebreaker: the expedition leader, at the door of the « Départ » house.

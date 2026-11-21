@@ -54,6 +54,12 @@ fn main() {
         std::process::exit(2);
     };
     let plan = VillagePlan::load().expect("plan du village");
+    let place = site.tile_center_wpos(site.plot(site.plazas().next().expect("place")).root_tile());
+    println!(
+        "apparition : en partant du bas {:?}, depuis le sol de la place {:?}",
+        world.find_accessible_pos(index, place, false),
+        world.find_accessible_pos_above(index, place, veloren_world::icebreaker::village_sol(site).unwrap_or(0) - 2)
+    );
     let emprise = plan.emprise();
     let bounds = Aabr {
         min: site.tile_wpos(emprise.min - plan.marge),
@@ -79,7 +85,7 @@ fn main() {
         let mut haut = None;
         for z in (chunk.get_min_z()..chunk.get_max_z()).rev() {
             let block = *chunk.get(local.with_z(z)).ok()?;
-            if haut.is_none() && (block.is_filled() || block.get_sprite().is_some_and(|s| s != SpriteKind::Empty)) {
+            if haut.is_none() && (block.is_filled() || block.kind().is_liquid() || block.get_sprite().is_some_and(|s| s != SpriteKind::Empty)) {
                 haut = Some((z, block));
             }
             if block.is_filled() {
@@ -129,12 +135,18 @@ fn main() {
 
     // L'image : couleur du bloc du dessus, éclairée selon sa hauteur ; nord en haut.
     let size = bounds.size();
+    let mut eau = 0;
     let mut image = image::RgbImage::new(size.w as u32, size.h as u32);
     for y in 0..size.h {
         for x in 0..size.w {
             let wpos = bounds.min + Vec2::new(x, y);
             let couleur = colonne(wpos).map_or(Rgb::new(255, 0, 255), |(z, block, _)| {
-                let base = block.get_color().unwrap_or(Rgb::new(120, 120, 120));
+                let base = if block.kind().is_liquid() {
+                    eau += 1;
+                    Rgb::new(40, 90, 230)
+                } else {
+                    block.get_color().unwrap_or(Rgb::new(120, 120, 120))
+                };
                 let eclairage = (1.0 + (z - mediane) as f32 * 0.03).clamp(0.4, 1.6);
                 base.map(|c| (c as f32 * eclairage).clamp(0.0, 255.0) as u8)
             });
@@ -142,6 +154,7 @@ fn main() {
         }
     }
     image.save(&sortie).expect("image enregistrée");
+    println!("colonnes d'eau dans l'image : {eau}");
     println!("image : {sortie} ({}×{} blocs)", size.w, size.h);
     std::process::exit(if a_plat >= 0.97 { 0 } else { 1 });
 }

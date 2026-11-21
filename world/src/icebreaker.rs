@@ -245,6 +245,12 @@ pub fn village_houses(site: &Site, square: vek::Vec2<i32>) -> Vec<VillageHouse> 
     houses
 }
 
+/// Icebreaker VF : la hauteur du sol de la place du village fixe (où l'on apparaît).
+pub fn village_sol(site: &Site) -> Option<i32> {
+    let plaza = site.plazas().next()?;
+    site.tiles.get(site.plot(plaza).root_tile()).hard_alt
+}
+
 /// Icebreaker VF : les lieux bâtis du village fixe (pas les terrains de
 /// décor), par id du plan (`village_plan.ron`), avec leur palier. Vide si le
 /// site n'a pas été construit d'après le plan.

@@ -71,6 +71,43 @@ fn standing_ranks(config: &VillageConfig, saved: Option<&str>) -> Vec<usize> {
     ranks
 }
 
+/// Icebreaker VF : les maisons du village fixe (décision 0022), rangées comme
+/// les attend le reste : les bâtiments dans l'ordre de `Building::ALL`, trouvés
+/// par leur id dans le plan, puis les terrains à bâtir par palier. Aucune si
+/// le site n'a pas de plan ou s'il y manque un bâtiment (la ville tirée au
+/// hasard prend alors le relais). La caisse, absente du croquis (Q63), est
+/// dans la Guilde (le lieu de la charrette), une tuile plus loin que la porte ;
+/// au plan, elle en occupe la moitié ouest.
+pub fn houses_du_plan(lieux: &[(String, u32, VillageHouse)]) -> Option<Vec<VillageHouse>> {
+    if lieux.is_empty() {
+        return None;
+    }
+    let lieu = |id: &str| lieux.iter().find(|(i, ..)| i == id).map(|(_, _, house)| *house);
+    let mut houses = Vec::new();
+    for building in Building::ALL {
+        let house = lieu(building.id()).or_else(|| {
+            (building == Building::Treasury).then_some(())?;
+            let mut guilde = lieu(Building::Charrette.id())?;
+            guilde.inside += guilde.inside - guilde.front;
+            // La moitié ouest de la Guilde : un clic au plan y trouve la caisse, au milieu la charrette.
+            guilde.bounds.max.x = guilde.bounds.center().x;
+            Some(guilde)
+        });
+        let Some(house) = house else {
+            warn!(id = building.id(), "Icebreaker : bâtiment absent du plan du village");
+            return None;
+        };
+        houses.push(house);
+    }
+    let mut terrains = lieux
+        .iter()
+        .filter(|(id, palier, _)| *palier > 0 && Building::ALL.iter().all(|b| b.id() != id))
+        .collect::<Vec<_>>();
+    terrains.sort_by_key(|(_, palier, _)| *palier);
+    houses.extend(terrains.into_iter().map(|(_, _, house)| *house));
+    Some(houses)
+}
+
 /// The first `count` plots to build on (rank, house): the houses not standing,
 /// nearest to the square first.
 fn open_plots(
@@ -260,6 +297,36 @@ pub(crate) fn handle_batir(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // Icebreaker VF : chaque bâtiment est le lieu de même id ; la caisse est dans la Guilde.
+    #[test]
+    fn le_village_fixe_range_ses_batiments_par_id() {
+        let house = |x: i32| VillageHouse {
+            plot: common::store::Id::new(x as u64),
+            front: vek::Vec2::new(x * 100, -6),
+            inside: vek::Vec2::new(x * 100, 0),
+            bounds: vek::Aabr { min: vek::Vec2::new(x * 100, 0), max: vek::Vec2::new(x * 100 + 10, 10) },
+            alt: 0,
+        };
+        let ids = ["salle_armes", "terrain_b", "charrette", "entrepot", "intendance", "terrain_a", "forge", "depart"];
+        let paliers = [0, 2, 0, 0, 0, 1, 0, 0];
+        let lieux = ids
+            .iter()
+            .zip(paliers)
+            .enumerate()
+            .map(|(i, (id, palier))| (id.to_string(), palier, house(i as i32)))
+            .collect::<Vec<_>>();
+        let houses = houses_du_plan(&lieux).unwrap();
+        let plots = houses.iter().map(|h| h.plot).collect::<Vec<_>>();
+        let id = |i: u64| common::store::Id::new(i);
+        // entrepot, caisse (= charrette), intendance, forge, depart, charrette, salle_armes, puis les terrains.
+        assert_eq!(plots, [id(3), id(2), id(4), id(6), id(7), id(2), id(0), id(5), id(1)]);
+        assert_eq!(houses[1].inside, vek::Vec2::new(200, 6), "la caisse, une tuile plus loin que la porte");
+        assert_eq!(houses[1].bounds.max.x, 205, "la caisse, la moitié ouest de la Guilde");
+        // Un bâtiment manque : pas de village fixe.
+        assert!(houses_du_plan(&lieux[1..]).is_none());
+        assert!(houses_du_plan(&[]).is_none());
+    }
 
     #[test]
     fn the_village_starts_small_and_keeps_its_buildings() {
