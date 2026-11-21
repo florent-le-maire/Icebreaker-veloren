@@ -1,55 +1,97 @@
-; Cuisine : un plan de travail et des tonneaux au nord, deux marmites au milieu, deux tables, des réserves au sud.
-; Meublée à la main (F.14), en attendant l'atelier des salles.
+; Cuisine (F.26, cuisine vivante) : serrée et pleine. Au fond l'âtre entre les étagères et les tonneaux ; au milieu
+; une table de travail avec un repas en cours, les ustensiles pendus au-dessus ; à l'est les plans de travail, le
+; billot et la viande pendue ; des provisions dans les coins.
 @roles: kitchen
 @fonction: cuisine
 @theme: artisan
-@meuble: Barrel 9 7 0 2
-@meuble: Barrel 10 7 0 2
-@meuble: BarrelWoodWater 12 7 0 2
-@meuble: CounterWoodEnd 15 7 0 2
-@meuble: CounterWoodMiddle 16 7 0 2
-@meuble: CounterWoodMiddle 17 7 0 2
-@meuble: CounterWoodMiddle 18 7 0 2
-@meuble: CounterWoodEnd 19 7 0 2 miroir
-@meuble: Shelf 22 7 0 2
-@meuble: Shelf 23 7 0 2
-@meuble: OvenArabic 27 7 0 2
-@meuble: Cauldron 31 7 0 2
-@meuble: JugClayM 34 7 0 2
-@meuble: JugClayM 35 7 0 2
-@meuble: BasketWovenM 37 7 0 2
-@meuble: Shelf 55 12 0 4
-@meuble: Shelf 55 13 0 4
-@meuble: CookingPot 28 19 0 0
-@meuble: CookingPot 32 19 0 0
-@meuble: BucketWoodM 30 21 0 0
-@meuble: ChairWoodWoodland 18 26 0 2
-@meuble: ChairWoodWoodland 40 26 0 2
-@meuble: ChairWoodWoodland 17 27 0 0
-@meuble: DiningtableWoodWoodlandRound 18 27 0 0
-@meuble: ChairWoodWoodland 19 27 0 4
-@meuble: ChairWoodWoodland 39 27 0 0
-@meuble: DiningtableWoodWoodlandRound 40 27 0 0
-@meuble: ChairWoodWoodland 41 27 0 4
-@meuble: ChairWoodWoodland 18 28 0 6
-@meuble: ChairWoodWoodland 40 28 0 6
-@meuble: Cauldron 7 34 0 0
-@meuble: BarrelWoodWater 55 34 0 4
-@meuble: SackLeatherM 9 41 0 6
-@meuble: SackLeatherM 10 41 0 6
-@meuble: CrateBlock 12 41 0 6
-@meuble: CrateBlock 13 41 0 6
-@meuble: Barrel 15 41 0 6
-@meuble: BasketWovenM 40 41 0 6
-@meuble: JugClayM 42 41 0 6
-@meuble: SackLeatherM 44 41 0 6
-@meuble: CarpenterToolsWall 55 16 1 4
-@meuble: CrateBlock 13 41 1 6
-@manque: "billot de boucher" 24 30 0 2 1 2
-#######+#
-#.......#
-#.......#
-+.......+
-#.......#
-#.......#
-###+#####
+@meuble: IcebreakerAtre 17 8 0 4
+@meuble: BarrelWoodWater 8 7 0 4
+@meuble: Barrel 9 7 0 4
+@meuble: Shelf 12 7 0 4
+@meuble: Shelf 22 7 0 4
+@meuble: JugClayM 24 7 0 4
+@meuble: BasketWovenM 25 7 0 4
+@meuble: SackLeatherM 26 7 0 4
+@meuble: CrateBlock 27 7 0 4
+@meuble: CrateBlock 27 7 1 4
+@meuble: BucketWoodM 14 10 0 0
+@meuble: IcebreakerViandePendue 7 9 1 2
+@meuble: CounterWoodEnd 16 17 0 4
+@meuble: CounterWoodMiddle 17 17 0 0
+@meuble: CounterWoodMiddle 18 17 0 0
+@meuble: CounterWoodMiddle 19 17 0 0
+@meuble: CounterWoodMiddle 20 17 0 0
+@meuble: CounterWoodMiddle 21 17 0 0
+@meuble: CounterWoodMiddle 22 17 0 0
+@meuble: CounterWoodEnd 23 17 0 0
+@meuble: JugClayM 17 17 1 2
+@meuble: IcebreakerVaisselle 18 17 1 0
+@meuble: IcebreakerPreparation 20 17 1 4
+@meuble: IcebreakerVaisselle 22 17 1 0
+@meuble: IcebreakerUstensilesPendus 17 17 5 0
+@meuble: IcebreakerUstensilesPendus 21 17 5 0
+@meuble: CounterWoodEnd 34 15 0 6
+@meuble: CounterWoodMiddle 34 16 0 6
+@meuble: CounterWoodMiddle 34 17 0 6
+@meuble: CounterWoodMiddle 34 18 0 6
+@meuble: CounterWoodMiddle 34 19 0 6
+@meuble: CounterWoodEnd 34 20 0 6 miroir
+@meuble: IcebreakerPreparation 34 17 1 6
+@meuble: JugClayM 34 19 1 6
+@meuble: IcebreakerUstensilesPendus 33 17 5 6
+@meuble: IcebreakerBillot 31 18 0 6
+@meuble: IcebreakerViandePendue 34 23 1 6
+@meuble: IcebreakerViandePendue 34 25 2 6
+@meuble: Barrel 34 27 0 6
+@meuble: BarrelWoodWater 29 27 0 0
+@meuble: BucketWoodM 31 27 0 0
+@meuble: CrateBlock 32 27 0 0
+@meuble: Shelf 24 27 0 0
+@meuble: SackLeatherM 22 26 0 0
+@meuble: Barrel 7 24 0 2
+@meuble: SackLeatherM 7 26 0 2
+@meuble: SackLeatherM 8 27 0 0
+@meuble: CrateBlock 7 27 0 0
+@meuble: CrateBlock 7 27 1 0
+@meuble: BasketWovenM 10 27 0 0
+@meuble: LogsWoodCoreEnd 13 7 0 0
+@meuble: LogsWoodCoreMiddle 14 7 0 0
+@meuble: LogsWoodBranchS 13 8 0 0
+@meuble: Cauldron 21 9 0 0
+@meuble: CounterWoodEnd 16 18 0 4
+@meuble: CounterWoodMiddle 17 18 0 0
+@meuble: CounterWoodMiddle 18 18 0 0
+@meuble: CounterWoodMiddle 19 18 0 0
+@meuble: CounterWoodMiddle 20 18 0 0
+@meuble: CounterWoodMiddle 21 18 0 0
+@meuble: CounterWoodMiddle 22 18 0 0
+@meuble: CounterWoodEnd 23 18 0 0
+@meuble: IcebreakerVaisselle 17 18 1 4
+@meuble: BasketWovenS 19 18 1 0
+@meuble: IcebreakerVaisselle 21 18 1 4
+@meuble: Bowl 23 18 1 0
+@meuble: BenchWood2Side 17 16 0 0
+@meuble: BenchWood2Middle 18 16 0 0
+@meuble: BenchWood2Middle 19 16 0 0
+@meuble: BenchWood2Middle 20 16 0 0
+@meuble: BenchWood2Middle 21 16 0 0
+@meuble: BenchWood2Side 22 16 0 0 miroir
+@meuble: BenchWood2Side 17 19 0 4 miroir
+@meuble: BenchWood2Middle 18 19 0 4
+@meuble: BenchWood2Middle 19 19 0 4
+@meuble: BenchWood2Middle 20 19 0 4
+@meuble: BenchWood2Middle 21 19 0 4
+@meuble: BenchWood2Side 22 19 0 4
+@meuble: IcebreakerUstensilesPendus 11 11 5 0
+@meuble: IcebreakerUstensilesPendus 29 24 5 0
+@meuble: CookingPot 26 24 0 0
+@meuble: BucketWoodM 25 25 0 0
+@meuble: BasketWovenL 27 27 0 0
+@meuble: SackLeatherM 33 27 0 0
+@meuble: SackLeatherM 34 26 0 6
+@meuble: CrateBlock 33 26 0 0
+####+#
+#....#
++....#
+#....#
+##+###

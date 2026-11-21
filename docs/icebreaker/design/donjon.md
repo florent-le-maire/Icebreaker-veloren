@@ -175,7 +175,8 @@ Le tableur `docs/icebreaker/salles.xlsx` liste les salles et leur plan : `cargo 
 laisse la salle vide. Une salle porte donc ses meubles un par un, en blocs comptés depuis le coin de son plan (x
 vers l'est, y dans le sens des lignes du plan, z 0 = posé sur le sol de l'étage 0, 7 de plus par étage) :
 `@meuble: <sprite> x y z ori [miroir]` (ori de 0 à 7, huitièmes de tour : un meuble adossé au mur de la première
-ligne du plan et tourné vers la salle a 2) et `@manque: "libellé" x y z largeur profondeur hauteur [sens]` pour un modèle
+ligne du plan et tourné vers la salle a 4, contre le mur est 6, du bas 0, ouest 2 : l'avant des meubles de Veloren et
+des nôtres regarde -y ; vu en jeu le 2026-11-21 avec l'âtre de la cuisine) et `@manque: "libellé" x y z largeur profondeur hauteur [sens]` pour un modèle
 que Veloren n'a pas (rien n'est dessiné en jeu : c'est la liste des modèles à faire ; `sens`, de 0 à 7 comme
 `ori`, dit de quel côté regarde le devant du modèle, la flèche du bloc « ? » de l'atelier ; un seul bloc peut
 couvrir toute une zone, un tapis par exemple). Les meubles tournent avec la
