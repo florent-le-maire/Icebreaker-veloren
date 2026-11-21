@@ -322,6 +322,11 @@ tâche pour ce qui casse.
 - Autel : « Relever les morts » (E) avec deux cristaux ; les relevés ont 25 % de vie, le prieur la moitié de la
   sienne ; un mort qui regardait un allié retrouve son personnage ; refus à 1 PV.
 
+**Cuisine vivante (F.23 à F.26, `PLAN-PLAYTEST.md`)**
+- La cuisine dans un donjon généré, avec ses habitants : se faufiler entre la table, le billot et l'âtre ; on
+  bute sur l'âtre (bloc devant, au milieu) et le billot, on passe sous les ustensiles et la viande pendus.
+- Les salles plus anciennes ont leurs meubles adossés en ori 2 : à revoir dans l'atelier (4 contre le mur du haut).
+
 **Atelier des salles (F.14 à F.17, `PLAN-PLAYTEST.md`)**
 - `.\icebreaker.ps1 salles` : ouvrir une salle, la meubler, l'enregistrer, puis la voir par `donjon -Site Genere
   -Salle <nom>` : chaque meuble est à la place et dans le sens montrés par l'atelier (surtout les meubles adossés

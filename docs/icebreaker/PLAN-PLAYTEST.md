@@ -91,6 +91,19 @@ jeu ; la suite (allumer, traverser, cristal, résurrection) est sous le jalon T 
 - [x] **F.22 Le donjon fait apparaître le portail et l'autel** — entité immobile à la place dite par la salle, avec
   une lueur (`portail.ron`). Vu en capture dans les deux salles seules. 727467233f, 6350a54f3a, bc044191f9
 
+Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,
+Veloren n'a presque rien pour une cuisine. Nos modèles sont générés par du code ; la vie vient des traces d'activité,
+de la densité et de la hauteur ; la cuisine passe à 6×5 cases. Premier lot de six modèles, puis essai en jeu (F.13).
+
+- [x] **F.23 Générateur de modèles** — crate `icebreaker-modeles` (formes, matières bruitées, `.vox`, image de
+  contrôle) ; `cargo run -p icebreaker-modeles [dossier d'images]`. b19856d9c0
+- [x] **F.24 Nos sprites dans le jeu** — six sprites `Icebreaker…` (`0xD4` à `0xD9`), manifeste, lueur et étincelles
+  de l'âtre, `pieces.ron`. Pas vu : la collision au contact. 736ee1f58b
+- [x] **F.25 Lot cuisine** — âtre de briques, billot, viande pendue, ustensiles pendus, vaisselle, préparation en
+  cours ; recettes dans `icebreaker-modeles/src/cuisine.rs`. Vus dans le vrai client. b19856d9c0, 736ee1f58b
+- [x] **F.26 Nouvelle cuisine 6×5** — 86 meubles, trois portes ; vue dans l'atelier et dans le vrai client
+  (salle seule, lanterne allumée) ; pas vue dans un donjon généré. 150961aae8
+
 ## 2. Grotte : casser pour avancer, miner pour de bon (jalon U, suite)
 
 **Ce que Flo demande** : des grottes séparées par des murs, pour obliger les joueurs à se servir de la destruction ;
