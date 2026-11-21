@@ -80,6 +80,19 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
 - [ ] **C.5 Nouveaux habitants** — une maison finie amène des habitants.
 - [ ] **C.6 Paliers** — l'or investi (300, 1000, 3000) ouvre des terrains plus loin de la place.
 
+## Jalon VF — Village fixe (Flo, 2026-11-21)
+
+Le village est toujours le même et presque plat, disposé comme le croquis de Flo (`decisions/0022`,
+`design/village.md`) ; plan dans `assets/icebreaker/village_plan.ron`. Worktree `Veloren-village`.
+
+- [ ] **VF.0 Docs** — note 0022, plan du village dans `design/village.md`, Q49 tranchée, Q63 (la caisse).
+- [ ] **VF.1 Le village plat d'après le plan** — place, chemins et bâtiments à leur place, une seule altitude, bordure
+  de raccord ; remplace la ville tirée au hasard.
+- [ ] **VF.2 Bâtiments par id** — PNJ posés d'après le lieu de même id ; infirmerie retirée, forge ajoutée.
+- [ ] **VF.3 Emplacements vides et paliers** — un lieu pas encore bâti reste terrain nu ; terrains désignés par id.
+- [ ] **VF.4 Champs, cimetière, écurie** — décor.
+- [ ] **VF.5 Vue du dessus fidèle** — les bâtiments à leur vraie place dans la vue du dessus.
+
 ## Jalon X — Interface du village, suite (Flo, 2026-11-06)
 
 - [x] **X.11 Plan schématique du village** — la vue U ne déplace plus la caméra : panneau centré dessiné par le HUD,

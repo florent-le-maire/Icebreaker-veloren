@@ -67,6 +67,17 @@ bâtiment reste utilisable au niveau d'avant.
 | **Cimetière** | Déposer un corps, ressusciter (avec séquelle), mémorial des morts | Résurrection moins chère, séquelle moins lourde |
 | **Marchand ambulant** | Acheter objets rares et babioles, vendre le butin | Plus d'objets, passe plus souvent |
 
+### Le plan du village (Flo, 2026-11-21, `decisions/0022`)
+
+![Croquis du village par Flo](images/village-croquis.png)
+
+Le village est **toujours le même** et **presque plat**, disposé comme ce croquis (une case = une tuile de 6
+blocs, nord en haut) ; le plan est dans `assets/icebreaker/village_plan.ron`. Autour de la place où l'on apparaît :
+**Guilde** au nord (la charrette : recrues et registre), **Expédition** à l'est (le départ), **Salle d'armes** à
+l'est, **Forge** et écurie au sud-est, **Entrepôt** au sud, **Cimetière** au sud, **Boutique** à l'ouest
+(l'intendance), deux **champs** au nord-ouest et au sud-ouest. L'**infirmerie est supprimée**. Un bâtiment pas
+encore construit garde sa place, en terrain nu.
+
 Plus tard : **tour du nécromancien** (deuxième option après la mort), **palissade** et défenses (le monde peut
 attaquer le village, phase 5), **écurie** (chevaux pour la carte, phase 4).
 

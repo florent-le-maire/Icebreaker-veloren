@@ -136,10 +136,7 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   prix et la description dans un sous-titre sur plusieurs rangs (la liste défile dès trois compétences), deux
   boutons « Touche 1 : changer » et « Touche 2 : changer » en bas (maquette redessinée d'après le vrai client) ;
   le lot d'une recrue sur une seconde ligne. *Qui* : Flo.
-- **Q49 Un village sans maison.** Une partie neuve tire la graine de son village au hasard ; celle de l'essai du
-  2026-11-11 (459192) a donné une ville sans maison de Veloren : les sept bâtiments sont posés sur la place, à
-  quelques blocs les uns des autres, et il n'y a aucun terrain à bâtir (jalon C). *Proposé* : à la création d'une
-  partie, retirer une graine tant que la ville n'a pas assez de maisons. *Qui* : Flo.
+- **Q49** *(numéro réservé : « un village sans maison » est tranchée, voir plus bas, 2026-11-21).*
 - **Q50 Une identité par race ennemie (jalon Y).** Proposé (Flo, 2026-11-14, `PLAN.md`, jalon Y) : danari fourbes
   (achèvent les joueurs à terre, fuient blessés ; contre : les frapper ou les repousser), humains organisés (rondes
   entre les salles), orcs brutaux (rage sous la moitié des PV), nains tenaces (tiennent leur salle, plus d'armure),
@@ -180,6 +177,11 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   chaudron (cuisine du donjon, intendance du village). *Qui* : Flo. *2026-11-16 (Flo)* : « on verra au moment » ;
   E.17 et E.18 attendent.
 - **Q62** *(numéro réservé : « tout avant le playtest » est tranchée, voir plus bas, 2026-11-16).*
+
+## 9. Le village fixe (`decisions/0022`, jalon VF)
+
+- **Q63 Où est la caisse ?** Le croquis du village (2026-11-21) n'a pas de caisse : en attendant, son PNJ est dans
+  la Guilde, à côté de celui de la charrette. Faut-il un bâtiment à elle (banque, mairie), et où ? *Qui* : Flo.
 
 ## Tranché
 
@@ -245,3 +247,6 @@ Petites décisions, par date ; les règles qui en sortent sont dans le fichier i
   **portail** éteint s'allume en 5 s d'interaction ; allumé, qui le traverse rentre au village, chacun pour soi ;
   (4) chaque donjon généré a au moins une salle de chaque, les salles en plus sont très rares et dépendent de sa
   taille. Remplace la résurrection au cimetière du village (`design/village.md`), qui garde le mémorial.
+- **2026-11-21 (Flo, `decisions/0022`, `design/village.md`)** : le village est fixe et presque plat, disposé comme
+  le croquis de Flo (`assets/icebreaker/village_plan.ron`) ; l'infirmerie est supprimée. Règle Q49 (village sans
+  maison) : la graine ne change plus la disposition.
