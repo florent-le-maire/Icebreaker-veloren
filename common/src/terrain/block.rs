@@ -418,7 +418,8 @@ impl Block {
             BlockKind::GlowingMushroom => 20,
             _ => match self.get_sprite()? {
                 SpriteKind::StreetLamp | SpriteKind::StreetLampTall | SpriteKind::BonfireMLit => 24,
-                SpriteKind::Ember | SpriteKind::FireBlock => 20,
+                // Icebreaker F.24 : l'âtre de la cuisine éclaire comme des braises.
+                SpriteKind::Ember | SpriteKind::FireBlock | SpriteKind::IcebreakerAtre => 20,
                 SpriteKind::WallLamp
                 | SpriteKind::WallLampSmall
                 | SpriteKind::WallLampWizard

@@ -209,6 +209,8 @@ impl BlocksOfInterest {
                                 fires.push(pos);
                                 smokers.push(SmokerProperties::new(pos, FireplaceType::House));
                             },
+                            // Icebreaker F.24 : les braises de l'âtre de la cuisine (sans fumée, qui traverserait la hotte).
+                            SpriteKind::IcebreakerAtre => fires.push(pos),
                             SpriteKind::TrainSmoke => {
                                 train_smokes.push(pos);
                             },

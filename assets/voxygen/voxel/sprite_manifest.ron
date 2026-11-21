@@ -7748,4 +7748,70 @@ GnarlingCarving: [(
     ],
     wind_sway: 0.0,
 )],
+// Icebreaker F.24 : nos modèles de la cuisine, écrits par `cargo run -p icebreaker-modeles` (qui donne aussi
+// les offsets) ; 14 et 15 sont les braises et les flammes de l'âtre.
+IcebreakerAtre: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.atre",
+            offset: (-27.5, -5.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+            custom_indices: {
+                14: (attr: Fire),
+                15: (attr: Fire),
+            },
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerBillot: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.billot",
+            offset: (-5.5, -5.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerViandePendue: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.viande_pendue",
+            offset: (-5.5, -1.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerUstensilesPendus: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.ustensiles_pendus",
+            offset: (-5.5, -5.5, -5.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerVaisselle: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.vaisselle",
+            offset: (-5.5, -5.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerPreparation: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.preparation",
+            offset: (-5.5, -5.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
 }

@@ -270,6 +270,13 @@ sprites! {
         BenchWood2Middle = 0xD1,
         BenchWood2Side = 0xD2,
         BenchWood2Middle2 = 0xD3,
+        // Icebreaker : nos modèles de la cuisine, générés par icebreaker-modeles (PLAN-PLAYTEST, F.24).
+        IcebreakerAtre = 0xD4,
+        IcebreakerBillot = 0xD5,
+        IcebreakerViandePendue = 0xD6,
+        IcebreakerUstensilesPendus = 0xD7,
+        IcebreakerVaisselle = 0xD8,
+        IcebreakerPreparation = 0xD9,
     },
     // Sprites representing plants that may grow over time (this does not include plant parts, like fruit).
     Plant = 3 has Growth, Owned, SnowCovered, Collectable {
@@ -917,6 +924,9 @@ impl SpriteKind {
             SpriteKind::BenchWood2Middle
             | SpriteKind::BenchWood2Side
             | SpriteKind::BenchWood2Middle2 => 0.636,
+            // Icebreaker F.24 : l'âtre (le bloc devant, au milieu) et le billot ; le reste ne gêne pas le passage.
+            SpriteKind::IcebreakerAtre => 2.9,
+            SpriteKind::IcebreakerBillot => 0.9,
             _ => return None,
         })
     }
