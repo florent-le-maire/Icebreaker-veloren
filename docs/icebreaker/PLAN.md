@@ -85,10 +85,12 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
 Le village est toujours le même et presque plat, disposé comme le croquis de Flo (`decisions/0022`,
 `design/village.md`) ; plan dans `assets/icebreaker/village_plan.ron`. Worktree `Veloren-village`.
 
-- [ ] **VF.0 Docs** — note 0022, plan du village dans `design/village.md`, Q49 tranchée, Q63 (la caisse).
-- [ ] **VF.1 Le village plat d'après le plan** — place, chemins et bâtiments à leur place, une seule altitude, bordure
-  de raccord ; remplace la ville tirée au hasard.
-- [ ] **VF.2 Bâtiments par id** — PNJ posés d'après le lieu de même id ; infirmerie retirée, forge ajoutée.
+- [x] **VF.0 Docs** — note 0022, plan du village dans `design/village.md`, Q49 tranchée, Q63 (la caisse). `ab804e3e2d`
+- [x] **VF.1 Le village plat d'après le plan** — même disposition sur trois graines, 98,5 % du sol à un bloc près
+  (`cargo run -p veloren-world --example icebreaker_village -- <graine>` en fait une image) ; vu en fantôme sur la
+  place. Pas de lampadaires. `a276eda8c0`
+- [x] **VF.2 Bâtiments par id** — panneaux charrette, caisse, forge, départ vus au plan du vrai client ; la caisse est
+  dans la Guilde (Q63). Pas vu : chaque PNJ à sa porte, engager une recrue. `2c08af7e97`
 - [ ] **VF.3 Emplacements vides et paliers** — un lieu pas encore bâti reste terrain nu ; terrains désignés par id.
 - [ ] **VF.4 Champs, cimetière, écurie** — décor.
 - [ ] **VF.5 Vue du dessus fidèle** — les bâtiments à leur vraie place dans la vue du dessus.
@@ -326,6 +328,11 @@ AM.9 (âmes), L.6 (plus de dégâts au village), X.18 (bouton « Rentrer »), E.
 Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (détail dans `HISTORIQUE.md` et
 `PLAN-GROTTE.md`). À parcourir dans le vrai client, en campagne, à deux si possible ; barrer ce qui est vu, ouvrir une
 tâche pour ce qui casse.
+
+**Village fixe (VF.1, VF.2)**
+- [ ] Faire le tour du village : chaque PNJ à sa porte (la caisse dans la Guilde), maisons d'aplomb sur le sol
+  plat, bordure en pente douce ; une recrue engagée à la charrette.
+- [ ] Une fois, de nuit (graine 777), la caméra a montré le village vu d'en dessous, terrain absent ; de jour, rien.
 
 **Portail, cristal et autel (F.19 à F.22, T.10 à T.12)**
 - Un donjon généré entier : trouver la salle du portail et celle de l'autel, voir qu'elles ne gênent pas le chemin.
