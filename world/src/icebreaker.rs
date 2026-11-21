@@ -8,6 +8,8 @@ pub mod butin;
 pub mod dungeon;
 pub mod grotte;
 pub mod races;
+// Icebreaker VF : le plan du village fixe.
+pub mod village_plan;
 
 use crate::site::{
     Site, SiteKind,
@@ -241,6 +243,38 @@ pub fn village_houses(site: &Site, square: vek::Vec2<i32>) -> Vec<VillageHouse> 
         .collect::<Vec<_>>();
     houses.sort_by_key(|house| house.front.distance_squared(square));
     houses
+}
+
+/// Icebreaker VF : les lieux bâtis du village fixe (pas les terrains de
+/// décor), par id du plan (`village_plan.ron`), avec leur palier. Vide si le
+/// site n'a pas été construit d'après le plan.
+pub fn village_lieux(site: &Site) -> Vec<(String, u32, VillageHouse)> {
+    let Ok(plan) = village_plan::VillagePlan::load() else {
+        return Vec::new();
+    };
+    plan.lieux
+        .iter()
+        .filter(|lieu| lieu.forme != village_plan::Forme::Terrain)
+        .filter_map(|lieu| {
+            let door = lieu.porte_tuile();
+            let tile = site.tiles.get(door);
+            let plot = tile.plot?;
+            if matches!(site.plot(plot).kind(), PlotKind::IcebreakerTerrain(_)) {
+                return None;
+            }
+            let bati = lieu.bati_aabr();
+            Some((lieu.id.clone(), lieu.palier, VillageHouse {
+                plot,
+                front: site.tile_center_wpos(door + lieu.porte.dir()),
+                inside: site.tile_center_wpos(door),
+                bounds: vek::Aabr {
+                    min: site.tile_wpos(bati.min),
+                    max: site.tile_wpos(bati.max),
+                },
+                alt: tile.hard_alt.unwrap_or(0),
+            }))
+        })
+        .collect()
 }
 
 /// The village as it stands: the plots of its town not built (yet), which are
@@ -698,6 +732,41 @@ pub fn village_town_size() -> Option<f32> {
             None
         },
     }
+}
+
+/// Icebreaker VF : le village est le village fixe (décision 0022), construit
+/// d'après `village_plan.ron`, et non une ville tirée au hasard.
+pub fn is_village_fixe(kind: SiteKind) -> bool { is_village() && kind == SiteKind::Refactor }
+
+/// Icebreaker VF : un relief jusqu'à cette hauteur (blocs) suffit au village
+/// fixe : on ne cherche pas d'autre place.
+pub const VILLAGE_RELIEF_OK: f32 = 8.0;
+
+/// Icebreaker VF : l'écart de hauteur (blocs) du terrain d'origine sous le
+/// village fixe et sa bordure s'il était posé au chunk `loc` ; aucun s'il y a
+/// de l'eau ou si le plan est illisible.
+pub fn village_relief(sim: &crate::sim::WorldSim, loc: vek::Vec2<i32>) -> Option<f32> {
+    use common::terrain::TerrainChunkSize;
+    use common::vol::RectVolSize;
+    let plan = village_plan::VillagePlan::load().ok()?;
+    let emprise = plan.emprise();
+    let centre = loc.map2(TerrainChunkSize::RECT_SIZE, |e, sz: u32| e * sz as i32 + sz as i32 / 2);
+    // La taille d'une tuile de site (`TILE_SIZE`, privée à `site::tile`).
+    let tile = crate::site::Site::default().tile_wpos(vek::Vec2::one()).x;
+    let land = crate::Land::from_sim(sim);
+    let (mut bas, mut haut) = (f32::MAX, f32::MIN);
+    for y in emprise.min.y - plan.marge..emprise.max.y + plan.marge {
+        for x in emprise.min.x - plan.marge..emprise.max.x + plan.marge {
+            let wpos = centre + vek::Vec2::new(x, y) * tile + tile / 2;
+            if sim.get_wpos(wpos).is_none_or(|chunk| chunk.river.near_water()) {
+                return None;
+            }
+            let alt = land.get_alt_approx(wpos);
+            bas = bas.min(alt);
+            haut = haut.max(alt);
+        }
+    }
+    Some(haut - bas)
 }
 
 /// Whether `kind` is a town.

@@ -28,6 +28,8 @@ mod haniwa;
 mod icebreaker_dungeon;
 mod icebreaker_grotte;
 mod icebreaker_remplacable;
+// Icebreaker VF : le village fixe.
+mod icebreaker_village;
 mod house;
 mod jungle_ruin;
 mod myrmidon_arena;
@@ -80,6 +82,7 @@ pub use self::{
     icebreaker_dungeon::{IcebreakerDungeon, MissionTargets},
     icebreaker_grotte::IcebreakerGrotte,
     icebreaker_remplacable::Remplacable,
+    icebreaker_village::IcebreakerTerrain,
     house::House,
     jungle_ruin::JungleRuin,
     myrmidon_arena::MyrmidonArena,
@@ -202,6 +205,8 @@ pub enum PlotKind {
     // Icebreaker: the dungeon of our generator.
     IcebreakerDungeon(Remplacable<IcebreakerDungeon>),
     IcebreakerGrotte(Remplacable<IcebreakerGrotte>),
+    // Icebreaker VF : le sol du village fixe.
+    IcebreakerTerrain(IcebreakerTerrain),
 }
 
 /// # Syntax
@@ -261,6 +266,7 @@ macro_rules! foreach_plot {
             PlotKind::Building($x) => $y,
             PlotKind::IcebreakerDungeon($x) => $y,
             PlotKind::IcebreakerGrotte($x) => $y,
+            PlotKind::IcebreakerTerrain($x) => $y,
         }
     };
 }

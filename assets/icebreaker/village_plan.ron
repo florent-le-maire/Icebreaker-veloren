@@ -1,0 +1,44 @@
+// Icebreaker VF : le plan du village (décision 0022), d'après le croquis de Flo
+// (docs/icebreaker/design/images/village-croquis.png).
+//
+// Tout est en tuiles de 6 blocs, relatif au centre du village ; x vers l'est, y vers le nord.
+// Un rectangle = (min: (x, y), taille: (largeur, hauteur)) : il couvre les tuiles min.x à
+// min.x + largeur - 1, et de même en y. Deux rectangles ne doivent pas se chevaucher.
+//
+// Ajouter un bâtiment = une ligne dans `lieux`.
+(
+    // Tuiles de raccord autour du village : le terrain y passe en pente douce de la
+    // hauteur du village à celle du pays.
+    marge: 6,
+    // La place, où l'on apparaît (en son centre).
+    place: (min: (-5, -6), taille: (12, 12)),
+    // Les allées pavées.
+    chemins: [
+        (min: (1, 6), taille: (2, 3)),     // vers la Guilde
+        (min: (-9, 5), taille: (4, 2)),    // vers le champ 2
+        (min: (-7, -1), taille: (2, 2)),   // vers la Boutique
+        (min: (-7, -16), taille: (3, 10)), // vers le champ 1 et le cimetière
+        (min: (0, -8), taille: (1, 2)),    // vers l'Entrepôt
+        (min: (7, -7), taille: (1, 11)),   // allée de l'est (Expédition, Salle d'armes)
+        (min: (4, -7), taille: (3, 1)),    // vers la Forge
+    ],
+    // Les lieux : id (celui des bâtiments du jeu, ou un nom de décor), forme de Veloren,
+    // rectangle, côté de la porte (Nord, Sud, Est, Ouest), palier (0 = bâti au départ).
+    // `bati` (facultatif) : la taille du bâtiment, posé contre la porte, centré ; le reste du
+    // rectangle est un terrain plat. Sans `bati`, le bâtiment prend tout le rectangle, dans la
+    // limite de la forme (Maison 4, Atelier 4, Taverne 7 tuiles de côté).
+    // Formes : Maison, Atelier, Taverne, Terrain (plat, rien dessus).
+    lieux: [
+        (id: "charrette", forme: Taverne, min: (-1, 9), taille: (8, 4), porte: Sud, palier: 0),
+        (id: "carriole", forme: Terrain, min: (4, 6), taille: (3, 2), porte: Ouest, palier: 0),
+        (id: "depart", forme: Maison, min: (8, 1), taille: (3, 3), porte: Ouest, palier: 0),
+        (id: "salle_armes", forme: Maison, min: (8, -6), taille: (5, 6), porte: Ouest, palier: 0, bati: Some((4, 4))),
+        (id: "forge", forme: Atelier, min: (4, -11), taille: (5, 4), porte: Nord, palier: 0),
+        (id: "ecurie", forme: Terrain, min: (9, -11), taille: (4, 4), porte: Nord, palier: 0),
+        (id: "entrepot", forme: Maison, min: (-3, -13), taille: (7, 5), porte: Nord, palier: 0, bati: Some((4, 4))),
+        (id: "cimetiere", forme: Terrain, min: (-4, -24), taille: (15, 9), porte: Ouest, palier: 0),
+        (id: "champ_1", forme: Terrain, min: (-14, -18), taille: (7, 8), porte: Est, palier: 0),
+        (id: "intendance", forme: Maison, min: (-12, -3), taille: (5, 7), porte: Est, palier: 0, bati: Some((4, 4))),
+        (id: "champ_2", forme: Terrain, min: (-13, 7), taille: (5, 6), porte: Sud, palier: 0),
+    ],
+)

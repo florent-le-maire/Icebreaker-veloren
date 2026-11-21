@@ -41,7 +41,10 @@ pub fn tree_valid_at(
     info: Option<CanvasInfo<'_>>,
     seed: u32,
 ) -> bool {
-    if col.alt < col.water_level
+    // Icebreaker VF : sans le test de densité nulle, un arbre sur 256 poussait quand même là où
+    // un site les interdit (au milieu de la place du village fixe).
+    if col.tree_density <= 0.0
+        || col.alt < col.water_level
         || col.spawn_rate < 0.9
         || col.water_dist.map(|d| d < 8.0).unwrap_or(false)
         || col.path.map(|(d, _, _, _)| d < 12.0).unwrap_or(false)

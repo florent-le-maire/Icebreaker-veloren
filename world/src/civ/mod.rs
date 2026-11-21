@@ -292,7 +292,7 @@ impl Civs {
             let anywhere = ProximityRequirementsBuilder::new().finalize(&area);
             // A town may find no room to build around its square: try a few
             // places and keep the one where the town grows the most.
-            let mut town_loc: Option<(Vec2<i32>, usize)> = None;
+            let mut town_loc: Option<(Vec2<i32>, i64)> = None;
             if crate::icebreaker::is_town(kind) {
                 // Near the center first, anywhere if no place there suits a town.
                 let attempts = std::iter::repeat_n(&near_center, crate::icebreaker::TOWN_PLACE_ATTEMPTS)
@@ -301,12 +301,23 @@ impl Civs {
                     let Some(loc) = find_site_loc(&mut ctx, requirements, &kind) else {
                         continue;
                     };
-                    let plots = icebreaker_town_plots(kind, loc, ctx.sim, index, calendar);
-                    debug!(?loc, plots, "Icebreaker village place tried");
-                    if town_loc.is_none_or(|(_, best)| plots > best) {
-                        town_loc = Some((loc, plots));
+                    // Icebreaker VF : le village fixe se pose là où le terrain est le
+                    // plus plat (sans eau) ; une ville tirée au hasard, là où elle a
+                    // le plus de parcelles.
+                    let (score, assez) = if crate::icebreaker::is_village_fixe(kind) {
+                        let relief = crate::icebreaker::village_relief(ctx.sim, loc);
+                        debug!(?loc, ?relief, "Icebreaker village fixe : place essayée");
+                        let Some(relief) = relief else { continue };
+                        (-(relief as i64), relief <= crate::icebreaker::VILLAGE_RELIEF_OK)
+                    } else {
+                        let plots = icebreaker_town_plots(kind, loc, ctx.sim, index, calendar);
+                        debug!(?loc, plots, "Icebreaker village place tried");
+                        (plots as i64, plots >= crate::icebreaker::TOWN_ENOUGH_PLOTS)
+                    };
+                    if town_loc.is_none_or(|(_, best)| score > best) {
+                        town_loc = Some((loc, score));
                     }
-                    if plots >= crate::icebreaker::TOWN_ENOUGH_PLOTS {
+                    if assez {
                         break;
                     }
                 }
@@ -582,6 +593,16 @@ impl Civs {
                     index,
                 };
                 match &sim_site.kind {
+                    // Icebreaker VF : le village fixe, d'après son plan (décision 0022).
+                    SiteKind::Refactor if crate::icebreaker::is_village_fixe(sim_site.kind) => {
+                        WorldSite::generate_icebreaker_village(
+                            &Land::from_sim(ctx.sim),
+                            index_ref,
+                            &mut rng,
+                            wpos,
+                            calendar,
+                        )
+                    },
                     SiteKind::Refactor => {
                         let size = Lerp::lerp(0.03, 1.0, rng.random_range(0.0..1f32).powi(5));
                         // Icebreaker: the village's town has the size it was given.
