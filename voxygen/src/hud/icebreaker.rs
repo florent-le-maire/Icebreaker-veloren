@@ -122,6 +122,8 @@ const CASE_W: f64 = 104.0;
 const CASE_H: f64 = 84.0;
 const PAS_X: f64 = CASE_W + 4.0;
 const PAS_Y: f64 = CASE_H + 4.0;
+/// Icebreaker VF.5 : le bord laissé autour du village sur le plan à l'échelle.
+const PLAN_MARGE: f64 = 14.0;
 
 // Le panneau : chaque bloc a sa hauteur.
 const MARGE: f64 = 16.0;
@@ -189,6 +191,8 @@ widget_ids! {
         plan_icones[],
         plan_noms[],
         plan_etats[],
+        plan_fonds[],
+        plan_fond_noms[],
         plan_joueur,
         plan_vous,
         separation,
@@ -856,6 +860,95 @@ struct Case {
     icone: String,
     /// Depuis le centre du plan (y vers le haut).
     centre: Vec2<f64>,
+    /// Icebreaker VF.5 : sa taille sur le plan (celle d'une case sur la grille).
+    taille: [f64; 2],
+    /// Icebreaker VF.5 : à l'échelle, le centre de son étiquette (nom, état).
+    etiquette: Vec2<f64>,
+}
+
+/// Icebreaker VF.5 : un morceau du sol du village fixe sur le plan.
+struct Fond {
+    nom: String,
+    couleur: (f32, f32, f32),
+    centre: Vec2<f64>,
+    taille: [f64; 2],
+}
+
+/// Icebreaker VF.5 : la hauteur d'une étiquette (nom, état) sous une case du plan à l'échelle.
+const ETIQUETTE_H: f64 = 30.0;
+
+/// Icebreaker VF.5 : la largeur estimée d'une étiquette (nom en 14, état en 12).
+fn largeur_etiquette(nom: &str, etat: &str) -> f64 {
+    (nom.chars().count() as f64 * 7.5).max(etat.chars().count() as f64 * 6.5) + 4.0
+}
+
+/// Icebreaker VF.5 : où mettre l'étiquette de chaque case (centre, taille,
+/// largeur de l'étiquette) : sous la case, sinon au-dessus, à droite, à gauche,
+/// à la première place qui ne touche ni une autre case ni une étiquette déjà
+/// posée et reste dans le plan (`demi`, sa demi-taille ; sous la case si
+/// aucune). Rend le centre de chaque étiquette.
+pub fn placer_etiquettes(cases: &[(Vec2<f64>, [f64; 2], f64)], demi: Vec2<f64>) -> Vec<Vec2<f64>> {
+    type Boite = (Vec2<f64>, Vec2<f64>);
+    let boite = |c: Vec2<f64>, w: f64, h: f64| -> Boite { (c - Vec2::new(w, h) / 2.0, c + Vec2::new(w, h) / 2.0) };
+    let touche = |a: &Boite, b: &Boite| a.0.x < b.1.x && b.0.x < a.1.x && a.0.y < b.1.y && b.0.y < a.1.y;
+    let boites_cases = cases.iter().map(|(c, t, _)| boite(*c, t[0], t[1])).collect::<Vec<_>>();
+    let mut posees: Vec<Boite> = Vec::new();
+    cases
+        .iter()
+        .enumerate()
+        .map(|(i, (c, t, l))| {
+            let (demi_w, demi_h) = (t[0] / 2.0, t[1] / 2.0);
+            let candidats = [
+                Vec2::new(c.x, c.y - demi_h - ETIQUETTE_H / 2.0 - 1.0),
+                Vec2::new(c.x, c.y + demi_h + ETIQUETTE_H / 2.0 + 1.0),
+                Vec2::new(c.x + demi_w + l / 2.0 + 3.0, c.y),
+                Vec2::new(c.x - demi_w - l / 2.0 - 3.0, c.y),
+            ];
+            let libre = |p: &Vec2<f64>| {
+                let b = boite(*p, *l, ETIQUETTE_H);
+                let dans_le_plan = b.0.x >= -demi.x && b.0.y >= -demi.y && b.1.x <= demi.x && b.1.y <= demi.y;
+                dans_le_plan
+                    && boites_cases.iter().enumerate().all(|(j, autre)| j == i || !touche(&b, autre))
+                    && posees.iter().all(|autre| !touche(&b, autre))
+            };
+            let choix = candidats.iter().copied().find(libre).unwrap_or(candidats[0]);
+            posees.push(boite(choix, *l, ETIQUETTE_H));
+            choix
+        })
+        .collect()
+}
+
+/// Le centre d'une emprise du monde.
+fn centre_de(emprise: Aabr<i32>) -> Vec2<f32> { (emprise.min + emprise.max).as_::<f32>() / 2.0 }
+
+/// Icebreaker VF.5 : du monde au plan à l'échelle : le village entier tient
+/// dans le plan, nord en haut, centré.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Echelle {
+    centre: Vec2<f32>,
+    /// Points du plan par bloc.
+    par_bloc: f64,
+}
+
+impl Echelle {
+    /// L'échelle où toutes les `emprises` tiennent dans `largeur` x `hauteur`.
+    pub fn de(emprises: &[Aabr<i32>], largeur: f64, hauteur: f64) -> Option<Self> {
+        let tout = emprises.iter().copied().reduce(|a, b| a.union(b))?;
+        let taille = (tout.max - tout.min).map(|d| f64::from(d.max(1)));
+        Some(Self {
+            centre: centre_de(tout),
+            par_bloc: (largeur / taille.x).min(hauteur / taille.y),
+        })
+    }
+
+    /// Un point du monde, depuis le centre du plan (y vers le haut, le nord).
+    pub fn point(&self, p: Vec2<f32>) -> Vec2<f64> { (p - self.centre).as_::<f64>() * self.par_bloc }
+
+    /// La taille d'une emprise sur le plan.
+    pub fn taille(&self, emprise: Aabr<i32>) -> [f64; 2] {
+        let d = (emprise.max - emprise.min).as_::<f64>() * self.par_bloc;
+        [d.x, d.y]
+    }
 }
 
 /// L'expédition en préparation au village, textes prêts.
@@ -901,6 +994,10 @@ pub struct Interface {
     ouvert: bool,
     cases: Vec<Case>,
     repere: Option<Repere>,
+    /// Icebreaker VF.5 : au village fixe, le sol (place, chemins, terrains) et
+    /// l'échelle du plan, où chaque chose est à sa vraie place.
+    fonds: Vec<Fond>,
+    echelle: Option<Echelle>,
     /// Le joueur, dans le monde (rien pour un fantôme).
     joueur: Option<Vec2<f32>>,
     /// Le bâtiment cliqué, par son emprise : son panneau est attendu ou montré.
@@ -940,6 +1037,8 @@ impl Interface {
             ouvert: false,
             cases: Vec::new(),
             repere: None,
+            fonds: Vec::new(),
+            echelle: None,
             joueur: None,
             choisi: None,
             panneau: None,
@@ -995,6 +1094,8 @@ impl Interface {
         self.ouvert = ouvert;
         self.cases.clear();
         self.repere = None;
+        self.fonds.clear();
+        self.echelle = None;
         self.choisi = None;
         self.panneau = None;
         self.attente = None;
@@ -1030,17 +1131,42 @@ impl Interface {
     /// Les bâtiments envoyés par le serveur : leurs textes et leurs cases sont
     /// préparés ici, pas à chaque image.
     pub fn batiments(&mut self, batiments: Vec<Batiment>, i18n: &Localization) {
-        let centres: Vec<Vec2<f32>> = batiments
-            .iter()
-            .map(|b| (b.emprise.min + b.emprise.max).as_::<f32>() / 2.0)
-            .collect();
+        // Icebreaker VF.5 : avec le sol du village fixe, tout à l'échelle ; sinon la grille.
+        let (fonds, batiments): (Vec<_>, Vec<_>) = batiments.into_iter().partition(|b| b.fond);
+        self.echelle = (!fonds.is_empty())
+            .then(|| {
+                let emprises = fonds.iter().chain(&batiments).map(|b| b.emprise).collect::<Vec<_>>();
+                Echelle::de(&emprises, PLAN_W - 2.0 * PLAN_MARGE, CORPS_H - 2.0 * PLAN_MARGE)
+            })
+            .flatten();
+        self.fonds = match self.echelle {
+            Some(echelle) => fonds
+                .iter()
+                .map(|fond| Fond {
+                    nom: i18n.get_content(&fond.nom),
+                    couleur: self.reglages.apparence(&fond.sorte).couleur,
+                    centre: echelle.point(centre_de(fond.emprise)),
+                    taille: echelle.taille(fond.emprise),
+                })
+                .collect(),
+            None => Vec::new(),
+        };
+        let centres: Vec<Vec2<f32>> = batiments.iter().map(|b| centre_de(b.emprise)).collect();
         self.repere = Repere::de(&centres);
         let places = ranger(&centres, COLONNES, RANGS);
+        let echelle = self.echelle;
         self.cases = batiments
             .into_iter()
             .zip(places)
             .map(|(batiment, (colonne, rang))| {
                 let apparence = self.reglages.apparence(&batiment.sorte);
+                let (centre, taille) = match echelle {
+                    Some(echelle) => (
+                        echelle.point(centre_de(batiment.emprise)),
+                        echelle.taille(batiment.emprise),
+                    ),
+                    None => (centre_case(Vec2::new(colonne as f32, rang as f32)), [CASE_W, CASE_H]),
+                };
                 Case {
                     nom: i18n.get_content(&batiment.nom),
                     etat: i18n.get_content(&batiment.etat),
@@ -1048,10 +1174,24 @@ impl Interface {
                     emprise: batiment.emprise,
                     couleur: apparence.couleur,
                     icone: apparence.icone,
-                    centre: centre_case(Vec2::new(colonne as f32, rang as f32)),
+                    centre,
+                    taille,
+                    etiquette: centre,
                 }
             })
             .collect();
+        // Icebreaker VF.5 : à l'échelle, les étiquettes là où elles ne se chevauchent pas.
+        if self.echelle.is_some() {
+            let poses = self
+                .cases
+                .iter()
+                .map(|c| (c.centre, c.taille, largeur_etiquette(&c.nom, &c.etat)))
+                .collect::<Vec<_>>();
+            let demi = Vec2::new(PLAN_W, CORPS_H) / 2.0;
+            for (case, etiquette) in self.cases.iter_mut().zip(placer_etiquettes(&poses, demi)) {
+                case.etiquette = etiquette;
+            }
+        }
     }
 
     /// Un panneau envoyé par le serveur : celui du bâtiment cliqué, ou un
@@ -1849,6 +1989,28 @@ impl Interface {
         ] {
             assez(liste, n, ui);
         }
+        // Icebreaker VF.5 : le sol du village fixe d'abord (place, chemins, champs…), sous les
+        // bâtiments ; un nom au milieu s'il en a un.
+        assez(&mut self.ids.plan_fonds, self.fonds.len(), ui);
+        assez(&mut self.ids.plan_fond_noms, self.fonds.len(), ui);
+        for (i, fond) in self.fonds.iter().enumerate() {
+            let id = self.ids.plan_fonds[i];
+            let (r, g, b) = fond.couleur;
+            cadre(fond.taille, melange(fond.couleur, 0.35, FOND_PLAN), Color::Rgba(r, g, b, 0.6), 1.0)
+                .x_y_relative_to(self.ids.plan, fond.centre.x, fond.centre.y)
+                .graphics_for(self.ids.plan)
+                .set(id, ui);
+            if !fond.nom.is_empty() {
+                Text::new(&fond.nom)
+                    .font_id(fonts.cyri.conrod_id)
+                    .font_size(fonts.cyri.scale(14))
+                    .color(DISCRET)
+                    .middle_of(id)
+                    .graphics_for(self.ids.plan)
+                    .set(self.ids.plan_fond_noms[i], ui);
+            }
+        }
+        let a_l_echelle = self.echelle.is_some();
         let mut clic = None;
         for (i, case) in self.cases.iter().enumerate() {
             let id = self.ids.plan_cases[i];
@@ -1857,34 +2019,61 @@ impl Interface {
             let vif = survol || choisi;
             let (r, g, b) = case.couleur;
             cadre(
-                [CASE_W, CASE_H],
+                case.taille,
                 melange(case.couleur, if vif { 0.30 } else { 0.14 }, FOND_PLAN),
                 if choisi { OR } else { Color::Rgba(r, g, b, 1.0) },
                 if vif { 3.0 } else { 2.0 },
             )
             .x_y_relative_to(self.ids.plan, case.centre.x, case.centre.y)
             .set(id, ui);
-            if let Some(image) = icone(imgs, &case.icone) {
-                Image::new(image)
-                    .w_h(32.0, 32.0)
-                    .mid_top_with_margin_on(id, 8.0)
+            if a_l_echelle {
+                // À l'échelle, la case est petite : l'icône au milieu, le nom et l'état dessous.
+                if let Some(image) = icone(imgs, &case.icone) {
+                    let cote = 28.0_f64.min(case.taille[0] - 6.0).min(case.taille[1] - 6.0).max(8.0);
+                    Image::new(image)
+                        .w_h(cote, cote)
+                        .middle_of(id)
+                        .graphics_for(id)
+                        .set(self.ids.plan_icones[i], ui);
+                }
+                let e = case.etiquette;
+                Text::new(&case.nom)
+                    .font_id(fonts.cyri.conrod_id)
+                    .font_size(fonts.cyri.scale(14))
+                    .color(TEXTE)
+                    .x_y_relative_to(self.ids.plan, e.x, e.y + ETIQUETTE_H / 2.0 - 8.0)
                     .graphics_for(id)
-                    .set(self.ids.plan_icones[i], ui);
+                    .set(self.ids.plan_noms[i], ui);
+                Text::new(&case.etat)
+                    .font_id(fonts.cyri.conrod_id)
+                    .font_size(fonts.cyri.scale(12))
+                    .color(DISCRET)
+                    .x_y_relative_to(self.ids.plan, e.x, e.y - ETIQUETTE_H / 2.0 + 7.0)
+                    .graphics_for(id)
+                    .set(self.ids.plan_etats[i], ui);
+            } else {
+                if let Some(image) = icone(imgs, &case.icone) {
+                    Image::new(image)
+                        .w_h(32.0, 32.0)
+                        .mid_top_with_margin_on(id, 8.0)
+                        .graphics_for(id)
+                        .set(self.ids.plan_icones[i], ui);
+                }
+                Text::new(&case.nom)
+                    .font_id(fonts.cyri.conrod_id)
+                    .font_size(fonts.cyri.scale(16))
+                    .color(TEXTE)
+                    .mid_top_with_margin_on(id, 42.0)
+                    .graphics_for(id)
+                    .set(self.ids.plan_noms[i], ui);
+                Text::new(&case.etat)
+                    .font_id(fonts.cyri.conrod_id)
+                    .font_size(fonts.cyri.scale(14))
+                    .color(DISCRET)
+                    .mid_top_with_margin_on(id, 61.0)
+                    .graphics_for(id)
+                    .set(self.ids.plan_etats[i], ui);
             }
-            Text::new(&case.nom)
-                .font_id(fonts.cyri.conrod_id)
-                .font_size(fonts.cyri.scale(16))
-                .color(TEXTE)
-                .mid_top_with_margin_on(id, 42.0)
-                .graphics_for(id)
-                .set(self.ids.plan_noms[i], ui);
-            Text::new(&case.etat)
-                .font_id(fonts.cyri.conrod_id)
-                .font_size(fonts.cyri.scale(14))
-                .color(DISCRET)
-                .mid_top_with_margin_on(id, 61.0)
-                .graphics_for(id)
-                .set(self.ids.plan_etats[i], ui);
             if ui.widget_input(id).clicks().left().next().is_some() {
                 clic = Some(case.emprise);
             }
@@ -1905,7 +2094,14 @@ impl Interface {
             let place = repere
                 .place(joueur, COLONNES, RANGS)
                 .clamped(Vec2::broadcast(-0.5), bord);
-            let p = centre_case(place);
+            // Icebreaker VF.5 : à l'échelle, à sa vraie place (gardé dans le plan).
+            let p = match self.echelle {
+                Some(echelle) => {
+                    let demi = Vec2::new(PLAN_W / 2.0 - 6.0, CORPS_H / 2.0 - 6.0);
+                    echelle.point(joueur).clamped(-demi, demi)
+                },
+                None => centre_case(place),
+            };
             let (r, g, b) = self.reglages.couleur_joueur;
             widget::Circle::fill(6.0)
                 .color(Color::Rgba(r, g, b, 1.0))
@@ -2544,6 +2740,40 @@ mod tests {
         // Celui qui est loin au nord-est reste en haut à droite.
         assert_eq!(places[12], (COLONNES - 1, 0));
         assert!(ranger(&[], COLONNES, RANGS).is_empty());
+    }
+
+    // Icebreaker VF.5 : le village entier tient dans le plan, nord en haut, à la même échelle.
+    #[test]
+    fn le_plan_a_l_echelle_garde_les_places_et_les_tailles() {
+        let a = |x0, y0, x1, y1| Aabr { min: Vec2::new(x0, y0), max: Vec2::new(x1, y1) };
+        // Un village de 200 x 100 blocs dans 400 x 400 : 2 points par bloc.
+        let emprises = [a(0, 0, 200, 50), a(50, 50, 100, 100)];
+        let echelle = Echelle::de(&emprises, 400.0, 400.0).unwrap();
+        assert_eq!(echelle.taille(emprises[1]), [100.0, 100.0]);
+        // Le centre du village au centre du plan ; le coin nord-est en haut à droite.
+        assert_eq!(echelle.point(Vec2::new(100.0, 50.0)), Vec2::new(0.0, 0.0));
+        assert_eq!(echelle.point(Vec2::new(200.0, 100.0)), Vec2::new(200.0, 100.0));
+        assert!(Echelle::de(&[], 400.0, 400.0).is_none());
+    }
+
+    // Icebreaker VF.5 : deux cases collées (la caisse et la charrette) : la seconde étiquette
+    // passe au-dessus ; une case juste dessous : l'étiquette monte aussi.
+    #[test]
+    fn les_etiquettes_ne_se_chevauchent_pas() {
+        let cases = [
+            (Vec2::new(0.0, 0.0), [40.0, 40.0], 60.0),
+            (Vec2::new(40.0, 0.0), [40.0, 40.0], 60.0),
+            (Vec2::new(200.0, 0.0), [40.0, 40.0], 60.0),
+            (Vec2::new(200.0, -45.0), [40.0, 40.0], 60.0),
+        ];
+        let e = placer_etiquettes(&cases, Vec2::new(500.0, 500.0));
+        assert!(e[0].y < -20.0, "sous la première case");
+        assert!(e[1].y > 20.0, "au-dessus de la seconde");
+        assert!(e[2].y > 20.0, "au-dessus : une case dessous");
+        assert!(e[3].y < -65.0, "sous la dernière");
+        // Au bord haut du plan, pas au-dessus : à côté.
+        let e = placer_etiquettes(&cases[..2], Vec2::new(500.0, 30.0));
+        assert!(e[1].x > 60.0 && e[1].y.abs() < 1.0, "à droite de la seconde : {:?}", e[1]);
     }
 
     #[test]

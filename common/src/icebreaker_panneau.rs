@@ -253,6 +253,11 @@ pub struct Batiment {
     pub sorte: String,
     /// Ce qu'il faut en savoir sans l'ouvrir (« 420 or », « fini dans 4 h »).
     pub etat: Content,
+    /// Icebreaker VF.5 : le sol du village fixe (place, chemin, champ,
+    /// cimetière…), dessiné sous les bâtiments, pas cliquable. Avec lui, le plan
+    /// montre chaque chose à sa vraie place et à sa vraie taille.
+    #[serde(default)]
+    pub fond: bool,
 }
 
 /// L'expédition en préparation au village.

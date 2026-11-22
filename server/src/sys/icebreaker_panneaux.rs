@@ -114,6 +114,10 @@ impl<'a> System<'a> for Sys {
                     inscrits,
                     carte,
                 )
+                .into_iter()
+                // Icebreaker VF.5 : le sol du village fixe, sous les bâtiments.
+                .chain(buildings.fond())
+                .collect()
             } else {
                 Vec::new()
             };

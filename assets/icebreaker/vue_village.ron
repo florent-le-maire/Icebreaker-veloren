@@ -24,5 +24,12 @@
         // Icebreaker O : les deux cases du lieu d'entraînement.
         "entrainement_perso": (couleur: (0.6, 1.0, 0.6), icone: "armure"),
         "entrainement_arene": (couleur: (1.0, 0.45, 0.45), icone: "epees"),
+        // Icebreaker VF.5 : le sol du village fixe sur le plan à l'échelle (sans icône).
+        "place": (couleur: (0.55, 0.55, 0.6), icone: ""),
+        "chemin": (couleur: (0.5, 0.5, 0.55), icone: ""),
+        "champ": (couleur: (0.75, 0.7, 0.3), icone: ""),
+        "cimetiere": (couleur: (0.6, 0.6, 0.7), icone: ""),
+        "enclos": (couleur: (0.6, 0.45, 0.3), icone: ""),
+        "terrain_nu": (couleur: (0.4, 0.55, 0.35), icone: ""),
     },
 )

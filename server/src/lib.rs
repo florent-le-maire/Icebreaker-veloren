@@ -669,13 +669,22 @@ impl Server {
             });
         #[cfg(not(feature = "worldgen"))]
         let village_zone = None;
+        // Icebreaker VF.5 : le sol du village fixe, pour le plan à l'échelle.
+        #[cfg(feature = "worldgen")]
+        let village_fond = instance_site
+            .filter(|_| world::icebreaker::is_village())
+            .map(|site| world::icebreaker::village_fond(&index.sites[site]))
+            .unwrap_or_default();
+        #[cfg(not(feature = "worldgen"))]
+        let village_fond = Vec::new();
         state.ecs_mut().insert(
             icebreaker_buildings::IcebreakerBuildings::new(
                 village_posts
                     .iter()
                     .map(|post| post.map(|(_, bounds, alt)| (bounds, alt))),
             )
-            .with_zone(village_zone),
+            .with_zone(village_zone)
+            .with_fond(village_fond),
         );
         state.ecs_mut().insert(village);
         // Icebreaker O : au lieu d'entraînement, le plan montre l'arène et l'entrée.

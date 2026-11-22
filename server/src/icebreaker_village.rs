@@ -124,6 +124,13 @@ pub fn houses_du_plan(lieux: &[(String, u32, VillageHouse)]) -> Option<(Vec<Vill
         };
         houses.push(house);
     }
+    // Icebreaker VF.5 : la caisse dans la Guilde, la charrette en garde la moitié est (le plan
+    // à l'échelle les montre côte à côte).
+    let rang = |b: Building| Building::ALL.iter().position(|x| *x == b).unwrap_or(0);
+    let (caisse, charrette) = (rang(Building::Treasury), rang(Building::Charrette));
+    if lieu(Building::Treasury.id()).is_none() {
+        houses[charrette].bounds.min.x = houses[caisse].bounds.max.x;
+    }
     let mut terrains = lieux
         .iter()
         .filter(|(id, palier, _)| *palier > 0 && Building::ALL.iter().all(|b| b.id() != id))
@@ -402,6 +409,7 @@ mod tests {
         assert_eq!(plots, [id(3), id(2), id(4), id(6), id(7), id(2), id(0), id(5), id(1)]);
         assert_eq!(houses[1].inside, vek::Vec2::new(200, 6), "la caisse, une tuile plus loin que la porte");
         assert_eq!(houses[1].bounds.max.x, 205, "la caisse, la moitié ouest de la Guilde");
+        assert_eq!(houses[5].bounds.min.x, 205, "la charrette, la moitié est (VF.5)");
         // Un bâtiment manque : pas de village fixe.
         assert!(houses_du_plan(&lieux[1..]).is_none());
         assert!(houses_du_plan(&[]).is_none());

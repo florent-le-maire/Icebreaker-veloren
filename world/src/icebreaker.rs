@@ -279,6 +279,44 @@ pub fn village_sol(site: &Site) -> Option<i32> {
     site.tiles.get(site.plot(plaza).root_tile()).hard_alt
 }
 
+/// Icebreaker VF.5 : le sol du village fixe pour le plan vu de dessus : la
+/// place, les chemins et les terrains (sorte, nom, emprise en blocs). La sorte
+/// d'un terrain est son décor (`champ`, `cimetiere`, `enclos`) ou `terrain_nu`.
+pub fn village_fond(site: &Site) -> Vec<(String, String, vek::Aabr<i32>)> {
+    let Ok(plan) = village_plan::VillagePlan::load() else {
+        return Vec::new();
+    };
+    // Une ville tirée au hasard n'a pas été construite d'après le plan.
+    if village_lieux(site).is_empty() {
+        return Vec::new();
+    }
+    let blocs = |r: village_plan::Rect| {
+        let t = r.aabr();
+        vek::Aabr {
+            min: site.tile_wpos(t.min),
+            max: site.tile_wpos(t.max),
+        }
+    };
+    // La place sans nom : le point du joueur s'y trouve souvent.
+    let mut fond = vec![("place".to_string(), String::new(), blocs(plan.place))];
+    fond.extend(plan.chemins.iter().map(|r| ("chemin".to_string(), String::new(), blocs(*r))));
+    fond.extend(
+        plan.lieux
+            .iter()
+            .filter(|lieu| lieu.forme == village_plan::Forme::Terrain)
+            .map(|lieu| {
+                let (sorte, nom) = match lieu.decor {
+                    Some(village_plan::Decor::Champ) => ("champ", "Champ"),
+                    Some(village_plan::Decor::Cimetiere) => ("cimetiere", "Cimetière"),
+                    Some(village_plan::Decor::Enclos) => ("enclos", "Écurie"),
+                    None => ("terrain_nu", ""),
+                };
+                (sorte.to_string(), nom.to_string(), blocs(lieu.rect()))
+            }),
+    );
+    fond
+}
+
 /// Icebreaker VF : les lieux bâtis du village fixe (pas les terrains de
 /// décor), par id du plan (`village_plan.ron`), avec leur palier. Vide si le
 /// site n'a pas été construit d'après le plan.

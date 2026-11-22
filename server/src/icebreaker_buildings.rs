@@ -105,6 +105,9 @@ pub struct IcebreakerBuildings {
     /// at that height, X.2).
     places: Vec<(Place, Aabr<i32>, i32)>,
     zone: Option<Zone>,
+    /// Icebreaker VF.5 : le sol du village fixe (sorte, nom, emprise), sous les
+    /// bâtiments du plan.
+    fond: Vec<(String, String, Aabr<i32>)>,
 }
 
 impl IcebreakerBuildings {
@@ -121,6 +124,7 @@ impl IcebreakerBuildings {
                 .map(|(building, (bounds, alt))| (Place::Building(building), bounds, alt))
                 .collect(),
             zone: None,
+            fond: Vec::new(),
         }
     }
 
@@ -137,12 +141,28 @@ impl IcebreakerBuildings {
                 (Place::Arene(Poste::Personnage), carre(centre + config.entree().as_::<i32>(), 5), alt),
             ],
             zone: None,
+            fond: Vec::new(),
         }
     }
 
     /// The village's zone, out of which the top view does not work (none: no
     /// limit, for a village alone).
     pub fn with_zone(self, zone: Option<Zone>) -> Self { Self { zone, ..self } }
+
+    /// Icebreaker VF.5 : le sol du village fixe (`world::icebreaker::village_fond`).
+    pub fn with_fond(self, fond: Vec<(String, String, Aabr<i32>)>) -> Self { Self { fond, ..self } }
+
+    /// Icebreaker VF.5 : le sol du plan, envoyé après les bâtiments.
+    pub fn fond(&self) -> impl Iterator<Item = Batiment> + '_ {
+        self.fond.iter().map(|(sorte, nom, emprise)| Batiment {
+            nom: texte(nom.clone()),
+            emprise: *emprise,
+            altitude: 0,
+            sorte: sorte.clone(),
+            etat: texte(String::new()),
+            fond: true,
+        })
+    }
 
     /// Whether a player at `pos` can see the village's top view.
     pub fn in_village(&self, pos: Vec2<f32>) -> bool {
@@ -240,6 +260,7 @@ pub fn liste(
                 altitude: *altitude,
                 sorte: sorte.to_string(),
                 etat: texte(etat),
+                fond: false,
             }
         })
         .collect()
