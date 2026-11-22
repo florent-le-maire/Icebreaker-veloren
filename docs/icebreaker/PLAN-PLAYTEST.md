@@ -100,9 +100,9 @@ bouche en surface ; le donjon est tout entier sous le sol ; un atelier web règl
 - [x] **F.32 Calme autour de l'arrivée** — personne à moins de `abri.calme` (4) cases ; les rondes n'y entrent pas ;
   éclairé par son feu de camp et ses appliques. Tests verts, abri vide en capture. 10880b5d62
 - [x] **F.33 Presets de donjon** — `donjons/formes.ron` (standard, plat, profond, labyrinthe) ; panneau Départ,
-  `/expedition 3 <preset>`, `-Profil`. `-Profil plat` vu au journal du serveur ; pas essayé en campagne. 038bb30699
+  `/expedition 3 <preset>`, `-Profil`. `-Profil plat` vu au journal du serveur ; pas essayé en campagne. a4fc4ad98a
 - [x] **F.34 Atelier du donjon** — `.\icebreaker.ps1 donjon-atelier` (port 8098) : plan par étage, curseurs,
-  « Enregistrer le preset » (commit). Vu dans Edge sans affichage ; pas encore essayé par l'équipe. 9035c74686
+  « Enregistrer le preset » (commit). Vu dans Edge sans affichage ; pas encore essayé par l'équipe. 01f05e67c4
 
 Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,
 Veloren n'a presque rien pour une cuisine. Nos modèles sont générés par du code ; la vie vient des traces d'activité,
