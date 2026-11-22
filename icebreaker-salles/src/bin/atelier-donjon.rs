@@ -143,7 +143,8 @@ fn formes_json() -> Result<String, String> {
 
 #[derive(Deserialize)]
 struct Demande {
-    graine: u64,
+    // Icebreaker F.35 : en texte, car une graine du jeu (u64) ne tient pas dans un nombre de JavaScript.
+    graine: String,
     taille: String,
     forme: Forme,
 }
@@ -156,8 +157,9 @@ fn plan_json(corps: &str) -> Result<String, String> {
     if !erreurs.is_empty() {
         return Err(erreurs.join(" ; "));
     }
+    let graine: u64 = demande.graine.trim().parse().map_err(|_| format!("graine illisible : {}", demande.graine))?;
     let settings = demande.forme.appliquer(Settings::load()?);
-    let donjon = dungeon::plan_atelier(&settings, demande.graine, &demande.taille)?;
+    let donjon = dungeon::plan_atelier(&settings, graine, &demande.taille)?;
     let mut salle_de = std::collections::BTreeMap::new();
     for (i, salle) in donjon.salles.iter().enumerate() {
         for cell in &salle.cells {

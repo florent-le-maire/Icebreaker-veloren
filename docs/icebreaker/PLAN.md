@@ -338,10 +338,11 @@ tâche pour ce qui casse.
 - [ ] VF.6 : en campagne (partie de graine 949093), on apparaît sur la place, pas dessous ; même chose au retour.
 
 **Donjon souterrain (F.31 à F.35, `PLAN-PLAYTEST.md`)**
-- [ ] En campagne, `/expedition 3` (donjon généré) : arrivée dans l'abri, puis sortir par la porte vers l'entrée ;
-  personne ne vient dans l'abri ; aucun jour au plafond dans tout le donjon.
-- [ ] Choisir une forme au panneau Départ (ou `/expedition 3 plat`) : à l'arrivée, « Donjon « plat », graine N », et
-  le même plan dans l'atelier du donjon avec ce preset et cette graine.
+- [ ] En campagne, `/expedition 2` (donjon généré) : sortir de l'abri par la porte vers l'entrée ; personne ne vient
+  dans l'abri ; aucun jour au plafond dans tout le donjon. (Arrivée dans l'abri, feu allumé, vue par Claude dans le
+  vrai client le 2026-11-22.)
+- [ ] Choisir une forme au panneau Départ (le bouton) : vu par Claude le 2026-11-22 avec `/expedition 2 plat`
+  (« Donjon « plat », graine N » à l'arrivée, même plan dans l'atelier avec ce preset et cette graine).
 - [ ] L'atelier du donjon (`.\icebreaker.ps1 donjon-atelier`) en main : vue 3D (tourner, couper les étages), curseurs, enregistrer un preset, le retrouver
   au panneau Départ.
 

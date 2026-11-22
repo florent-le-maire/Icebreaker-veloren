@@ -184,7 +184,7 @@ async function demander() {
   if (enCours) { encore = true; return; }
   enCours = fetch('/plan', {
     method: 'POST',
-    body: JSON.stringify({ graine: +$('graine').value, taille: $('taille').value, forme: forme() }),
+    body: JSON.stringify({ graine: $('graine').value, taille: $('taille').value, forme: forme() }),
   }).then((r) => r.json()).then((p) => {
     plan = p;
     if (p.niveaux && !p.niveaux.includes(etage)) etage = p.niveaux[0];

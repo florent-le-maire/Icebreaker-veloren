@@ -100,7 +100,7 @@ bouche en surface ; le donjon est tout entier sous le sol ; un atelier web règl
 - [x] **F.32 Calme autour de l'arrivée** — personne à moins de `abri.calme` (4) cases ; les rondes n'y entrent pas ;
   éclairé par son feu de camp et ses appliques. Tests verts, abri vide en capture. 10880b5d62
 - [x] **F.33 Presets de donjon** — `donjons/formes.ron` (standard, plat, profond, labyrinthe) ; panneau Départ,
-  `/expedition 3 <preset>`, `-Profil`. `-Profil plat` vu au journal du serveur ; pas essayé en campagne. a4fc4ad98a
+  `/expedition 2 <preset>`, `-Profil`. `-Profil plat` vu au journal du serveur ; pas essayé en campagne. a4fc4ad98a
 - [x] **F.34 Atelier du donjon** — `.\icebreaker.ps1 donjon-atelier` (port 8098) : plan par étage, curseurs,
   « Enregistrer le preset » (commit). Vu dans Edge sans affichage ; pas encore essayé par l'équipe. 01f05e67c4
 - [x] **F.35 Vue 3D de l'atelier du donjon** — three.js comme la grotte : une case = un cube, étages écartés, rampes,
