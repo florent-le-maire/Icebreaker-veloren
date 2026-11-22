@@ -431,7 +431,11 @@ impl Block {
                 | SpriteKind::ChristmasOrnament
                 | SpriteKind::CliffDecorBlock
                 | SpriteKind::Orb
-                | SpriteKind::Candle => 16,
+                | SpriteKind::Candle
+                // Icebreaker F.37 : le chandelier de la salle du trône, comme une bougie.
+                | SpriteKind::IcebreakerChandelier => 16,
+                // Icebreaker F.37 : le vitrail de la salle du trône luit doucement.
+                SpriteKind::IcebreakerVitrail => 12,
                 SpriteKind::DiamondLight => 30,
                 SpriteKind::VeloriteFrag
                 | SpriteKind::GrassBlueShort

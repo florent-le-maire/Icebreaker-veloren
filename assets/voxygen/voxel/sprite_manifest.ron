@@ -7814,4 +7814,100 @@ IcebreakerPreparation: [(
     ],
     wind_sway: 0.0,
 )],
+// Icebreaker F.37 : la salle du trône (icebreaker-modeles/src/trone.rs, offsets donnés par le générateur) ;
+// 14 et 15 sont les flammes des bougies du chandelier.
+IcebreakerTrone: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.trone",
+            offset: (-16.5, -16.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerEstrade: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.estrade",
+            offset: (-5.5, -5.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerMarche: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.marche",
+            offset: (-5.5, -5.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerTapis: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.tapis",
+            offset: (-16.5, -5.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerTapisBout: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.tapis_bout",
+            offset: (-16.5, -5.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerTapisMarche: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.tapis_marche",
+            offset: (-16.5, -6.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerPilier: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.pilier",
+            offset: (-16.5, -16.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerVitrail: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.vitrail",
+            offset: (-16.5, 2.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerChandelier: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.chandelier",
+            offset: (-5.5, -5.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+            custom_indices: {
+                14: (attr: Fire),
+                15: (attr: Fire),
+            },
+        ),
+    ],
+    wind_sway: 0.0,
+)],
 }
