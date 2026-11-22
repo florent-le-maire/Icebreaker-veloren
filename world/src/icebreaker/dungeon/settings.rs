@@ -104,6 +104,15 @@ pub struct Settings {
     pub placement: PlacementSettings,
     /// Icebreaker F.20 : the rooms every dungeon has (portal, altar), by role.
     pub special_rooms: BTreeMap<String, SpecialRoom>,
+    /// Icebreaker F.32 : the safe room where the party arrives.
+    pub abri: AbriSettings,
+}
+
+/// Icebreaker F.32 : the safe room (`abri`): no creature within `calme` cells of where the party arrives (on its
+/// level and the ones next to it), as no one comes near the safe room of the cave.
+#[derive(Clone, Debug, Deserialize)]
+pub struct AbriSettings {
+    pub calme: i32,
 }
 
 /// Icebreaker F.20 : a room every dungeon has (`special_rooms`): `min` of them always, up to `max` when the dice
@@ -542,6 +551,7 @@ impl Settings {
             fallback,
             population,
             corridors,
+            calme: self.abri.calme,
             faction,
             species,
             modifiers: names,
@@ -685,6 +695,8 @@ pub struct Resolved {
     pub fallback: RoomRole,
     pub population: BTreeMap<RoomRole, RoomPopulation>,
     pub corridors: CorridorPopulation,
+    /// Icebreaker F.32 : no creature within this many cells of the arrival.
+    pub calme: i32,
     pub faction: Faction,
     /// Icebreaker H.2: the species of its humanoids (none: their own bodies).
     pub species: Option<String>,

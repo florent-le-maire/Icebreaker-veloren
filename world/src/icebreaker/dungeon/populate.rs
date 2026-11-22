@@ -44,6 +44,12 @@ pub fn populate(dungeon: &mut Assembled, graph: &MissionGraph, settings: &Resolv
     let mut rng = ChaCha8Rng::seed_from_u64(seed.wrapping_mul(31).wrapping_add(7));
     let keys: BTreeSet<Cell> = dungeon.keys.iter().map(|(c, _)| *c).collect();
     let (mut creatures, mut chests) = (0, 0);
+    // Icebreaker F.32 : no one near where the party arrives (the safe room and around it).
+    let arrival = dungeon.arrival;
+    let near = |c: &Cell| {
+        (c.level - arrival.level).abs() <= 1
+            && (c.x - arrival.x).abs().max((c.y - arrival.y).abs()) <= settings.calme
+    };
     for room in &dungeon.rooms {
         let plan = &mut dungeon.plan;
         // Proposals of the template (removed from the plan) and free cells of the room.
@@ -70,7 +76,7 @@ pub fn populate(dungeon: &mut Assembled, graph: &MissionGraph, settings: &Resolv
         for list in proposals.values_mut() {
             shuffle(list, &mut rng);
         }
-        let mut usable: BTreeSet<Cell> = free.iter().copied().collect();
+        let mut usable: BTreeSet<Cell> = free.iter().copied().filter(|c| !near(c)).collect();
         let mut take = |plan: &mut plan::Plan, proposal: char, symbol: char| -> bool {
             let spot = proposals
                 .get(&proposal)
@@ -130,6 +136,7 @@ pub fn populate(dungeon: &mut Assembled, graph: &MissionGraph, settings: &Resolv
                 })
         })
         .map(|(cell, _)| *cell)
+        .filter(|cell| !near(cell))
         .collect();
     shuffle(&mut cells, &mut rng);
     let corridors = &settings.corridors;
@@ -184,6 +191,13 @@ mod tests {
                         "graine {seed} : {symbol} devant une porte en {cell:?}"
                     );
                 }
+            }
+            // Icebreaker F.32 : no one in the safe room nor near it.
+            let a = dungeon.arrival;
+            for (cell, symbol) in &dungeon.plan.cells {
+                let close = (cell.level - a.level).abs() <= 1
+                    && (cell.x - a.x).abs().max((cell.y - a.y).abs()) <= resolved.calme;
+                assert!(!(close && kind_of(*symbol).is_some()), "graine {seed} : {symbol} en {cell:?}, près de l'abri {a:?}");
             }
             // Still finishable.
             assert!(dungeon.check().is_empty());

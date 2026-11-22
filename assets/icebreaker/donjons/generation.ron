@@ -426,4 +426,7 @@
         // blocs de roche au moins entre le plafond de l'étage le plus haut et le sol le plus bas au-dessus du donjon.
         profondeur: 12,
     ),
+    // Icebreaker F.32 : l'abri, la salle sûre où l'on arrive (salle `abri.txt`, rôle safeRoom) : aucune créature à moins
+    // de `calme` cases de l'arrivée (couloirs compris, sur son étage et ceux d'à côté), comme dans la grotte.
+    abri: (calme: 4),
 )

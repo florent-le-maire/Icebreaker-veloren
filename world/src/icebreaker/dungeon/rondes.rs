@@ -51,6 +51,8 @@ fn rooms_from(graph: &MissionGraph, home: usize, stops: usize) -> Vec<usize> {
             .filter(|p| p.lock.is_none() && p.kind != PassageKind::Drop && (p.from == last || p.to == last))
             .map(|p| p.other(last))
             .filter(|r| !route.contains(r))
+            // Icebreaker F.32 : never into the safe room.
+            .filter(|r| graph.rooms[*r].role != super::rooms::RoomRole::SafeRoom)
             .min();
         match next {
             Some(r) => route.push(r),
