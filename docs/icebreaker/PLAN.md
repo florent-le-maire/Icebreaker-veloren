@@ -334,9 +334,13 @@ tâche pour ce qui casse.
   plat, bordure en pente douce ; une recrue engagée à la charrette.
 - [ ] Une fois, de nuit (graine 777), la caméra a montré le village vu d'en dessous, terrain absent ; de jour, rien.
 
-**Donjon souterrain (F.31, F.32, `PLAN-PLAYTEST.md`)**
+**Donjon souterrain (F.31 à F.34, `PLAN-PLAYTEST.md`)**
 - [ ] En campagne, `/expedition 3` (donjon généré) : arrivée dans l'abri, puis sortir par la porte vers l'entrée ;
   personne ne vient dans l'abri ; aucun jour au plafond dans tout le donjon.
+- [ ] Choisir une forme au panneau Départ (ou `/expedition 3 plat`) : à l'arrivée, « Donjon « plat », graine N », et
+  le même plan dans l'atelier du donjon avec ce preset et cette graine.
+- [ ] L'atelier du donjon (`.\icebreaker.ps1 donjon-atelier`) en main : curseurs, enregistrer un preset, le retrouver
+  au panneau Départ.
 
 **Portail, cristal et autel (F.19 à F.22, T.10 à T.12)**
 - Un donjon généré entier : trouver la salle du portail et celle de l'autel, voir qu'elles ne gênent pas le chemin.
