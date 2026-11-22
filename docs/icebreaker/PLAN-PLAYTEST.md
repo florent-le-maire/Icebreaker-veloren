@@ -104,6 +104,19 @@ de la densité et de la hauteur ; la cuisine passe à 6×5 cases. Premier lot de
 - [x] **F.26 Nouvelle cuisine 6×5** — 86 meubles, trois portes ; vue dans l'atelier et dans le vrai client
   (salle seule, lanterne allumée) ; pas vue dans un donjon généré. 150961aae8
 
+Sol, murs et plafond (Flo, 2026-11-22) : tout le donjon a la même pierre. Le générateur sait dessiner des matériaux
+(dallage, planches, pierre taillée, poutres…) au bloc près ; une salle choisit les siens, sinon le thème du donjon
+décide.
+
+- [x] **F.27 Matériaux du donjon** — `materiaux.ron` : 6 sols, 5 murs, 3 plafonds, un habillage par thème ; dessin
+  bloc par bloc (`Fill::Sampling`). d4bba130cb
+- [x] **F.28 Chaque salle son habillage** — `@sol:`, `@murs:`, `@plafond:` ; mur partagé : chaque côté le sien ; couloirs
+  et tunnel au thème du donjon. Pas vu : un donjon généré entier. d4bba130cb
+- [x] **F.29 Atelier : choisir et voir** — trois listes, sol au motif et murs à la couleur du matériau ; un nom
+  inconnu est refusé à l'enregistrement. Le plafond ne se voit pas dans la vue. 1d7aa6079b
+- [x] **F.30 La cuisine habillée en jeu** — carrelage, enduit et poutres vus dans le vrai client (salle seule,
+  lanterne) ; étape « sol, murs, plafond » dans le skill `piece-vivante`. Commit « F.30 ».
+
 ## 2. Grotte : casser pour avancer, miner pour de bon (jalon U, suite)
 
 **Ce que Flo demande** : des grottes séparées par des murs, pour obliger les joueurs à se servir de la destruction ;

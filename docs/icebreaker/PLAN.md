@@ -345,6 +345,8 @@ tâche pour ce qui casse.
 **Cuisine vivante (F.23 à F.26, `PLAN-PLAYTEST.md`)**
 - La cuisine dans un donjon généré, avec ses habitants : se faufiler entre la table, le billot et l'âtre ; on
   bute sur l'âtre (bloc devant, au milieu) et le billot, on passe sous les ustensiles et la viande pendus.
+- Sol, murs et plafond (F.27 à F.29) dans un donjon généré : un mur entre deux salles d'habillage différent, les
+  couloirs et le tunnel au thème du donjon, les thèmes militaire, culte, bestial.
 - Les salles plus anciennes ont leurs meubles adossés en ori 2 : à revoir dans l'atelier (4 contre le mur du haut).
 
 **Atelier des salles (F.14 à F.17, `PLAN-PLAYTEST.md`)**

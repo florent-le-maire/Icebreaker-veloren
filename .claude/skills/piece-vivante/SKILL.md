@@ -92,6 +92,13 @@ Fichiers de Veloren en CRLF : après une insertion par perl ou sed, renormaliser
 
 `assets/icebreaker/donjons/salles/<nom>.txt` : en-têtes `@roles`, `@fonction`, `@theme`, puis les `@meuble: <Sprite>
 x y z ori [miroir]`, puis le plan par cases (`#` mur, `.` sol, `+` porte).
+- **Sol, murs, plafond** (F.27 à F.29) : `@sol:`, `@murs:`, `@plafond:` avec des noms de
+  `assets/icebreaker/donjons/materiaux.ron` (cuisine : `carrelage`, `enduit`, `poutres`) ; sans eux, le thème du
+  donjon décide. Choisir ce qui raconte la pièce (terre battue pour un nid, dallage pour une salle de garde, plancher
+  pour un dortoir). Il en manque un : l'ajouter dans `materiaux.ron` (motif `Uni`, `Dalles`, `Rangs`, `Planches`,
+  `Poutres` et 2 à 4 couleurs proches ; `plinthe` et `corniche` pour un mur) ; un nouveau motif s'écrit dans
+  `world/src/icebreaker/dungeon/materiaux.rs` (`Materiau::bloc`) **et** dans `couleurSol` de
+  `icebreaker-salles/web/index.html`. Rien de plus fin qu'un bloc : une dalle fait 2 ou 3 blocs.
 - **Taille** : plan murs compris ; dedans = (largeur − 2) × 7 blocs. La cuisine : 6×5 cases, 28×21 blocs dedans,
   86 meubles. Compter environ un meuble pour 7 blocs² de sol.
 - **Coordonnées** en blocs depuis le coin du plan : dedans de x = 7 à 7 × (largeur − 1) − 1, de même en y ; z 0 au
