@@ -25,6 +25,8 @@ use veloren_world::{
 fn main() {
     let seed = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(1234);
     let sortie = std::env::args().nth(2).unwrap_or_else(|| format!("village-{seed}.png"));
+    // Icebreaker : la taille du monde (6 pour le village seul, 7 pour la campagne).
+    let lg = std::env::args().nth(3).and_then(|s| s.parse().ok()).unwrap_or(6);
     // SAFETY: set before any other thread is started.
     unsafe { std::env::set_var("ICEBREAKER_INSTANCE_SITE", "Town") };
     let threadpool = rayon::ThreadPoolBuilder::new().build().unwrap();
@@ -33,8 +35,8 @@ fn main() {
         WorldOpts {
             seed_elements: true,
             world_file: FileOpts::Generate(GenOpts {
-                x_lg: 6,
-                y_lg: 6,
+                x_lg: lg,
+                y_lg: lg,
                 ..GenOpts::default()
             }),
             calendar: None,

@@ -351,12 +351,14 @@ impl World {
             .unwrap();
         let rel = wpos.map2(TerrainChunkSize::RECT_SIZE, |e, sz| e.rem_euclid(sz as i32));
         let block = |z: i32| tc.get(Vec3::new(rel.x, rel.y, z)).ok();
-        let z = (z_from..tc.get_max_z())
-            .find(|z| {
-                block(z - 1).is_some_and(|b| b.is_filled())
-                    && (0..3).all(|dz| block(z + dz).is_none_or(|b| !b.is_solid()))
-            })
-            .unwrap_or(z_from);
+        // Icebreaker : jusqu'à `max_z` compris (sol au sommet du tronçon).
+        let z = icebreaker::first_standing_z(
+            z_from,
+            tc.get_max_z(),
+            |z| block(z).is_some_and(|b| b.is_filled()),
+            |z| block(z).is_none_or(|b| !b.is_solid()),
+        )
+        .unwrap_or(z_from);
         wpos.with_z(z).map(|e| e as f32) + 0.5
     }
 

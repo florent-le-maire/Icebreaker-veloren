@@ -820,6 +820,39 @@ pub fn is_town(kind: SiteKind) -> bool {
     )
 }
 
+/// Icebreaker : la première hauteur, de `z_from` en montant, où l'on tient debout
+/// (`plein` dessous, `libre` sur trois blocs). Au-dessus de `max_z`, le tronçon
+/// n'a que de l'air : la hauteur `max_z` compte, pour un sol au sommet du tronçon
+/// (la place d'un village plat), sans quoi on restait à `z_from`, sous terre.
+pub fn first_standing_z(
+    z_from: i32,
+    max_z: i32,
+    plein: impl Fn(i32) -> bool,
+    libre: impl Fn(i32) -> bool,
+) -> Option<i32> {
+    (z_from..=max_z).find(|z| plein(z - 1) && (0..3).all(|dz| libre(z + dz)))
+}
+
+#[cfg(test)]
+mod standing_tests {
+    use super::first_standing_z;
+
+    #[test]
+    fn le_sol_au_sommet_du_troncon() {
+        // Plein jusqu'à 192, le tronçon s'arrête à 193 (air au-dessus).
+        let plein = |z: i32| z <= 192;
+        assert_eq!(first_standing_z(191, 193, plein, |z| !plein(z)), Some(193));
+    }
+
+    #[test]
+    fn le_premier_sol_en_montant() {
+        // Une poche d'air de 3 blocs à 100, la surface à 120.
+        let plein = |z: i32| z < 100 || (103..120).contains(&z);
+        assert_eq!(first_standing_z(90, 200, plein, |z| !plein(z)), Some(100));
+        assert_eq!(first_standing_z(101, 200, plein, |z| !plein(z)), Some(120));
+    }
+}
+
 /// Icebreaker: the corner nearest to `near` (within `radius`) of an area of
 /// `size` blocks, with `margin` more blocks around, whose ground is all at the
 /// same height (X.15), and that height. `ground` gives the height where one
