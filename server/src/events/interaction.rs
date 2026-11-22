@@ -350,6 +350,73 @@ lazy_static! {
         Ron::load_expect_combined_static("server.manifests.resource_experience_manifest");
 }
 
+/// Icebreaker U.16 : ce qu'un coup de pioche fait à un bloc.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum IcebreakerCreuse {
+    /// Pas notre affaire (sprite de minerai, roche tendre hors de nos lieux) : règles de Veloren.
+    Veloren,
+    /// Le coup ne fait rien (hors d'une Grotte ou d'un donjon généré, ou à sec).
+    Rien,
+    Entame,
+    Casse,
+}
+
+/// Icebreaker U.16 : les coups déjà reçus par les blocs entamés (oubliés quand le bloc cède).
+static ICEBREAKER_COUPS: std::sync::LazyLock<std::sync::Mutex<HashMap<Vec3<i32>, u8>>> =
+    std::sync::LazyLock::new(Default::default);
+
+/// Icebreaker U.16 : le coup de pioche de `ev` sur `block` ; l'énergie du coup est payée ici.
+fn icebreaker_creuser(
+    ev: &MineBlockEvent,
+    block: Block,
+    world: &world::World,
+    index: world::IndexRef,
+    energies: &mut WriteStorage<comp::Energy>,
+) -> IcebreakerCreuse {
+    use common::{
+        comp::tool::ToolKind,
+        icebreaker_destruction::{Coup, coup, destruction, se_creuse},
+        terrain::BlockKind,
+    };
+    if !se_creuse(&block) {
+        return IcebreakerCreuse::Veloren;
+    }
+    if !world::icebreaker::se_creuse_ici(world, index, ev.pos.xy()) {
+        // Ailleurs, seules les matières que Veloren casse déjà.
+        return if matches!(
+            block.kind(),
+            BlockKind::WeakRock | BlockKind::Ice | BlockKind::GlowingWeakRock
+        ) {
+            IcebreakerCreuse::Veloren
+        } else {
+            IcebreakerCreuse::Rien
+        };
+    }
+    let (Some(ToolKind::Pick), Some(mut energy)) = (ev.tool, energies.get_mut(ev.entity)) else {
+        return IcebreakerCreuse::Rien;
+    };
+    let matiere = destruction().matiere(block.kind());
+    let mut coups = ICEBREAKER_COUPS.lock().unwrap_or_else(|e| e.into_inner());
+    // Un serveur qui tourne longtemps ne garde pas les blocs entamés puis laissés.
+    if coups.len() > 20_000 {
+        coups.clear();
+    }
+    let deja = coups.get(&ev.pos).copied().unwrap_or(0);
+    match coup(matiere, energy.current(), deja) {
+        Coup::ASec => IcebreakerCreuse::Rien,
+        Coup::Entame(n) => {
+            energy.change_by(-matiere.energie);
+            coups.insert(ev.pos, n);
+            IcebreakerCreuse::Entame
+        },
+        Coup::Casse => {
+            energy.change_by(-matiere.energie);
+            coups.remove(&ev.pos);
+            IcebreakerCreuse::Casse
+        },
+    }
+}
+
 impl ServerEvent for MineBlockEvent {
     type SystemData<'a> = (
         WriteExpect<'a, BlockChange>,
@@ -363,6 +430,10 @@ impl ServerEvent for MineBlockEvent {
         ReadExpect<'a, Time>,
         WriteStorage<'a, comp::SkillSet>,
         ReadStorage<'a, Uid>,
+        // Icebreaker U.16 : l'énergie de qui creuse, et le lieu.
+        WriteStorage<'a, comp::Energy>,
+        ReadExpect<'a, std::sync::Arc<world::World>>,
+        ReadExpect<'a, world::IndexOwned>,
     );
 
     fn handle(
@@ -379,6 +450,9 @@ impl ServerEvent for MineBlockEvent {
             time,
             mut skill_sets,
             uids,
+            mut energies,
+            world,
+            index,
         ): Self::SystemData<'_>,
     ) {
         use rand::RngExt;
@@ -389,6 +463,36 @@ impl ServerEvent for MineBlockEvent {
         for ev in events {
             if block_change.can_set_block(ev.pos) {
                 let block = terrain.get(ev.pos).ok().copied();
+                // Icebreaker U.16 : un bloc plein (roche, mur, bois) cède à la pioche, coup après
+                // coup et contre de l'énergie, dans une Grotte ou un donjon généré.
+                if let Some(block) = block {
+                    let creuse =
+                        icebreaker_creuser(&ev, block, &world, index.as_index_ref(), &mut energies);
+                    match creuse {
+                        IcebreakerCreuse::Veloren => {},
+                        IcebreakerCreuse::Rien => continue,
+                        IcebreakerCreuse::Entame | IcebreakerCreuse::Casse => {
+                            outcome_emitter.emit(if creuse == IcebreakerCreuse::Casse {
+                                block_change.set(ev.pos, block.into_vacant());
+                                Outcome::BreakBlock {
+                                    pos: ev.pos,
+                                    tool: ev.tool,
+                                    color: block.get_color(),
+                                }
+                            } else {
+                                Outcome::DamagedBlock {
+                                    pos: ev.pos,
+                                    stage_changed: false,
+                                    tool: ev.tool,
+                                }
+                            });
+                            sound_event_emitter.emit(SoundEvent {
+                                sound: Sound::new(SoundKind::Mine, ev.pos.as_(), 20.0, time.0),
+                            });
+                            continue;
+                        },
+                    }
+                }
                 if let Some(mut block) =
                     block.filter(|b| b.mine_tool().is_some_and(|t| Some(t) == ev.tool))
                 {

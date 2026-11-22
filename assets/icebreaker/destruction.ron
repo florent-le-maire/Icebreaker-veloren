@@ -1,0 +1,19 @@
+// Icebreaker U.16 : tout se casse à la pioche, dans une Grotte et dans un donjon généré ; c'est
+// plus ou moins facile selon la matière (docs/icebreaker/design/destruction.md).
+//   coups   : coups de pioche pour que le bloc cède ;
+//   energie : énergie payée à chaque coup (sans elle, le coup ne fait rien).
+// Les matières sont les genres de bloc de Veloren (Rock = roche et murs de pierre, Wood = bois).
+(
+    matieres: {
+        "WeakRock": (coups: 1, energie: 5.0),
+        "GlowingWeakRock": (coups: 1, energie: 5.0),
+        "Earth": (coups: 2, energie: 8.0),
+        "Sand": (coups: 2, energie: 8.0),
+        "Grass": (coups: 2, energie: 8.0),
+        "Wood": (coups: 3, energie: 10.0),
+        "Rock": (coups: 5, energie: 15.0),
+        "GlowingRock": (coups: 5, energie: 15.0),
+    },
+    // Toute autre matière pleine.
+    defaut: (coups: 5, energie: 15.0),
+)

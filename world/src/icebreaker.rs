@@ -52,6 +52,20 @@ pub fn instance_site() -> Option<SiteKind> {
     kind
 }
 
+/// Icebreaker U.16 : la pioche casse tout (`common::icebreaker_destruction`) dans les tronçons
+/// d'une Grotte ou d'un donjon généré ; leur bord est la limite, ailleurs Veloren garde ses règles.
+pub fn se_creuse_ici(world: &crate::World, index: crate::IndexRef, wpos: vek::Vec2<i32>) -> bool {
+    use common::terrain::CoordinateConversions;
+    world.sim().get(wpos.wpos_to_cpos()).is_some_and(|chunk| {
+        chunk.sites.iter().any(|site| {
+            matches!(
+                index.sites.get(*site).kind,
+                Some(SiteKind::IcebreakerGrotte | SiteKind::IcebreakerDungeon)
+            )
+        })
+    })
+}
+
 /// Icebreaker O : ce serveur est le lieu d'entraînement (`icebreaker.ps1 entrainement`) : aucun
 /// site, un plateau nivelé (`arene`).
 pub fn is_entrainement() -> bool {

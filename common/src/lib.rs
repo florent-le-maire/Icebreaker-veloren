@@ -33,6 +33,8 @@ pub mod icebreaker_races;
 pub mod icebreaker_arene;
 // Icebreaker : le fantôme du village (jalon FT).
 pub mod icebreaker_fantome;
+// Icebreaker : tout se casse à la pioche (U.16).
+pub mod icebreaker_destruction;
 pub mod comp;
 pub mod consts;
 pub mod resources;

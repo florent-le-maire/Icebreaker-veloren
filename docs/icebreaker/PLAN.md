@@ -454,6 +454,9 @@ tâche pour ce qui casse.
   (`butin.ron`) ; rien d'inutile. B.14 : ce que lâchent les créatures, le chef, le boss.
 
 **Grotte**
+- U.16 : pioche en main, creuser un passage dans la roche de la grotte (5 coups par bloc, l'énergie baisse, plus
+  rien à sec) ; dans un donjon généré, percer un mur de pierre et une porte en bois ; au village, la roche ne se
+  creuse pas.
 - U.4 : descendre dans une grotte de chaque forme (`donjon -Site Grotte -Profil gouffre`, `plaine`, `chaos`, `mixte`) :
   le sentier se suit-il à l'aller et au retour, les puits et leurs lacets, la caméra sous les plafonds bas, la
   lumière, la densité des sprites et des créatures dans les très grandes zones ; atelier : glisser les curseurs,

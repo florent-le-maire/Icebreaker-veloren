@@ -169,10 +169,11 @@ roche tendre (`WeakRock`) à la pioche et à l'explosion ; la roche ordinaire ne
 2026-11-16)** : la pioche casse aussi la roche dure, contre de l'énergie. Le todo « Ajouter la
 destructibilité » (2026-11-11) commence ici ; les matières et la foreuse restent dans `PLAN-DONJON.md` (E.5, E.6).
 
-- [ ] **U.16 La pioche casse la roche dure** (à faire avant U.13) — à la pioche, la roche ordinaire se casse aussi ;
-  chaque bloc coûte de l'énergie (coût et temps par matière dans `grotte.ron`) ; sans énergie, on ne creuse plus.
-  Jusqu'où ça vaut (grotte seule ou donjon généré aussi, roche du bord de l'emplacement) : à dire en prenant la tâche.
-  *Fin* : un personnage creuse un passage dans la roche tant qu'il a de l'énergie, et s'arrête à sec.
+- [x] **U.16 La pioche casse tout** — tranché par Flo (2026-11-22) : tout est destructible à la pioche, dans la
+  Grotte et le donjon généré, plus ou moins facilement selon la matière (`assets/icebreaker/destruction.ron` : coups
+  et énergie par coup ; roche 5 coups à 15, bois 3 à 10, roche tendre 1 à 5). À sec, le coup ne fait rien ; hors de
+  ces lieux, règles de Veloren. Testé : 4 tests de `veloren-common`, serveur de grotte lancé. Pas vérifié en jeu :
+  creuser au vrai client (visée, bruit, arrêt à sec), dans la grotte et le donjon. — HASH_U16
 - [ ] **U.13 Murs à casser** — une part réglable des liens entre deux zones est bouchée par un mur de roche,
   d'une épaisseur réglable (`formes.ron`) ; le contrôle du sentier compte ces murs comme franchissables ; la salle
   sûre et sa première zone restent ouvertes.

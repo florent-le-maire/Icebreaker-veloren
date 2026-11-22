@@ -677,6 +677,9 @@ impl Block {
             BlockKind::WeakRock | BlockKind::Ice | BlockKind::GlowingWeakRock => {
                 Some(ToolKind::Pick)
             },
+            // Icebreaker U.16 : tout bloc plein se vise à la pioche ; le serveur ne le casse que
+            // dans une Grotte ou un donjon généré (`icebreaker_destruction`).
+            kind if kind.is_filled() => Some(ToolKind::Pick),
             _ => self.get_sprite().and_then(|s| s.mine_tool()),
         }
     }

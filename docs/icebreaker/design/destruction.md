@@ -4,6 +4,26 @@ Casser les murs du donjon (décision `docs/decisions/0009`, tâches 2.9 à 2.17)
 lieu : [`generation.md`](generation.md) (« Derrière les murs et lieux »). Index des règles :
 [`docs/GAME_DESIGN.md`](../GAME_DESIGN.md).
 
+## À la pioche, dans Veloren (U.16)
+
+**Tout est destructible** (Flo, 2026-11-22) : dans une Grotte ou un donjon généré, la pioche casse n'importe quel
+bloc plein (roche, mur de pierre, bois) ; c'est seulement plus ou moins facile selon la matière. Chaque matière a un
+nombre de **coups** et une **énergie par coup** (`assets/icebreaker/destruction.ron`) :
+
+| Matière (genre de bloc) | Coups | Énergie par coup |
+|---|---|---|
+| Roche tendre | 1 | 5 |
+| Terre, sable, herbe | 2 | 8 |
+| Bois | 3 | 10 |
+| Roche, murs de pierre | 5 | 15 |
+| Toute autre | 5 | 15 |
+
+Sans assez d'énergie, le coup ne fait rien et ne coûte rien : on attend qu'elle remonte. Les coups s'additionnent
+sur un bloc, d'un joueur à l'autre. Le bord de l'emplacement (ses tronçons) est la limite : au-delà, et partout
+ailleurs (village), les règles de Veloren. Minerais, coffres, portes à serrure et meubles (des sprites) gardent leurs
+règles. Les matières fines du tableau ci-dessous (pierre renforcée, maçonnerie), la bombe et la foreuse restent à
+faire (E.5, E.6 de `PLAN-DONJON.md`) ; d'ici là, un mur d'antre se creuse comme un autre.
+
 ## Matières et outils (tâche 2.11)
 
 Chaque case solide a une **matière** et des points de vie (`game/data/dungeons/materials.json`). Un coup retire
