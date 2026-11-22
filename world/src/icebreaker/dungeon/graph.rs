@@ -90,6 +90,11 @@ impl MissionGraph {
         errors
     }
 
+    /// Icebreaker F.31 : the safe room where the party arrives.
+    pub fn safe_room(&self) -> usize {
+        self.rooms.iter().rposition(|r| r.role == RoomRole::SafeRoom).expect("every graph has its safe room")
+    }
+
     /// Rooms reachable from `start` with the given keys.
     pub fn reachable(&self, start: usize, keys: &BTreeSet<usize>) -> BTreeSet<usize> {
         let mut seen = BTreeSet::from([start]);
@@ -388,7 +393,7 @@ pub fn generate(settings: &Resolved, seed: u64) -> MissionGraph {
         let count = special.min + (special.min..special.max).filter(|_| rng.random_bool(chance)).count();
         for _ in 0..count {
             let distances = b.distances(main[0]);
-            // The tunnel to the surface takes a door of the entrance.
+            // The safe room (added below, F.31) takes a door of the entrance.
             let passages = |room: usize| {
                 b.passages.iter().filter(|p| p.from == room || p.to == room).count() + usize::from(room == main[0])
             };
@@ -408,6 +413,11 @@ pub fn generate(settings: &Resolved, seed: u64) -> MissionGraph {
             b.connect(anchor, room, None);
         }
     }
+
+    // 6. Icebreaker F.31 : the safe room where the party arrives, a dead end off the entrance, last so that the
+    // rest of the graph stays the one the seed always gave.
+    let safe = b.add_room(RoomRole::SafeRoom, b.level(main[0]), false, b.zone[main[0]]);
+    b.connect(main[0], safe, None);
 
     MissionGraph {
         rooms: b.rooms,
@@ -438,6 +448,13 @@ mod tests {
                 assert_eq!(goal.role, RoomRole::ChiefLair);
                 assert!(graph.rooms.iter().all(|r| r.level <= goal.level));
                 assert_eq!(graph.rooms.iter().filter(|r| r.role == RoomRole::ChiefLair).count(), 1);
+                // Icebreaker F.31 : one safe room, a dead end off the entrance.
+                let safe: Vec<&MissionRoom> = graph.rooms.iter().filter(|r| r.role == RoomRole::SafeRoom).collect();
+                assert_eq!(safe.len(), 1, "{size} {seed}");
+                let doors: Vec<&Passage> =
+                    graph.passages.iter().filter(|p| p.from == safe[0].id || p.to == safe[0].id).collect();
+                assert_eq!(doors.len(), 1, "{size} {seed} : l'abri n'est pas un cul-de-sac");
+                assert_eq!(doors[0].other(safe[0].id), 0, "{size} {seed} : l'abri n'est pas sur l'entrée");
 
                 // Icebreaker F.20 : the rooms every dungeon has, each a dead end off the goal.
                 for (role, special) in &resolved.specials {
@@ -504,7 +521,10 @@ mod tests {
         bare.specials.clear();
         for seed in 0..50 {
             let (with, without) = (generate(&resolved, seed), generate(&bare, seed));
-            let kept = with.rooms.iter().zip(&without.rooms).all(|(a, b)| a.role == b.role && a.level == b.level);
+            let rooms = |g: &MissionGraph| -> Vec<(RoomRole, i32)> {
+                g.rooms.iter().filter(|r| r.role != RoomRole::SafeRoom).map(|r| (r.role, r.level)).collect()
+            };
+            let kept = rooms(&with).iter().zip(&rooms(&without)).all(|(a, b)| a == b);
             assert!(kept && without.rooms.len() < with.rooms.len(), "graine {seed}");
         }
     }

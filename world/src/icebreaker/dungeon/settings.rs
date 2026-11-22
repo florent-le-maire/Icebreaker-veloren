@@ -25,8 +25,6 @@ pub struct RenderSettings {
     /// Blocks per level (floor included). Stairs climb one level over one
     /// cell, one block per step: at most `cell_size`.
     pub level_height: i32,
-    /// Cells of the tunnel from the surface down to the entrance room.
-    pub tunnel_cells: i32,
 }
 
 /// The shape of the mission graph for a size of dungeon. Counts of branches,
@@ -140,6 +138,9 @@ pub struct PlacementSettings {
     /// Icebreaker I.11: chunks kept around the entrance, on each side, for
     /// the dungeon and the ones drawn again in its place.
     pub emprise: i32,
+    /// Icebreaker F.31 : blocks of rock at least between the ceiling of the highest level and the lowest ground
+    /// above the dungeon (it lies wholly under the ground).
+    pub profondeur: i32,
 }
 
 /// Variety of the rooms (Icebreaker F.2 and F.5): the orientations of each drawn
@@ -250,8 +251,8 @@ impl Settings {
         if placement.entrance_margin < 0 || placement.edge_margin < 0 || placement.fit_tries < 1 || placement.emprise < 1 {
             errors.push("placement : marges positives, fit_tries et emprise au moins 1".into());
         }
-        if render.tunnel_cells < 1 {
-            errors.push("render : tunnel_cells doit être au moins 1".into());
+        if placement.profondeur < 1 {
+            errors.push("placement : profondeur au moins 1".into());
         }
         if ![1, 2, 4, 8].contains(&settings.variety.orientations) {
             errors.push("variety : orientations vaut 1, 2, 4 ou 8".into());

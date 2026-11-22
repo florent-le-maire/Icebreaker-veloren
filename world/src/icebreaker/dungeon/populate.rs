@@ -165,7 +165,7 @@ mod tests {
         for seed in 0..40 {
             let graph = graph::generate(&resolved, seed);
             let Some(mut dungeon) =
-                assemble::assemble(&graph, &catalog, seed, &settings.assembly, 4, |_| {})
+                assemble::assemble(&graph, &catalog, seed, &settings.assembly, |_| {})
             else {
                 continue;
             };
@@ -200,7 +200,7 @@ mod tests {
         let (mut total, mut in_corridors, mut dungeons) = (0, 0, 0);
         for seed in 0..40 {
             let graph = graph::generate(&resolved, seed);
-            let Some(mut dungeon) = assemble::assemble(&graph, &catalog, seed, &settings.assembly, 4, |_| {})
+            let Some(mut dungeon) = assemble::assemble(&graph, &catalog, seed, &settings.assembly, |_| {})
             else {
                 continue;
             };

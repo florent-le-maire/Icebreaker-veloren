@@ -114,7 +114,7 @@ mod tests {
         let mut with_rounds = 0;
         for seed in 0..30 {
             let graph = graph::generate(&resolved, seed);
-            let Some(mut dungeon) = assemble::assemble(&graph, &catalog, seed, &settings.assembly, 4, |_| {})
+            let Some(mut dungeon) = assemble::assemble(&graph, &catalog, seed, &settings.assembly, |_| {})
             else {
                 continue;
             };

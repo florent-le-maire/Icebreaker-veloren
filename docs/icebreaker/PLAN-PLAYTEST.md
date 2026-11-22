@@ -91,6 +91,17 @@ jeu ; la suite (allumer, traverser, cristal, résurrection) est sous le jalon T 
 - [x] **F.22 Le donjon fait apparaître le portail et l'autel** — entité immobile à la place dite par la salle, avec
   une lueur (`portail.ron`). Vu en capture dans les deux salles seules. 727467233f, 6350a54f3a, bc044191f9
 
+Donjon souterrain (Flo, 2026-11-22) : comme la grotte, on arrive dans une salle sûre, sous terre, sans tunnel ni
+bouche en surface ; le donjon est tout entier sous le sol ; un atelier web règle sa forme comme celui des grottes.
+
+- [ ] **F.31 Salle sûre, tout sous le sol** — rôle `safeRoom` (salle `abri.txt`) accroché à l'entrée par le graphe,
+  plus de tunnel ; l'étage 0 sous la surface la plus basse de l'emprise, moins `placement.profondeur` ; on apparaît
+  dans l'abri. — *en cours : Veloren-souterrain, 2026-11-22*
+- [ ] **F.32 Calme autour de l'arrivée** — personne à moins de `abri.calme` cases de l'abri ; l'abri éclairé.
+- [ ] **F.33 Presets de donjon** — `donjons/formes.ron` ; `/expedition N <preset>`, `-Profil` du lanceur.
+- [ ] **F.34 Atelier du donjon** — `.\icebreaker.ps1 donjon-atelier` (port 8098) : plan par étage, curseurs,
+  « Enregistrer le preset » (commit).
+
 Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,
 Veloren n'a presque rien pour une cuisine. Nos modèles sont générés par du code ; la vie vient des traces d'activité,
 de la densité et de la hauteur ; la cuisine passe à 6×5 cases. Premier lot de six modèles, puis essai en jeu (F.13).

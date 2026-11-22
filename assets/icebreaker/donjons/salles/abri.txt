@@ -1,0 +1,8 @@
+; Abri (F.31) : la salle sûre où le groupe arrive, sous terre (plus de tunnel ni de bouche en surface). Un
+; cul-de-sac accroché à l'entrée ; personne n'y habite. Un feu de camp, des couchages, des appliques.
+@roles: safeRoom
+#####
+#(&(#
++.1.+
+#&.&#
+##+##

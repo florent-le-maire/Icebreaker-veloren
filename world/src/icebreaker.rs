@@ -135,13 +135,13 @@ pub fn site_area(kind: SiteKind, world_dims: vek::Aabr<i32>) -> vek::Aabr<i32> {
     }
 }
 
-/// Where players arrive at a dungeon of our generator: out of its entrance
-/// tunnel.
 /// Icebreaker U.8: where players arrive under the ground (the safe room of
 /// the cave, which has no mouth at the surface): a block one stands in.
+/// Icebreaker F.31: and the safe room of a dungeon of our generator.
 pub fn dungeon_arrival_under(site: &Site) -> Option<vek::Vec3<i32>> {
     site.plots().find_map(|plot| match plot.kind() {
         PlotKind::IcebreakerGrotte(grotte) => Some(grotte.get().grotte().arrival),
+        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get().arrival()),
         _ => None,
     })
 }
@@ -181,9 +181,11 @@ pub fn dungeon_specials(site: &Site) -> Vec<(&'static str, vek::Vec3<f32>, vek::
         .collect()
 }
 
+/// Where players arrive at a site of ours, seen from above (a dungeon of our generator: above its safe room, F.31;
+/// the real place is `dungeon_arrival_under`).
 pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
     site.plots().find_map(|plot| match plot.kind() {
-        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get().entrance()),
+        PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get().arrival().xy()),
         PlotKind::IcebreakerGrotte(grotte) => Some(grotte.get().entrance()),
         _ => None,
     })

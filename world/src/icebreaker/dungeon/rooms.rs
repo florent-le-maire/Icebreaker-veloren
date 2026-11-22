@@ -30,6 +30,9 @@ pub enum RoomRole {
     /// dead. Each tells where its object stands by a `@manque:` of the reserved label (`special_label`).
     Portal,
     Altar,
+    /// Icebreaker F.31 : the safe room where the party arrives, under the ground (no tunnel to the surface any
+    /// more), off the entrance.
+    SafeRoom,
 }
 
 impl RoomRole {
@@ -45,7 +48,7 @@ impl RoomRole {
         }
     }
 
-    pub const ALL: [RoomRole; 15] = [
+    pub const ALL: [RoomRole; 16] = [
         RoomRole::Entrance,
         RoomRole::Hall,
         RoomRole::GuardRoom,
@@ -61,6 +64,7 @@ impl RoomRole {
         RoomRole::BossLair,
         RoomRole::Portal,
         RoomRole::Altar,
+        RoomRole::SafeRoom,
     ];
 
     /// The name of the role in the data files (`guardRoom`, `barracks`…).
@@ -81,6 +85,7 @@ impl RoomRole {
             RoomRole::BossLair => "bossLair",
             RoomRole::Portal => "portal",
             RoomRole::Altar => "altar",
+            RoomRole::SafeRoom => "safeRoom",
         }
     }
 
@@ -465,6 +470,25 @@ impl RoomTemplate {
 
     pub fn door_count(&self) -> usize { self.doors().count() }
 
+    /// Icebreaker F.31 : the open floor cell of the lowest level nearest to the middle of the room (where one
+    /// arrives in the safe room, or in a room alone).
+    pub fn middle(&self) -> Cell {
+        let level = self.plan.cells.keys().map(|c| c.level).min().unwrap_or(0);
+        let floor: Vec<Cell> = self
+            .plan
+            .cells
+            .iter()
+            .filter(|(c, s)| c.level == level && plan::is_open_floor(**s))
+            .map(|(c, _)| *c)
+            .collect();
+        let n = floor.len().max(1) as i32;
+        let (mx, my) = (floor.iter().map(|c| 2 * c.x).sum::<i32>() / n, floor.iter().map(|c| 2 * c.y).sum::<i32>() / n);
+        floor
+            .into_iter()
+            .min_by_key(|c| ((2 * c.x - mx).pow(2) + (2 * c.y - my).pow(2), c.x, c.y))
+            .unwrap_or(Cell::new(0, 0, level))
+    }
+
     /// Icebreaker F.19 : where the object of a special room stands (none: not a room of this role).
     pub fn special(&self, role: RoomRole) -> Option<&Missing> {
         let label = role.special_label()?;
@@ -643,7 +667,7 @@ mod tests {
     #[test]
     fn all_rooms_are_valid() {
         let catalog = RoomCatalog::load().unwrap_or_else(|e| panic!("{e}"));
-        assert_eq!(catalog.rooms.len(), 32);
+        assert_eq!(catalog.rooms.len(), 33);
         // Every role of a branch or of the main path has a room.
         for role in RoomRole::ALL {
             assert!(!catalog.with_role(role).is_empty(), "aucune salle pour {}", role.name());

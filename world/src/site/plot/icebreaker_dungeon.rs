@@ -1,6 +1,6 @@
 //! Icebreaker: the dungeon of our generator (`crate::icebreaker::dungeon`),
-//! drawn under the terrain. A tunnel climbs from the entrance room up to the
-//! surface, at the site's origin.
+//! drawn under the terrain. Icebreaker F.31: wholly under the ground, no tunnel
+//! any more; one arrives in its safe room, under the site's origin.
 
 use super::*;
 use crate::{
@@ -42,32 +42,39 @@ pub struct IcebreakerDungeon {
     base: Vec2<i32>,
     /// Altitude of the floor of level 0.
     floor0: i32,
-    /// Where the tunnel comes out, on the surface.
-    entrance: Vec2<i32>,
+    /// Icebreaker F.31: where one arrives, a block one stands in, in the safe room.
+    arrival: Vec3<i32>,
 }
 
 impl IcebreakerDungeon {
-    fn new(dungeon: Dungeon, render: RenderSettings, land: &Land, origin: Vec2<i32>) -> Self {
-        let c = render.cell_size;
-        let tunnel = &dungeon.tunnel;
-        let (dx, dy) = tunnel.dir;
-        // The tunnel ends at the site's origin.
-        let last = *tunnel.cells.last().expect("a tunnel has cells");
-        let mouth_rel = Vec2::new(last.x * c + c / 2, last.y * c + c / 2)
-            + Vec2::new(dx, dy) * (c / 2);
-        let base = origin - mouth_rel;
-        let rise = tunnel.cells.len() as i32 * c - 1;
-        let floor0 = land.get_alt_approx(origin) as i32 - rise - last.level * render.level_height;
-        Self {
+    /// Icebreaker F.31: the safe room under `origin`; the highest ceiling `profondeur` blocks at least under the
+    /// lowest ground above the dungeon.
+    fn new(dungeon: Dungeon, render: RenderSettings, profondeur: i32, land: &Land, origin: Vec2<i32>) -> Self {
+        let (c, h) = (render.cell_size, render.level_height);
+        let arrival = dungeon.arrival;
+        let base = origin - Vec2::new(arrival.x * c + c / 2, arrival.y * c + c / 2);
+        let plan = &dungeon.plan;
+        let lowest_ground = plan
+            .cells
+            .keys()
+            .map(|cell| land.get_alt_approx(base + Vec2::new(cell.x * c + c / 2, cell.y * c + c / 2)) as i32)
+            .min()
+            .unwrap_or(0);
+        let top = plan.cells.keys().map(|cell| cell.level).max().unwrap_or(0);
+        // The ceiling of a cell is the block above its height (`render_inner`).
+        let floor0 = lowest_ground - profondeur - (h + 1) - top * h;
+        let mut plot = Self {
             dungeon,
             render,
             base,
             floor0,
-            entrance: origin + Vec2::new(dx, dy) * 3,
-        }
+            arrival: Vec3::zero(),
+        };
+        plot.arrival = plot.spot(arrival);
+        plot
     }
 
-    /// Icebreaker F.8: the dungeon of the mission, its tunnel coming out at
+    /// Icebreaker F.8: the dungeon of the mission, its safe room under
     /// `origin`, drawn again with other seeds (`placement` of the settings)
     /// while it comes too close to an edge of the world: the chunks past the
     /// edge are never generated, and such a dungeon could not be finished.
@@ -98,7 +105,7 @@ impl IcebreakerDungeon {
         let mut plot = None;
         for attempt in 1..=placement.fit_tries {
             let dungeon = dungeon::generate(&settings, &mission(rng.random())?)?;
-            let tried = Self::new(dungeon, settings.render.clone(), land, origin);
+            let tried = Self::new(dungeon, settings.render.clone(), settings.placement.profondeur, land, origin);
             let bounds = tried.bounds();
             if fits(bounds) {
                 if attempt > 1 {
@@ -117,7 +124,7 @@ impl IcebreakerDungeon {
         Ok((plot.expect("fit_tries is at least 1"), false))
     }
 
-    /// Icebreaker I.11: the area kept for the dungeons whose tunnel comes out
+    /// Icebreaker I.11: the area kept for the dungeons whose safe room is
     /// at `origin`, the first one and those drawn again in its place
     /// (`placement.emprise` chunks on each side).
     fn emprise(settings: &dungeon::Settings, origin: Vec2<i32>) -> Aabr<i32> {
@@ -128,8 +135,8 @@ impl IcebreakerDungeon {
         }
     }
 
-    /// Where players arrive, on the surface just outside the tunnel.
-    pub fn entrance(&self) -> Vec2<i32> { self.entrance }
+    /// Icebreaker F.31: where players arrive, in the safe room (a block one stands in).
+    pub fn arrival(&self) -> Vec3<i32> { self.arrival }
 
     pub fn dungeon(&self) -> &Dungeon { &self.dungeon }
 
@@ -282,14 +289,13 @@ impl IcebreakerDungeon {
     }
 
     /// Checks the drawn blocks (`block_at`) against the plan: every cell one
-    /// can reach from the tunnel has a solid floor and room above it. Returns
+    /// can reach from the safe room has a solid floor and room above it. Returns
     /// the problems found.
     pub fn check_blocks(&self, mut block_at: impl FnMut(Vec3<i32>) -> Option<Block>) -> Vec<String> {
         let plan = &self.dungeon.plan;
         let c = self.render.cell_size;
-        let top = *self.dungeon.tunnel.cells.last().expect("a tunnel has cells");
         let mut problems = Vec::new();
-        for cell in plan.reachable(top) {
+        for cell in plan.reachable(self.dungeon.arrival) {
             let symbol = plan.get(cell);
             let min = self.cell_min(cell);
             // Where to look in the cell, and the height of what one stands on.
@@ -320,17 +326,17 @@ impl IcebreakerDungeon {
                 ));
             }
         }
-        // The steps of the tunnel, up to the surface.
-        let tunnel = &self.dungeon.tunnel;
-        let start = self.cell_min(tunnel.cells[0]).z;
-        for (k, cell) in tunnel.cells.iter().enumerate() {
-            for u in 0..c {
-                let step = self.slice(*cell, tunnel.dir, u, 1).center().with_z(start + k as i32 * c + u);
-                let solid = |b: Option<Block>| b.is_some_and(|b| b.is_solid());
-                if !solid(block_at(step)) || (1..=2).any(|dz| solid(block_at(step + Vec3::unit_z() * dz))) {
-                    problems.push(format!("tunnel : marche ratée en {step:?}"));
-                }
-            }
+        // Icebreaker F.31: wholly under the ground, rock above every ceiling.
+        let h = self.render.level_height;
+        let open_sky = plan
+            .cells
+            .keys()
+            .filter(|cell| plan.is_free(cell.offset(0, 0, 1)))
+            .map(|cell| (self.cell_min(*cell).xy() + c / 2).with_z(self.cell_min(*cell).z + h + 1))
+            .filter(|above| !block_at(*above).is_some_and(|b| b.is_solid()))
+            .collect::<Vec<_>>();
+        if let Some(first) = open_sky.first() {
+            problems.push(format!("{} case(s) sans roche au-dessus du plafond, par ex. en {first:?}", open_sky.len()));
         }
         // The locked doors and the chests of their keys.
         for (cell, _) in &self.dungeon.locks {
@@ -360,7 +366,7 @@ impl IcebreakerDungeon {
         problems
     }
 
-    /// The blocks covered by the plan (including the tunnel).
+    /// The blocks covered by the plan.
     pub fn bounds(&self) -> Aabr<i32> {
         let c = self.render.cell_size;
         let (min_x, max_x, min_y, max_y) = self.dungeon.plan.bounds().unwrap_or_default();
@@ -454,38 +460,6 @@ impl IcebreakerDungeon {
             Some(m.bloc(p, p.z - min.z, etage))
         }))
     }
-
-    fn render_tunnel(&self, land: &Land, painter: &Painter, rock: &Fill) {
-        let c = self.render.cell_size;
-        let tunnel = &self.dungeon.tunnel;
-        let start = self.cell_min(tunnel.cells[0]).z;
-        for (k, cell) in tunnel.cells.iter().enumerate() {
-            for u in 0..c {
-                let t = k as i32 * c + u;
-                let floor = start + t;
-                let slice = self.slice(*cell, tunnel.dir, u, 1);
-                let surface = land.get_alt_approx(slice.center()) as i32;
-                // A trench open to the sky where the rock above gets thin.
-                let top = if floor + self.render.level_height >= surface {
-                    surface.max(floor + self.render.level_height) + 6
-                } else {
-                    floor + self.render.level_height
-                };
-                painter
-                    .aabb(Aabb {
-                        min: slice.min.with_z(start),
-                        max: slice.max.with_z(floor + 1),
-                    })
-                    .fill(rock.clone());
-                painter
-                    .aabb(Aabb {
-                        min: slice.min.with_z(floor + 1),
-                        max: slice.max.with_z(top),
-                    })
-                    .clear();
-            }
-        }
-    }
 }
 
 impl Structure for IcebreakerDungeon {
@@ -499,20 +473,15 @@ impl Structure for IcebreakerDungeon {
         &self,
         spawn_rules: &mut SpawnRules,
         _land: &Land,
-        wpos: Vec2<i32>,
+        _wpos: Vec2<i32>,
         _weight: f32,
     ) {
-        spawn_rules.trees &= wpos.distance_squared(self.entrance) > 24 * 24;
         spawn_rules.waypoints = false;
     }
 
-    fn render_inner(&self, _site: &Site, land: &Land, painter: &Painter) {
+    fn render_inner(&self, _site: &Site, _land: &Land, painter: &Painter) {
         let h = self.render.level_height;
         let c = self.render.cell_size;
-        // Icebreaker F.27 : the rock outside the rooms (the tunnel) in the walls of the dungeon.
-        let habillage = &self.dungeon.habillage;
-        let roche = habillage.materiaux.mur(&habillage.defaut).clone();
-        let rock = Fill::Sampling(std::sync::Arc::new(move |p| Some(roche.bloc(p, 3, 7))));
         let plan = &self.dungeon.plan;
 
         // Solid first: every cell of the plan is rock, floors included.
@@ -594,7 +563,6 @@ impl Structure for IcebreakerDungeon {
                 },
             }
         }
-        self.render_tunnel(land, painter, &rock);
 
         // Lights by the inhabitants (G.10): torches on the walls, braziers on the floors.
         for (cell, torch) in &self.dungeon.lights {
@@ -764,8 +732,8 @@ fn chest_sprite(name: &str) -> SpriteKind {
 }
 
 impl Site {
-    /// Icebreaker: the site of a dungeon from our generator, its tunnel
-    /// coming out at `origin`.
+    /// Icebreaker: the site of a dungeon from our generator, its safe room
+    /// under `origin` (F.31).
     pub fn generate_icebreaker_dungeon(land: &Land, rng: &mut impl Rng, origin: Vec2<i32>) -> Self {
         let mut rng = reseed(rng);
         let mut site = Site {
@@ -840,7 +808,7 @@ impl IcebreakerDungeon {
 
 impl Remplacable<IcebreakerDungeon> {
     /// Icebreaker I.11: draws in its place a new dungeon of `seed`, its
-    /// tunnel coming out at the same `origin`, within the area kept for it.
+    /// safe room under the same `origin` (F.31), within the area kept for it.
     /// The current one stays if none fits; says whether it was replaced.
     pub fn regenerate(&self, land: &Land, origin: Vec2<i32>, seed: u64) -> Result<bool, String> {
         let world = land.size().map(|e| e as i32);
@@ -928,7 +896,7 @@ mod tests {
     }
 
     /// Icebreaker I.11: a dungeon drawn again in its place is another one,
-    /// its tunnel at the same entrance, within the area kept for it.
+    /// its safe room under the same origin, within the area kept for it.
     #[test]
     fn a_dungeon_drawn_again_is_new_and_stays_in_its_area() {
         let settings = dungeon::Settings::load().unwrap();
@@ -956,7 +924,7 @@ mod tests {
             let now = slot.get();
             let b = now.bounds();
             assert!(kept.contains_point(b.min) && kept.contains_point(b.max), "graine {seed} : {b:?} hors de {kept:?}");
-            assert!(now.entrance().distance_squared(origin) < 32 * 32, "graine {seed} : entrée loin du site");
+            assert!(now.arrival().xy().distance_squared(origin) < 8 * 8, "graine {seed} : abri loin du site");
             plans.push(now.dungeon.plan.to_text());
         }
         plans.sort();

@@ -1,7 +1,7 @@
 //! Icebreaker: assembly, from a mission graph to a plan
 //! (`docs/icebreaker/design/generation.md`, « Assemblage du donjon »).
 //! Translated from `DungeonAssembler.cs` of the Icebreaker project, without
-//! the shared walls of castles; the tunnel up to the surface is ours.
+//! the shared walls of castles; the safe room off the entrance is ours (F.31).
 //!
 //! The rooms of the tree (main path and branches) are placed one by one from
 //! the entrance: a template drawn among those of the role, placed near a free
@@ -13,10 +13,8 @@
 //! attempt starts over (same seed, further draws).
 
 use super::{
-    Tunnel,
     graph::{MissionGraph, Passage, PassageKind},
     plan::{self, Cell, DIRECTIONS, Plan},
-    reserve_tunnel,
     rooms::{RoomCatalog, RoomTemplate},
 };
 use rand::{RngExt, SeedableRng};
@@ -81,13 +79,17 @@ impl PlacedRoom {
     pub fn footprint(&self) -> impl Iterator<Item = Cell> + '_ {
         self.template.plan.cells.keys().map(|c| self.to_dungeon(*c))
     }
+
+    /// Icebreaker F.31 : the open floor cell nearest to the middle of the room (where one arrives in the safe room).
+    pub fn middle(&self) -> Cell { self.to_dungeon(self.template.middle()) }
 }
 
 /// The result of the assembly.
 #[derive(Clone, Debug)]
 pub struct Assembled {
     pub plan: Plan,
-    pub tunnel: Tunnel,
+    /// Icebreaker F.31 : where the party arrives, a floor cell of the safe room.
+    pub arrival: Cell,
     /// Placed rooms, indexed by room of the graph.
     pub rooms: Vec<PlacedRoom>,
     /// Locked doors: the door, the key it needs.
@@ -101,12 +103,12 @@ pub struct Assembled {
 }
 
 impl Assembled {
-    /// Checks the plan cell by cell: leaving the tunnel and picking the keys
+    /// Checks the plan cell by cell: leaving the safe room and picking the keys
     /// up, one reaches the whole dungeon (locked doors closed without their
-    /// key); from any cell, one can come back to the tunnel.
+    /// key); from any cell, one can come back to the safe room.
     pub fn check(&self) -> Vec<String> {
         let plan = &self.plan;
-        let start = *self.tunnel.cells.last().expect("a tunnel has cells");
+        let start = self.arrival;
         let search = |next: &dyn Fn(Cell) -> Vec<Cell>| {
             let mut seen = BTreeSet::from([start]);
             let mut queue = VecDeque::from([start]);
@@ -172,13 +174,12 @@ pub fn assemble(
     catalog: &RoomCatalog,
     seed: u64,
     settings: &AssemblySettings,
-    tunnel_cells: i32,
     mut log: impl FnMut(String),
 ) -> Option<Assembled> {
     let mut rng = ChaCha8Rng::seed_from_u64(seed);
     let theme = dominant_theme(catalog, seed);
     for attempt in 1..=settings.attempts {
-        let mut state = Attempt::new(graph, catalog, &mut rng, settings, tunnel_cells, theme.clone());
+        let mut state = Attempt::new(graph, catalog, &mut rng, settings, theme.clone());
         match state.run() {
             Err(failure) => log(format!("tentative {attempt} : {failure}")),
             Ok(()) => {
@@ -199,7 +200,6 @@ struct Attempt<'a> {
     catalog: &'a RoomCatalog,
     rng: &'a mut ChaCha8Rng,
     settings: &'a AssemblySettings,
-    tunnel_cells: i32,
     grid: Plan,
     placed: BTreeMap<usize, PlacedRoom>,
     used_connectors: BTreeSet<Cell>,
@@ -207,7 +207,6 @@ struct Attempt<'a> {
     passages: Vec<Passage>,
     tree_degree: Vec<usize>,
     degree: Vec<usize>,
-    tunnel: Option<Tunnel>,
     theme: Option<String>,
     placement_failure: String,
 }
@@ -226,7 +225,6 @@ impl<'a> Attempt<'a> {
         catalog: &'a RoomCatalog,
         rng: &'a mut ChaCha8Rng,
         settings: &'a AssemblySettings,
-        tunnel_cells: i32,
         theme: Option<String>,
     ) -> Self {
         Self {
@@ -235,7 +233,6 @@ impl<'a> Attempt<'a> {
             catalog,
             rng,
             settings,
-            tunnel_cells,
             grid: Plan::default(),
             placed: BTreeMap::new(),
             used_connectors: BTreeSet::new(),
@@ -243,7 +240,6 @@ impl<'a> Attempt<'a> {
             passages: Vec::new(),
             tree_degree: vec![0; graph.rooms.len()],
             degree: vec![0; graph.rooms.len()],
-            tunnel: None,
             placement_failure: String::new(),
         }
     }
@@ -295,11 +291,7 @@ impl<'a> Attempt<'a> {
             self.degree[p.from] += 1;
             self.degree[p.to] += 1;
         }
-        // The tunnel up to the surface takes a door of the entrance too.
-        self.tree_degree[0] += 1;
-        self.degree[0] += 1;
-
-        // The entrance, and the tunnel up to the surface through one of its doors.
+        // The entrance first.
         let templates = self.templates_for(0);
         if templates.is_empty() {
             return Err("aucune salle d'entrée".into());
@@ -310,22 +302,6 @@ impl<'a> Attempt<'a> {
             template: template.clone(),
             origin: Cell::new(0, 0, 0),
         });
-        let mut doors: Vec<FreeDoor> = self.free_connectors(&self.placed[&0]).collect();
-        super::graph::shuffle(&mut doors, self.rng);
-        // Keep a door for each passage of the entrance.
-        if doors.len() < self.tree_degree[0] {
-            return Err("pas de porte libre pour le tunnel".into());
-        }
-        for (door, _, dir) in doors {
-            if let Some(tunnel) = reserve_tunnel(&mut self.grid, door, dir, self.tunnel_cells) {
-                self.used_connectors.insert(door);
-                self.tunnel = Some(tunnel);
-                break;
-            }
-        }
-        if self.tunnel.is_none() {
-            return Err("pas de place pour le tunnel".into());
-        }
 
         // The tree: each passage links a placed room to a room still to place.
         let mut queue = VecDeque::from([0]);
@@ -699,7 +675,7 @@ impl<'a> Attempt<'a> {
         }
         Assembled {
             plan: self.grid.clone(),
-            tunnel: self.tunnel.clone().expect("placed in run"),
+            arrival: self.placed[&self.graph.safe_room()].middle(),
             rooms: (0..self.graph.rooms.len()).map(|r| self.placed[&r].clone()).collect(),
             locks: self.locks.clone(),
             keys,
@@ -730,7 +706,7 @@ mod tests {
             let mut failures = 0;
             for seed in 0..100 {
                 let graph = graph::generate(&resolved, seed);
-                match assemble(&graph, &catalog, seed, &settings.assembly, settings.render.tunnel_cells, |_| {}) {
+                match assemble(&graph, &catalog, seed, &settings.assembly, |_| {}) {
                     Some(dungeon) => {
                         assert!(dungeon.check().is_empty());
                         // The goal is the deepest room.
@@ -786,7 +762,7 @@ mod tests {
             for seed in 0..100 {
                 let graph = graph::generate(&resolved, seed);
                 let assembled =
-                    assemble(&graph, &catalog, seed, &settings.assembly, settings.render.tunnel_cells, |_| {});
+                    assemble(&graph, &catalog, seed, &settings.assembly, |_| {});
                 if let Some(dungeon) = assembled {
                     let (c, b) = corridor_stats(&dungeon);
                     cells += c;
@@ -818,7 +794,7 @@ mod tests {
             let graph = graph::generate(&resolved, seed);
             let catalog = settings.catalog(seed).unwrap();
             if let Some(dungeon) =
-                assemble(&graph, &catalog, seed, &settings.assembly, settings.render.tunnel_cells, |_| {})
+                assemble(&graph, &catalog, seed, &settings.assembly, |_| {})
             {
                 assert!(dungeon.rooms.len() >= 10, "graine {seed} : {} salles", dungeon.rooms.len());
                 // Icebreaker F.5: generated rooms of varied shapes among them.

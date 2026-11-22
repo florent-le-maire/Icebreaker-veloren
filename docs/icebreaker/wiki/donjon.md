@@ -26,8 +26,8 @@ cle = "level_height"
 nom = "Blocs par étage"
 
 [[chiffre]]
-cle = "tunnel_cells"
-nom = "Cases du tunnel d'entrée"
+cle = "profondeur"
+nom = "Roche au moins au-dessus du donjon (blocs)"
 +++
 
 ## La règle
@@ -49,8 +49,9 @@ Le lieu « Genere » est **notre** donjon, pas un de ceux de Veloren. Il naît e
 En bas, les **portes à clé** sont des murs de blocs avec leur serrure : il faut trouver la clé dans une branche.
 Beaucoup de créatures **dorment** : elles ronflent sur le dos et se réveillent si on les frappe, si un combat fait
 du bruit à portée, ou si on s'approche trop (moins si on est accroupi) ; une réveillée réveille ses voisines. La
-**victoire**, c'est atteindre l'objectif de la mission. Un tunnel remonte de la salle d'entrée à la surface, où
-l'expédition arrive.
+**victoire**, c'est atteindre l'objectif de la mission. Le donjon est tout entier **sous le sol**, sans bouche en surface : l'expédition
+arrive dans l'**abri**, une petite salle sûre (un feu, des couchages) accrochée à la salle d'entrée, comme dans la
+grotte.
 
 ## Ce qui reste à faire
 
@@ -59,7 +60,5 @@ encerclement, déroute, alerte, embuscades. Et tout ce que propose `PLAN-DONJON.
 intéressante : ressources, inventaire à formes, foreuse, trous, monstres à coop.
 
 ## En images
-
-![L’entrée du donjon généré, le tunnel qui descend de la surface](images/donjon-entree.png)
 
 ![Une salle de garde devant une porte verrouillée, avec ses dormeurs](images/donjon-salle-garde.png)
