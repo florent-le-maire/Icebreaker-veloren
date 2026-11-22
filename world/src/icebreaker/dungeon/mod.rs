@@ -36,12 +36,22 @@ pub fn read_data(name: &str) -> Result<String, String> {
     std::fs::read_to_string(&path).map_err(|e| format!("{} : {e}", path.display()))
 }
 
+/// Icebreaker F.34: a room of a generated dungeon: its role, its template (`entree:3`: turned), its cells.
+#[derive(Clone, Debug)]
+pub struct Salle {
+    pub role: &'static str,
+    pub id: String,
+    pub cells: Vec<Cell>,
+}
+
 /// A generated dungeon, ready to be drawn.
 #[derive(Clone, Debug)]
 pub struct Dungeon {
     pub plan: Plan,
     /// Icebreaker F.31 : where the party arrives (a floor cell of the safe room; no tunnel to the surface any more).
     pub arrival: Cell,
+    /// Icebreaker F.34: its rooms (role, template, cells), for the dungeon workshop.
+    pub salles: Vec<Salle>,
     /// What the dungeon is made of, for the logs.
     pub summary: String,
     /// Who lives there.
@@ -407,9 +417,11 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
     let taken = lights.iter().map(|(c, _)| *c).collect();
     let decor = place_decor(&plan, &rooms, &furnished, &taken, &settings.decor, 0);
     let habillage = habiller(&plan, std::iter::once((room, room.plan.cells.keys().copied().collect())), None)?;
+    let salles = vec![Salle { role, id: room.id.clone(), cells: rooms[0].1.clone() }];
     Ok(Dungeon {
         plan,
         arrival,
+        salles,
         summary: format!("salle seule : {}", room.id),
         faction: settings.with_solitaires(
             settings
@@ -432,20 +444,32 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
     })
 }
 
+/// Icebreaker F.34: the dungeon of the workshop: `seed`, `size`, the other parameters of the mission by default
+/// (not those of the launcher), never a room alone.
+pub fn plan_atelier(settings: &Settings, seed: u64, size: &str) -> Result<Dungeon, String> {
+    generate_mission(settings, &Mission { seed, size: size.to_string(), ..Mission::default() })
+}
+
 /// Seeds tried one after the other when a dungeon can't be assembled.
 const SEED_TRIES: u64 = 10;
 
 /// Generates the dungeon of a mission: its graph, then the assembly of the
 /// rooms. A seed whose dungeon can't be assembled gives way to the next one.
 pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, String> {
-    let catalog = settings.catalog(mission.seed)?;
     // A single room to look at (`ICEBREAKER_DONJON_SALLE`, `-Salle` of the launcher).
     if let Ok(id) = std::env::var("ICEBREAKER_DONJON_SALLE")
         && !id.is_empty()
     {
+        let catalog = settings.catalog(mission.seed)?;
         let room = catalog.get(&id).ok_or(format!("salle inconnue : {id}"))?;
         return single_room(settings, room);
     }
+    generate_mission(settings, mission)
+}
+
+/// The dungeon of a mission (never a room alone).
+fn generate_mission(settings: &Settings, mission: &Mission) -> Result<Dungeon, String> {
+    let catalog = settings.catalog(mission.seed)?;
 
     let resolved = settings.resolve(mission)?;
     let missing: Vec<&str> = [RoomRole::Entrance, RoomRole::SafeRoom]
@@ -496,7 +520,7 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 .map(|r| format!("{} {}", graph.rooms[r.graph_room].role.name(), r.template.id))
                 .collect();
             let keys = with_keys(&assembled.keys)?;
-            let room_cells: Vec<(&str, Vec<Cell>)> = assembled
+            let room_cells: Vec<(&'static str, Vec<Cell>)> = assembled
                 .rooms
                 .iter()
                 .map(|r| (graph.rooms[r.graph_room].role.name(), r.footprint().collect()))
@@ -535,9 +559,16 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 assembled.rooms.iter().map(|r| (&r.template, r.footprint().collect())),
                 assemble::dominant_theme(&catalog, seed).as_deref(),
             )?;
+            let salles = assembled
+                .rooms
+                .iter()
+                .zip(&room_cells)
+                .map(|(r, (role, cells))| Salle { role: *role, id: r.template.id.clone(), cells: cells.clone() })
+                .collect();
             return Ok(Dungeon {
                 plan: assembled.plan,
                 arrival: assembled.arrival,
+                salles,
                 summary: format!(
                     "{} {} ({}), race {}, graine {seed} ({} tentative(s)), {creatures} créature(s), {chests} \
                      coffre(s) ({} par palier) ; salles : {}\n{}",

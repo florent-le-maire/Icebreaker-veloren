@@ -18,6 +18,8 @@
 #                                             l'on enregistre des presets dans formes.ron)
 #   .\icebreaker.ps1 salles                  (atelier des salles, F.15 : http://localhost:8097, où l'on meuble
 #                                             les salles du donjon au bloc près avec les objets de Veloren)
+#   .\icebreaker.ps1 donjon-atelier          (atelier du donjon, F.34 : http://localhost:8098, le plan du donjon
+#                                             généré étage par étage, des curseurs, les presets de formes.ron)
 #
 # Chaque lieu génère son propre petit monde à chaque lancement (graine au hasard, ou -Seed).
 # Les personnages sont communs à tous les lieux : ils vivent dans la partie, userdata-icebreaker\parties\<nom>
@@ -25,7 +27,7 @@
 # Dans le jeu : Multijoueur, serveur « localhost:<port> », n'importe quel pseudo.
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("campagne", "village", "donjon", "route", "entrainement", "mod", "caverne", "salles")]
+    [ValidateSet("campagne", "village", "donjon", "route", "entrainement", "mod", "caverne", "salles", "donjon-atelier")]
     [string]$Lieu,
     # Site autour duquel le lieu est généré (par défaut : Gnarling au donjon, Town au village).
     [string]$Site,
@@ -107,6 +109,18 @@ if ($Lieu -eq "salles") {
     $atelier = Start-Process "$repo\target\debug\atelier-salles.exe" -WorkingDirectory $repo -NoNewWindow -PassThru
     Start-Sleep -Seconds 2
     Start-Process "http://localhost:8097"
+    $atelier | Wait-Process
+    exit 0
+}
+
+# Icebreaker F.34 : l'atelier du donjon (PLAN-PLAYTEST.md, « Donjon souterrain ») : le plan du donjon généré par le
+# générateur du jeu, des curseurs, les presets de donjons/formes.ron (commit).
+if ($Lieu -eq "donjon-atelier") {
+    cargo build -p icebreaker-salles --bin atelier-donjon
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    $atelier = Start-Process "$repo\target\debug\atelier-donjon.exe" -WorkingDirectory $repo -NoNewWindow -PassThru
+    Start-Sleep -Seconds 2
+    Start-Process "http://localhost:8098"
     $atelier | Wait-Process
     exit 0
 }

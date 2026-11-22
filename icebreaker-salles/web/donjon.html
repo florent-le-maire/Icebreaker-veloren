@@ -1,0 +1,316 @@
+<!doctype html>
+<!-- Icebreaker F.34 : l'atelier du donjon (docs/icebreaker/PLAN-PLAYTEST.md, « Donjon souterrain »). Ouvert par
+     `.\icebreaker.ps1 donjon-atelier` (serveur icebreaker-salles/src/bin/atelier-donjon.rs, port 8098) : le plan est
+     calculé par le générateur du jeu (world), étage par étage ; « Enregistrer le preset » écrit le profil dans
+     assets/icebreaker/donjons/formes.ron et committe. -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier du donjon</title>
+<style>
+  :root {
+    --fond: #14171c; --panneau: #1c2027; --bord: #2c323c; --texte: #e6e8ec; --discret: #9aa3b0;
+    --accent: #f0be46; --alerte: #ff6b5e;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; background: var(--fond); color: var(--texte); font: 14px/1.4 system-ui, "Segoe UI", sans-serif; }
+  #reglages { width: 360px; flex: none; overflow-y: auto; background: var(--panneau); border-right: 1px solid var(--bord); padding: 14px 14px 30px; }
+  h1 { font-size: 17px; margin: 0 0 2px; }
+  .sous-titre { color: var(--discret); margin: 0 0 14px; font-size: 12.5px; }
+  .ligne { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .ligne > label { flex: none; width: 64px; color: var(--discret); }
+  input[type=number], input[type=text], select, button {
+    background: var(--fond); color: var(--texte); border: 1px solid var(--bord); border-radius: 6px; padding: 6px 8px; font: inherit;
+  }
+  input[type=number], input[type=text], select { flex: 1; min-width: 0; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.principal { background: var(--accent); color: #1b1505; border-color: var(--accent); font-weight: 600; }
+  fieldset { border: 1px solid var(--bord); border-radius: 8px; margin: 4px 0 12px; padding: 8px 10px 2px; }
+  legend { color: var(--discret); font-size: 12.5px; padding: 0 4px; }
+  .champ { margin-bottom: 10px; }
+  .champ .tete { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; align-items: center; }
+  .champ .tete label { display: flex; gap: 6px; align-items: center; }
+  .champ .valeur { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .champ.libre .valeur { color: var(--discret); }
+  .champ.libre input[type=range] { opacity: .35; }
+  .curseurs { display: flex; gap: 8px; }
+  input[type=range] { width: 100%; margin: 2px 0 0; accent-color: var(--accent); }
+  #scene { flex: 1; position: relative; min-width: 0; display: flex; flex-direction: column; }
+  #etages { display: flex; gap: 6px; padding: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--bord); }
+  #etages button.choisi { border-color: var(--accent); color: var(--accent); }
+  #plan { flex: 1; position: relative; overflow: hidden; }
+  canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+  #etat { padding: 8px 12px; border-top: 1px solid var(--bord); font-size: 12.5px; white-space: pre-wrap; max-height: 30vh; overflow-y: auto; }
+  #etat .erreur { color: var(--alerte); }
+  #legende { position: absolute; top: 10px; right: 10px; background: #1c2027e6; border: 1px solid var(--bord); border-radius: 8px; padding: 6px 10px; font-size: 12px; display: grid; gap: 2px; }
+  #legende i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; }
+  #survol { position: absolute; left: 10px; bottom: 10px; background: #1c2027e6; border: 1px solid var(--bord); border-radius: 8px; padding: 4px 8px; font-size: 12px; display: none; }
+</style>
+</head>
+<body>
+<aside id="reglages">
+  <h1>Atelier du donjon</h1>
+  <p class="sous-titre">Même générateur que le jeu : ce plan est le donjon de cette graine et de ces réglages (mission par défaut).</p>
+  <div class="ligne"><label for="graine">Graine</label><input id="graine" type="number" min="0" step="1" value="1"><button id="hasard" title="Une autre graine">Autre graine</button></div>
+  <div class="ligne"><label for="taille">Taille</label><select id="taille"></select></div>
+  <div class="ligne"><label for="profil">Preset</label><select id="profil"></select></div>
+  <fieldset>
+    <legend>Enregistrer ces réglages comme preset</legend>
+    <div class="ligne"><label for="nom">Nom</label><input id="nom" type="text" maxlength="24" placeholder="a-z, 0-9, - et _"></div>
+    <div class="ligne"><label for="poids" title="Chance d'être tiré par la graine (0 : jamais tiré, seulement choisi)">Poids</label><input id="poids" type="number" min="0" max="100" step="0.5" value="0"></div>
+    <div class="ligne"><button id="enregistrer" class="principal" style="flex:1" title="Écrit le preset dans donjons/formes.ron (commit) : le jeu le propose au départ pour le Donjon généré">Enregistrer le preset</button><button id="supprimer">Supprimer</button></div>
+    <p id="preset-etat" class="sous-titre"></p>
+  </fieldset>
+  <p class="sous-titre">Case cochée : le preset fixe ce réglage ; décochée : la valeur de la taille (generation.ron).</p>
+  <div id="champs"></div>
+</aside>
+<main id="scene">
+  <div id="etages"></div>
+  <div id="plan">
+    <canvas id="toile"></canvas>
+    <div id="legende"></div>
+    <div id="survol"></div>
+  </div>
+  <div id="etat">Chargement…</div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+// Les réglages d'un preset (formes.rs, `Forme`) : une plage (min, max) ou un nombre.
+const CHAMPS = [
+  { cle: 'main_path', libelle: 'Salles du chemin principal', min: 2, max: 20, plage: true },
+  { cle: 'levels', libelle: 'Étages', min: 1, max: 8, plage: true },
+  { cle: 'branches', libelle: 'Branches (culs-de-sac)', min: 0, max: 14, plage: true },
+  { cle: 'branch_length', libelle: 'Longueur des branches', min: 1, max: 5, plage: true },
+  { cle: 'locks', libelle: 'Portes à clé', min: 0, max: 4, plage: true },
+  { cle: 'loops', libelle: 'Boucles', min: 0, max: 5, plage: true },
+  { cle: 'drops', libelle: 'Chutes (sens unique)', min: 0, max: 4, plage: true },
+  { cle: 'spacing', libelle: 'Cases entre deux salles', min: 1, max: 8, plage: true },
+  { cle: 'profondeur', libelle: 'Roche au-dessus (blocs)', min: 1, max: 60, plage: false },
+];
+const COULEURS = {
+  safeRoom: ['#5fd16a', 'Abri (arrivée)'], entrance: ['#8fd3ff', 'Entrée'], hall: ['#6b7686', 'Salle de passage'],
+  guardRoom: ['#c77b4a', 'Salle de garde'], barracks: ['#a0654a', 'Caserne'], storage: ['#8a7a55', 'Réserve'],
+  kitchen: ['#c9a04a', 'Cuisine'], nest: ['#7a8a3a', 'Nid'], treasure: ['#f0be46', 'Trésor'],
+  chiefLair: ['#ff4d4d', 'Antre du chef'], prison: ['#7a6a8a', 'Prison'], vault: ['#d6b04a', 'Chambre forte'],
+  sanctum: ['#9a7ad6', 'Sanctuaire'], bossLair: ['#ff2d6d', 'Antre du boss'], portal: ['#4ab0ff', 'Portail'],
+  altar: ['#e0e0ff', 'Autel'],
+};
+let base = null;      // réglages de generation.ron (tailles)
+let formes = {};      // presets de formes.ron
+let plan = null;      // dernière réponse de /plan
+let etage = 0;
+let vue = { echelle: 10, x: 0, y: 0 };
+
+function champsHtml() {
+  $('champs').innerHTML = CHAMPS.map((c) => `
+    <div class="champ libre" id="c-${c.cle}">
+      <div class="tete"><label><input type="checkbox" id="f-${c.cle}">${c.libelle}</label><span class="valeur" id="v-${c.cle}"></span></div>
+      <div class="curseurs">
+        <input type="range" id="a-${c.cle}" min="${c.min}" max="${c.max}" step="1">
+        ${c.plage ? `<input type="range" id="b-${c.cle}" min="${c.min}" max="${c.max}" step="1">` : ''}
+      </div>
+    </div>`).join('');
+  for (const c of CHAMPS) {
+    const maj = () => { majChamp(c); demander(); };
+    $(`f-${c.cle}`).addEventListener('change', maj);
+    $(`a-${c.cle}`).addEventListener('input', () => { cocher(c); if (c.plage && +$(`a-${c.cle}`).value > +$(`b-${c.cle}`).value) $(`b-${c.cle}`).value = $(`a-${c.cle}`).value; maj(); });
+    if (c.plage) $(`b-${c.cle}`).addEventListener('input', () => { cocher(c); if (+$(`b-${c.cle}`).value < +$(`a-${c.cle}`).value) $(`a-${c.cle}`).value = $(`b-${c.cle}`).value; maj(); });
+  }
+}
+const cocher = (c) => { $(`f-${c.cle}`).checked = true; };
+// La valeur de la taille choisie pour un réglage (ce que donne generation.ron sans preset).
+function valeurBase(c) {
+  if (!base) return c.plage ? [c.min, c.min] : c.min;
+  if (c.cle === 'spacing') return base.spacing;
+  if (c.cle === 'profondeur') return base.profondeur;
+  return base.tailles[$('taille').value][c.cle];
+}
+function majChamp(c) {
+  const fixe = $(`f-${c.cle}`).checked;
+  $(`c-${c.cle}`).classList.toggle('libre', !fixe);
+  if (!fixe) {
+    const v = valeurBase(c);
+    if (c.plage) { $(`a-${c.cle}`).value = v[0]; $(`b-${c.cle}`).value = v[1]; } else { $(`a-${c.cle}`).value = v; }
+  }
+  const a = +$(`a-${c.cle}`).value;
+  $(`v-${c.cle}`).textContent = c.plage ? (a === +$(`b-${c.cle}`).value ? `${a}` : `${a} à ${$(`b-${c.cle}`).value}`) : `${a}`;
+}
+// La forme des curseurs, au format de formes.ron (null : la valeur de la taille).
+function forme() {
+  const f = {};
+  for (const c of CHAMPS) {
+    if (!$(`f-${c.cle}`).checked) { f[c.cle] = null; continue; }
+    f[c.cle] = c.plage ? [+$(`a-${c.cle}`).value, +$(`b-${c.cle}`).value] : +$(`a-${c.cle}`).value;
+  }
+  return f;
+}
+function poserForme(f) {
+  for (const c of CHAMPS) {
+    const v = f ? f[c.cle] : null;
+    $(`f-${c.cle}`).checked = v !== null && v !== undefined;
+    if ($(`f-${c.cle}`).checked) {
+      if (c.plage) { $(`a-${c.cle}`).value = v[0]; $(`b-${c.cle}`).value = v[1]; } else { $(`a-${c.cle}`).value = v; }
+    }
+    majChamp(c);
+  }
+}
+
+let enCours = null, encore = false;
+async function demander() {
+  if (enCours) { encore = true; return; }
+  enCours = fetch('/plan', {
+    method: 'POST',
+    body: JSON.stringify({ graine: +$('graine').value, taille: $('taille').value, forme: forme() }),
+  }).then((r) => r.json()).then((p) => {
+    plan = p;
+    if (p.niveaux && !p.niveaux.includes(etage)) etage = p.niveaux[0];
+    afficher();
+  }).catch((e) => { $('etat').innerHTML = `<span class="erreur">${e}</span>`; })
+    .finally(() => { enCours = null; if (encore) { encore = false; demander(); } });
+}
+
+function afficher() {
+  if (!plan) return;
+  if (plan.erreur) {
+    $('etat').innerHTML = `<span class="erreur">Pas de donjon : ${echapper(plan.erreur)}</span>`;
+    $('etages').innerHTML = '';
+    dessiner();
+    return;
+  }
+  $('etages').innerHTML = plan.niveaux.map((n) => {
+    const nom = n === 0 ? 'Étage 0 (entrée)' : n > 0 ? `Étage +${n} (mezzanines)` : `Étage ${n}`;
+    return `<button data-etage="${n}" class="${n === etage ? 'choisi' : ''}">${nom}</button>`;
+  }).join('');
+  for (const b of $('etages').querySelectorAll('button')) b.onclick = () => { etage = +b.dataset.etage; afficher(); };
+  const roles = {};
+  for (const s of plan.salles) roles[s.role] = (roles[s.role] || 0) + 1;
+  $('legende').innerHTML = Object.keys(roles).map((r) => `<span><i style="background:${(COULEURS[r] || ['#888'])[0]}"></i>${(COULEURS[r] || [0, r])[1]} ×${roles[r]}</span>`).join('')
+    + '<span><i style="background:#3a404a"></i>Couloir</span><span><i style="background:#ff6b5e;border-radius:50%"></i>Créature</span><span><i style="background:#ffd34d;border-radius:50%"></i>Coffre</span>';
+  $('etat').textContent = `${plan.salles.length} salles, ${plan.creatures} créatures, ${plan.coffres} coffres, ${plan.niveaux.length} étage(s). `
+    + `Preset en jeu : « ${$('profil').value || 'aucun'} », graine ${$('graine').value}.\n${plan.resume}`;
+  cadrer();
+  dessiner();
+}
+const echapper = (t) => t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+// Le cadrage : tout le plan (tous étages) tient dans la toile.
+function cadrer() {
+  const toile = $('toile');
+  const cs = plan.cases;
+  if (!cs.length) return;
+  let [x0, x1, y0, y1] = [Infinity, -Infinity, Infinity, -Infinity];
+  for (const [x, y] of cs) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  const l = toile.clientWidth, h = toile.clientHeight;
+  vue.echelle = Math.max(3, Math.floor(Math.min((l - 40) / (x1 - x0 + 1), (h - 40) / (y1 - y0 + 1))));
+  vue.x = (l - (x1 - x0 + 1) * vue.echelle) / 2 - x0 * vue.echelle;
+  vue.y = (h - (y1 - y0 + 1) * vue.echelle) / 2 - y0 * vue.echelle;
+}
+
+function dessiner() {
+  const toile = $('toile');
+  const r = window.devicePixelRatio || 1;
+  toile.width = toile.clientWidth * r; toile.height = toile.clientHeight * r;
+  const g = toile.getContext('2d');
+  g.setTransform(r, 0, 0, r, 0, 0);
+  g.fillStyle = '#14171c'; g.fillRect(0, 0, toile.clientWidth, toile.clientHeight);
+  if (!plan || plan.erreur) return;
+  const e = vue.echelle;
+  const px = (x) => vue.x + x * e, py = (y) => vue.y + y * e;
+  // L'étage du dessus en filigrane.
+  for (const [x, y, n, s] of plan.cases) {
+    if (n === etage + 1 && s !== '#') { g.fillStyle = '#ffffff10'; g.fillRect(px(x), py(y), e, e); }
+  }
+  for (const [x, y, n, s, salle] of plan.cases) {
+    if (n !== etage) continue;
+    let c;
+    if (s === '#') c = '#262b33';
+    else if (salle >= 0) c = (COULEURS[plan.salles[salle].role] || ['#888'])[0];
+    else c = '#3a404a';
+    g.fillStyle = c; g.fillRect(px(x), py(y), e, e);
+    if (s === 'D') { g.fillStyle = '#e6e8ec'; g.fillRect(px(x) + e * .3, py(y) + e * .3, e * .4, e * .4); }
+    if ('<>^v'.includes(s) || s === 'H' || s === '_' ) {
+      g.fillStyle = '#14171c'; g.font = `${Math.max(8, e * .8)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText({ '<': '←', '>': '→', '^': '↑', 'v': '↓', H: '≡', _: '○' }[s], px(x) + e / 2, py(y) + e / 2);
+    }
+    if (/[a-zA-Z]/.test(s) && 'bcgawxBCGAWX'.includes(s)) { point(g, px(x), py(y), e, '#ff6b5e'); }
+    if (s === '$') point(g, px(x), py(y), e, '#ffd34d');
+  }
+  // L'arrivée.
+  const [ax, ay, an] = plan.arrivee;
+  if (an === etage) {
+    g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.beginPath(); g.arc(px(ax) + e / 2, py(ay) + e / 2, e * .45, 0, Math.PI * 2); g.stroke();
+  }
+  // Le nom des salles.
+  g.fillStyle = '#14171c'; g.font = `600 ${Math.max(9, Math.min(13, e * .9))}px system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const s of plan.salles) {
+    const ici = s.cases.filter((c) => c[2] === etage);
+    if (!ici.length || e < 6) continue;
+    const mx = ici.reduce((t, c) => t + c[0], 0) / ici.length, my = ici.reduce((t, c) => t + c[1], 0) / ici.length;
+    g.fillText(s.id.replace(/:.*/, ''), px(mx) + e / 2, py(my) + e / 2);
+  }
+}
+const point = (g, x, y, e, c) => { g.fillStyle = c; g.beginPath(); g.arc(x + e / 2, y + e / 2, Math.max(2, e * .28), 0, Math.PI * 2); g.fill(); };
+
+// Survol : la salle sous la souris ; clic : l'ouvrir dans l'atelier des salles.
+function salleSous(ev) {
+  if (!plan || plan.erreur) return null;
+  const b = $('toile').getBoundingClientRect();
+  const x = Math.floor((ev.clientX - b.left - vue.x) / vue.echelle), y = Math.floor((ev.clientY - b.top - vue.y) / vue.echelle);
+  const c = plan.cases.find((c) => c[0] === x && c[1] === y && c[2] === etage);
+  return c && c[4] >= 0 ? plan.salles[c[4]] : null;
+}
+$('toile').addEventListener('mousemove', (ev) => {
+  const s = salleSous(ev);
+  $('survol').style.display = s ? 'block' : 'none';
+  if (s) $('survol').textContent = `${(COULEURS[s.role] || [0, s.role])[1]} — ${s.id} (clic : ouvrir dans l'atelier des salles)`;
+});
+$('toile').addEventListener('click', (ev) => {
+  const s = salleSous(ev);
+  if (s && !s.id.startsWith('forme-')) window.open(`http://localhost:8097/?salle=${encodeURIComponent(s.id.replace(/:.*/, ''))}`, '_blank');
+});
+window.addEventListener('resize', () => { if (plan && !plan.erreur) { cadrer(); dessiner(); } });
+
+async function chargerFormes(choisir) {
+  const r = await fetch('/formes').then((r) => r.json());
+  base = r.base; formes = r.formes.profils;
+  const tailles = Object.keys(base.tailles);
+  if (!$('taille').options.length) {
+    $('taille').innerHTML = tailles.map((t) => `<option ${t === 'medium' ? 'selected' : ''}>${t}</option>`).join('');
+  }
+  $('profil').innerHTML = '<option value="">(aucun : generation.ron)</option>'
+    + Object.keys(formes).map((n) => `<option>${n}</option>`).join('');
+  $('profil').value = choisir && formes[choisir] ? choisir : '';
+}
+function choisirProfil() {
+  const nom = $('profil').value;
+  poserForme(nom ? formes[nom].forme : null);
+  if (nom) { $('nom').value = nom; $('poids').value = formes[nom].poids; }
+  demander();
+}
+
+async function enregistrer(supprimer) {
+  const nom = $('nom').value.trim();
+  const corps = supprimer ? { nom } : { nom, poids: +$('poids').value, forme: forme() };
+  const r = await fetch(supprimer ? '/preset/supprimer' : '/preset', { method: 'POST', body: JSON.stringify(corps) });
+  const t = await r.text();
+  if (!r.ok) { $('preset-etat').innerHTML = `<span style="color:var(--alerte)">${echapper(t)}</span>`; return; }
+  $('preset-etat').textContent = supprimer ? `Preset « ${nom} » retiré (commit fait).` : `Preset « ${nom} » enregistré (commit fait).`;
+  await chargerFormes(supprimer ? '' : nom);
+  if (!supprimer) choisirProfil();
+}
+
+$('graine').addEventListener('change', demander);
+$('hasard').onclick = () => { $('graine').value = Math.floor(Math.random() * 1e9); demander(); };
+$('taille').addEventListener('change', () => { for (const c of CHAMPS) majChamp(c); demander(); });
+$('profil').addEventListener('change', choisirProfil);
+$('enregistrer').onclick = () => enregistrer(false);
+$('supprimer').onclick = () => { if (confirm(`Retirer le preset « ${$('nom').value} » de formes.ron ?`)) enregistrer(true); };
+
+champsHtml();
+chargerFormes('').then(() => { choisirProfil(); }).catch((e) => { $('etat').innerHTML = `<span class="erreur">${e}</span>`; });
+</script>
+</body>
+</html>

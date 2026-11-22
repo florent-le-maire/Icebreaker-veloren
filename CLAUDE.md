@@ -79,6 +79,10 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   `assets/icebreaker/donjons/salles/<nom>.txt` (`@meuble:`, `@manque:` pour un modèle qui manque) et committe. En
   jeu : `donjon -Site Genere -Salle <nom>`. Une pièce vivante (nos modèles voxel générés par
   `icebreaker-modeles`, salle serrée, vérifiée en jeu) : skill `piece-vivante` (`.claude/skills/piece-vivante`).
+- Atelier du donjon (F.34, `docs/icebreaker/PLAN-PLAYTEST.md`) : `.\icebreaker.ps1 donjon-atelier` sert sur
+  http://localhost:8098 le plan du donjon généré, étage par étage, avec des curseurs ; « Enregistrer le preset » écrit
+  le profil dans `assets/icebreaker/donjons/formes.ron` et committe. En jeu : `donjon -Site Genere -Profil <preset>`,
+  en campagne `/expedition 3 <preset>`. Le donjon généré est tout sous le sol : on arrive dans l'abri (F.31).
 - Lieu d'entraînement (jalon O, `docs/icebreaker/PLAN-ENTRAINEMENT.md`) : `.icebreaker.ps1 entrainement` (port
   14150) ; tout s'y règle par `/entrainement` (classe, arme, niveau, ennemi, allie, nettoyer, soin…) ou par les deux
   cases du plan (touche U). Sans registre : `ICEBREAKER_AUTO_PERSONNAGE=1` fait entrer le vrai client dans le monde

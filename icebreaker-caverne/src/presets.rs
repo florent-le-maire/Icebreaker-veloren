@@ -86,18 +86,7 @@ pub fn poser_profil(texte: &str, nom: &str, poids: f32, forme: &Forme) -> Result
     if !(0.0..=100.0).contains(&poids) {
         return Err(format!("poids refusé : {poids} (0 à 100)"));
     }
-    let t = texte.replace("\r\n", "\n");
-    let bloc = bloc(nom, poids, &forme.bornee());
-    let (debut, fin) = match entree(&t, nom) {
-        Some(range) => range,
-        None => {
-            let open = t.find("profils:").and_then(|i| t[i..].find('{').map(|j| i + j));
-            let close = open.and_then(|o| fermeture(t.as_bytes(), o)).ok_or("formes.ron : pas de `profils: { … }`")?;
-            let at = debut_ligne(&t, close);
-            (at, at)
-        },
-    };
-    let sortie = format!("{}{bloc}{}", &t[..debut], &t[fin..]);
+    let sortie = poser_entree(texte, nom, &bloc(nom, poids, &forme.bornee()))?.replace("\r\n", "\n");
     let formes = rendre(texte, sortie.clone())?;
     match Formes::lire(&sortie)?.profils.get(nom) {
         Some(p) if p.forme == forme.bornee() => Ok(formes),
@@ -107,6 +96,29 @@ pub fn poser_profil(texte: &str, nom: &str, poids: f32, forme: &Forme) -> Result
 
 /// `formes.ron` without the profile `nom` (nor the comment over it).
 pub fn retirer_profil(texte: &str, nom: &str) -> Result<String, String> {
+    rendre(texte, retirer_entree(texte, nom)?)
+}
+
+/// Icebreaker F.34: `texte` (a RON file of `profils: { … }`, as a `formes.ron`)
+/// with the entry `nom` replaced by `bloc` (its lines), or `bloc` added at the
+/// end of the profiles; `\n` line ends, unchecked (the dungeon workshop uses it
+/// too, with its own file).
+pub fn poser_entree(texte: &str, nom: &str, bloc: &str) -> Result<String, String> {
+    let t = texte.replace("\r\n", "\n");
+    let (debut, fin) = match entree(&t, nom) {
+        Some(range) => range,
+        None => {
+            let open = t.find("profils:").and_then(|i| t[i..].find('{').map(|j| i + j));
+            let close = open.and_then(|o| fermeture(t.as_bytes(), o)).ok_or("formes.ron : pas de `profils: { … }`")?;
+            let at = debut_ligne(&t, close);
+            (at, at)
+        },
+    };
+    Ok(format!("{}{bloc}{}", &t[..debut], &t[fin..]))
+}
+
+/// Icebreaker F.34: `texte` without the entry `nom` (nor the comment over it); `\n` line ends, unchecked.
+pub fn retirer_entree(texte: &str, nom: &str) -> Result<String, String> {
     let t = texte.replace("\r\n", "\n");
     let (mut debut, fin) = entree(&t, nom).ok_or(format!("pas de preset « {nom} »"))?;
     while debut > 0 {
@@ -116,7 +128,7 @@ pub fn retirer_profil(texte: &str, nom: &str) -> Result<String, String> {
         }
         debut = avant;
     }
-    rendre(texte, format!("{}{}", &t[..debut], &t[fin..]))
+    Ok(format!("{}{}", &t[..debut], &t[fin..]))
 }
 
 #[cfg(test)]

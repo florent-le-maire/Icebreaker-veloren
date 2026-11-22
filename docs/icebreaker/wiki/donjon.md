@@ -5,7 +5,7 @@ icone = "voxygen/element/ui/map/buttons/dungeon.png"
 schema = "etages-donjon"
 resume = "Un graphe de mission, des salles préfaites assemblées sur plusieurs étages, des verrous, des dormeurs."
 design = ["generation.md", "creatures.md"]
-reglages = ["donjons/generation.ron", "butin.ron"]
+reglages = ["donjons/generation.ron", "donjons/formes.ron", "butin.ron"]
 taches = ["G", "F", "B.5", "B.14"]
 systemes = [
   "world/src/icebreaker/dungeon/mod.rs",
@@ -52,6 +52,11 @@ du bruit à portée, ou si on s'approche trop (moins si on est accroupi) ; une r
 **victoire**, c'est atteindre l'objectif de la mission. Le donjon est tout entier **sous le sol**, sans bouche en surface : l'expédition
 arrive dans l'**abri**, une petite salle sûre (un feu, des couchages) accrochée à la salle d'entrée, comme dans la
 grotte.
+
+Comme la grotte, le donjon a des **formes** (`donjons/formes.ron`) : « plat », « profond », « labyrinthe »…
+Chacune change le graphe, l'écart entre les salles ou la roche au-dessus. La graine en tire une, ou l'équipe la
+choisit au départ. On les règle dans l'**atelier du donjon** (`.\icebreaker.ps1 donjon-atelier`). L'atelier montre
+le plan étage par étage, avec des curseurs, et enregistre la forme.
 
 ## Ce qui reste à faire
 

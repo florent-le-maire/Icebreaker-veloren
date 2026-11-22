@@ -140,6 +140,62 @@ impl Formes {
     }
 }
 
+impl Forme {
+    /// Icebreaker F.34: the lines of the profile in `formes.ron` (what it changes only).
+    fn bloc(&self, nom: &str, poids: f64) -> String {
+        let plage = |name: &str, r: Option<Range>| r.map(|r| format!("{name}: ({}, {})", r.0, r.1));
+        let champs: Vec<String> = [
+            plage("main_path", self.main_path),
+            plage("levels", self.levels),
+            plage("branches", self.branches),
+            plage("branch_length", self.branch_length),
+            plage("locks", self.locks),
+            plage("loops", self.loops),
+            plage("drops", self.drops),
+            plage("spacing", self.spacing),
+            self.profondeur.map(|p| format!("profondeur: {p}")),
+        ]
+        .into_iter()
+        .flatten()
+        .collect();
+        format!(
+            "        \"{nom}\": (\n            poids: {poids:?},\n            forme: ({}),\n        ),\n",
+            champs.join(", ")
+        )
+    }
+}
+
+/// Icebreaker F.34: `formes.ron` with the profile `nom` added, or replaced if it is there (the comments of the file
+/// kept), for the dungeon workshop.
+pub fn poser_profil(texte: &str, nom: &str, poids: f64, forme: &Forme) -> Result<String, String> {
+    icebreaker_caverne::presets::nom_valide(nom)?;
+    if !(0.0..=100.0).contains(&poids) {
+        return Err(format!("poids refusé : {poids} (0 à 100)"));
+    }
+    let erreurs = forme.erreurs();
+    if !erreurs.is_empty() {
+        return Err(erreurs.join(" ; "));
+    }
+    let sortie = icebreaker_caverne::presets::poser_entree(texte, nom, &forme.bloc(nom, poids))?;
+    let formes = Formes::parse(&sortie)?;
+    if formes.profils.get(nom).is_none_or(|p| p.forme != *forme || p.poids != poids) {
+        return Err(format!("le preset « {nom} » n'a pas été écrit comme prévu"));
+    }
+    if formes.tirer(0, None).is_none() {
+        return Err("il faut au moins un preset de poids non nul (tiré par la graine)".into());
+    }
+    Ok(if texte.contains("\r\n") { sortie.replace('\n', "\r\n") } else { sortie })
+}
+
+/// Icebreaker F.34: `formes.ron` without the profile `nom` (nor the comment over it).
+pub fn retirer_profil(texte: &str, nom: &str) -> Result<String, String> {
+    let sortie = icebreaker_caverne::presets::retirer_entree(texte, nom)?;
+    if Formes::parse(&sortie)?.tirer(0, None).is_none() {
+        return Err("il faut au moins un preset de poids non nul (tiré par la graine)".into());
+    }
+    Ok(if texte.contains("\r\n") { sortie.replace('\n', "\r\n") } else { sortie })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -166,6 +222,23 @@ mod tests {
                 assert!(formes.profils[nom].poids > 0.0, "{nom} tiré sans poids");
             }
         }
+    }
+
+    /// Icebreaker F.34: the workshop adds a preset to the real file, replaces it, and removing it gives the file back.
+    #[test]
+    fn the_real_file_takes_a_preset() {
+        let texte = std::fs::read_to_string(super::super::data_path(FICHIER)).unwrap();
+        let forme = Forme { levels: Some(Range(2, 2)), profondeur: Some(30), ..Forme::default() };
+        let plus = poser_profil(&texte, "essai", 0.5, &forme).unwrap();
+        let formes = Formes::parse(&plus).unwrap();
+        assert_eq!(formes.profils["essai"].forme, forme);
+        assert_eq!(formes.profils.len(), Formes::parse(&texte).unwrap().profils.len() + 1);
+        let autre = Forme { loops: Some(Range(0, 0)), ..Forme::default() };
+        let remplace = poser_profil(&plus, "essai", 0.0, &autre).unwrap();
+        assert_eq!(Formes::parse(&remplace).unwrap().profils["essai"].forme, autre);
+        assert_eq!(retirer_profil(&remplace, "essai").unwrap(), texte);
+        assert!(poser_profil(&texte, "Pas Bon", 1.0, &forme).is_err());
+        assert!(poser_profil(&texte, "x", 1.0, &Forme { levels: Some(Range(3, 1)), ..Forme::default() }).is_err());
     }
 
     #[test]
