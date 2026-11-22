@@ -65,7 +65,7 @@ Le jeu doit rester lançable après chaque tâche.
 ## Jalons finis (détail dans `HISTORIQUE.md`)
 
 Prototype du 2026-10-28 ; jalon 1 (instances propres, I.1 à I.9) ; jalon 2 (village, V.1 à V.12) ; L (combat
-létal) ; R (charrette et registre) ; X (interface du village) ; S.1 (script Linux). Finis en partie : C (C.1 à C.3),
+létal) ; R (charrette et registre) ; X (interface du village) ; S.1 (script Linux) ; VF (village fixe). Finis en partie : C (C.1 à C.3),
 G (G.1 à G.10), F (F.1 à F.6). Grotte : K.1 à K.5 (`PLAN-GROTTE.md`). Mod : M.1 (`PLAN-MOD.md`).
 
 ## Jalon C — Le village qui grandit (Flo, 2026-10-28)
@@ -79,23 +79,6 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
 - [ ] **C.4 Chantier visible** — la maison sort de terre au fil du temps de carte, sans relancer.
 - [ ] **C.5 Nouveaux habitants** — une maison finie amène des habitants.
 - [ ] **C.6 Paliers** — l'or investi (300, 1000, 3000) ouvre des terrains plus loin de la place.
-
-## Jalon VF — Village fixe (Flo, 2026-11-21)
-
-Le village est toujours le même et presque plat, disposé comme le croquis de Flo (`decisions/0022`,
-`design/village.md`) ; plan dans `assets/icebreaker/village_plan.ron`. Worktree `Veloren-village`.
-
-- [x] **VF.0 Docs** — note 0022, plan du village dans `design/village.md`, Q49 tranchée, Q63 (la caisse). `76ec817894`
-- [x] **VF.1 Le village plat d'après le plan** — même disposition sur trois graines, 98,5 % du sol à un bloc près
-  (`cargo run -p veloren-world --example icebreaker_village -- <graine>` en fait une image) ; vu en fantôme sur la
-  place. Pas de lampadaires. `d3e12c0cc5`
-- [x] **VF.2 Bâtiments par id** — panneaux charrette, caisse, forge, départ vus au plan du vrai client ; la caisse est
-  dans la Guilde (Q63). Pas vu : chaque PNJ à sa porte, engager une recrue. `41d70ec977`
-- [ ] **VF.3 Emplacements vides et paliers** — un lieu pas encore bâti reste terrain nu ; terrains désignés par id. — *en cours : Veloren-village, 2026-11-22*
-- [ ] **VF.4 Champs, cimetière, écurie** — décor. — *en cours : Veloren-village, 2026-11-22*
-- [ ] **VF.5 Vue du dessus fidèle** — les bâtiments à leur vraie place dans la vue du dessus. — *en cours : Veloren-village, 2026-11-22*
-- [x] **VF.6 Apparition sous la place** — la recherche du sol s'arrêtait sous le sommet du tronçon : sur une place plate
-  au sommet (graine 949093 en campagne, 2), on apparaissait 2 blocs sous terre. Vu en jeu (Flo, 2026-11-22). `d8fda3e396`
 
 ## Jalon X — Interface du village, suite (Flo, 2026-11-06)
 
@@ -331,10 +314,14 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 `PLAN-GROTTE.md`). À parcourir dans le vrai client, en campagne, à deux si possible ; barrer ce qui est vu, ouvrir une
 tâche pour ce qui casse.
 
-**Village fixe (VF.1, VF.2)**
+**Village fixe (VF.1 à VF.5)**
 - [ ] Faire le tour du village : chaque PNJ à sa porte (la caisse dans la Guilde), maisons d'aplomb sur le sol
   plat, bordure en pente douce ; une recrue engagée à la charrette.
 - [ ] Une fois, de nuit (graine 777), la caméra a montré le village vu d'en dessous, terrain absent ; de jour, rien.
+- [ ] VF.3 : un lieu mis au palier 1 dans `village_plan.ron` reste nu, `/batir <id>` le fait sortir de terre
+  au lancement suivant.
+- [ ] VF.4 : de près, les rangs de tombes du cimetière et l'entrée de chaque clôture.
+- [ ] VF.5 : le plan à l'échelle dans une ville tirée au hasard (doit rester la grille).
 
 **Donjon souterrain (F.31 à F.35, `PLAN-PLAYTEST.md`)**
 - [ ] En campagne, `/expedition 2` (donjon généré) : sortir de l'abri par la porte vers l'entrée ; personne ne vient

@@ -377,3 +377,26 @@ par des agents sur un modèle plus léger (demande de Flo), relus et essayés da
 - [x] **N.9 Coûts par image restants** — la cible verrouillée lue seule (plus de parcours de toutes les entités),
   temps à terre sans ménage ni lecture de `mort.ron` à chaque appel, allié à regarder cherché deux fois par seconde.
   `207aeab532`
+
+## Jalon VF — Village fixe (Flo, 2026-11-21)
+
+Le village est toujours le même et presque plat, disposé comme le croquis de Flo (`decisions/0022`,
+`design/village.md`) ; plan dans `assets/icebreaker/village_plan.ron`. Worktree `Veloren-village`.
+
+- [x] **VF.0 Docs** — note 0022, plan du village dans `design/village.md`, Q49 tranchée, Q63 (la caisse). `76ec817894`
+- [x] **VF.1 Le village plat d'après le plan** — même disposition sur trois graines, 98,5 % du sol à un bloc près
+  (`cargo run -p veloren-world --example icebreaker_village -- <graine>` en fait une image) ; vu en fantôme sur la
+  place. Pas de lampadaires. `d3e12c0cc5`
+- [x] **VF.2 Bâtiments par id** — panneaux charrette, caisse, forge, départ vus au plan du vrai client ; la caisse est
+  dans la Guilde (Q63). Pas vu : chaque PNJ à sa porte, engager une recrue. `41d70ec977`
+- [x] **VF.3 Emplacements vides et paliers** — un lieu au palier > 0 est un terrain à bâtir, caché jusqu'à
+  son chantier, nu et plat (vu à l'exemple) ; bâtis et chantiers gardés par id du plan, `/batir <id>`. Aucun
+  lieu au palier > 0 pour l'instant (Flo : la mécanique seule). Pas vu en jeu. `07923c7a00`
+- [x] **VF.4 Champs, cimetière, écurie** — `decor` d'un terrain au plan : champs de Veloren clôturés, tombes en
+  rangs le long d'une allée, enclos de terre battue avec du foin. Vus au vrai client, sauf les rangs de tombes
+  de près. `a8fbde05b5`
+- [x] **VF.5 Vue du dessus fidèle** — au village fixe, le plan est à l'échelle : sol (place, chemins, champs,
+  cimetière, écurie), bâtiments à leur place, étiquettes sans chevauchement ; caisse et charrette côte à côte.
+  Vu au vrai client. Pas vu : une ville tirée au hasard (garde la grille). `0a6c918db1`
+- [x] **VF.6 Apparition sous la place** — la recherche du sol s'arrêtait sous le sommet du tronçon : sur une place plate
+  au sommet (graine 949093 en campagne, 2), on apparaissait 2 blocs sous terre. Vu en jeu (Flo, 2026-11-22). `d8fda3e396`
