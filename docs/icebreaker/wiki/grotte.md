@@ -55,7 +55,10 @@ sont rares.
 
 Une partie des passages entre deux zones est **bouchée par la roche** : la galerie s'arrête, il faut creuser. Dans la
 grotte, la pioche casse tout, bloc après bloc, contre de l'énergie ; à sec, on attend. La salle sûre où l'on arrive
-s'ouvre toujours sur sa zone. Coffres et créatures donnent le butin de leur niveau (`butin.ron`), le chef bien plus.
+s'ouvre toujours sur sa zone.
+
+Chaque grotte cache une **salle au minerai**, au bout d'une galerie murée : du minerai partout au sol, du fer et du
+cuivre surtout, un peu d'or, de cobalt et de gemmes. Personne ne la garde : son mur suffit. Coffres et créatures donnent le butin de leur niveau (`butin.ron`), le chef bien plus.
 
 ## Régler la forme
 

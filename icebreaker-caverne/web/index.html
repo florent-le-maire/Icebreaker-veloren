@@ -92,6 +92,7 @@
     <span><i style="background:#c9cdd6"></i>Niche (coffre)</span>
     <span><i style="background:#ff4d4d"></i>Fond (chef)</span>
     <span><i style="background:#dc3cff"></i>Mur à casser</span>
+    <span><i style="background:#ffd23c"></i>Salle au minerai</span>
   </div>
   <div id="etat" class="barre">Chargement…</div>
   <div id="erreur"></div>
@@ -218,7 +219,7 @@ sol.material.transparent = true;
 sol.material.opacity = 0.45;
 sol.material.fog = false;
 scene.add(sol);
-const COULEURS = [0x5fd16a, 0x5aa7ff, 0xff9a4a, 0xc9cdd6, 0xff4d4d, 0xdc3cff];
+const COULEURS = [0x5fd16a, 0x5aa7ff, 0xff9a4a, 0xc9cdd6, 0xff4d4d, 0xdc3cff, 0xffd23c];
 let boite = new THREE.Box3();
 // La brume donne la profondeur : le fond de la grotte s'estompe, quel que soit le recul.
 scene.fog = new THREE.Fog(0x0e1116, 1, 2);

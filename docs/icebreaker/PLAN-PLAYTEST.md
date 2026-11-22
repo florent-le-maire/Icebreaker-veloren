@@ -14,7 +14,7 @@ interface du village) et se cochent ici ; les âmes ouvrent le jalon **AM**.
 | # | Chantier | Tâches | Worktree | État |
 |---|---|---|---|---|
 | 1 | Donjon : des pièces travaillées | F.10 à F.18 | `Veloren-donjon` | catalogue et atelier des salles faits (F.10, F.14 à F.17) ; salles à meubler dans l'atelier (F.18), puis F.11 à F.13 |
-| 2 | Grotte : murs à casser, filons, salle au minerai | U.13 à U.16 | `Veloren-caverne` | tranché |
+| 2 | Grotte : murs à casser, filons, salle au minerai | U.13 à U.16 | `Veloren-caverne` | fait (2026-11-22), à voir en jeu |
 | 3 | Missions : sablier, zones, types de mission, boss | B.16 à B.20 | `Veloren-boucles` | tranché ; B.19 et B.20 peuvent suivre le premier playtest |
 | 4 | Âmes | AM.1 à AM.9 | `Veloren-ames` | attend le tableau de Sayanel (Q58) ; AM.6 peut suivre le premier playtest |
 | 5 | Améliorations : village sans dégâts, bouton Rentrer | L.6, X.18 | `Veloren-village` | prêt à coder |
@@ -185,10 +185,13 @@ destructibilité » (2026-11-11) commence ici ; les matières et la foreuse rest
   `filons.veines` : `par_zone`, `longueur` 6 à 12 blocs) : une traînée d'un seul minerai, bloc après bloc au pied
   d'une paroi, hors du sentier et de la salle sûre ; chance des pépites isolées divisée par dix (0,0008). Testé :
   11 tests de `veloren-world` (filons contigus, au moins un par zone dès le niveau 2), contrôle sur 12 mondes
-  (12 à 19 filons et 5 à 27 pépites par grotte, chaque bloc de filon porte son minerai). Pas vu en jeu. — HASH_U14
-- [ ] **U.15 La salle au minerai** — une par grotte, à l'écart du sentier, derrière un mur à casser : beaucoup de
-  minerai courant et quelques minerais rares (or, cobalt, gemmes) ; marquée dans l'atelier.
-  *Fin* : chaque grotte de l'exemple de contrôle en a une, atteinte en cassant.
+  (12 à 19 filons et 5 à 27 pépites par grotte, chaque bloc de filon porte son minerai). Pas vu en jeu. — 0c6d3184bb
+- [x] **U.15 La salle au minerai** — une par grotte (`minerai_rayon` dans `formes.ron`), accrochée à une zone loin de
+  la salle sûre, au bout d'une galerie toujours murée ; ce mur ne ferme qu'elle (sinon la grotte est retirée). Du
+  minerai sur 30 % de son sol (`grotte.ron` → `filons.salle`) : fer, cuivre, étain, charbon, argent, et un peu d'or,
+  de cobalt et de gemmes ; ni créature ni coffre. Bille dorée dans l'atelier. Testé : tests du générateur et de
+  `veloren-world`, 160 grottes (160 salles, toutes fermées), contrôle sur 12 mondes (49 à 103 minerais par salle,
+  0 problème), capture de l'atelier, serveur lancé. Pas vu en jeu. — HASH_U15
 
 Reste du jalon U, inchangé : régler les profils dans l'atelier et voir une grotte de chaque forme en jeu.
 

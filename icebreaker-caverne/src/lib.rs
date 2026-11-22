@@ -128,6 +128,9 @@ forme! {
         murs_part: 0.5, 0.0, 1.0, 0.05, "Part des passages bouchés par un mur";
         murs_epaisseur: 3.0, 1.0, 8.0, 1.0, "Épaisseur d'un mur (blocs)";
     }
+    "Salle au minerai" {
+        minerai_rayon: 11.0, 6.0, 24.0, 1.0, "Rayon de la salle au minerai (derrière un mur)";
+    }
 }
 
 impl Forme {
@@ -208,6 +211,8 @@ pub enum Genre {
     Niche,
     /// The safe room: where one arrives, away from the chief.
     Abri,
+    /// Icebreaker U.15: the ore room, off the trail behind a wall to break.
+    Minerai,
 }
 
 /// A zone of the cave: where it was dug (the walls wander around).
@@ -260,6 +265,8 @@ pub struct Caverne {
     pub liens: Vec<Lien>,
     /// The safe room (Icebreaker U.7), if it found a place.
     pub abri: Option<usize>,
+    /// Icebreaker U.15: the ore room, behind its wall.
+    pub minerai: Option<usize>,
     /// Where one arrives: in the safe room, a block one stands in.
     pub depart: [i32; 3],
     /// Whether every zone is reached on foot from the safe room, and back,
@@ -277,7 +284,7 @@ impl Caverne {
     /// trail (niches aside).
     pub fn fond(&self) -> usize {
         (0..self.zones.len())
-            .filter(|i| !matches!(self.zones[*i].genre, Genre::Niche | Genre::Abri))
+            .filter(|i| !matches!(self.zones[*i].genre, Genre::Niche | Genre::Abri | Genre::Minerai))
             .max_by(|a, b| self.zones[*a].distance.total_cmp(&self.zones[*b].distance))
             .unwrap_or(0)
     }
@@ -336,6 +343,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
         Genre::Chaos => [1.0 + f.chaos_bruit; 3],
         Genre::Niche => [1.3; 3],
         Genre::Abri => [1.2; 3],
+        Genre::Minerai => [1.3; 3],
     };
     let tailles = |rng: &mut Alea, genre: Genre| {
         let mut var = |v: f32| (v * (1.0 + f.variation * rng.entre(-1.0, 1.0))).round().max(3.0) as i32;
@@ -344,6 +352,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
             Genre::Chaos => [var(f.chaos_rayon), var(f.chaos_rayon), var(f.chaos_hauteur / 2.0)],
             Genre::Niche => [var(6.5), var(6.5), 4],
             Genre::Abri => [var(f.abri_rayon), var(f.abri_rayon), 5],
+            Genre::Minerai => [var(f.minerai_rayon), var(f.minerai_rayon), (f.minerai_rayon * 0.6) as i32],
         }
     };
     // The lowest ground over a zone.
@@ -546,6 +555,48 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
         }
     }
 
+    // The ore room (Icebreaker U.15): a pocket beside a zone, far enough for a
+    // gallery of its own, which a wall closes. Not beside the zone of the
+    // safe room if another one will do.
+    let mut minerai = None;
+    // Its own draws: the rest of the cave is the one of the seed without it.
+    let mut tirage = Alea::new(graine ^ 0x6d69_6e65);
+    let pres_abri = abri.and_then(|a| zones[a].parent);
+    let mut candidats: Vec<usize> = (0..principales).filter(|i| Some(*i) != pres_abri || principales == 1).collect();
+    while minerai.is_none() && !candidats.is_empty() {
+        let parent = candidats.swap_remove(tirage.indice(candidats.len()));
+        for _ in 0..24 {
+            let rayon = tailles(&mut tirage, Genre::Minerai);
+            let p = &zones[parent];
+            let az = tirage.entre(0.0, TAU);
+            let d = (p.rayon[0] + p.rayon[1]) as f32 / 2.0 * debord(p.genre)[0].min(1.3) + rayon[0] as f32 * 1.3 + tirage.entre(18.0, 28.0);
+            let mut centre = [
+                p.centre[0] + (az.cos() * d).round() as i32,
+                p.centre[1] + (az.sin() * d).round() as i32,
+                p.centre[2] - p.rayon[2] + rayon[2] + tirage.entre(-2.0, 2.0).round() as i32,
+            ];
+            centre[2] = centre[2].min(sous_terre(centre, rayon));
+            if dedans(centre, rayon, Genre::Minerai)
+                && libre(&zones, parent, centre, rayon)
+                && ecart_angle(&azimuts[parent], az) >= ECART_ANGLE
+            {
+                minerai = Some(zones.len());
+                zones.push(Zone {
+                    centre,
+                    rayon,
+                    genre: Genre::Minerai,
+                    parent: Some(parent),
+                    ancre: centre,
+                    distance: 0.0,
+                    sols: Vec::new(),
+                });
+                azimuts[parent].push(az);
+                azimuts.push(vec![az + PI]);
+                break;
+            }
+        }
+    }
+
     // Dig the zones, then find where the trail passes in each.
     for zone in &zones {
         match zone.genre {
@@ -553,6 +604,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
             Genre::Chaos => creuser_chaos(&mut grille, zone, f.chaos_bruit, f.chaos_echelle, f.chaos_detail, s),
             Genre::Niche => creuser_chaos(&mut grille, zone, 0.3, 7.0, 0.5, s),
             Genre::Abri => creuser_chaos(&mut grille, zone, 0.15, 8.0, 0.3, s),
+            Genre::Minerai => creuser_chaos(&mut grille, zone, 0.25, 8.0, 0.4, s),
         }
     }
     for zone in &mut zones {
@@ -639,16 +691,44 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
     // Icebreaker U.13: walls to break across a share of the ways (never the
     // way out of the safe room, never in a shaft). A loop that would go round
     // a wall gets its own.
+    // What a wall must leave open, walking without breaking: every zone but `sauf` (the ore room
+    // behind its wall), or at least the zone the safe room opens on (the slab of a wall may reach
+    // into the gallery of another way).
+    let ouvert = |g: &Grille, sauf: Option<usize>| {
+        let libres = marcher(g, depart, false);
+        let atteinte = |i: usize| libres.binary_search(&zones[i].ancre).is_ok();
+        match sauf {
+            Some(_) => (0..zones.len()).all(|i| Some(i) == sauf || atteinte(i)),
+            None => pres_abri.is_none_or(atteinte),
+        }
+    };
+    // Icebreaker U.15: first the wall of the ore room; it must close that room only (its gallery may
+    // run into another one: then no wall, and the cave is drawn again).
+    if let Some(m) = minerai
+        && let Some(lien) = liens.iter_mut().find(|l| l.vers == m && l.puits.is_none())
+    {
+        let sauve = grille.clone();
+        lien.mur = poser_mur(&mut grille, &lien.points, &zones, f.murs_epaisseur);
+        if lien.mur.is_some() && !ouvert(&grille, Some(m)) {
+            grille = sauve;
+            lien.mur = None;
+        }
+    }
     let mut cote: Vec<usize> = (0..zones.len()).collect();
     for (i, lien) in liens.iter_mut().enumerate() {
         let Some(de) = lien.de else { continue };
         let voulu = if i < arbre {
-            Some(lien.vers) != abri && rng.chance(f.murs_part)
+            Some(lien.vers) != abri && Some(lien.vers) != minerai && rng.chance(f.murs_part)
         } else {
             cote[de] != cote[lien.vers]
         };
         if voulu && lien.puits.is_none() {
+            let sauve = grille.clone();
             lien.mur = poser_mur(&mut grille, &lien.points, &zones, f.murs_epaisseur);
+            if lien.mur.is_some() && !ouvert(&grille, None) {
+                grille = sauve;
+                lien.mur = None;
+            }
         }
         // The zones on the same side of the walls so far (the ways of the tree
         // come parent first: a zone takes the side of its parent).
@@ -664,6 +744,8 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
     let praticable = zones.iter().all(|z| pieds.binary_search(&z.ancre).is_ok());
     let libres = marcher(&grille, depart, false);
     let fermees: Vec<usize> = (0..zones.len()).filter(|i| libres.binary_search(&zones[*i].ancre).is_err()).collect();
+    // The ore room is behind a wall, or the cave is drawn again.
+    let praticable = praticable && minerai.is_none_or(|m| fermees.contains(&m));
     for p in pieds.iter().filter(|p| grille.air(p[0], p[1], p[2])) {
         if let Some(zone) = zones.iter_mut().find(|z| z.ancre == *p || z.contient(*p, 1.25)) {
             zone.sols.push(*p);
@@ -678,12 +760,13 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
         .max()
         .unwrap_or(0);
     let resume = format!(
-        "{} zone(s) plate(s), {} chaotique(s), {} niche(s), {} salle sûre, {} puits, {} mur(s) à casser ({} zone(s) derrière) ; \
+        "{} zone(s) plate(s), {} chaotique(s), {} niche(s), {} salle sûre, {} salle au minerai, {} puits, {} mur(s) à casser ({} zone(s) derrière) ; \
          dénivelé {} blocs, étendue {} blocs, {} blocs d'air, {} sols à pied ; sentier {}",
         n(Genre::Plaine),
         n(Genre::Chaos),
         n(Genre::Niche),
         n(Genre::Abri),
+        n(Genre::Minerai),
         liens.iter().filter(|l| l.puits.is_some()).count(),
         liens.iter().filter(|l| l.mur.is_some()).count(),
         fermees.len(),
@@ -698,6 +781,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
         zones,
         liens,
         abri,
+        minerai,
         depart,
         praticable,
         fermees,
@@ -1009,7 +1093,7 @@ fn concretions(g: &mut Grille, zone: &Zone, f: &Forme, rng: &mut Alea) {
     let (stalactites, stalagmites, piliers) = match zone.genre {
         Genre::Plaine => (f.plaine_stalactites, f.plaine_stalagmites, f.plaine_piliers),
         Genre::Chaos => (f.chaos_stalactites, f.chaos_stalactites * 0.5, 0.0),
-        Genre::Niche | Genre::Abri => return,
+        Genre::Niche | Genre::Abri | Genre::Minerai => return,
     };
     let [rx, ry, h] = zone.rayon.map(|e| e as f32);
     let [cx, cy, cz] = zone.centre;
@@ -1278,7 +1362,15 @@ mod tests {
                 fermees += c.fermees.len();
 
                 let ouvert = generer(&Forme { murs_part: 0.0, ..profil.forme.clone() }, graine, &|_, _| 0, i32::MIN);
-                assert!(ouvert.fermees.is_empty() && ouvert.liens.iter().all(|l| l.mur.is_none()), "{nom}, graine {graine}");
+                // Only the ore room (U.15) keeps its wall.
+                assert_eq!(ouvert.fermees, ouvert.minerai.into_iter().collect::<Vec<_>>(), "{nom}, graine {graine} : {:?} {}", ouvert.minerai, ouvert.resume);
+                assert!(ouvert.liens.iter().all(|l| l.mur.is_none() || Some(l.vers) == ouvert.minerai), "{nom}, graine {graine}");
+
+                // Icebreaker U.15: one ore room, off the trail of the others, behind a wall.
+                let m = c.minerai.expect("une salle au minerai");
+                assert!(c.zones[m].genre == Genre::Minerai && c.fermees.contains(&m) && !c.zones[m].sols.is_empty(), "{nom}, graine {graine}");
+                assert_eq!(c.zones.iter().filter(|z| z.genre == Genre::Minerai).count(), 1);
+                assert!(c.zones.iter().all(|z| z.parent != Some(m)) && c.fond() != m && ouvert.minerai.is_some());
             }
         }
         assert!(murs >= 24 && fermees >= 24, "{murs} murs, {fermees} zones fermées sur 24 grottes");

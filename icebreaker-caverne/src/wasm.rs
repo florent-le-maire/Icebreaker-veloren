@@ -57,6 +57,8 @@ pub extern "C" fn generer(graine: f64) -> u32 {
             Genre::Plaine => 1,
             Genre::Chaos => 2,
             Genre::Niche => 3,
+            // Icebreaker U.15: the ore room.
+            Genre::Minerai => 6,
             // The safe room is the first mark: where one arrives.
             Genre::Abri => continue,
         };

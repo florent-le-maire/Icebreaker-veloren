@@ -23,6 +23,16 @@
     filons: (
         chance: 0.0008,
         veines: (par_zone: [1, 2, 3], longueur: [6, 9, 12]),
+        // U.15 : la salle au minerai, une par grotte, derrière un mur à casser (sa taille : minerai_rayon de
+        // formes.ron) : chance d'un minerai sur chaque bloc de son sol, et les minerais (nom de sprite, poids),
+        // courants et quelques rares.
+        salle: (
+            chance: 0.3,
+            minerais: [
+                ("Iron", 4.0), ("Copper", 3.0), ("Tin", 3.0), ("Coal", 3.0), ("Silver", 2.0), ("Gold", 1.0), ("Cobalt", 1.0),
+                ("Amethyst", 0.5), ("Ruby", 0.5), ("Sapphire", 0.5), ("Emerald", 0.5),
+            ],
+        ),
         paliers: [
             [("Copper", 3.0), ("Tin", 3.0), ("Iron", 2.0)],
             [("Coal", 3.0), ("Cobalt", 2.0), ("Silver", 1.0)],

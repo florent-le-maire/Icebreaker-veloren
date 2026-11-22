@@ -17,11 +17,12 @@ fn main() {
             let start = std::time::Instant::now();
             let caves: Vec<_> = (0..40).map(|g| generer(&profil.forme, g, &|_, _| 0, i32::MIN)).collect();
             println!(
-                "{nom} : {} sur 40 au premier essai, {} coupée(s), {} mur(s) à casser, {} zone(s) derrière un mur, {:?} par grotte",
+                "{nom} : {} sur 40 au premier essai, {} coupée(s), {} mur(s) à casser, {} zone(s) derrière un mur, {} salle(s) au minerai, {:?} par grotte",
                 caves.iter().filter(|c| c.essais == 1).count(),
                 caves.iter().filter(|c| !c.praticable).count(),
                 caves.iter().map(|c| c.liens.iter().filter(|l| l.mur.is_some()).count()).sum::<usize>(),
                 caves.iter().map(|c| c.fermees.len()).sum::<usize>(),
+                caves.iter().filter(|c| c.minerai.is_some()).count(),
                 start.elapsed() / 40
             );
         }

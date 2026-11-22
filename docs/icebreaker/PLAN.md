@@ -38,6 +38,11 @@ Le jeu doit rester lançable après chaque tâche.
   sentier toujours praticable à pied. Atelier web (`.\icebreaker.ps1 caverne`) pour régler les formes et
   les enregistrer en presets, que l'équipe choisit au panneau Départ (U.9 à U.11). Vérifié en
   test et par l'exemple de contrôle (12 mondes générés) ; pas vu en jeu, profils à régler par Flo.
+- **Destruction dans la grotte (2026-11-22)** : la pioche casse tout, dans la grotte et le donjon généré, contre de
+  l'énergie (plus ou moins de coups selon la matière, `destruction.ron`) ; des murs de roche bouchent une part des
+  passages de la grotte ; le minerai est en filons le long des parois, et une salle au minerai attend derrière un
+  mur (U.13 à U.16, `PLAN-PLAYTEST.md`). Vérifié en test et par le contrôle ; rien n'est vu en jeu. Le protocole ne
+  change pas, mais client et serveur sont à recompiler ensemble (la visée de la pioche).
 - **Jalon A (2026-11-11)** : armes, classes et compétences (`PLAN-CLASSES.md`, `decisions/0020`) codé pour les trois
   classes : jeux d'armes, 2 compétences d'arme + ultime + passif, recharges, niveaux 1 à 5, lot tiré à la charrette,
   maîtrise en expédition, salle d'armes (7e bâtiment). Vérifié en test, au client texte (de bout en bout en
@@ -449,6 +454,8 @@ tâche pour ce qui casse.
   curseurs « Murs à casser ».
 - U.14 : les filons se voient-ils de loin le long des parois, sont-ils assez longs, les miner ; reste-t-il trop ou
   trop peu de pépites isolées.
+- U.15 : trouver la salle au minerai (au bout d'une galerie murée, bille dorée dans l'atelier pour la même graine),
+  percer son mur, la miner ; est-elle assez riche, trop ?
 - U.4 : descendre dans une grotte de chaque forme (`donjon -Site Grotte -Profil gouffre`, `plaine`, `chaos`, `mixte`) :
   le sentier se suit-il à l'aller et au retour, les puits et leurs lacets, la caméra sous les plafonds bas, la
   lumière, la densité des sprites et des créatures dans les très grandes zones ; atelier : glisser les curseurs,

@@ -806,13 +806,18 @@ pub fn check_generated_grotte(
     if ores.iter().sum::<usize>() == 0 {
         problems.push("aucun filon sur lequel marcher".into());
     }
+    // Icebreaker U.15: the ore room, full, behind its wall (a zone closed by a wall is checked above).
+    match grotte.caverne.minerai {
+        Some(m) if grotte.caverne.fermees.contains(&m) && !grotte.ore_room.is_empty() => {},
+        m => problems.push(format!("salle au minerai absente, ouverte ou vide : {m:?}, {} minerai(s)", grotte.ore_room.len())),
+    }
     // Icebreaker U.14: every block of a vein holds its ore.
     let missing = grotte.vein_blocks.iter().filter(|(p, ore)| block_at(**p).and_then(|b| b.get_sprite()) != Some(**ore)).count();
     if missing > 0 {
         problems.push(format!("{missing} bloc(s) de filon sans leur minerai sur {}", grotte.vein_blocks.len()));
     }
     let summary = format!(
-        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, minerais par niveau {:?} dont {} filon(s) et {lone} pépite(s), {} habitant(s) ({appeared} \
+        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, minerais par niveau {:?} dont {} filon(s) et {lone} pépite(s), {} minerai(s) dans la salle au minerai, {} habitant(s) ({appeared} \
          apparus), {} coffre(s)\nzones :\n  {}",
         grotte.summary,
         grotte.mouth,
@@ -820,6 +825,7 @@ pub fn check_generated_grotte(
         seen.len(),
         ores,
         grotte.veins.len(),
+        grotte.ore_room.len(),
         grotte.inhabitants.len(),
         grotte.chests.len(),
         zones.join("\n  ")

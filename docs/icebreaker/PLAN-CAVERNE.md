@@ -101,8 +101,9 @@ images (dessus, côté) ; `-- stats` compte les grottes réussies au premier ess
 
 ## Reste
 
-- **Suite demandée par Flo (2026-11-16)** : murs à casser entre les zones, filons, bien moins de pépites, salle au
-  minerai : U.13 à U.16 dans `PLAN-PLAYTEST.md` (chantier 2) ; la pioche casse la roche dure contre de l'énergie (U.16).
+- **Destruction (2026-11-22)**, U.13 à U.16 de `PLAN-PLAYTEST.md` (chantier 2) : la pioche casse tout contre de
+  l'énergie (`destruction.ron`), murs à casser entre les zones (`murs_part`, `murs_epaisseur`), filons le long des
+  parois, salle au minerai derrière son mur (`minerai_rayon`). Fait et testé ; à voir en jeu, et à régler.
 - **Régler les profils** dans l'atelier (Flo), puis les voir en jeu : allure avec le vrai rendu, lumière, caméra dans
   les zones basses, plaisir de parcours, densité des sprites et des créatures dans de très grandes zones.
 - Des îlots de roche flottants peuvent rester dans les zones chaotiques à fort bruit (le générateur retire les
