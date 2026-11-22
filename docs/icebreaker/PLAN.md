@@ -360,6 +360,11 @@ tâche pour ce qui casse.
   couloirs et le tunnel au thème du donjon, les thèmes militaire, culte, bestial.
 - Les salles plus anciennes ont leurs meubles adossés en ori 2 : à revoir dans l'atelier (4 contre le mur du haut).
 
+**Salle du trône royale (F.35 à F.39, `PLAN-PLAYTEST.md`)**
+- La salle du trône dans un donjon généré, avec le chef : monter la marche puis l'estrade (0,5 puis 1,0) par le
+  tapis ; on bute sur les piliers (le fût seulement), le trône et les chandeliers. En salle seule, le chef (case `c`)
+  a tué le personnage d'essai avant toute capture : vérifier que c'est bien un combat et pas autre chose.
+
 **Atelier des salles (F.14 à F.17, `PLAN-PLAYTEST.md`)**
 - `.\icebreaker.ps1 salles` : ouvrir une salle, la meubler, l'enregistrer, puis la voir par `donjon -Site Genere
   -Salle <nom>` : chaque meuble est à la place et dans le sens montrés par l'atelier (surtout les meubles adossés
