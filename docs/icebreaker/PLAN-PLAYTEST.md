@@ -148,6 +148,14 @@ et chandeliers ; peu d'objets, chacun travaillé.
 - [x] **F.40 La salle du trône vue** — atelier et vrai client (salle seule, lanterne, sans le chef qui tuait le
   personnage d'essai). 2042a1c765
 
+Grande salle du trône (Flo, 2026-11-22) : « fais tout », et une salle grande, surtout haute, pour montrer
+l'importance du lieu. Nef de 7×10 cases sur deux étages (14 blocs sous la voûte), lot 2 de modèles, gardes.
+
+- [ ] **F.41 Lot trône 2** — bannière, statue, lustre, rosace, grand vitrail, pilier haut (14 blocs). — *en cours : Veloren-donjon, 2026-11-22*
+- [ ] **F.42 Sprites du lot 2** — `0xE3` à `0xE8`, collisions, lueurs, manifeste, `pieces.ron`. — *en cours : Veloren-donjon, 2026-11-22*
+- [ ] **F.43 Grande salle du trône** — 7×10 cases, deux étages ouverts, gardes de part et d'autre du tapis. — *en cours : Veloren-donjon, 2026-11-22*
+- [ ] **F.44 La grande salle vue** — atelier et vrai client. — *en cours : Veloren-donjon, 2026-11-22*
+
 ## 2. Grotte : casser pour avancer, miner pour de bon (jalon U, suite)
 
 **Ce que Flo demande** : des grottes séparées par des murs, pour obliger les joueurs à se servir de la destruction ;
