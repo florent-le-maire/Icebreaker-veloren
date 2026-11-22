@@ -13,6 +13,7 @@
 //! des salles comme une étagère.
 
 pub mod cuisine;
+pub mod trone;
 
 use std::collections::BTreeMap;
 
@@ -51,6 +52,17 @@ pub enum Matiere {
     Toile,
     Grain,
     Os,
+    // Icebreaker F.36 : la salle du trône.
+    Marbre,
+    MarbreSombre,
+    PierreRose,
+    Pourpre,
+    PourpreSombre,
+    Or,
+    VerreBleu,
+    VerreVert,
+    Cire,
+    Vigne,
 }
 
 impl Matiere {
@@ -87,6 +99,16 @@ impl Matiere {
             Toile => &[62, 63],
             Grain => &[64, 65],
             Os => &[66],
+            Marbre => &[67, 68, 69],
+            MarbreSombre => &[71, 72],
+            PierreRose => &[73, 74, 75],
+            Pourpre => &[76, 77],
+            PourpreSombre => &[78],
+            Or => &[79, 80],
+            VerreBleu => &[81],
+            VerreVert => &[82],
+            Cire => &[83, 84],
+            Vigne => &[85, 86],
         }
     }
 }
@@ -147,6 +169,27 @@ pub fn couleur(indice: u8) -> [u8; 3] {
         64 => [218, 196, 140], // grain
         65 => [200, 176, 118],
         66 => [230, 222, 200], // os
+        // Icebreaker F.36 : la salle du trône.
+        67 => [200, 192, 174], // marbre
+        68 => [190, 182, 165],
+        69 => [181, 173, 157],
+        70 => [140, 132, 122], // veine du marbre
+        71 => [88, 66, 52],    // marbre sombre (cadres, moulures)
+        72 => [76, 57, 45],
+        73 => [178, 142, 122], // pierre rose (fût des piliers)
+        74 => [168, 132, 113],
+        75 => [188, 152, 130],
+        76 => [130, 28, 36], // pourpre (tapis, coussin)
+        77 => [116, 24, 32],
+        78 => [80, 16, 24],   // pourpre sombre
+        79 => [204, 164, 70], // or (mat)
+        80 => [182, 142, 56],
+        81 => [56, 88, 170],   // verre bleu
+        82 => [54, 126, 84],   // verre vert
+        83 => [234, 226, 202], // cire
+        84 => [218, 208, 182],
+        85 => [72, 82, 60], // vigne peinte
+        86 => [60, 70, 50],
         _ => [0, 0, 0],
     }
 }
@@ -209,6 +252,8 @@ impl Modele {
                 tons[(brique as usize) % tons.len()]
             },
             // Le bois : un ton par fibre (le long de z ou de la plus grande dimension, la fibre change peu).
+            // Icebreaker F.36 : le marbre a des veines rares.
+            Matiere::Marbre if bruit(x, y, z) % 13 == 0 => 70,
             Matiere::BoisClair | Matiere::BoisSombre => tons[(bruit(x, y, z.div_euclid(4)) as usize) % tons.len()],
             _ => tons[(bruit(x, y, z) as usize) % tons.len()],
         }
@@ -443,7 +488,7 @@ impl Axe {
 }
 
 /// Tous nos modèles.
-pub fn tous() -> Vec<Modele> { cuisine::modeles() }
+pub fn tous() -> Vec<Modele> { cuisine::modeles().into_iter().chain(trone::modeles()).collect() }
 
 #[cfg(test)]
 mod tests {
