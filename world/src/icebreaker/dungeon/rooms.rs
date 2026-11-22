@@ -240,6 +240,9 @@ pub struct RoomTemplate {
     /// with furniture gets no decor drawn by its role.
     pub furniture: Vec<Furniture>,
     pub missing: Vec<Missing>,
+    /// Icebreaker F.28 : the floor, walls and ceiling it asks for (`@sol:`, `@murs:`, `@plafond:`, names of
+    /// `donjons/materiaux.ron`) ; what it leaves out comes from the theme of the dungeon.
+    pub habillage: super::materiaux::HabillageSalle,
     pub plan: Plan,
     pub connectors: Vec<Connector>,
 }
@@ -259,6 +262,7 @@ impl RoomTemplate {
         let mut function = None;
         let mut furniture = Vec::new();
         let mut missing = Vec::new();
+        let mut habillage = super::materiaux::HabillageSalle::default();
         for (i, line) in text.lines().enumerate() {
             let Some(setting) = line.strip_prefix('@') else {
                 continue;
@@ -285,6 +289,9 @@ impl RoomTemplate {
                     Ok(m) => missing.push(m),
                     Err(e) => errors.push(format!("ligne {} : « @manque » : {e}", i + 1)),
                 },
+                "sol" => habillage.sol = Some(value.trim().to_lowercase()).filter(|v| !v.is_empty()),
+                "murs" => habillage.murs = Some(value.trim().to_lowercase()).filter(|v| !v.is_empty()),
+                "plafond" => habillage.plafond = Some(value.trim().to_lowercase()).filter(|v| !v.is_empty()),
                 "poids" => match value.trim().parse::<f64>() {
                     Ok(w) if w > 0.0 => weight = w,
                     _ => errors.push(format!("ligne {} : « @poids » doit être un nombre positif", i + 1)),
@@ -337,6 +344,7 @@ impl RoomTemplate {
             function,
             furniture,
             missing,
+            habillage,
             ..room
         })
     }
@@ -445,6 +453,7 @@ impl RoomTemplate {
             function: None,
             furniture: Vec::new(),
             missing: Vec::new(),
+            habillage: Default::default(),
             plan,
             connectors,
         })
@@ -539,6 +548,7 @@ impl RoomTemplate {
             function: self.function.clone(),
             furniture,
             missing,
+            habillage: self.habillage.clone(),
             ..room
         })
     }

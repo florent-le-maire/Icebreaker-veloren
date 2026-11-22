@@ -4,6 +4,8 @@
 
 pub mod assemble;
 pub mod graph;
+// Icebreaker F.27 : sol, murs et plafond des salles.
+pub mod materiaux;
 pub mod plan;
 pub mod populate;
 // Icebreaker Y.3: the rounds of a race.
@@ -70,6 +72,8 @@ pub struct Dungeon {
     pub rondes: Vec<rondes::PlannedRound>,
     /// Icebreaker F.22 : the objects of its special rooms (portal, altar).
     pub speciaux: Vec<Special>,
+    /// Icebreaker F.28 : the floor, walls and ceiling of each room.
+    pub habillage: materiaux::Habillages,
 }
 
 /// Icebreaker B.5: the tier of each chest and creature of `plan` by its
@@ -398,6 +402,33 @@ pub fn close_connectors(plan: &mut Plan) {
     }
 }
 
+/// Icebreaker F.28 : the floor, walls and ceiling of each room (`rooms` : its template and its cells in the
+/// dungeon), by what it asks for, else the theme of the dungeon.
+fn habiller<'a>(
+    plan: &Plan,
+    rooms: impl Iterator<Item = (&'a rooms::RoomTemplate, Vec<Cell>)>,
+    theme: Option<&str>,
+) -> Result<materiaux::Habillages, String> {
+    let materiaux = materiaux::Materiaux::load()?;
+    let mut salles = Vec::new();
+    let mut cases = BTreeMap::new();
+    for (i, (template, cells)) in rooms.enumerate() {
+        let erreurs = materiaux.erreurs(&template.habillage);
+        if !erreurs.is_empty() {
+            return Err(format!("salle « {} » : {}", template.id, erreurs.join(" ; ")));
+        }
+        let theme = theme.or(template.themes.first().map(String::as_str));
+        salles.push(materiaux.habillage(&template.habillage, theme));
+        for cell in cells {
+            if !matches!(plan.get(cell), '#' | ' ' | '%') {
+                cases.entry(cell).or_insert(i);
+            }
+        }
+    }
+    let defaut = materiaux.habillage(&Default::default(), theme);
+    Ok(materiaux::Habillages { salles, cases, defaut, materiaux: std::sync::Arc::new(materiaux) })
+}
+
 /// A single room, its tunnel through the first door that has room for it.
 pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Dungeon, String> {
     let mut plan = room.plan.clone();
@@ -420,6 +451,7 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
     let lights = place_lights(&plan, &rooms, &[], &settings.lighting, &furnished_cells(&furnished, &speciaux), 0);
     let taken = lights.iter().map(|(c, _)| *c).collect();
     let decor = place_decor(&plan, &rooms, &furnished, &taken, &settings.decor, 0);
+    let habillage = habiller(&plan, std::iter::once((room, room.plan.cells.keys().copied().collect())), None)?;
     Ok(Dungeon {
         plan,
         tunnel,
@@ -441,6 +473,7 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
         paliers: BTreeMap::new(),
         rondes: Vec::new(),
         speciaux,
+        habillage,
     })
 }
 
@@ -542,6 +575,11 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                         .to_string()
                 })
                 .collect();
+            let habillage = habiller(
+                &assembled.plan,
+                assembled.rooms.iter().map(|r| (&r.template, r.footprint().collect())),
+                assemble::dominant_theme(&catalog, seed).as_deref(),
+            )?;
             return Ok(Dungeon {
                 plan: assembled.plan,
                 tunnel: assembled.tunnel,
@@ -568,6 +606,7 @@ pub fn generate(settings: &Settings, mission: &Mission) -> Result<Dungeon, Strin
                 paliers,
                 rondes,
                 speciaux,
+                habillage,
             });
         }
     }
@@ -605,6 +644,35 @@ mod tests {
 
     #[test]
     fn settings_load() { Settings::load().unwrap(); }
+
+    /// Icebreaker F.28 : the floor cells of the rooms have the habillage of their room ; the rooms name only known
+    /// materials ; a room that asks for a floor gets it.
+    #[test]
+    fn rooms_get_their_habillage() {
+        let settings = Settings::load().unwrap();
+        let materiaux = materiaux::Materiaux::load().unwrap();
+        let catalog = RoomCatalog::load().unwrap();
+        for room in &catalog.rooms {
+            assert!(materiaux.erreurs(&room.habillage).is_empty(), "{} : {:?}", room.id, materiaux.erreurs(&room.habillage));
+        }
+        for seed in 0..5 {
+            let dungeon = generate(&settings, &Mission { seed, ..Mission::default() }).unwrap();
+            // The corridors dug between rooms take the habillage of the dungeon (its theme).
+            let h = &dungeon.habillage;
+            assert!(h.salles.len() >= 2 && h.cases.len() > h.salles.len(), "graine {seed}");
+            for (cell, salle) in &h.cases {
+                assert!(*salle < h.salles.len() && !matches!(dungeon.plan.get(*cell), '#' | ' '), "graine {seed} : {cell:?}");
+            }
+        }
+        let room = rooms::RoomTemplate::parse("x", "@roles: hall
+@sol: planches
+###
++.+
+###
+").unwrap();
+        let dungeon = single_room(&settings, &room).unwrap();
+        assert_eq!(dungeon.habillage.salles[0].sol, "planches");
+    }
 
     #[test]
     fn threat_changes_the_dungeon() {

@@ -4,6 +4,9 @@
 @roles: kitchen
 @fonction: cuisine
 @theme: artisan
+@sol: carrelage
+@murs: enduit
+@plafond: poutres
 @meuble: IcebreakerAtre 17 8 0 4
 @meuble: BarrelWoodWater 8 7 0 4
 @meuble: Barrel 9 7 0 4

@@ -77,6 +77,7 @@ impl Fixes {
     fn lire() -> Result<Self, String> {
         let pieces = Pieces::load()?;
         let settings = Settings::load()?;
+        let materiaux = world::icebreaker::dungeon::materiaux::Materiaux::load()?;
         let (c, h) = (settings.render.cell_size, settings.render.level_height);
         if (c, h) != (FURNITURE_CELL, FURNITURE_LEVEL) {
             return Err(format!("generation.ron : case de {c} × {h} blocs, les meubles sont écrits pour {FURNITURE_CELL} × {FURNITURE_LEVEL}"));
@@ -85,8 +86,9 @@ impl Fixes {
         let reglages = json!({
             "case": c,
             "etage": h,
-            "mur": settings.render.wall_color,
-            "sol": settings.render.floor_color,
+            // Icebreaker F.27 : la teinte du sol et des murs par défaut (materiaux.ron).
+            "mur": materiaux.mur(&materiaux.defaut).couleurs.first(),
+            "sol": materiaux.sol(&materiaux.defaut).couleurs.first(),
             "roles": roles,
         });
         Ok(Self {

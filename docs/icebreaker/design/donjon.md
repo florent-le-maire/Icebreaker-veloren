@@ -169,6 +169,13 @@ Dans un plan de salle, des symboles de décor (sol avec un objet dessus ; liste 
 (`wall`) ou au milieu de la case (`center`). Ne jamais en mettre devant une porte ni contre un escalier (test).
 En-têtes : `@theme: militaire, culte…` (style de donjon ; aucun = va partout) et `@poids: 2` (tirage, 1 par défaut).
 Chaque donjon tire un thème dominant de sa graine ; ses salles pèsent `assembly.theme_bias` fois plus.
+
+**Sol, murs et plafond (F.27, F.28).** `assets/icebreaker/donjons/materiaux.ron` décrit des matériaux au bloc près
+(motif et couleurs : dallage, carreaux, pavés, plancher, terre battue ; pierre taillée, moellons, briques, enduit ;
+voûte appareillée, poutres). Une salle choisit les siens par `@sol: carrelage`, `@murs: enduit`, `@plafond: poutres` ;
+ce qu'elle ne dit pas vient du thème dominant du donjon (`par_theme`), sinon de `defaut` (aussi pour le tunnel et les
+couloirs creusés entre les salles). Un mur entre deux salles montre à chacune son propre matériau. Pas de motif plus
+fin qu'un bloc (une dalle fait 2 ou 3 blocs).
 Le tableur `docs/icebreaker/salles.xlsx` liste les salles et leur plan : `cargo run -p icebreaker-salles`.
 
 **Meubles au bloc près (F.14) et atelier des salles (F.15 à F.17).** Une case fait 7 blocs : un symbole par case

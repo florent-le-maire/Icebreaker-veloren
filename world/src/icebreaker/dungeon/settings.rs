@@ -27,8 +27,6 @@ pub struct RenderSettings {
     pub level_height: i32,
     /// Cells of the tunnel from the surface down to the entrance room.
     pub tunnel_cells: i32,
-    pub wall_color: (u8, u8, u8),
-    pub floor_color: (u8, u8, u8),
 }
 
 /// The shape of the mission graph for a size of dungeon. Counts of branches,

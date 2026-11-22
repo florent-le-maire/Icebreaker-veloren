@@ -12,7 +12,7 @@ use crate::{
 use common::{
     comp::item::ItemDefinitionIdOwned,
     lottery::LootSpec,
-    terrain::{Block, BlockKind, SpriteCfg, SpriteKind, TerrainChunkSize, UnlockKind},
+    terrain::{Block, SpriteCfg, SpriteKind, TerrainChunkSize, UnlockKind},
 };
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -406,6 +406,55 @@ impl IcebreakerDungeon {
         }
     }
 
+    /// Icebreaker F.27 : a surface of `cell` drawn in a material, block by block (its height counted from the
+    /// floor of the cell's level).
+    fn materiau_fill(&self, cell: plan::Cell, m: &dungeon::materiaux::Materiau) -> Fill {
+        let (m, z0, etage) = (m.clone(), self.cell_min(cell).z, self.render.level_height);
+        Fill::Sampling(std::sync::Arc::new(move |p| Some(m.bloc(p, p.z - z0, etage))))
+    }
+
+    /// The habillage of the room `cell` belongs to, or that of the dungeon.
+    fn habillage(&self, cell: plan::Cell) -> &dungeon::materiaux::Habillage {
+        let h = &self.dungeon.habillage;
+        h.de(cell).unwrap_or(&h.defaut)
+    }
+
+    fn sol_fill(&self, cell: plan::Cell) -> Fill {
+        let h = &self.dungeon.habillage;
+        self.materiau_fill(cell, h.materiaux.sol(self.habillage(cell)))
+    }
+
+    fn plafond_fill(&self, cell: plan::Cell) -> Fill {
+        let h = &self.dungeon.habillage;
+        self.materiau_fill(cell, h.materiaux.plafond(self.habillage(cell)))
+    }
+
+    /// Icebreaker F.28 : a wall cell, each block in the walls of the room it is nearest to (a wall between two
+    /// rooms shows each room its own side) ; the walls of the dungeon where no room is next to it.
+    fn mur_fill(&self, cell: plan::Cell) -> Fill {
+        let h = &self.dungeon.habillage;
+        if h.de(cell).is_some() {
+            return self.materiau_fill(cell, h.materiaux.mur(self.habillage(cell)));
+        }
+        let cotes: Vec<((i32, i32), dungeon::materiaux::Materiau)> = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+            .into_iter()
+            .filter_map(|(dx, dy)| h.de(cell.offset(dx, dy, 0)).map(|hab| ((dx, dy), h.materiaux.mur(hab).clone())))
+            .collect();
+        let defaut = h.materiaux.mur(&h.defaut).clone();
+        let (min, c, etage) = (self.cell_min(cell), self.render.cell_size, self.render.level_height);
+        Fill::Sampling(std::sync::Arc::new(move |p| {
+            let (lx, ly) = (p.x - min.x, p.y - min.y);
+            let distance = |d: (i32, i32)| match d {
+                (-1, 0) => lx,
+                (1, 0) => c - 1 - lx,
+                (0, -1) => ly,
+                _ => c - 1 - ly,
+            };
+            let m = cotes.iter().min_by_key(|(d, _)| distance(*d)).map_or(&defaut, |(_, m)| m);
+            Some(m.bloc(p, p.z - min.z, etage))
+        }))
+    }
+
     fn render_tunnel(&self, land: &Land, painter: &Painter, rock: &Fill) {
         let c = self.render.cell_size;
         let tunnel = &self.dungeon.tunnel;
@@ -460,16 +509,16 @@ impl Structure for IcebreakerDungeon {
     fn render_inner(&self, _site: &Site, land: &Land, painter: &Painter) {
         let h = self.render.level_height;
         let c = self.render.cell_size;
-        let (r, g, b) = self.render.wall_color;
-        let rock = Fill::Brick(BlockKind::Rock, Rgb::new(r, g, b), 12);
-        let (r, g, b) = self.render.floor_color;
-        let floor = Fill::Brick(BlockKind::Rock, Rgb::new(r, g, b), 8);
+        // Icebreaker F.27 : the rock outside the rooms (the tunnel) in the walls of the dungeon.
+        let habillage = &self.dungeon.habillage;
+        let roche = habillage.materiaux.mur(&habillage.defaut).clone();
+        let rock = Fill::Sampling(std::sync::Arc::new(move |p| Some(roche.bloc(p, 3, 7))));
         let plan = &self.dungeon.plan;
 
         // Solid first: every cell of the plan is rock, floors included.
         for (cell, symbol) in &plan.cells {
             if !matches!(symbol, ' ' | '%' | '~') {
-                painter.aabb(self.cell_aabb(*cell, 0, h, 0)).fill(rock.clone());
+                painter.aabb(self.cell_aabb(*cell, 0, h, 0)).fill(self.mur_fill(*cell));
             }
         }
         // Then the open spaces.
@@ -483,7 +532,7 @@ impl Structure for IcebreakerDungeon {
             }
             if plan.is_free(cell.offset(0, 0, 1)) {
                 // Ceiling where nothing is above.
-                painter.aabb(self.cell_aabb(cell, h, h + 1, 0)).fill(rock.clone());
+                painter.aabb(self.cell_aabb(cell, h, h + 1, 0)).fill(self.plafond_fill(cell));
             }
             match *symbol {
                 '_' => {
@@ -499,7 +548,7 @@ impl Structure for IcebreakerDungeon {
                 'D' => {
                     // A passage through the wall, along the floors on both sides.
                     let dir = self.door_dir(cell);
-                    painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(floor.clone());
+                    painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(self.sol_fill(cell));
                     for u in 0..c {
                         let slice = self.slice(cell, dir, u, 1);
                         let z = self.cell_min(cell).z;
@@ -514,14 +563,14 @@ impl Structure for IcebreakerDungeon {
                 'H' => {
                     // Icebreaker F.2: a shaft with a ladder on its wall instead of steps.
                     painter.aabb(self.cell_aabb(cell, 1, h, 0)).clear();
-                    painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(floor.clone());
+                    painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(self.sol_fill(cell));
                     if let Some(wall) = self.ladder_wall(cell) {
                         self.ladder(painter, cell, wall, 1, h);
                     }
                 },
                 symbol if plan::stairs_direction(symbol).is_some() => {
                     painter.aabb(self.cell_aabb(cell, 1, h, 0)).clear();
-                    painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(floor.clone());
+                    painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(self.sol_fill(cell));
                     let dir = plan::stairs_direction(symbol).expect("stairs");
                     // One step per block: the last one is level with the floor above.
                     for u in 0..c {
@@ -532,15 +581,15 @@ impl Structure for IcebreakerDungeon {
                                 min: slice.min.with_z(z + 1),
                                 max: slice.max.with_z(z + 2 + u),
                             })
-                            .fill(floor.clone());
+                            .fill(self.sol_fill(cell));
                     }
                 },
                 symbol => {
                     painter.aabb(self.cell_aabb(cell, 1, h, 0)).clear();
-                    painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(floor.clone());
+                    painter.aabb(self.cell_aabb(cell, 0, 1, 0)).fill(self.sol_fill(cell));
                     if symbol == 'O' {
                         // A 3 × 3 column whatever the cell size (Icebreaker F.1).
-                        painter.aabb(self.cell_aabb(cell, 1, h, (c / 2 - 1).max(1))).fill(rock.clone());
+                        painter.aabb(self.cell_aabb(cell, 1, h, (c / 2 - 1).max(1))).fill(self.mur_fill(cell));
                     }
                 },
             }

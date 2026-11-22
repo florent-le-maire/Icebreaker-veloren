@@ -1,0 +1,53 @@
+// Icebreaker F.27 : ce dont sont faits le sol, les murs et le plafond des salles du donjon
+// (docs/icebreaker/PLAN-PLAYTEST.md, « Sol, murs et plafond » ; code : world/src/icebreaker/dungeon/materiaux.rs).
+//
+// Un matériau = un motif et quelques couleurs (r, g, b), au bloc près (un bloc ≈ la moitié d'un personnage) :
+// - Uni : une couleur par bloc, au hasard (terre battue, roche brute, enduit) ;
+// - Dalles(cote: n) : dalles carrées de n blocs, une couleur par dalle, le bord plus sombre ;
+// - Rangs(longueur: l, hauteur: h) : pierres de l blocs sur h rangs, décalées d'un rang à l'autre, joint sombre ;
+// - Planches(largeur: w, longueur: l) : planches le long de x, aboutées tous les l blocs ;
+// - Poutres(ecart: n, bois: (r, g, b)) : une poutre de bois tous les n blocs le long de x (plafond).
+// `bois: true` fait des blocs de bois ; `plinthe` et `corniche` colorent le rang du bas et du haut d'un mur.
+//
+// Une salle choisit les siens par `@sol:`, `@murs:`, `@plafond:` ; sinon le thème dominant du donjon (`par_theme`),
+// sinon `defaut` (le tunnel et la roche hors des salles aussi).
+(
+    sols: {
+        "roche": (nom: "Roche", motif: Uni, couleurs: [(70, 62, 55), (64, 57, 51), (76, 68, 60)]),
+        "terre": (nom: "Terre battue", motif: Uni, couleurs: [(78, 64, 50), (70, 58, 46), (84, 70, 54), (66, 55, 44)]),
+        "dalles": (nom: "Dallage de pierre", motif: Dalles(cote: 3),
+            couleurs: [(96, 90, 82), (84, 79, 72), (104, 97, 88), (78, 72, 66)]),
+        "carrelage": (nom: "Carreaux de terre cuite", motif: Dalles(cote: 2),
+            couleurs: [(128, 70, 52), (112, 60, 44), (140, 82, 60), (104, 56, 42)]),
+        "paves": (nom: "Pavés", motif: Rangs(longueur: 2, hauteur: 1),
+            couleurs: [(74, 70, 66), (64, 61, 58), (84, 80, 74), (70, 64, 58)]),
+        "planches": (nom: "Plancher", motif: Planches(largeur: 1, longueur: 5), bois: true,
+            couleurs: [(104, 72, 46), (94, 64, 40), (114, 80, 52)]),
+    },
+    murs: {
+        "roche": (nom: "Roche brute", motif: Uni, couleurs: [(92, 86, 80), (84, 79, 74), (98, 92, 85)]),
+        "pierre_taillee": (nom: "Pierre taillée", motif: Rangs(longueur: 3, hauteur: 2),
+            couleurs: [(98, 92, 86), (88, 83, 78), (106, 99, 92), (82, 77, 72)], plinthe: Some((62, 58, 55))),
+        "moellons": (nom: "Moellons", motif: Rangs(longueur: 2, hauteur: 1),
+            couleurs: [(90, 84, 76), (78, 73, 66), (100, 92, 82), (70, 66, 60)]),
+        "briques": (nom: "Briques", motif: Rangs(longueur: 2, hauteur: 1),
+            couleurs: [(124, 62, 46), (110, 54, 40), (134, 72, 52)], plinthe: Some((70, 60, 54))),
+        "enduit": (nom: "Enduit à la chaux", motif: Uni,
+            couleurs: [(150, 140, 122), (142, 132, 116), (156, 146, 128)],
+            plinthe: Some((92, 70, 50)), corniche: Some((100, 78, 56))),
+    },
+    plafonds: {
+        "roche": (nom: "Roche brute", motif: Uni, couleurs: [(92, 86, 80), (84, 79, 74), (98, 92, 85)]),
+        "voute": (nom: "Pierre appareillée", motif: Rangs(longueur: 3, hauteur: 1),
+            couleurs: [(86, 80, 74), (78, 73, 68), (94, 88, 80)]),
+        "poutres": (nom: "Poutres et enduit", motif: Poutres(ecart: 4, bois: (78, 54, 34)),
+            couleurs: [(120, 112, 100), (112, 104, 94)]),
+    },
+    par_theme: {
+        "militaire": (sol: "dalles", murs: "pierre_taillee", plafond: "voute"),
+        "culte": (sol: "dalles", murs: "moellons", plafond: "roche"),
+        "bestial": (sol: "terre", murs: "roche", plafond: "roche"),
+        "artisan": (sol: "paves", murs: "enduit", plafond: "poutres"),
+    },
+    defaut: (sol: "roche", murs: "roche", plafond: "roche"),
+)
