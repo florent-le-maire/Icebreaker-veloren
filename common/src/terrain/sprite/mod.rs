@@ -277,7 +277,7 @@ sprites! {
         IcebreakerUstensilesPendus = 0xD7,
         IcebreakerVaisselle = 0xD8,
         IcebreakerPreparation = 0xD9,
-        // Icebreaker F.37 : la salle du trône (icebreaker-modeles/src/trone.rs).
+        // Icebreaker F.38 : la salle du trône (icebreaker-modeles/src/trone.rs).
         IcebreakerTrone = 0xDA,
         IcebreakerEstrade = 0xDB,
         IcebreakerMarche = 0xDC,
@@ -937,7 +937,7 @@ impl SpriteKind {
             // Icebreaker F.24 : l'âtre (le bloc devant, au milieu) et le billot ; le reste ne gêne pas le passage.
             SpriteKind::IcebreakerAtre => 2.9,
             SpriteKind::IcebreakerBillot => 0.9,
-            // Icebreaker F.37 : la salle du trône ; le tapis et le vitrail ne gênent pas.
+            // Icebreaker F.38 : la salle du trône ; le tapis et le vitrail ne gênent pas.
             SpriteKind::IcebreakerTrone | SpriteKind::IcebreakerEstrade => 1.0,
             SpriteKind::IcebreakerMarche | SpriteKind::IcebreakerTapisMarche => 0.5,
             SpriteKind::IcebreakerPilier => 3.0,

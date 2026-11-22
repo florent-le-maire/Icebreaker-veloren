@@ -137,16 +137,16 @@ Salle du trône royale (Flo, 2026-11-22, ambiance d'une salle du trône de marbr
 un tapis qui mène jusqu'au trône sur son estrade. Nef de 5×8 cases, sol de marbre à cadres sombres, piliers, vitrail
 et chandeliers ; peu d'objets, chacun travaillé.
 
-- [x] **F.35 Sol de marbre à cadres** — motif `Cadres` (cadre sombre par case, compté depuis le coin de la case), sol
-  `marbre`, mur `pierre_claire`, atelier aussi ; vu en jeu (salle seule). b42e3bdc09
-- [x] **F.36 Lot trône** — trône, estrade, marche, tapis (droit, bout, sur la marche), pilier à vigne, vitrail, chandelier ;
-  `icebreaker-modeles/src/trone.rs`. Vus dans le vrai client. 020ff24e50
-- [x] **F.37 Sprites du trône** — neuf sprites `0xDA` à `0xE2`, collisions, lueurs (vitrail 12, chandelier 16),
-  manifeste, `pieces.ron`. Pas vu : les collisions au contact. 60e0584293
-- [x] **F.38 Nouvelle salle du trône 5×8** — 116 meubles, tapis de la porte au trône par la marche du milieu ;
-  pas vue dans un donjon généré. 4833ba51fc
-- [x] **F.39 La salle du trône vue** — atelier et vrai client (salle seule, lanterne, sans le chef qui tuait le
-  personnage d'essai). Commit « F.39 ».
+- [x] **F.36 Sol de marbre à cadres** — motif `Cadres` (cadre sombre par case, compté depuis le coin de la case), sol
+  `marbre`, mur `pierre_claire`, atelier aussi ; vu en jeu (salle seule). 443238313b
+- [x] **F.37 Lot trône** — trône, estrade, marche, tapis (droit, bout, sur la marche), pilier à vigne, vitrail, chandelier ;
+  `icebreaker-modeles/src/trone.rs`. Vus dans le vrai client. 8e882c6737
+- [x] **F.38 Sprites du trône** — neuf sprites `0xDA` à `0xE2`, collisions, lueurs (vitrail 12, chandelier 16),
+  manifeste, `pieces.ron`. Pas vu : les collisions au contact. 89a355377d
+- [x] **F.39 Nouvelle salle du trône 5×8** — 116 meubles, tapis de la porte au trône par la marche du milieu ;
+  pas vue dans un donjon généré. 9ad28ba17d
+- [x] **F.40 La salle du trône vue** — atelier et vrai client (salle seule, lanterne, sans le chef qui tuait le
+  personnage d'essai). 2042a1c765
 
 ## 2. Grotte : casser pour avancer, miner pour de bon (jalon U, suite)
 

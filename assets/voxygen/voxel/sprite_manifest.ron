@@ -7814,7 +7814,7 @@ IcebreakerPreparation: [(
     ],
     wind_sway: 0.0,
 )],
-// Icebreaker F.37 : la salle du trône (icebreaker-modeles/src/trone.rs, offsets donnés par le générateur) ;
+// Icebreaker F.38 : la salle du trône (icebreaker-modeles/src/trone.rs, offsets donnés par le générateur) ;
 // 14 et 15 sont les flammes des bougies du chandelier.
 IcebreakerTrone: [(
     variations: [

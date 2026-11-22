@@ -430,7 +430,7 @@ impl IcebreakerDungeon {
     /// Icebreaker F.27 : a surface of `cell` drawn in a material, block by block (its height counted from the
     /// floor of the cell's level).
     fn materiau_fill(&self, cell: plan::Cell, m: &dungeon::materiaux::Materiau) -> Fill {
-        // Icebreaker F.35 : le coin de la case, pour que les cadres du marbre tombent sur les cases.
+        // Icebreaker F.36 : le coin de la case, pour que les cadres du marbre tombent sur les cases.
         let (m, min, etage) = (m.clone(), self.cell_min(cell), self.render.level_height);
         Fill::Sampling(std::sync::Arc::new(move |p| Some(m.bloc_case(p, min.xy(), p.z - min.z, etage))))
     }

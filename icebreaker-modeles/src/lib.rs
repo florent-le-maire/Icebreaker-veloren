@@ -52,7 +52,7 @@ pub enum Matiere {
     Toile,
     Grain,
     Os,
-    // Icebreaker F.36 : la salle du trône.
+    // Icebreaker F.37 : la salle du trône.
     Marbre,
     MarbreSombre,
     PierreRose,
@@ -169,7 +169,7 @@ pub fn couleur(indice: u8) -> [u8; 3] {
         64 => [218, 196, 140], // grain
         65 => [200, 176, 118],
         66 => [230, 222, 200], // os
-        // Icebreaker F.36 : la salle du trône.
+        // Icebreaker F.37 : la salle du trône.
         67 => [200, 192, 174], // marbre
         68 => [190, 182, 165],
         69 => [181, 173, 157],
@@ -252,7 +252,7 @@ impl Modele {
                 tons[(brique as usize) % tons.len()]
             },
             // Le bois : un ton par fibre (le long de z ou de la plus grande dimension, la fibre change peu).
-            // Icebreaker F.36 : le marbre a des veines rares.
+            // Icebreaker F.37 : le marbre a des veines rares.
             Matiere::Marbre if bruit(x, y, z) % 13 == 0 => 70,
             Matiere::BoisClair | Matiere::BoisSombre => tons[(bruit(x, y, z.div_euclid(4)) as usize) % tons.len()],
             _ => tons[(bruit(x, y, z) as usize) % tons.len()],

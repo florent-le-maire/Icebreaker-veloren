@@ -1,4 +1,4 @@
-//! Icebreaker F.36 : les modèles de la salle du trône (`docs/icebreaker/PLAN-PLAYTEST.md`, « Salle du trône
+//! Icebreaker F.37 : les modèles de la salle du trône (`docs/icebreaker/PLAN-PLAYTEST.md`, « Salle du trône
 //! royale »). Épurée : peu d'objets, chacun travaillé ; marbre clair, pourpre et or ; la vie vient de la lumière
 //! (vitrail, bougies), de la hauteur (piliers jusqu'au plafond) et du tapis qui mène au trône.
 //!

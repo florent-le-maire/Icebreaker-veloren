@@ -23,7 +23,7 @@ pub enum Motif {
     /// Une poutre de bois de la couleur `bois` tous les `ecart` blocs le long de x, le reste dans les couleurs
     /// (plafond à poutres).
     Poutres { ecart: i32, bois: (u8, u8, u8) },
-    /// Icebreaker F.35 : un carré de `cote` blocs (7 = une case) en marbre (couleurs 0 et 1, une teinte par bloc),
+    /// Icebreaker F.36 : un carré de `cote` blocs (7 = une case) en marbre (couleurs 0 et 1, une teinte par bloc),
     /// un cadre sombre (couleur 2) de `bord` blocs en retrait d'un bloc ; une case sur deux a le cœur du cadre
     /// plein (couleur 3). Compté depuis le coin de la case (`bloc_case`), pour tomber juste sur les cases.
     Cadres { cote: i32, bord: i32 },
@@ -98,7 +98,7 @@ impl Materiau {
     /// sol), pour les rangs des murs, la plinthe et la corniche ; `etage` : les blocs d'un étage.
     pub fn bloc(&self, pos: Vec3<i32>, hauteur: i32, etage: i32) -> Block { self.bloc_case(pos, Vec2::zero(), hauteur, etage) }
 
-    /// Icebreaker F.35 : le même, avec le coin de la case où tombe `pos` (le motif `Cadres` se compte depuis là).
+    /// Icebreaker F.36 : le même, avec le coin de la case où tombe `pos` (le motif `Cadres` se compte depuis là).
     pub fn bloc_case(&self, pos: Vec3<i32>, coin: Vec2<i32>, hauteur: i32, etage: i32) -> Block {
         let (x, y, z) = (pos.x, pos.y, pos.z);
         let mut kind = if self.bois { BlockKind::Wood } else { BlockKind::Rock };
@@ -273,7 +273,7 @@ mod tests {
         }
     }
 
-    /// Icebreaker F.35 : le cadre du marbre tombe sur la case, où qu'elle soit dans le monde.
+    /// Icebreaker F.36 : le cadre du marbre tombe sur la case, où qu'elle soit dans le monde.
     #[test]
     fn les_cadres_suivent_la_case() {
         let m = Materiaux::load().unwrap();
