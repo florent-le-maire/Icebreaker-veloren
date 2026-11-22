@@ -77,7 +77,8 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   http://localhost:8097 l'éditeur où l'on meuble les salles du donjon au bloc près avec les objets de Veloren
   (`?salle=<nom>` ouvre une salle) ; « Enregistrer » contrôle la salle comme le jeu, écrit
   `assets/icebreaker/donjons/salles/<nom>.txt` (`@meuble:`, `@manque:` pour un modèle qui manque) et committe. En
-  jeu : `donjon -Site Genere -Salle <nom>`.
+  jeu : `donjon -Site Genere -Salle <nom>`. Une pièce vivante (nos modèles voxel générés par
+  `icebreaker-modeles`, salle serrée, vérifiée en jeu) : skill `piece-vivante` (`.claude/skills/piece-vivante`).
 - Lieu d'entraînement (jalon O, `docs/icebreaker/PLAN-ENTRAINEMENT.md`) : `.icebreaker.ps1 entrainement` (port
   14150) ; tout s'y règle par `/entrainement` (classe, arme, niveau, ennemi, allie, nettoyer, soin…) ou par les deux
   cases du plan (touche U). Sans registre : `ICEBREAKER_AUTO_PERSONNAGE=1` fait entrer le vrai client dans le monde
