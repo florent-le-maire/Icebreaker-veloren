@@ -154,7 +154,7 @@ l'importance du lieu. Nef de 7×10 cases sur deux étages (14 blocs sous la voû
 - [x] **F.41 Lot trône 2** — bannière, statue, lustre, rosace, grand vitrail, pilier haut ; vus dans le vrai client. 280191db4b
 - [x] **F.42 Sprites du lot 2** — `0xE3` à `0xE8`, lueurs, `pieces.ron`. Pas vu : les collisions au contact. 0377b8bd59
 - [x] **F.43 Grande salle du trône** — 7×10 cases, 14 blocs sous la voûte, 185 meubles ; pas vue dans un donjon généré. 455152560f
-- [x] **F.44 La grande salle vue** — atelier et vrai client (salle seule, sans créatures) ; pas `cap` du client sans les mains. Commit « F.44 ».
+- [x] **F.44 La grande salle vue** — atelier et vrai client (salle seule, sans créatures) ; pas `cap` du client sans les mains. f4ba4e0460
 
 ## 2. Grotte : casser pour avancer, miner pour de bon (jalon U, suite)
 
