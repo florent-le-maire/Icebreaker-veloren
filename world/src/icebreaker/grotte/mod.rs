@@ -277,6 +277,13 @@ impl Grotte {
         self.caverne.grille.air(p.x, p.y, p.z)
     }
 
+    /// Icebreaker U.13: whether `wpos` is rock of a wall to break (a way
+    /// between two zones closed by the generator).
+    pub fn wall(&self, wpos: Vec3<i32>) -> bool {
+        let p = wpos - self.mouth;
+        self.caverne.grille.mur(p.x, p.y, p.z)
+    }
+
     /// Whether `wpos` is in the safe room.
     pub fn in_safe_room(&self, wpos: Vec3<i32>) -> bool {
         let p = (wpos - self.mouth).into_array();

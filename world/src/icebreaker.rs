@@ -641,9 +641,14 @@ pub fn check_generated_grotte(
     while hollow(start - vek::Vec3::unit_z()) && start.z > volume.min.z {
         start.z -= 1;
     }
-    let mut seen = HashSet::from([start]);
-    let mut queue = VecDeque::from([start]);
-    while let Some(p) = queue.pop_front() {
+    // Icebreaker U.13: walked twice, through the walls to break (they are broken) and without
+    // breaking anything.
+    let walk = |breaking: bool| {
+        let hollow = |p: vek::Vec3<i32>| hollow(p) || (breaking && grotte.wall(p));
+        let standing = |p: vek::Vec3<i32>| !hollow(p - vek::Vec3::unit_z()) && hollow(p) && hollow(p + vek::Vec3::unit_z());
+        let mut seen = HashSet::from([start]);
+        let mut queue = VecDeque::from([start]);
+        while let Some(p) = queue.pop_front() {
         for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
             let column = p.xy() + vek::Vec2::new(dx, dy);
             if !volume.contains_point(column.with_z(p.z)) {
@@ -662,7 +667,10 @@ pub fn check_generated_grotte(
                 queue.push_back(next);
             }
         }
-    }
+        }
+        seen
+    };
+    let (seen, open) = (walk(true), walk(false));
     let mut problems = Vec::new();
     // Icebreaker U.4: the trail reaches every zone (its anchor, a block off
     // at most: the terrain may round a floor).
@@ -670,6 +678,10 @@ pub fn check_generated_grotte(
         let anchor = grotte.monde(zone.ancre);
         if ![0, 1, -1].iter().any(|dz| seen.contains(&(anchor + vek::Vec3::unit_z() * *dz))) {
             problems.push(format!("zone {i} ({:?}, niveau {}) inaccessible depuis la bouche : {anchor:?}", zone.genre, grotte.levels[i]));
+        }
+        // Icebreaker U.13: a zone behind a wall is not reached without breaking.
+        if grotte.caverne.fermees.contains(&i) && [0, 1, -1].iter().any(|dz| open.contains(&(anchor + vek::Vec3::unit_z() * *dz))) {
+            problems.push(format!("zone {i} ({:?}) atteinte sans casser son mur : {anchor:?}", zone.genre));
         }
     }
     // `ICEBREAKER_GROTTE_ATTEINT=x,y`: the heights reached on foot in that column.

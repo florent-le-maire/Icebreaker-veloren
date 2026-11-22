@@ -1,7 +1,7 @@
 //! Icebreaker: draws a cave without the workshop page, to check its shape:
 //! `cargo run -p icebreaker-caverne --example coupes -- [profil] [graine] [dossier]`
 //! writes `<profil>-<graine>-dessus.png` (seen from above: the highest
-//! floors, lighter when higher, the trail in yellow, the zones in red) and
+//! floors, lighter when higher, the trail in yellow, the zones in red, the walls to break in purple) and
 //! `-cote.png` (seen from the side).
 
 use icebreaker_caverne::{Formes, generer};
@@ -17,9 +17,11 @@ fn main() {
             let start = std::time::Instant::now();
             let caves: Vec<_> = (0..40).map(|g| generer(&profil.forme, g, &|_, _| 0, i32::MIN)).collect();
             println!(
-                "{nom} : {} sur 40 au premier essai, {} coupée(s), {:?} par grotte",
+                "{nom} : {} sur 40 au premier essai, {} coupée(s), {} mur(s) à casser, {} zone(s) derrière un mur, {:?} par grotte",
                 caves.iter().filter(|c| c.essais == 1).count(),
                 caves.iter().filter(|c| !c.praticable).count(),
+                caves.iter().map(|c| c.liens.iter().filter(|l| l.mur.is_some()).count()).sum::<usize>(),
+                caves.iter().map(|c| c.fermees.len()).sum::<usize>(),
                 start.elapsed() / 40
             );
         }
@@ -59,6 +61,14 @@ fn main() {
             cote.put_pixel(px, pz, Rgb([v / 2, v, v]));
         }
     }
+    // Icebreaker U.13: the walls to break, in purple.
+    for [x, y, z] in c.liens.iter().filter_map(|l| l.mur) {
+        for d in -2..=2 {
+            dessus.put_pixel((x + d - min[0]) as u32, (max[1] - 1 - y) as u32, Rgb([220, 60, 255]));
+            dessus.put_pixel((x - min[0]) as u32, (max[1] - 1 - y - d) as u32, Rgb([220, 60, 255]));
+            cote.put_pixel((x + d - min[0]) as u32, (max[2] - 1 - z) as u32, Rgb([220, 60, 255]));
+        }
+    }
     for zone in &c.zones {
         let [x, y, _] = zone.ancre;
         for (dx, dy) in [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)] {
@@ -72,7 +82,7 @@ fn main() {
 /// Where the trail of each way stops being walked from the mouth, if it does.
 #[allow(dead_code)]
 fn ruptures(c: &icebreaker_caverne::Caverne) {
-    let pieds = icebreaker_caverne::marcher(&c.grille, c.depart);
+    let pieds = icebreaker_caverne::marcher(&c.grille, c.depart, true);
     let g = &c.grille;
     for (n, lien) in c.liens.iter().enumerate() {
         for (i, p) in lien.points.iter().enumerate() {

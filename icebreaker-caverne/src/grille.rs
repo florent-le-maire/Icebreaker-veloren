@@ -9,6 +9,7 @@ pub struct Grille {
     air: Vec<u64>,
     sentier: Vec<u64>,
     concretion: Vec<u64>,
+    mur: Vec<u64>,
 }
 
 impl Grille {
@@ -21,6 +22,7 @@ impl Grille {
             air: vec![0; words],
             sentier: vec![0; words],
             concretion: vec![0; words],
+            mur: vec![0; words],
         }
     }
 
@@ -64,15 +66,21 @@ impl Grille {
         self.index(x, y, z).is_some_and(|i| Self::bit(&self.concretion, i))
     }
 
+    /// Icebreaker U.13: rock of a wall to break, put back across a way between two zones.
+    #[inline]
+    pub fn mur(&self, x: i32, y: i32, z: i32) -> bool { self.index(x, y, z).is_some_and(|i| Self::bit(&self.mur, i)) }
+
     pub fn creuser(&mut self, x: i32, y: i32, z: i32) {
         if let Some(i) = self.index(x, y, z) {
             self.air[i >> 6] |= 1 << (i & 63);
             self.sentier[i >> 6] &= !(1 << (i & 63));
             self.concretion[i >> 6] &= !(1 << (i & 63));
+            self.mur[i >> 6] &= !(1 << (i & 63));
         }
     }
 
-    /// Puts rock back: plain (0), of the trail (1) or of a concretion (2).
+    /// Puts rock back: plain (0), of the trail (1), of a concretion (2) or of a
+    /// wall to break (3).
     pub fn remplir(&mut self, x: i32, y: i32, z: i32, nature: u8) {
         if let Some(i) = self.index(x, y, z) {
             let bit = 1 << (i & 63);
@@ -80,6 +88,7 @@ impl Grille {
             self.sentier[i >> 6] = if nature == 1 { self.sentier[i >> 6] | bit } else { self.sentier[i >> 6] & !bit };
             self.concretion[i >> 6] =
                 if nature == 2 { self.concretion[i >> 6] | bit } else { self.concretion[i >> 6] & !bit };
+            self.mur[i >> 6] = if nature == 3 { self.mur[i >> 6] | bit } else { self.mur[i >> 6] & !bit };
         }
     }
 

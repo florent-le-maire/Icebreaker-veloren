@@ -62,6 +62,8 @@ pub extern "C" fn generer(graine: f64) -> u32 {
         };
         marks.push([zone.ancre[0], zone.ancre[1], zone.ancre[2], kind]);
     }
+    // Icebreaker U.13: the walls to break.
+    marks.extend(caverne.liens.iter().filter_map(|l| l.mur).map(|m| [m[0], m[1], m[2], 5]));
     etat.sorties[3] = marks.iter().flatten().flat_map(|v| (*v as i16).to_le_bytes()).collect();
     etat.sorties[4] = caverne.resume.into_bytes();
     caverne.praticable as u32

@@ -124,6 +124,10 @@ forme! {
         sentier_largeur: 2.0, 1.0, 4.0, 0.5, "Demi-largeur";
         sentier_pente: 2.0, 1.5, 4.0, 0.1, "Blocs parcourus pour un bloc de dénivelé";
     }
+    "Murs à casser" {
+        murs_part: 0.5, 0.0, 1.0, 0.05, "Part des passages bouchés par un mur";
+        murs_epaisseur: 3.0, 1.0, 8.0, 1.0, "Épaisseur d'un mur (blocs)";
+    }
 }
 
 impl Forme {
@@ -242,6 +246,9 @@ pub struct Lien {
     /// The shaft the trail winds down, if the way is steep: centre, radius,
     /// and the indices of the points where the trail enters and leaves it.
     pub puits: Option<([f32; 2], f32, usize, usize)>,
+    /// Icebreaker U.13: the wall of rock put back across the way (where the
+    /// trail goes through it), to break to go on.
+    pub mur: Option<[i32; 3]>,
 }
 
 /// A generated cave, in blocks relative to its mouth (0, 0, 0: where one
@@ -255,8 +262,11 @@ pub struct Caverne {
     pub abri: Option<usize>,
     /// Where one arrives: in the safe room, a block one stands in.
     pub depart: [i32; 3],
-    /// Whether every zone is reached on foot from the mouth, and back.
+    /// Whether every zone is reached on foot from the safe room, and back,
+    /// breaking the walls on the way.
     pub praticable: bool,
+    /// Icebreaker U.13: the zones one only reaches by breaking a wall.
+    pub fermees: Vec<usize>,
     /// Seeds tried for a whole trail (1: the first one was right).
     pub essais: u32,
     pub resume: String,
@@ -561,8 +571,9 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
             azimuts[parent].push(vers(a, c));
             azimuts[i].push(vers(b, c));
         }
-        liens.push(Lien { de: Some(parent), vers: i, points, puits });
+        liens.push(Lien { de: Some(parent), vers: i, points, puits, mur: None });
     }
+    let arbre = liens.len();
     for (a, b) in boucles {
         let (pa, pb) = (reel(zones[a].ancre), reel(zones[b].ancre));
         let (points, puits) = tracer(pa, pb, f, &mut rng, &azimuts[a], &azimuts[b]);
@@ -570,7 +581,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
             azimuts[a].push(vers(pa, c));
             azimuts[b].push(vers(pb, c));
         }
-        liens.push(Lien { de: Some(a), vers: b, points, puits });
+        liens.push(Lien { de: Some(a), vers: b, points, puits, mur: None });
     }
     for lien in &liens {
         let (debut, fin) = lien.puits.map_or((lien.points.len(), lien.points.len()), |(_, _, debut, fin)| (debut, fin));
@@ -625,10 +636,35 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
     }
     grille.garder_relie(depart);
 
-    // What one reaches on foot, and back: steps of one block, both ways.
-    let pieds = marcher(&grille, depart);
+    // Icebreaker U.13: walls to break across a share of the ways (never the
+    // way out of the safe room, never in a shaft). A loop that would go round
+    // a wall gets its own.
+    let mut cote: Vec<usize> = (0..zones.len()).collect();
+    for (i, lien) in liens.iter_mut().enumerate() {
+        let Some(de) = lien.de else { continue };
+        let voulu = if i < arbre {
+            Some(lien.vers) != abri && rng.chance(f.murs_part)
+        } else {
+            cote[de] != cote[lien.vers]
+        };
+        if voulu && lien.puits.is_none() {
+            lien.mur = poser_mur(&mut grille, &lien.points, &zones, f.murs_epaisseur);
+        }
+        // The zones on the same side of the walls so far (the ways of the tree
+        // come parent first: a zone takes the side of its parent).
+        if lien.mur.is_none() {
+            let (a, b) = (cote[de], cote[lien.vers]);
+            cote.iter_mut().filter(|c| **c == b).for_each(|c| *c = a);
+        }
+    }
+
+    // What one reaches on foot, and back: steps of one block, both ways,
+    // through the walls (they are broken), then without breaking anything.
+    let pieds = marcher(&grille, depart, true);
     let praticable = zones.iter().all(|z| pieds.binary_search(&z.ancre).is_ok());
-    for p in &pieds {
+    let libres = marcher(&grille, depart, false);
+    let fermees: Vec<usize> = (0..zones.len()).filter(|i| libres.binary_search(&zones[*i].ancre).is_err()).collect();
+    for p in pieds.iter().filter(|p| grille.air(p[0], p[1], p[2])) {
         if let Some(zone) = zones.iter_mut().find(|z| z.ancre == *p || z.contient(*p, 1.25)) {
             zone.sols.push(*p);
         }
@@ -642,13 +678,15 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
         .max()
         .unwrap_or(0);
     let resume = format!(
-        "{} zone(s) plate(s), {} chaotique(s), {} niche(s), {} salle sûre, {} puits ; dénivelé {} blocs, étendue {} blocs, {} blocs \
-         d'air, {} sols à pied ; sentier {}",
+        "{} zone(s) plate(s), {} chaotique(s), {} niche(s), {} salle sûre, {} puits, {} mur(s) à casser ({} zone(s) derrière) ; \
+         dénivelé {} blocs, étendue {} blocs, {} blocs d'air, {} sols à pied ; sentier {}",
         n(Genre::Plaine),
         n(Genre::Chaos),
         n(Genre::Niche),
         n(Genre::Abri),
         liens.iter().filter(|l| l.puits.is_some()).count(),
+        liens.iter().filter(|l| l.mur.is_some()).count(),
+        fermees.len(),
         -bas,
         large,
         grille.volume(),
@@ -662,6 +700,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32, plancher: 
         abri,
         depart,
         praticable,
+        fermees,
         essais: 1,
         resume,
     }
@@ -1049,15 +1088,99 @@ fn poser_sentier(g: &mut Grille, points: &[[f32; 3]], largeur: f32) {
     }
 }
 
+/// Icebreaker U.13: puts rock back across the way of `points`, `epaisseur`
+/// blocks thick, where the way is a gallery of its own between the zones.
+/// Gives where the trail goes through the wall; nothing (and no wall) if the
+/// way has no such stretch, or if one still walks round the wall nearby (two
+/// zones that touch, switchbacks open on each other).
+fn poser_mur(g: &mut Grille, points: &[[f32; 3]], zones: &[Zone], epaisseur: f32) -> Option<[i32; 3]> {
+    let bloc = |p: [f32; 3]| p.map(|e| e.round() as i32);
+    // The longest stretch of the way out of every zone; the wall is in its middle.
+    let dehors = |p: [f32; 3]| zones.iter().all(|z| !z.contient(bloc(p), 1.2));
+    let (mut debut, mut meilleur) = (0, 0..0);
+    for i in 0..=points.len() {
+        if i == points.len() || !dehors(points[i]) {
+            if i - debut > meilleur.len() {
+                meilleur = debut..i;
+            }
+            debut = i + 1;
+        }
+    }
+    // A point every third of a block: room for the wall and three blocks on each side.
+    let marge = ((epaisseur / 2.0 + 3.0) * 3.0).ceil() as usize;
+    if meilleur.len() < 2 * marge + 1 {
+        return None;
+    }
+    let milieu = (meilleur.start + meilleur.end) / 2;
+    let (c, avant, apres) = (points[milieu], points[milieu - marge], points[milieu + marge]);
+    let t = [0, 1, 2].map(|i| points[milieu + 6][i] - points[milieu - 6][i]);
+    let norme = (t[0] * t[0] + t[1] * t[1] + t[2] * t[2]).sqrt().max(0.01);
+    // The air of the gallery in a slab across the way, from the trail outward.
+    const PORTEE: i32 = 44;
+    let centre = bloc(c);
+    let dans = |q: [i32; 3]| {
+        let d = [0, 1, 2].map(|i| q[i] as f32 - c[i]);
+        ((d[0] * t[0] + d[1] * t[1] + d[2] * t[2]) / norme).abs() <= epaisseur / 2.0
+    };
+    let mut bouchon = vec![centre];
+    let mut vus = std::collections::BTreeSet::from([centre]);
+    let mut k = 0;
+    while k < bouchon.len() {
+        let p = bouchon[k];
+        k += 1;
+        for (i, pas) in [(0, 1), (0, -1), (1, 1), (1, -1), (2, 1), (2, -1)] {
+            let mut q = p;
+            q[i] += pas;
+            if g.air(q[0], q[1], q[2]) && dans(q) && vus.insert(q) {
+                // Too wide to be a gallery: this is a zone, no wall here.
+                if (0..3).any(|i| (q[i] - centre[i]).abs() > PORTEE) {
+                    return None;
+                }
+                bouchon.push(q);
+            }
+        }
+    }
+    if !g.air(centre[0], centre[1], centre[2]) {
+        return None;
+    }
+    for q in &bouchon {
+        g.remplir(q[0], q[1], q[2], 3);
+    }
+    // One must not walk round it nearby.
+    let pied = |g: &Grille, p: [f32; 3]| {
+        let p = bloc(p);
+        [0, -1, 1, -2, 2].iter().map(|dz| [p[0], p[1], p[2] + dz]).find(|q| debout(g, q[0], q[1], q[2]))
+    };
+    let contourne = match (pied(g, avant), pied(g, apres)) {
+        (Some(a), Some(b)) => marcher_dans(g, a, false, Some((centre, PORTEE + 20))).binary_search(&b).is_ok(),
+        _ => true,
+    };
+    if contourne {
+        for q in &bouchon {
+            g.creuser(q[0], q[1], q[2]);
+        }
+        return None;
+    }
+    Some(centre)
+}
+
 /// Whether one stands in this block: two blocks of air over rock.
 pub fn debout(g: &Grille, x: i32, y: i32, z: i32) -> bool { g.air(x, y, z) && g.air(x, y, z + 1) && !g.air(x, y, z - 1) }
 
 /// The blocks one stands in, walking from `depart` with steps of one block up
-/// or down (so that one walks back), sorted.
-pub fn marcher(g: &Grille, depart: [i32; 3]) -> Vec<[i32; 3]> {
+/// or down (so that one walks back), sorted. Icebreaker U.13: `casser` goes
+/// through the walls to break as if they were air (some of the blocks are
+/// then in a wall).
+pub fn marcher(g: &Grille, depart: [i32; 3], casser: bool) -> Vec<[i32; 3]> { marcher_dans(g, depart, casser, None) }
+
+/// `marcher`, within `borne` blocks of a point if given.
+fn marcher_dans(g: &Grille, depart: [i32; 3], casser: bool, borne: Option<([i32; 3], i32)>) -> Vec<[i32; 3]> {
+    let air = |x: i32, y: i32, z: i32| g.air(x, y, z) || (casser && g.mur(x, y, z));
+    let debout = |x: i32, y: i32, z: i32| air(x, y, z) && air(x, y, z + 1) && !air(x, y, z - 1);
+    let dedans = |p: [i32; 3]| borne.is_none_or(|(c, r)| (0..3).all(|i| (p[i] - c[i]).abs() <= r));
     let mut seen = std::collections::BTreeSet::new();
     let mut stack = Vec::new();
-    if debout(g, depart[0], depart[1], depart[2]) {
+    if debout(depart[0], depart[1], depart[2]) {
         seen.insert(depart);
         stack.push(depart);
     }
@@ -1066,7 +1189,11 @@ pub fn marcher(g: &Grille, depart: [i32; 3]) -> Vec<[i32; 3]> {
             for dz in [0, 1, -1] {
                 let next = [x + dx, y + dy, z + dz];
                 // Up a step: room for the head over where one stands.
-                if debout(g, next[0], next[1], next[2]) && (dz < 1 || g.air(x, y, z + 2)) && (dz > -1 || g.air(next[0], next[1], z + 1)) {
+                if debout(next[0], next[1], next[2])
+                    && (dz < 1 || air(x, y, z + 2))
+                    && (dz > -1 || air(next[0], next[1], z + 1))
+                    && dedans(next)
+                {
                     if seen.insert(next) {
                         stack.push(next);
                     }
@@ -1120,6 +1247,41 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// Icebreaker U.13: with walls on every way, some zones are only reached
+    /// by breaking, all are reached by breaking, and the safe room opens on
+    /// its zone; without walls, nothing is closed.
+    #[test]
+    fn walls_close_zones_until_broken() {
+        let formes = formes();
+        let (mut murs, mut fermees) = (0, 0);
+        for (nom, profil) in &formes.profils {
+            for graine in 0..6 {
+                let f = Forme { murs_part: 1.0, ..profil.forme.clone() };
+                let c = generer(&f, graine, &|_, _| 0, i32::MIN);
+                assert!(c.praticable, "{nom}, graine {graine} : {}", c.resume);
+                let abri = c.abri.unwrap();
+                assert!(!c.fermees.contains(&abri) && !c.fermees.contains(&c.zones[abri].parent.unwrap()), "{nom}, graine {graine}");
+                let (libres, pieds) = (marcher(&c.grille, c.depart, false), marcher(&c.grille, c.depart, true));
+                for i in &c.fermees {
+                    assert!(libres.binary_search(&c.zones[*i].ancre).is_err() && pieds.binary_search(&c.zones[*i].ancre).is_ok());
+                    assert!(!c.zones[*i].sols.is_empty(), "{nom}, graine {graine} : zone murée sans sol");
+                }
+                for lien in c.liens.iter().filter(|l| l.mur.is_some()) {
+                    let [x, y, z] = lien.mur.unwrap();
+                    assert!(c.grille.mur(x, y, z) && !c.grille.air(x, y, z) && lien.puits.is_none());
+                }
+                // No one stands in a wall.
+                assert!(c.zones.iter().flat_map(|z| &z.sols).all(|p| c.grille.air(p[0], p[1], p[2])));
+                murs += c.liens.iter().filter(|l| l.mur.is_some()).count();
+                fermees += c.fermees.len();
+
+                let ouvert = generer(&Forme { murs_part: 0.0, ..profil.forme.clone() }, graine, &|_, _| 0, i32::MIN);
+                assert!(ouvert.fermees.is_empty() && ouvert.liens.iter().all(|l| l.mur.is_none()), "{nom}, graine {graine}");
+            }
+        }
+        assert!(murs >= 24 && fermees >= 24, "{murs} murs, {fermees} zones fermées sur 24 grottes");
     }
 
     /// Icebreaker U.9: squeezed along an axis, the cave holds in its ellipse
