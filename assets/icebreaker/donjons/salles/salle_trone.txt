@@ -1,13 +1,134 @@
-; Salle du trône : le chef au fond, quatre braseros, trophées et heaumes le long des murs. Trois portes.
+; Salle du trône (F.38, salle du trône royale) : une nef de marbre à cadres, épurée. Au fond, l'estrade et ses
+; marches, le trône dos au mur entre deux vitraux et deux chandeliers ; le tapis part de la porte du bas, monte la
+; marche du milieu et finit au pied du trône. Deux rangs de quatre piliers ; contre les murs, chandelier, vitrail,
+; chandelier. Le chef (c) attend à gauche du tapis, devant les marches. Trois portes possibles, en bas.
 @roles: chiefLair
 @fonction: trone
 @theme: militaire
-######+######
-#4.5.....5.4#
-#...........#
-#.1.......1.#
-+.....c.....+
-#.1.......1.#
-#...........#
-#4.5.....5.4#
-######+######
+@sol: marbre
+@murs: pierre_claire
+@plafond: voute
+@meuble: IcebreakerTrone 17 7 1 4
+@meuble: IcebreakerEstrade 11 7 0 4
+@meuble: IcebreakerEstrade 11 8 0 4
+@meuble: IcebreakerEstrade 11 9 0 4
+@meuble: IcebreakerEstrade 11 10 0 4
+@meuble: IcebreakerEstrade 12 7 0 4
+@meuble: IcebreakerEstrade 12 8 0 4
+@meuble: IcebreakerEstrade 12 9 0 4
+@meuble: IcebreakerEstrade 12 10 0 4
+@meuble: IcebreakerEstrade 13 7 0 4
+@meuble: IcebreakerEstrade 13 8 0 4
+@meuble: IcebreakerEstrade 13 9 0 4
+@meuble: IcebreakerEstrade 13 10 0 4
+@meuble: IcebreakerEstrade 14 7 0 4
+@meuble: IcebreakerEstrade 14 8 0 4
+@meuble: IcebreakerEstrade 14 9 0 4
+@meuble: IcebreakerEstrade 14 10 0 4
+@meuble: IcebreakerEstrade 15 7 0 4
+@meuble: IcebreakerEstrade 15 8 0 4
+@meuble: IcebreakerEstrade 15 9 0 4
+@meuble: IcebreakerEstrade 15 10 0 4
+@meuble: IcebreakerEstrade 16 7 0 4
+@meuble: IcebreakerEstrade 16 8 0 4
+@meuble: IcebreakerEstrade 16 9 0 4
+@meuble: IcebreakerEstrade 16 10 0 4
+@meuble: IcebreakerEstrade 17 7 0 4
+@meuble: IcebreakerEstrade 17 8 0 4
+@meuble: IcebreakerEstrade 17 9 0 4
+@meuble: IcebreakerEstrade 17 10 0 4
+@meuble: IcebreakerEstrade 18 7 0 4
+@meuble: IcebreakerEstrade 18 8 0 4
+@meuble: IcebreakerEstrade 18 9 0 4
+@meuble: IcebreakerEstrade 18 10 0 4
+@meuble: IcebreakerEstrade 19 7 0 4
+@meuble: IcebreakerEstrade 19 8 0 4
+@meuble: IcebreakerEstrade 19 9 0 4
+@meuble: IcebreakerEstrade 19 10 0 4
+@meuble: IcebreakerEstrade 20 7 0 4
+@meuble: IcebreakerEstrade 20 8 0 4
+@meuble: IcebreakerEstrade 20 9 0 4
+@meuble: IcebreakerEstrade 20 10 0 4
+@meuble: IcebreakerEstrade 21 7 0 4
+@meuble: IcebreakerEstrade 21 8 0 4
+@meuble: IcebreakerEstrade 21 9 0 4
+@meuble: IcebreakerEstrade 21 10 0 4
+@meuble: IcebreakerEstrade 22 7 0 4
+@meuble: IcebreakerEstrade 22 8 0 4
+@meuble: IcebreakerEstrade 22 9 0 4
+@meuble: IcebreakerEstrade 22 10 0 4
+@meuble: IcebreakerEstrade 23 7 0 4
+@meuble: IcebreakerEstrade 23 8 0 4
+@meuble: IcebreakerEstrade 23 9 0 4
+@meuble: IcebreakerEstrade 23 10 0 4
+@meuble: IcebreakerMarche 11 11 0 4
+@meuble: IcebreakerMarche 12 11 0 4
+@meuble: IcebreakerMarche 13 11 0 4
+@meuble: IcebreakerMarche 14 11 0 4
+@meuble: IcebreakerMarche 15 11 0 4
+@meuble: IcebreakerMarche 16 11 0 4
+@meuble: IcebreakerTapisMarche 17 11 0 4
+@meuble: IcebreakerMarche 18 11 0 4
+@meuble: IcebreakerMarche 19 11 0 4
+@meuble: IcebreakerMarche 20 11 0 4
+@meuble: IcebreakerMarche 21 11 0 4
+@meuble: IcebreakerMarche 22 11 0 4
+@meuble: IcebreakerMarche 23 11 0 4
+@meuble: IcebreakerTapis 17 9 1 4
+@meuble: IcebreakerTapis 17 10 1 4
+@meuble: IcebreakerTapis 17 12 0 4
+@meuble: IcebreakerTapis 17 13 0 4
+@meuble: IcebreakerTapis 17 14 0 4
+@meuble: IcebreakerTapis 17 15 0 4
+@meuble: IcebreakerTapis 17 16 0 4
+@meuble: IcebreakerTapis 17 17 0 4
+@meuble: IcebreakerTapis 17 18 0 4
+@meuble: IcebreakerTapis 17 19 0 4
+@meuble: IcebreakerTapis 17 20 0 4
+@meuble: IcebreakerTapis 17 21 0 4
+@meuble: IcebreakerTapis 17 22 0 4
+@meuble: IcebreakerTapis 17 23 0 4
+@meuble: IcebreakerTapis 17 24 0 4
+@meuble: IcebreakerTapis 17 25 0 4
+@meuble: IcebreakerTapis 17 26 0 4
+@meuble: IcebreakerTapis 17 27 0 4
+@meuble: IcebreakerTapis 17 28 0 4
+@meuble: IcebreakerTapis 17 29 0 4
+@meuble: IcebreakerTapis 17 30 0 4
+@meuble: IcebreakerTapis 17 31 0 4
+@meuble: IcebreakerTapis 17 32 0 4
+@meuble: IcebreakerTapis 17 33 0 4
+@meuble: IcebreakerTapis 17 34 0 4
+@meuble: IcebreakerTapis 17 35 0 4
+@meuble: IcebreakerTapis 17 36 0 4
+@meuble: IcebreakerTapis 17 37 0 4
+@meuble: IcebreakerTapis 17 38 0 4
+@meuble: IcebreakerTapis 17 39 0 4
+@meuble: IcebreakerTapis 17 40 0 4
+@meuble: IcebreakerTapisBout 17 41 0 4
+@meuble: IcebreakerVitrail 12 7 1 4
+@meuble: IcebreakerVitrail 22 7 1 4
+@meuble: IcebreakerChandelier 14 8 1 4
+@meuble: IcebreakerChandelier 20 8 1 4
+@meuble: IcebreakerPilier 10 15 0 4
+@meuble: IcebreakerPilier 24 15 0 4
+@meuble: IcebreakerPilier 10 22 0 4
+@meuble: IcebreakerPilier 24 22 0 4
+@meuble: IcebreakerPilier 10 29 0 4
+@meuble: IcebreakerPilier 24 29 0 4
+@meuble: IcebreakerPilier 10 36 0 4
+@meuble: IcebreakerPilier 24 36 0 4
+@meuble: IcebreakerChandelier 7 18 0 2
+@meuble: IcebreakerChandelier 27 18 0 6
+@meuble: IcebreakerChandelier 7 32 0 2
+@meuble: IcebreakerChandelier 27 32 0 6
+@meuble: IcebreakerVitrail 7 25 1 2
+@meuble: IcebreakerVitrail 27 25 1 6
+#####
+#...#
+#c..#
+#...#
+#...#
+#...#
++...+
+##+##
