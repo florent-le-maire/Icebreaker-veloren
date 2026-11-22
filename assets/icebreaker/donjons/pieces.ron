@@ -269,7 +269,7 @@
             nom: "Salle du trône",
             roles: ["chiefLair"],
             themes: ["militaire", "bestial"],
-            idee: "Le chef y reçoit : une nef de marbre, un tapis qui mène au trône sur son estrade, des piliers, un vitrail, des chandeliers (F.39).",
+            idee: "Le chef y reçoit : une grande nef de marbre haute de deux étages, un tapis qui mène au trône sur son estrade sous une rosace, des piliers jusqu'à la voûte, des lustres, des bannières, des statues (F.43).",
             meubles: [
                 // Icebreaker F.38 : nos modèles de la salle du trône.
                 ("trône", "IcebreakerTrone"),
