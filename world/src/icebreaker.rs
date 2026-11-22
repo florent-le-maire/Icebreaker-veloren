@@ -510,6 +510,25 @@ pub fn check_generated_dungeon(
             }
         }
     }
+    // Icebreaker F.33 : the party arrives where the server puts it (`icebreaker_slots::arrival_pos`), in the safe
+    // room, not on the ground above.
+    let arrival = dungeon.arrival();
+    let landed = world.find_accessible_pos_above(index, arrival.xy(), arrival.z - 1);
+    if landed.z as i32 != arrival.z {
+        let block = |z: i32| {
+            let key = key_of(arrival.xy());
+            chunks
+                .get(&key)
+                .and_then(|c| c.as_ref())
+                .and_then(|c| c.get(arrival.with_z(z) - (key * chunk_size).with_z(0)).ok().copied())
+        };
+        problems.push(format!(
+            "arrivée {arrival:?} : le groupe apparaît en z {} (sous lui {:?}, à sa place {:?})",
+            landed.z as i32,
+            block(arrival.z - 1),
+            block(arrival.z)
+        ));
+    }
     let report = format!(
         "{}\n{}\n{} créature(s) apparue(s) dans le donjon, {} autre(s) dans la zone",
         dungeon.dungeon().summary,
