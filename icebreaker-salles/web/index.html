@@ -455,6 +455,11 @@ function couleurSol(m, x, y) {
     const w = Math.max(1, p.largeur), l = Math.max(2, p.longueur), planche = div(y, w), decale = x + planche * 3;
     rvb = c(bruit(planche, div(decale, l), 31));
     if (mod(decale, l) === 0) rvb = teinte(rvb, 0.75);
+  } else if (nom === 'Cadres') {
+    // Icebreaker F.35 : comme Materiau::bloc (x et y comptés depuis le coin du plan, donc des cases).
+    const k = Math.max(3, p.cote), b = Math.max(1, p.bord), ix = mod(x, k), iy = mod(y, k);
+    const d = Math.min(ix, iy, k - 1 - ix, k - 1 - iy), plein = mod(div(x, k) + div(y, k), 2) === 0;
+    rvb = d >= 1 && d <= b ? c(2) : d > b && plein ? c(3) : c(bruit(x, y, 0) % 2);
   } else rvb = c(bruit(x, y, 0));
   return rvb;
 }

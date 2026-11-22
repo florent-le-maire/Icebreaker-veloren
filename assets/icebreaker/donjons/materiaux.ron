@@ -6,7 +6,9 @@
 // - Dalles(cote: n) : dalles carrées de n blocs, une couleur par dalle, le bord plus sombre ;
 // - Rangs(longueur: l, hauteur: h) : pierres de l blocs sur h rangs, décalées d'un rang à l'autre, joint sombre ;
 // - Planches(largeur: w, longueur: l) : planches le long de x, aboutées tous les l blocs ;
-// - Poutres(ecart: n, bois: (r, g, b)) : une poutre de bois tous les n blocs le long de x (plafond).
+// - Poutres(ecart: n, bois: (r, g, b)) : une poutre de bois tous les n blocs le long de x (plafond) ;
+// - Cadres(cote: n, bord: b) : dans chaque carré de n blocs (compté depuis le coin de la case), un cadre sombre
+//   (3e couleur) de b blocs en retrait d'un bloc ; marbre autour (1re et 2e) ; une case sur deux, cœur plein (4e).
 // `bois: true` fait des blocs de bois ; `plinthe` et `corniche` colorent le rang du bas et du haut d'un mur.
 //
 // Une salle choisit les siens par `@sol:`, `@murs:`, `@plafond:` ; sinon le thème dominant du donjon (`par_theme`),
@@ -21,6 +23,8 @@
             couleurs: [(128, 70, 52), (112, 60, 44), (140, 82, 60), (104, 56, 42)]),
         "paves": (nom: "Pavés", motif: Rangs(longueur: 2, hauteur: 1),
             couleurs: [(74, 70, 66), (64, 61, 58), (84, 80, 74), (70, 64, 58)]),
+        "marbre": (nom: "Marbre à cadres", motif: Cadres(cote: 7, bord: 1),
+            couleurs: [(184, 174, 156), (174, 165, 148), (72, 54, 42), (150, 114, 80)]),
         "planches": (nom: "Plancher", motif: Planches(largeur: 1, longueur: 5), bois: true,
             couleurs: [(104, 72, 46), (94, 64, 40), (114, 80, 52)]),
     },
@@ -32,6 +36,9 @@
             couleurs: [(90, 84, 76), (78, 73, 66), (100, 92, 82), (70, 66, 60)]),
         "briques": (nom: "Briques", motif: Rangs(longueur: 2, hauteur: 1),
             couleurs: [(124, 62, 46), (110, 54, 40), (134, 72, 52)], plinthe: Some((70, 60, 54))),
+        "pierre_claire": (nom: "Pierre claire", motif: Rangs(longueur: 3, hauteur: 2),
+            couleurs: [(152, 144, 130), (142, 135, 122), (160, 152, 137), (136, 129, 117)],
+            plinthe: Some((92, 80, 68)), corniche: Some((122, 112, 98))),
         "enduit": (nom: "Enduit à la chaux", motif: Uni,
             couleurs: [(150, 140, 122), (142, 132, 116), (156, 146, 128)],
             plinthe: Some((92, 70, 50)), corniche: Some((100, 78, 56))),

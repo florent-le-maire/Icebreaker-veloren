@@ -6,7 +6,7 @@
 use common::terrain::{Block, BlockKind};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use vek::{Rgb, Vec3};
+use vek::{Rgb, Vec2, Vec3};
 
 /// Le dessin d'un matériau. Les longueurs sont en blocs.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -23,6 +23,10 @@ pub enum Motif {
     /// Une poutre de bois de la couleur `bois` tous les `ecart` blocs le long de x, le reste dans les couleurs
     /// (plafond à poutres).
     Poutres { ecart: i32, bois: (u8, u8, u8) },
+    /// Icebreaker F.35 : un carré de `cote` blocs (7 = une case) en marbre (couleurs 0 et 1, une teinte par bloc),
+    /// un cadre sombre (couleur 2) de `bord` blocs en retrait d'un bloc ; une case sur deux a le cœur du cadre
+    /// plein (couleur 3). Compté depuis le coin de la case (`bloc_case`), pour tomber juste sur les cases.
+    Cadres { cote: i32, bord: i32 },
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -92,7 +96,10 @@ impl Materiau {
 
     /// Le bloc en `pos` (monde). `hauteur` : la hauteur du bloc au-dessus du sol de son étage (0 = la couche du
     /// sol), pour les rangs des murs, la plinthe et la corniche ; `etage` : les blocs d'un étage.
-    pub fn bloc(&self, pos: Vec3<i32>, hauteur: i32, etage: i32) -> Block {
+    pub fn bloc(&self, pos: Vec3<i32>, hauteur: i32, etage: i32) -> Block { self.bloc_case(pos, Vec2::zero(), hauteur, etage) }
+
+    /// Icebreaker F.35 : le même, avec le coin de la case où tombe `pos` (le motif `Cadres` se compte depuis là).
+    pub fn bloc_case(&self, pos: Vec3<i32>, coin: Vec2<i32>, hauteur: i32, etage: i32) -> Block {
         let (x, y, z) = (pos.x, pos.y, pos.z);
         let mut kind = if self.bois { BlockKind::Wood } else { BlockKind::Rock };
         let couleur = match &self.motif {
@@ -126,6 +133,21 @@ impl Materiau {
                     *bois
                 } else {
                     self.couleur(bruit(x, y, z))
+                }
+            },
+            Motif::Cadres { cote, bord } => {
+                let (c, b) = ((*cote).max(3), (*bord).max(1));
+                let (lx, ly) = (x - coin.x, y - coin.y);
+                let (ix, iy) = (lx.rem_euclid(c), ly.rem_euclid(c));
+                // Distance au bord du carré : 0 = le marbre autour, 1..=b = le cadre, au-delà = le cœur.
+                let d = ix.min(iy).min(c - 1 - ix).min(c - 1 - iy);
+                let plein = (lx.div_euclid(c) + ly.div_euclid(c)).rem_euclid(2) == 0;
+                if d >= 1 && d <= b {
+                    self.couleur(2)
+                } else if d > b && plein {
+                    self.couleur(3)
+                } else {
+                    self.couleur(bruit(x, y, z) % 2)
                 }
             },
         };
@@ -248,6 +270,22 @@ mod tests {
                 .map(|(x, y)| mat.bloc(Vec3::new(x, y, 3), 3, 7).get_color().map(|c| (c.r, c.g, c.b)))
                 .collect();
             assert!(couleurs.len() > 3, "{nom} : trop uni");
+        }
+    }
+
+    /// Icebreaker F.35 : le cadre du marbre tombe sur la case, où qu'elle soit dans le monde.
+    #[test]
+    fn les_cadres_suivent_la_case() {
+        let m = Materiaux::load().unwrap();
+        let marbre = &m.sols["marbre"];
+        let sombre = |c: Option<Rgb<u8>>| c.map(|c| c.r < 100).unwrap();
+        for coin in [Vec2::new(0, 0), Vec2::new(1003, -45)] {
+            let teinte = |x, y| marbre.bloc_case(Vec3::new(coin.x + x, coin.y + y, 0), coin, 0, 7).get_color();
+            for i in 1..=5 {
+                assert!(sombre(teinte(1, i)) && sombre(teinte(i, 5)), "le cadre en ({i}) depuis {coin:?}");
+            }
+            assert!(!sombre(teinte(0, 3)) && !sombre(teinte(6, 3)) && !sombre(teinte(3, 0)), "le marbre autour");
+            assert!(!sombre(teinte(3, 3)), "le cœur");
         }
     }
 }

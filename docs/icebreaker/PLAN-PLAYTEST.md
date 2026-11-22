@@ -133,6 +133,17 @@ décide.
 - [x] **F.30 La cuisine habillée en jeu** — carrelage, enduit et poutres vus dans le vrai client (salle seule,
   lanterne) ; étape « sol, murs, plafond » dans le skill `piece-vivante`. Commit « F.30 ».
 
+Salle du trône royale (Flo, 2026-11-22, ambiance d'une salle du trône de marbre, sans copier) : épurée mais stylée,
+un tapis qui mène jusqu'au trône sur son estrade. Nef de 5×8 cases, sol de marbre à cadres sombres, piliers, vitrail
+et chandeliers ; peu d'objets, chacun travaillé.
+
+- [ ] **F.35 Sol de marbre à cadres** — motif `Cadres` (un cadre sombre par case), sol `marbre`, atelier aussi. — *en cours : Veloren-donjon, 2026-11-22*
+- [ ] **F.36 Lot trône** — trône, estrade, marche, tapis (droit, bout, sur la marche), pilier, vitrail, chandelier ;
+  `icebreaker-modeles/src/trone.rs`. — *en cours : Veloren-donjon, 2026-11-22*
+- [ ] **F.37 Sprites du trône** — neuf sprites `0xDA` à `0xE2`, collisions, lueurs, manifeste, `pieces.ron`. — *en cours : Veloren-donjon, 2026-11-22*
+- [ ] **F.38 Nouvelle salle du trône 5×8** — `salle_trone.txt` refaite : tapis de la porte au trône. — *en cours : Veloren-donjon, 2026-11-22*
+- [ ] **F.39 La salle du trône vue** — atelier et vrai client (salle seule). — *en cours : Veloren-donjon, 2026-11-22*
+
 ## 2. Grotte : casser pour avancer, miner pour de bon (jalon U, suite)
 
 **Ce que Flo demande** : des grottes séparées par des murs, pour obliger les joueurs à se servir de la destruction ;
