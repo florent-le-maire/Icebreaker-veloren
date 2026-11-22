@@ -94,10 +94,11 @@ jeu ; la suite (allumer, traverser, cristal, résurrection) est sous le jalon T 
 Donjon souterrain (Flo, 2026-11-22) : comme la grotte, on arrive dans une salle sûre, sous terre, sans tunnel ni
 bouche en surface ; le donjon est tout entier sous le sol ; un atelier web règle sa forme comme celui des grottes.
 
-- [ ] **F.31 Salle sûre, tout sous le sol** — rôle `safeRoom` (salle `abri.txt`) accroché à l'entrée par le graphe,
-  plus de tunnel ; l'étage 0 sous la surface la plus basse de l'emprise, moins `placement.profondeur` ; on apparaît
-  dans l'abri. — *en cours : Veloren-souterrain, 2026-11-22*
-- [ ] **F.32 Calme autour de l'arrivée** — personne à moins de `abri.calme` cases de l'abri ; l'abri éclairé.
+- [x] **F.31 Salle sûre, tout sous le sol** — salle `abri.txt` (rôle `safeRoom`) en cul-de-sac sur l'entrée, plus de
+  tunnel ; roche au-dessus de tout (`placement.profondeur`). Vu en capture : arrivée dans l'abri, sous terre (donjon
+  seul) ; pas essayé en expédition de campagne. 8995919e92
+- [x] **F.32 Calme autour de l'arrivée** — personne à moins de `abri.calme` (4) cases ; les rondes n'y entrent pas ;
+  éclairé par son feu de camp et ses appliques. Tests verts, abri vide en capture. 10880b5d62
 - [ ] **F.33 Presets de donjon** — `donjons/formes.ron` ; `/expedition N <preset>`, `-Profil` du lanceur.
 - [ ] **F.34 Atelier du donjon** — `.\icebreaker.ps1 donjon-atelier` (port 8098) : plan par étage, curseurs,
   « Enregistrer le preset » (commit).
