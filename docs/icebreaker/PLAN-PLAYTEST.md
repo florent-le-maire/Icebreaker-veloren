@@ -173,19 +173,19 @@ destructibilité » (2026-11-11) commence ici ; les matières et la foreuse rest
   Grotte et le donjon généré, plus ou moins facilement selon la matière (`assets/icebreaker/destruction.ron` : coups
   et énergie par coup ; roche 5 coups à 15, bois 3 à 10, roche tendre 1 à 5). À sec, le coup ne fait rien ; hors de
   ces lieux, règles de Veloren. Testé : 4 tests de `veloren-common`, serveur de grotte lancé. Pas vérifié en jeu :
-  creuser au vrai client (visée, bruit, arrêt à sec), dans la grotte et le donjon. — 8c11626f51
+  creuser au vrai client (visée, bruit, arrêt à sec), dans la grotte et le donjon. — cd0cf87665
 - [x] **U.13 Murs à casser** — une part des passages entre deux zones (`murs_part`, 0,5 ; `murs_epaisseur`, 3 blocs,
   dans `formes.ron` et l'atelier) est rebouchée par de la roche ordinaire, au milieu de la galerie ; jamais la sortie
   de la salle sûre ni un puits ; un mur qu'on contournerait à pied tout près n'est pas posé. Le sentier est contrôlé
   « en cassant » ; créatures, coffres et cristaux aussi derrière les murs. Marqueur violet dans l'atelier. Testé :
   10 tests du générateur, 160 grottes (aucune coupée, 3 à 5 murs par grotte), contrôle en jeu sur 12 mondes
   (0 problème : zones murées non atteintes sans casser, toutes atteintes en cassant). Pas vérifié en jeu : trouver
-  un mur (rien ne le signale) et le percer ; la page de l'atelier. — HASH_U13
-- [ ] **U.14 Filons, et presque plus de pépites** — un filon est une traînée serrée de minerai le long d'une paroi
-  (longueur et minerais par niveau dans `grotte.ron`), visible de loin ; les pépites isolées sont divisées par dix
-  environ (réglage).
-  *Fin* : l'exemple de contrôle compte dix fois moins de pépites isolées et au moins un filon par zone à partir du
-  niveau 2.
+  un mur (rien ne le signale) et le percer ; la page de l'atelier. — 088709de49
+- [x] **U.14 Filons, et presque plus de pépites** — dans chaque zone, 1 à 3 filons selon le niveau (`grotte.ron` →
+  `filons.veines` : `par_zone`, `longueur` 6 à 12 blocs) : une traînée d'un seul minerai, bloc après bloc au pied
+  d'une paroi, hors du sentier et de la salle sûre ; chance des pépites isolées divisée par dix (0,0008). Testé :
+  11 tests de `veloren-world` (filons contigus, au moins un par zone dès le niveau 2), contrôle sur 12 mondes
+  (12 à 19 filons et 5 à 27 pépites par grotte, chaque bloc de filon porte son minerai). Pas vu en jeu. — HASH_U14
 - [ ] **U.15 La salle au minerai** — une par grotte, à l'écart du sentier, derrière un mur à casser : beaucoup de
   minerai courant et quelques minerais rares (or, cobalt, gemmes) ; marquée dans l'atelier.
   *Fin* : chaque grotte de l'exemple de contrôle en a une, atteinte en cassant.

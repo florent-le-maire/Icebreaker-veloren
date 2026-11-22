@@ -17,8 +17,12 @@
     // n'ont que des solitaires. calme (U.8) : aucune créature à moins de ce nombre de blocs de la salle sûre, où
     // l'équipe arrive (la grotte n'a plus de bouche en surface).
     population: (par_poche: (2, 3), par_niveau: 1, trous: 0.5, coffres: 0.3, coffre: "DungeonChest2", part_solitaires: 0.3, calme: 30),
+    // U.14 : presque plus de pépites isolées (chance divisée par dix) ; le minerai est en filons : dans chaque zone,
+    // veines.par_zone traînées d'un seul minerai le long du pied d'une paroi, de veines.longueur blocs (une valeur
+    // par niveau, la dernière pour les niveaux plus profonds).
     filons: (
-        chance: 0.008,
+        chance: 0.0008,
+        veines: (par_zone: [1, 2, 3], longueur: [6, 9, 12]),
         paliers: [
             [("Copper", 3.0), ("Tin", 3.0), ("Iron", 2.0)],
             [("Coal", 3.0), ("Cobalt", 2.0), ("Silver", 1.0)],

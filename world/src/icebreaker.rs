@@ -793,25 +793,33 @@ pub fn check_generated_grotte(
     // The ores (K.4): one stands on them (a mineable sprite is solid); counted
     // by the level of the zone they lie in.
     let mut ores = vec![0usize; grotte.niveaux.max(1) as usize];
+    let mut lone = 0;
     for p in &seen {
         let mined = block_at(*p - vek::Vec3::unit_z())
             .and_then(|b| b.get_sprite())
             .is_some_and(|s| s.mine_tool() == Some(common::comp::item::tool::ToolKind::Pick));
         if mined {
             ores[grotte.level_at(*p) as usize] += 1;
+            lone += usize::from(!grotte.vein_blocks.contains_key(&(*p - vek::Vec3::unit_z())));
         }
     }
     if ores.iter().sum::<usize>() == 0 {
         problems.push("aucun filon sur lequel marcher".into());
     }
+    // Icebreaker U.14: every block of a vein holds its ore.
+    let missing = grotte.vein_blocks.iter().filter(|(p, ore)| block_at(**p).and_then(|b| b.get_sprite()) != Some(**ore)).count();
+    if missing > 0 {
+        problems.push(format!("{missing} bloc(s) de filon sans leur minerai sur {}", grotte.vein_blocks.len()));
+    }
     let summary = format!(
-        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, filons par niveau {:?}, {} habitant(s) ({appeared} \
+        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, minerais par niveau {:?} dont {} filon(s) et {lone} pépite(s), {} habitant(s) ({appeared} \
          apparus), {} coffre(s)\nzones :\n  {}",
         grotte.summary,
         grotte.mouth,
         plot.entrance(),
         seen.len(),
         ores,
+        grotte.veins.len(),
         grotte.inhabitants.len(),
         grotte.chests.len(),
         zones.join("\n  ")

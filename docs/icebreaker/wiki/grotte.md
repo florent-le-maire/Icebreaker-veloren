@@ -26,7 +26,7 @@ nom = "Créatures en plus par niveau"
 
 [[chiffre]]
 cle = "chance"
-nom = "Chance de filon par bloc au pied d'une paroi"
+nom = "Chance d'une pépite isolée par bloc au pied d'une paroi"
 pourcent = true
 +++
 
@@ -49,8 +49,13 @@ Chaque grotte tire aussi une **ambiance** (champignons, cristaux, ossuaire) : la
 luisante, les sprites au sol et au plafond, les créatures. Le **chef** attend dans la zone la plus loin de l'entrée.
 Le tuer, c'est la victoire.
 
-Au pied des parois, des **filons** à miner à la pioche (chaque personnage en a une) : cuivre et étain près de
-l'entrée, or et gemmes au fond. Coffres et créatures donnent le butin de leur niveau (`butin.ron`), le chef bien plus.
+Au pied des parois, des **filons** à miner à la pioche (chaque personnage en a une) : une traînée d'un seul minerai
+le long de la roche, un à trois par zone ; cuivre et étain près de l'entrée, or et gemmes au fond. Les pépites isolées
+sont rares.
+
+Une partie des passages entre deux zones est **bouchée par la roche** : la galerie s'arrête, il faut creuser. Dans la
+grotte, la pioche casse tout, bloc après bloc, contre de l'énergie ; à sec, on attend. La salle sûre où l'on arrive
+s'ouvre toujours sur sa zone. Coffres et créatures donnent le butin de leur niveau (`butin.ron`), le chef bien plus.
 
 ## Régler la forme
 
