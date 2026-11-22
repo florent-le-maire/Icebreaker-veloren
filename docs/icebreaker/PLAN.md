@@ -95,7 +95,7 @@ Le village est toujours le même et presque plat, disposé comme le croquis de F
 - [ ] **VF.4 Champs, cimetière, écurie** — décor.
 - [ ] **VF.5 Vue du dessus fidèle** — les bâtiments à leur vraie place dans la vue du dessus.
 - [x] **VF.6 Apparition sous la place** — la recherche du sol s'arrêtait sous le sommet du tronçon : sur une place plate
-  au sommet (graine 949093 en campagne, 2), on apparaissait 2 blocs sous terre. Vu à l'exemple, pas en jeu. `124de21c3a`
+  au sommet (graine 949093 en campagne, 2), on apparaissait 2 blocs sous terre. Vu à l'exemple, pas en jeu. `d8fda3e396`
 
 ## Jalon X — Interface du village, suite (Flo, 2026-11-06)
 
