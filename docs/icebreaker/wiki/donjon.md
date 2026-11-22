@@ -56,7 +56,7 @@ grotte.
 Comme la grotte, le donjon a des **formes** (`donjons/formes.ron`) : « plat », « profond », « labyrinthe »…
 Chacune change le graphe, l'écart entre les salles ou la roche au-dessus. La graine en tire une, ou l'équipe la
 choisit au départ. On les règle dans l'**atelier du donjon** (`.\icebreaker.ps1 donjon-atelier`). L'atelier montre
-le plan étage par étage, avec des curseurs, et enregistre la forme.
+le donjon en 3D (comme la grotte) ou étage par étage, avec des curseurs, et enregistre la forme.
 
 ## Ce qui reste à faire
 

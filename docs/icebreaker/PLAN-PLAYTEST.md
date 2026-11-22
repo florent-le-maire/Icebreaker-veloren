@@ -103,6 +103,9 @@ bouche en surface ; le donjon est tout entier sous le sol ; un atelier web règl
   `/expedition 3 <preset>`, `-Profil`. `-Profil plat` vu au journal du serveur ; pas essayé en campagne. a4fc4ad98a
 - [x] **F.34 Atelier du donjon** — `.\icebreaker.ps1 donjon-atelier` (port 8098) : plan par étage, curseurs,
   « Enregistrer le preset » (commit). Vu dans Edge sans affichage ; pas encore essayé par l'équipe. 01f05e67c4
+- [x] **F.35 Vue 3D de l'atelier du donjon** — three.js comme la grotte : une case = un cube, étages écartés, rampes,
+  billes (créatures, coffres), arrivée ; « Jusqu'à l'étage N » coupe le dessus ; le plan reste en onglet. Vu dans Edge sans
+  affichage. HASH35
 
 Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,
 Veloren n'a presque rien pour une cuisine. Nos modèles sont générés par du code ; la vie vient des traces d'activité,

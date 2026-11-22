@@ -39,8 +39,11 @@
   .curseurs { display: flex; gap: 8px; }
   input[type=range] { width: 100%; margin: 2px 0 0; accent-color: var(--accent); }
   #scene { flex: 1; position: relative; min-width: 0; display: flex; flex-direction: column; }
-  #etages { display: flex; gap: 6px; padding: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--bord); }
-  #etages button.choisi { border-color: var(--accent); color: var(--accent); }
+  #barre { display: flex; gap: 14px; padding: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--bord); align-items: center; }
+  #modes, #etages { display: flex; gap: 6px; flex-wrap: wrap; }
+  #modes { padding-right: 14px; border-right: 1px solid var(--bord); }
+  #barre button.choisi { border-color: var(--accent); color: var(--accent); }
+  #aide { position: absolute; left: 10px; top: 10px; color: var(--discret); font-size: 12px; pointer-events: none; }
   #plan { flex: 1; position: relative; overflow: hidden; }
   canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
   #etat { padding: 8px 12px; border-top: 1px solid var(--bord); font-size: 12.5px; white-space: pre-wrap; max-height: 30vh; overflow-y: auto; }
@@ -49,6 +52,14 @@
   #legende i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; }
   #survol { position: absolute; left: 10px; bottom: 10px; background: #1c2027e6; border: 1px solid var(--bord); border-radius: 8px; padding: 4px 8px; font-size: 12px; display: none; }
 </style>
+<!-- Icebreaker F.35 : la vue 3D vient de three.js, comme l'atelier des grottes (jsdelivr : il faut être en ligne ;
+     sans lui, il reste le plan). -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
 </head>
 <body>
 <aside id="reglages">
@@ -68,9 +79,14 @@
   <div id="champs"></div>
 </aside>
 <main id="scene">
-  <div id="etages"></div>
+  <div id="barre">
+    <div id="modes"><button id="m-3d" class="choisi" title="Le donjon en volume : glisser pour tourner">3D</button><button id="m-plan" title="Un étage à plat">Plan</button></div>
+    <div id="etages"></div>
+  </div>
   <div id="plan">
     <canvas id="toile"></canvas>
+    <canvas id="toile3d"></canvas>
+    <div id="aide"></div>
     <div id="legende"></div>
     <div id="survol"></div>
   </div>
@@ -103,6 +119,11 @@ let formes = {};      // presets de formes.ron
 let plan = null;      // dernière réponse de /plan
 let etage = 0;
 let vue = { echelle: 10, x: 0, y: 0 };
+let mode = '3d';      // '3d' ou 'plan'
+let coupe = null;     // 3D : plus haut étage montré (null : tous)
+let recadrer = true;  // 3D : replacer la caméra au prochain plan (nouvelle graine, taille, preset)
+// Comme plan::is_creature_marker (minuscule éveillée, majuscule endormie).
+const creature = (s) => s.length === 1 && 'bagcxefijklnpqrtuwyz'.includes(s.toLowerCase());
 
 function champsHtml() {
   $('champs').innerHTML = CHAMPS.map((c) => `
@@ -177,20 +198,31 @@ function afficher() {
   if (plan.erreur) {
     $('etat').innerHTML = `<span class="erreur">Pas de donjon : ${echapper(plan.erreur)}</span>`;
     $('etages').innerHTML = '';
-    dessiner();
+    if (mode === '3d') construire3d(); else dessiner();
     return;
   }
-  $('etages').innerHTML = plan.niveaux.map((n) => {
-    const nom = n === 0 ? 'Étage 0 (entrée)' : n > 0 ? `Étage +${n} (mezzanines)` : `Étage ${n}`;
-    return `<button data-etage="${n}" class="${n === etage ? 'choisi' : ''}">${nom}</button>`;
-  }).join('');
-  for (const b of $('etages').querySelectorAll('button')) b.onclick = () => { etage = +b.dataset.etage; afficher(); };
+  // En plan, l'onglet est l'étage dessiné ; en 3D, l'étage au-dessus duquel on coupe (« Tous » : rien de coupé).
+  const enTrois = mode === '3d';
+  const choisi = (n) => (enTrois ? coupe === n : etage === n);
+  $('etages').innerHTML = (enTrois ? `<button data-etage="tous" class="${coupe === null ? 'choisi' : ''}">Tous les étages</button>` : '')
+    + plan.niveaux.map((n) => {
+      const nom = n === 0 ? 'Étage 0 (entrée)' : n > 0 ? `Étage +${n} (mezzanines)` : `Étage ${n}`;
+      return `<button data-etage="${n}" class="${choisi(n) ? 'choisi' : ''}"${enTrois ? ` title="Cacher ce qui est au-dessus de cet étage"` : ''}>${enTrois && n !== plan.niveaux[0] ? 'Jusqu’à ' + nom.toLowerCase() : nom}</button>`;
+    }).join('');
+  for (const b of $('etages').querySelectorAll('button')) {
+    b.onclick = () => {
+      if (enTrois) coupe = b.dataset.etage === 'tous' ? null : +b.dataset.etage;
+      else etage = +b.dataset.etage;
+      afficher();
+    };
+  }
   const roles = {};
   for (const s of plan.salles) roles[s.role] = (roles[s.role] || 0) + 1;
   $('legende').innerHTML = Object.keys(roles).map((r) => `<span><i style="background:${(COULEURS[r] || ['#888'])[0]}"></i>${(COULEURS[r] || [0, r])[1]} ×${roles[r]}</span>`).join('')
     + '<span><i style="background:#3a404a"></i>Couloir</span><span><i style="background:#ff6b5e;border-radius:50%"></i>Créature</span><span><i style="background:#ffd34d;border-radius:50%"></i>Coffre</span>';
   $('etat').textContent = `${plan.salles.length} salles, ${plan.creatures} créatures, ${plan.coffres} coffres, ${plan.niveaux.length} étage(s). `
     + `Preset en jeu : « ${$('profil').value || 'aucun'} », graine ${$('graine').value}.\n${plan.resume}`;
+  if (enTrois) { construire3d(); return; }
   cadrer();
   dessiner();
 }
@@ -235,7 +267,7 @@ function dessiner() {
       g.fillStyle = '#14171c'; g.font = `${Math.max(8, e * .8)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText({ '<': '←', '>': '→', '^': '↑', 'v': '↓', H: '≡', _: '○' }[s], px(x) + e / 2, py(y) + e / 2);
     }
-    if (/[a-zA-Z]/.test(s) && 'bcgawxBCGAWX'.includes(s)) { point(g, px(x), py(y), e, '#ff6b5e'); }
+    if (creature(s)) { point(g, px(x), py(y), e, '#ff6b5e'); }
     if (s === '$') point(g, px(x), py(y), e, '#ffd34d');
   }
   // L'arrivée.
@@ -254,6 +286,170 @@ function dessiner() {
 }
 const point = (g, x, y, e, c) => { g.fillStyle = c; g.beginPath(); g.arc(x + e / 2, y + e / 2, Math.max(2, e * .28), 0, Math.PI * 2); g.fill(); };
 
+// Icebreaker F.35 : la vue 3D. Une case = un cube d'un côté (cell_size et level_height valent tous deux 7 blocs) :
+// x vers la droite, l'étage vers le haut, y vers l'avant. Le sol de chaque case a la couleur du rôle de sa salle,
+// les murs sont bas pour qu'on voie dedans, les escaliers sont des rampes vers l'étage du dessus.
+let trois = null;     // three.js prêt : { THREE, rendu, scene, camera, controles, groupe, sols }
+// Hauteur d'un étage dans la vue (une case de large vaut 1) : écartée, pour bien voir les étages l'un sur l'autre.
+const E = 3;
+async function initTrois() {
+  const THREE = await import('three');
+  const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
+  const toile = $('toile3d');
+  const rendu = new THREE.WebGLRenderer({ canvas: toile, antialias: true, preserveDrawingBuffer: true });
+  rendu.setPixelRatio(window.devicePixelRatio || 1);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x14171c);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x3a4250, 2.0));
+  const soleil = new THREE.DirectionalLight(0xffffff, 1.6);
+  soleil.position.set(0.5, 1, 0.8);
+  scene.add(soleil);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 3000);
+  const controles = new OrbitControls(camera, toile);
+  controles.enableDamping = false;
+  controles.addEventListener('change', rendre);
+  trois = { THREE, rendu, scene, camera, controles, groupe: null, sols: null };
+}
+function taille3d() {
+  const toile = $('toile3d');
+  trois.rendu.setSize(toile.clientWidth, toile.clientHeight, false);
+  trois.camera.aspect = toile.clientWidth / Math.max(1, toile.clientHeight);
+  trois.camera.updateProjectionMatrix();
+}
+function rendre() { if (trois) trois.rendu.render(trois.scene, trois.camera); }
+
+function construire3d() {
+  if (!trois) return;
+  const T = trois.THREE;
+  if (trois.groupe) {
+    trois.scene.remove(trois.groupe);
+    trois.groupe.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); });
+  }
+  trois.groupe = new T.Group();
+  trois.sols = null;
+  trois.scene.add(trois.groupe);
+  taille3d();
+  if (!plan || plan.erreur) { rendre(); return; }
+  const visibles = plan.cases.filter((c) => coupe === null || c[2] <= coupe);
+  const de = (s) => visibles.filter((c) => s(c[3]));
+  const couleur = (c) => {
+    if (c[3] === 'D') return '#e6e8ec';
+    if (c[4] >= 0) return (COULEURS[plan.salles[c[4]].role] || ['#888'])[0];
+    return '#4a515c';
+  };
+  const placer = (cases, geometrie, materiau, poser, teinter = false) => {
+    if (!cases.length) return null;
+    const m = new T.InstancedMesh(geometrie, materiau, cases.length);
+    const o = new T.Object3D(), teinte = new T.Color();
+    cases.forEach((c, i) => {
+      o.position.set(0, 0, 0); o.rotation.set(0, 0, 0); o.scale.set(1, 1, 1);
+      poser(o, c);
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+      if (teinter) m.setColorAt(i, teinte.set(couleur(c)));
+    });
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    m.userData.cases = cases;
+    trois.groupe.add(m);
+    return m;
+  };
+  const mat = () => new T.MeshLambertMaterial({ color: 0xffffff });
+  const escalier = (s) => '^>v<'.includes(s);
+  // Les sols (tout ce qui n'est ni mur, ni trou, ni escalier) : ce que le survol et le clic regardent.
+  trois.sols = placer(de((s) => s !== '#' && s !== '_' && !escalier(s)), new T.BoxGeometry(0.98, 0.16, 0.98), mat(),
+    (o, [x, y, n]) => o.position.set(x + 0.5, n * E - 0.08, y + 0.5), true);
+  // Les murs, bas et sombres.
+  placer(de((s) => s === '#'), new T.BoxGeometry(1, 0.45, 1), new T.MeshLambertMaterial({ color: 0x2a3039 }),
+    (o, [x, y, n]) => o.position.set(x + 0.5, n * E + 0.065, y + 0.5));
+  // Les escaliers : une rampe de l'étage n (côté du pied) à l'étage n+1 (côté du palier).
+  placer(de(escalier), new T.BoxGeometry(0.9, 0.12, Math.hypot(1, E)), new T.MeshLambertMaterial({ color: 0xd8c08a }),
+    (o, [x, y, n, s]) => {
+      const [dx, dz] = { '^': [0, -1], '>': [1, 0], 'v': [0, 1], '<': [-1, 0] }[s];
+      o.position.set(x + 0.5, n * E + E / 2, y + 0.5);
+      o.rotation.order = 'YXZ';
+      o.rotation.set(-Math.atan(E), Math.atan2(dx, dz), 0);
+    });
+  // Les échelles : un montant jusqu'au trou du dessus.
+  placer(de((s) => s === 'H'), new T.BoxGeometry(0.12, E, 0.12), new T.MeshLambertMaterial({ color: 0x9a6a3a }),
+    (o, [x, y, n]) => o.position.set(x + 0.5, n * E + E / 2, y + 0.5));
+  // Créatures, coffres.
+  placer(de(creature), new T.SphereGeometry(0.22, 12, 8), new T.MeshLambertMaterial({ color: 0xff6b5e }),
+    (o, [x, y, n]) => o.position.set(x + 0.5, n * E + 0.25, y + 0.5));
+  placer(de((s) => s === '$'), new T.BoxGeometry(0.34, 0.26, 0.26), new T.MeshLambertMaterial({ color: 0xffd34d }),
+    (o, [x, y, n]) => o.position.set(x + 0.5, n * E + 0.13, y + 0.5));
+  // L'arrivée : un anneau blanc et un faisceau.
+  const [ax, ay, an] = plan.arrivee;
+  if (coupe === null || an <= coupe) {
+    const anneau = new T.Mesh(new T.TorusGeometry(0.42, 0.06, 8, 32), new T.MeshBasicMaterial({ color: 0xffffff }));
+    anneau.rotation.x = Math.PI / 2; anneau.position.set(ax + 0.5, an * E + 0.08, ay + 0.5);
+    const faisceau = new T.Mesh(new T.CylinderGeometry(0.05, 0.05, 2.5, 8),
+      new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.45 }));
+    faisceau.position.set(ax + 0.5, an * E + 1.25, ay + 0.5);
+    trois.groupe.add(anneau, faisceau);
+  }
+  if (recadrer) { cadrer3d(); recadrer = false; }
+  rendre();
+}
+// La caméra en biais au-dessus du donjon entier, qui tient dans la vue.
+function cadrer3d() {
+  const T = trois.THREE;
+  if (!plan || plan.erreur || !plan.cases.length) return;
+  const boite = new T.Box3();
+  for (const [x, y, n] of plan.cases) boite.expandByPoint(new T.Vector3(x, n * E, y)).expandByPoint(new T.Vector3(x + 1, n * E + 1, y + 1));
+  const centre = boite.getCenter(new T.Vector3());
+  const rayon = boite.getSize(new T.Vector3()).length() / 2 || 1;
+  const d = rayon / Math.sin((trois.camera.fov * Math.PI) / 360) * 0.78;
+  trois.controles.target.copy(centre);
+  trois.camera.position.copy(centre).add(new T.Vector3(0.55, 0.6, 0.8).normalize().multiplyScalar(d));
+  trois.camera.near = Math.max(0.1, d / 100); trois.camera.far = d * 10;
+  trois.camera.updateProjectionMatrix();
+  trois.controles.update();
+}
+function salleSous3d(ev) {
+  if (!trois || !trois.sols) return null;
+  const T = trois.THREE;
+  const b = $('toile3d').getBoundingClientRect();
+  const souris = new T.Vector2(((ev.clientX - b.left) / b.width) * 2 - 1, -((ev.clientY - b.top) / b.height) * 2 + 1);
+  const rayon = new T.Raycaster();
+  rayon.setFromCamera(souris, trois.camera);
+  const touche = rayon.intersectObject(trois.sols)[0];
+  if (!touche) return null;
+  const c = trois.sols.userData.cases[touche.instanceId];
+  return c && c[4] >= 0 ? plan.salles[c[4]] : null;
+}
+function changerMode(m) {
+  mode = m;
+  $('m-3d').classList.toggle('choisi', m === '3d');
+  $('m-plan').classList.toggle('choisi', m === 'plan');
+  $('toile').style.display = m === 'plan' ? 'block' : 'none';
+  $('toile3d').style.display = m === '3d' ? 'block' : 'none';
+  $('aide').textContent = m === '3d' ? 'Glisser : tourner · molette : zoom · clic droit : déplacer · double-clic : recadrer' : '';
+  $('survol').style.display = 'none';
+  afficher();
+}
+$('m-3d').onclick = () => {
+  if (trois) { changerMode('3d'); return; }
+  initTrois().then(() => changerMode('3d')).catch((e) => {
+    $('etat').innerHTML = `<span class="erreur">three.js n'a pas pu être chargé (il faut être en ligne) : ${echapper(String(e))}</span>`;
+  });
+};
+$('m-plan').onclick = () => changerMode('plan');
+let appui = null;
+$('toile3d').addEventListener('pointerdown', (ev) => { appui = [ev.clientX, ev.clientY]; });
+$('toile3d').addEventListener('mousemove', (ev) => {
+  const s = salleSous3d(ev);
+  $('survol').style.display = s ? 'block' : 'none';
+  if (s) $('survol').textContent = `${(COULEURS[s.role] || [0, s.role])[1]} — ${s.id} (clic : ouvrir dans l'atelier des salles)`;
+});
+$('toile3d').addEventListener('click', (ev) => {
+  // Un glisser (la caméra tourne) n'est pas un clic.
+  if (appui && Math.hypot(ev.clientX - appui[0], ev.clientY - appui[1]) > 4) return;
+  const s = salleSous3d(ev);
+  if (s && !s.id.startsWith('forme-')) window.open(`http://localhost:8097/?salle=${encodeURIComponent(s.id.replace(/:.*/, ''))}`, '_blank');
+});
+$('toile3d').addEventListener('dblclick', () => { cadrer3d(); rendre(); });
+
 // Survol : la salle sous la souris ; clic : l'ouvrir dans l'atelier des salles.
 function salleSous(ev) {
   if (!plan || plan.erreur) return null;
@@ -271,7 +467,10 @@ $('toile').addEventListener('click', (ev) => {
   const s = salleSous(ev);
   if (s && !s.id.startsWith('forme-')) window.open(`http://localhost:8097/?salle=${encodeURIComponent(s.id.replace(/:.*/, ''))}`, '_blank');
 });
-window.addEventListener('resize', () => { if (plan && !plan.erreur) { cadrer(); dessiner(); } });
+window.addEventListener('resize', () => {
+  if (mode === '3d') { if (trois) { taille3d(); rendre(); } return; }
+  if (plan && !plan.erreur) { cadrer(); dessiner(); }
+});
 
 async function chargerFormes(choisir) {
   const r = await fetch('/formes').then((r) => r.json());
@@ -302,15 +501,19 @@ async function enregistrer(supprimer) {
   if (!supprimer) choisirProfil();
 }
 
-$('graine').addEventListener('change', demander);
-$('hasard').onclick = () => { $('graine').value = Math.floor(Math.random() * 1e9); demander(); };
-$('taille').addEventListener('change', () => { for (const c of CHAMPS) majChamp(c); demander(); });
-$('profil').addEventListener('change', choisirProfil);
+$('graine').addEventListener('change', () => { recadrer = true; demander(); });
+$('hasard').onclick = () => { $('graine').value = Math.floor(Math.random() * 1e9); recadrer = true; demander(); };
+$('taille').addEventListener('change', () => { for (const c of CHAMPS) majChamp(c); recadrer = true; demander(); });
+$('profil').addEventListener('change', () => { recadrer = true; choisirProfil(); });
 $('enregistrer').onclick = () => enregistrer(false);
 $('supprimer').onclick = () => { if (confirm(`Retirer le preset « ${$('nom').value} » de formes.ron ?`)) enregistrer(true); };
 
 champsHtml();
-chargerFormes('').then(() => { choisirProfil(); }).catch((e) => { $('etat').innerHTML = `<span class="erreur">${e}</span>`; });
+// La 3D d'abord, comme pour la grotte ; hors ligne, le plan.
+initTrois().then(() => changerMode('3d'), () => changerMode('plan'))
+  .then(() => chargerFormes(''))
+  .then(() => { choisirProfil(); })
+  .catch((e) => { $('etat').innerHTML = `<span class="erreur">${e}</span>`; });
 </script>
 </body>
 </html>

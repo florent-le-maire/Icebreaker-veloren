@@ -80,7 +80,7 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   jeu : `donjon -Site Genere -Salle <nom>`. Une pièce vivante (nos modèles voxel générés par
   `icebreaker-modeles`, salle serrée, vérifiée en jeu) : skill `piece-vivante` (`.claude/skills/piece-vivante`).
 - Atelier du donjon (F.34, `docs/icebreaker/PLAN-PLAYTEST.md`) : `.\icebreaker.ps1 donjon-atelier` sert sur
-  http://localhost:8098 le plan du donjon généré, étage par étage, avec des curseurs ; « Enregistrer le preset » écrit
+  http://localhost:8098 le donjon généré en 3D (ou à plat, étage par étage), avec des curseurs ; « Enregistrer le preset » écrit
   le profil dans `assets/icebreaker/donjons/formes.ron` et committe. En jeu : `donjon -Site Genere -Profil <preset>`,
   en campagne `/expedition 3 <preset>`. Le donjon généré est tout sous le sol : on arrive dans l'abri (F.31).
 - Lieu d'entraînement (jalon O, `docs/icebreaker/PLAN-ENTRAINEMENT.md`) : `.icebreaker.ps1 entrainement` (port
