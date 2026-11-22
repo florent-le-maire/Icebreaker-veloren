@@ -4,12 +4,12 @@
 //! (`@sol:`, `@murs:`, `@plafond:`), sinon le thème du donjon décide (`par_theme`), sinon `defaut`.
 
 use common::terrain::{Block, BlockKind};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use vek::{Rgb, Vec3};
 
 /// Le dessin d'un matériau. Les longueurs sont en blocs.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Motif {
     /// Une teinte par bloc, prise au hasard dans les couleurs (terre battue, roche brute, enduit).
     Uni,
@@ -25,7 +25,7 @@ pub enum Motif {
     Poutres { ecart: i32, bois: (u8, u8, u8) },
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Materiau {
     /// Le nom affiché dans l'atelier des salles.
     pub nom: String,
@@ -42,7 +42,7 @@ pub struct Materiau {
 }
 
 /// Les trois matériaux d'une salle (des noms de `materiaux.ron`).
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Habillage {
     pub sol: String,
     pub murs: String,
@@ -57,7 +57,7 @@ pub struct HabillageSalle {
     pub plafond: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Materiaux {
     pub sols: BTreeMap<String, Materiau>,
     pub murs: BTreeMap<String, Materiau>,

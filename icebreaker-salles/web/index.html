@@ -89,6 +89,9 @@
   <div id="roles"></div>
   <div class="ligne"><label for="themes" title="Styles de donjon, séparés par des virgules ; vide : va partout">Styles</label><input id="themes" type="text" placeholder="militaire, culte, bestial, artisan"></div>
   <div class="ligne"><label for="poids" title="Chance d'être tirée, 1 par défaut">Poids</label><input id="poids" type="number" min="0.1" step="0.1" value="1"></div>
+  <div class="ligne"><label for="sol" title="Le sol de la salle (materiaux.ron) ; vide : celui du thème du donjon">Sol</label><select id="sol"></select></div>
+  <div class="ligne"><label for="mursm" title="Les murs de la salle ; vide : ceux du thème du donjon">Murs</label><select id="mursm"></select></div>
+  <div class="ligne"><label for="plafond" title="Le plafond de la salle ; vide : celui du thème du donjon">Plafond</label><select id="plafond"></select></div>
   <div class="ligne" id="ligne-boss"><label for="boss">Boss</label><input id="boss" type="text" placeholder="orcchief"></div>
   <label class="sous-titre" for="description">Description</label>
   <textarea id="description" rows="3"></textarea>
@@ -171,7 +174,7 @@ const PAR_NOM = new Map(OBJETS.map((o) => [o.nom, o]));
 // Le fichier d'une salle : en-têtes, plan par cases, meubles au bloc près (docs/icebreaker/design/donjon.md).
 // ---------------------------------------------------------------------------------------------------------
 function lireSalle(id, texte) {
-  const s = { id, description: [], roles: [], fonction: '', themes: '', poids: 1, boss: '', autres: [], etages: [], meubles: [], manques: [] };
+  const s = { id, description: [], roles: [], fonction: '', themes: '', poids: 1, boss: '', sol: '', murs: '', plafond: '', autres: [], etages: [], meubles: [], manques: [] };
   const liste = (v) => v.split(',').map((x) => x.trim()).filter(Boolean);
   for (const brute of texte.split('\n')) {
     const ligne = brute.replace(/\r$/, '');
@@ -185,6 +188,7 @@ function lireSalle(id, texte) {
       else if (cle === 'theme') s.themes = liste(valeur).join(', ');
       else if (cle === 'poids') s.poids = parseFloat(valeur) || 1;
       else if (cle === 'boss') s.boss = valeur;
+      else if (cle === 'sol' || cle === 'murs' || cle === 'plafond') s[cle] = valeur.toLowerCase();
       else if (cle === 'meuble') {
         const m = valeur.split(/\s+/);
         s.meubles.push({ sprite: m[0], x: +m[1], y: +m[2], z: +m[3], ori: +m[4] || 0, miroir: m[5] === 'miroir' });
@@ -247,6 +251,7 @@ function ecrireSalle(s) {
   if (s.themes.trim()) lignes.push(`@theme: ${s.themes.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean).join(', ')}`);
   if (s.poids && s.poids !== 1) lignes.push(`@poids: ${s.poids}`);
   if (s.boss.trim()) lignes.push(`@boss: ${s.boss.trim()}`);
+  for (const k of ['sol', 'murs', 'plafond']) if (s[k]) lignes.push(`@${k}: ${s[k]}`);
   lignes.push(...s.autres);
   const ordre = (a, b) => a.z - b.z || a.y - b.y || a.x - b.x;
   for (const m of [...s.meubles].sort(ordre)) lignes.push(`@meuble: ${m.sprite} ${m.x} ${m.y} ${m.z} ${m.ori}${m.miroir ? ' miroir' : ''}`);
@@ -414,12 +419,54 @@ const MARQUES = {
 const marque = (s) => MARQUES[s] || (/[a-z]/.test(s) ? [[204, 30, 30], 1, 2] : /[A-Z]/.test(s) ? [[234, 150, 150], 1, 2] : null);
 const ESCALIER = { '^': [0, -1], '>': [1, 0], v: [0, 1], '<': [-1, 0] };
 
+// Icebreaker F.29 : les matériaux de la salle (materiaux.ron), comme le jeu : ce qu'elle demande, sinon le thème
+// (son premier style), sinon le défaut. La couleur d'un bloc reprend les motifs du jeu (world/.../materiaux.rs).
+const MATERIAUX = REGLAGES.materiaux;
+function habillage(s) {
+  const theme = MATERIAUX.par_theme[(s.themes.split(',')[0] || '').trim().toLowerCase()] || MATERIAUX.defaut;
+  return {
+    sol: MATERIAUX.sols[s.sol] ? s.sol : theme.sol,
+    murs: MATERIAUX.murs[s.murs] ? s.murs : theme.murs,
+    plafond: MATERIAUX.plafonds[s.plafond] ? s.plafond : theme.plafond,
+  };
+}
+function bruit(x, y, z) {
+  let h = (Math.imul(x, 0x9E3779B1) ^ Math.imul(y, 0x85EBCA77) ^ Math.imul(z, 0xC2B2AE3D)) >>> 0;
+  h = (h ^ (h >>> 15)) >>> 0;
+  h = Math.imul(h, 0x2C1B3C6D) >>> 0;
+  return (h ^ (h >>> 13)) >>> 0;
+}
+const div = (a, b) => Math.floor(a / b), mod = (a, b) => ((a % b) + b) % b;
+// La couleur d'un bloc de sol (x, y) dans le matériau m.
+function couleurSol(m, x, y) {
+  const c = (n) => m.couleurs[n % m.couleurs.length] || [128, 128, 128];
+  const [nom, p] = typeof m.motif === 'string' ? [m.motif, {}] : Object.entries(m.motif)[0];
+  let rvb;
+  if (nom === 'Dalles') {
+    const k = Math.max(1, p.cote);
+    rvb = c(bruit(div(x, k), div(y, k), 11));
+    if (k > 1 && (mod(x, k) === 0 || mod(y, k) === 0)) rvb = teinte(rvb, 0.86);
+  } else if (nom === 'Rangs') {
+    const l = Math.max(1, p.longueur), h = Math.max(1, p.hauteur), rang = div(y, h);
+    const decale = x + (rang % 2 === 0 ? 0 : div(l, 2));
+    rvb = c(bruit(div(decale, l), rang, 23));
+    if (l > 1 && mod(decale, l) === 0) rvb = teinte(rvb, 0.8);
+  } else if (nom === 'Planches') {
+    const w = Math.max(1, p.largeur), l = Math.max(2, p.longueur), planche = div(y, w), decale = x + planche * 3;
+    rvb = c(bruit(planche, div(decale, l), 31));
+    if (mod(decale, l) === 0) rvb = teinte(rvb, 0.75);
+  } else rvb = c(bruit(x, y, 0));
+  return rvb;
+}
+
 // Les murs et les sols de la salle, d'après son plan ; les étages au-dessus de celui qu'on regarde sont cachés.
 function batirCoque() {
   if (coque) { scene.remove(coque); coque.geometry.dispose(); }
   const tas = new Tas();
   const bas = $('murs-bas').checked;
-  const mur = REGLAGES.mur, sol = REGLAGES.sol;
+  const hab = habillage(salle);
+  const matSol = MATERIAUX.sols[hab.sol], matMur = MATERIAUX.murs[hab.murs];
+  const mur = matMur.couleurs[0], sol = matSol.couleurs[0];
   for (const e of salle.etages) {
     if (e.n > etage) continue;
     const z0 = e.n * H;
@@ -436,7 +483,8 @@ function batirCoque() {
       for (const f of FACES) if (f[0][2] !== 1) tas.face(f, [o[0], o[1], z0 - 1], [C, C, 1], teinte(couleur, 0.8));
       for (let i = 0; i < C; i++) for (let j = 0; j < C; j++) {
         const bord = i === 0 || j === 0 ? 0.8 : 1;
-        tas.face(FACES[4], [o[0] + i, o[1] + j, z0 - 1], [1, 1, 1], teinte(couleur, ((i + j) % 2 ? 1.3 : 1.38) * bord));
+        const bloc = s === '*' ? couleur : couleurSol(matSol, o[0] + i, o[1] + j);
+        tas.face(FACES[4], [o[0] + i, o[1] + j, z0 - 1], [1, 1, 1], teinte(bloc, (s === '*' ? ((i + j) % 2 ? 1.3 : 1.38) : 1.15) * bord));
       }
       const milieu = Math.floor(C / 2);
       if (s === 'O') tas.boite([o[0] + milieu - 1, o[1] + milieu - 1, z0], [3, 3, bas && e.n === etage ? 2 : H - 1], teinte(mur, 1.2));
@@ -635,12 +683,21 @@ const NOMS_ROLES = {
 $('roles').innerHTML = REGLAGES.roles.map((r) => `<label><input type="checkbox" value="${r}"> ${NOMS_ROLES[r] || r}</label>`).join('');
 $('fonction').innerHTML = '<option value="">— (entrée, passage)</option>' + PIECES.pieces.map((p) => `<option value="${p.id}">${p.nom}</option>`).join('');
 
+{
+  const options = (liste) => '<option value="">— (thème du donjon)</option>' +
+    Object.entries(liste).map(([id, m]) => `<option value="${id}">${m.nom}</option>`).join('');
+  $('sol').innerHTML = options(MATERIAUX.sols);
+  $('mursm').innerHTML = options(MATERIAUX.murs);
+  $('plafond').innerHTML = options(MATERIAUX.plafonds);
+}
+
 function remplirFiche() {
   $('id').value = salle.id;
   $('fonction').value = salle.fonction;
   for (const c of $('roles').querySelectorAll('input')) c.checked = salle.roles.includes(c.value);
   $('themes').value = salle.themes; $('poids').value = salle.poids; $('boss').value = salle.boss;
   $('description').value = salle.description;
+  $('sol').value = salle.sol; $('mursm').value = salle.murs; $('plafond').value = salle.plafond;
   $('ligne-boss').style.display = salle.roles.includes('bossLair') ? '' : 'none';
   const piece = PIECES.pieces.find((p) => p.id === salle.fonction);
   $('idee').textContent = piece ? piece.idee : '';
@@ -657,6 +714,9 @@ champ('fonction', (v) => { salle.fonction = v; });
 champ('themes', (v) => { salle.themes = v; });
 champ('poids', (v) => { salle.poids = parseFloat(v) || 1; });
 champ('boss', (v) => { salle.boss = v; });
+champ('sol', (v) => { salle.sol = v; batirCoque(); });
+champ('mursm', (v) => { salle.murs = v; batirCoque(); });
+champ('plafond', (v) => { salle.plafond = v; });
 champ('description', (v) => { salle.description = v; });
 $('roles').addEventListener('change', () => {
   garder();

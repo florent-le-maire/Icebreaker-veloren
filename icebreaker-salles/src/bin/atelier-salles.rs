@@ -86,10 +86,9 @@ impl Fixes {
         let reglages = json!({
             "case": c,
             "etage": h,
-            // Icebreaker F.27 : la teinte du sol et des murs par défaut (materiaux.ron).
-            "mur": materiaux.mur(&materiaux.defaut).couleurs.first(),
-            "sol": materiaux.sol(&materiaux.defaut).couleurs.first(),
             "roles": roles,
+            // Icebreaker F.29 : les matériaux du sol, des murs et du plafond, pour la fiche et la vue.
+            "materiaux": materiaux,
         });
         Ok(Self {
             objets: objets(&pieces)?,
@@ -338,6 +337,11 @@ fn git(args: &[&str]) -> Result<(), String> {
 /// What the game says of a room: read like the game reads it, in its eight orientations.
 fn controler(id: &str, texte: &str) -> Result<(), String> {
     let salle = RoomTemplate::parse(id, texte)?;
+    // Icebreaker F.29 : le sol, les murs et le plafond sont des noms de materiaux.ron.
+    let erreurs = world::icebreaker::dungeon::materiaux::Materiaux::load()?.erreurs(&salle.habillage);
+    if !erreurs.is_empty() {
+        return Err(format!("salle « {id} » : {}", erreurs.join(" ; ")));
+    }
     for orientation in 1..8 {
         salle.oriented(orientation)?;
     }
