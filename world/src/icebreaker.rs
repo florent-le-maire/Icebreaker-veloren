@@ -147,15 +147,27 @@ pub fn dungeon_arrival_under(site: &Site) -> Option<vek::Vec3<i32>> {
 }
 
 /// Icebreaker U.11: the shape (a preset of `formes.ron`) and the seed of the
-/// cave of `site`.
-pub fn grotte_info(site: &Site) -> Option<(String, u64)> {
+/// cave of `site`; F.33: or of its generated dungeon. First what it is
+/// (`Grotte`, `Donjon`).
+pub fn forme_info(site: &Site) -> Option<(&'static str, String, u64)> {
     site.plots().find_map(|plot| match plot.kind() {
         PlotKind::IcebreakerGrotte(grotte) => {
             let plot = grotte.get();
-            Some((plot.grotte().profil.clone(), plot.grotte().seed))
+            Some(("Grotte", plot.grotte().profil.clone(), plot.grotte().seed))
+        },
+        PlotKind::IcebreakerDungeon(dungeon) => {
+            let plot = dungeon.get();
+            let (profil, seed) = plot.forme();
+            Some(("Donjon", profil.to_string(), seed))
         },
         _ => None,
     })
+}
+
+/// Icebreaker F.33: the presets a party may choose the shape of its generated
+/// dungeon from (`donjons/formes.ron`, read again at each call).
+pub fn dungeon_presets() -> Vec<String> {
+    dungeon::formes::Formes::load().map_or_else(|_| Vec::new(), |formes| formes.profils.into_keys().collect())
 }
 
 /// Icebreaker U.11: the presets a party may choose the shape of its cave
@@ -395,13 +407,13 @@ pub fn dungeon_mission(site: &Site) -> Option<crate::site::plot::MissionTargets>
 /// Icebreaker I.11: draws a new dungeon (of our generator) or cave of `seed`
 /// in place of the one of `site`, within the area kept for it; the chunks
 /// generated from now on draw it. `Ok(false)`: the site has none, or none fit
-/// (the current one stays). `profil` (Icebreaker U.11): the shape asked for a
-/// cave.
+/// (the current one stays). `profil` (Icebreaker U.11, F.33): the shape asked
+/// for a cave or a generated dungeon.
 pub fn regenerate_slot(world: &crate::World, site: &Site, seed: u64, profil: Option<&str>) -> Result<bool, String> {
     let land = crate::Land::from_sim(world.sim());
     for plot in site.plots() {
         let replaced = match plot.kind() {
-            PlotKind::IcebreakerDungeon(dungeon) => dungeon.regenerate(&land, site.origin, seed)?,
+            PlotKind::IcebreakerDungeon(dungeon) => dungeon.regenerate(&land, site.origin, seed, profil)?,
             PlotKind::IcebreakerGrotte(grotte) => grotte.regenerate(&land, site.origin, seed, profil)?,
             _ => continue,
         };

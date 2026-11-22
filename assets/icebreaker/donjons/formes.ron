@@ -1,0 +1,32 @@
+#![enable(implicit_some)]
+// Icebreaker F.33 : la forme du donjon généré, comme les profils des grottes (grottes/formes.ron). Chaque profil change
+// quelques réglages de generation.ron : le graphe (pour toutes les tailles : main_path, levels, branches,
+// branch_length, locks, loops, drops), l'écart entre les salles (spacing) et la roche au-dessus (profondeur) ; ce
+// qu'il ne dit pas garde sa valeur. La graine d'un donjon en tire un selon les poids (poids 0 : jamais tiré, seulement
+// choisi) ; ICEBREAKER_DONJON_PROFIL (-Profil du lanceur) en demande un ; en campagne, l'équipe le choisit au
+// panneau Départ ou par `/expedition 3 <profil>`.
+// Pour régler : `.\icebreaker.ps1 donjon-atelier` ouvre l'atelier ; « Enregistrer le preset » écrit ici le profil.
+(
+    profils: {
+        // Les tailles de generation.ron telles quelles.
+        "standard": (
+            poids: 1.0,
+            forme: (),
+        ),
+        // Un seul étage, sans chute : tout se joue à plat.
+        "plat": (
+            poids: 0.0,
+            forme: (levels: (1, 1), drops: (0, 0)),
+        ),
+        // Une longue descente : beaucoup d'étages et de chutes.
+        "profond": (
+            poids: 0.0,
+            forme: (main_path: (9, 11), levels: (4, 5), drops: (1, 2), profondeur: 20),
+        ),
+        // Beaucoup de branches et de boucles, des salles plus écartées.
+        "labyrinthe": (
+            poids: 0.0,
+            forme: (branches: (6, 9), loops: (2, 3), spacing: (2, 4)),
+        ),
+    },
+)

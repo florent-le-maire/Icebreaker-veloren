@@ -153,7 +153,7 @@ impl<'a> System<'a> for Sys {
                 partance.refait = true;
                 #[cfg(feature = "worldgen")]
                 {
-                    partance.grotte = world::icebreaker::grotte_info(&new_plan.1.as_index_ref().sites[slot.site]);
+                    partance.grotte = world::icebreaker::forme_info(&new_plan.1.as_index_ref().sites[slot.site]);
                 }
             }
             slot.occupied = occupied;
@@ -179,7 +179,7 @@ pub fn new_layout(
         Ok(true) => {
             slot.arrival = crate::icebreaker_slots::arrival_pos(world, index, site, site.origin);
             crate::icebreaker_mission::set_dungeon(mission, sleep, slot.site, site);
-            let grotte = world::icebreaker::grotte_info(site);
+            let grotte = world::icebreaker::forme_info(site);
             info!(slot = %slot.name, seed, ?grotte, arrival = ?slot.arrival, "Icebreaker: new plan for the dungeon slot");
         },
         Ok(false) => {},

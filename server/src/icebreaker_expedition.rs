@@ -48,19 +48,55 @@ pub struct Partance {
     pub members: Vec<specs::Entity>,
     pub profil: Option<String>,
     pub refait: bool,
-    /// The shape and the seed of the cave dug.
-    pub grotte: Option<(String, u64)>,
+    /// What was dug (`Grotte`, `Donjon`), its shape and its seed.
+    pub grotte: Option<(&'static str, String, u64)>,
 }
 
-/// The site (`-Site`) whose shape a party chooses.
+/// The sites (`-Site`) whose shape a party chooses: the cave (U.11), the generated dungeon (F.33).
 pub const SITE_GROTTE: &str = "Grotte";
+pub const SITE_GENERE: &str = "Genere";
+
+/// Icebreaker F.33: a destination whose shape a party chooses.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FormeLieu {
+    Grotte,
+    Donjon,
+}
+
+impl FormeLieu {
+    pub fn of_site(site: &str) -> Option<Self> {
+        match site {
+            SITE_GROTTE => Some(Self::Grotte),
+            SITE_GENERE => Some(Self::Donjon),
+            _ => None,
+        }
+    }
+
+    /// « de la grotte », « du donjon ».
+    pub fn de(self) -> &'static str {
+        match self {
+            Self::Grotte => "de la grotte",
+            Self::Donjon => "du donjon",
+        }
+    }
+
+    /// The presets of the workshop, read again at each call.
+    pub fn presets(self) -> Vec<String> {
+        match self {
+            Self::Grotte => world::icebreaker::grotte_presets(),
+            Self::Donjon => world::icebreaker::dungeon_presets(),
+        }
+    }
+}
 
 /// The word of `/expedition forme` that leaves the shape to the seed.
 pub const HASARD: &str = "hasard";
 
-/// What a party reads when it arrives in its cave: the same preset and seed
-/// in the workshop show its shape.
-pub fn annonce_grotte(profil: &str, seed: u64) -> String { format!("Grotte « {profil} », graine {seed}.") }
+/// What a party reads when it arrives in its cave or generated dungeon (`lieu`: `Grotte`, `Donjon`): the same
+/// preset and seed in the workshop show its shape.
+pub fn annonce_forme(lieu: &str, profil: &str, seed: u64) -> String {
+    format!("{lieu} « {profil} », graine {seed}.")
+}
 
 impl IcebreakerExpedition {
     pub fn new(leader_pos: Option<Vec3<f32>>) -> Self {
@@ -193,11 +229,9 @@ impl Expedition {
         }
     }
 
-    /// Whether it goes to a cave, whose shape is chosen.
-    fn is_grotte(&self) -> bool {
-        lieux()
-            .get(self.destination)
-            .is_some_and(|lieu| lieu.site() == Some(SITE_GROTTE))
+    /// Whether it goes to a cave or a generated dungeon, whose shape is chosen.
+    fn forme(&self) -> Option<FormeLieu> {
+        lieux().get(self.destination).and_then(|lieu| lieu.site().and_then(FormeLieu::of_site))
     }
 
     fn member(&self, uid: Uid) -> Option<&Member> { self.members.iter().find(|m| m.uid == uid) }
@@ -418,9 +452,9 @@ fn panneau_de(
             if m.uid == player { ligne.choisie() } else { ligne }
         })
         .collect();
-    // Icebreaker U.11: the shape of the cave, chosen by any member among the
-    // presets of the workshop.
-    if exp.is_grotte() {
+    // Icebreaker U.11: the shape of the cave (F.33: or of the generated dungeon),
+    // chosen by any member among the presets of the workshop.
+    if let Some(lieu) = exp.forme() {
         let membre = exp.member(player).is_some();
         let forme = |titre: String, mot: &str, choisie: bool| {
             let ligne = Ligne::nouvelle(titre).icone("globe").action(
@@ -428,10 +462,11 @@ fn panneau_de(
             );
             if choisie { ligne.pastille("choisie", Ton::Or) } else { ligne }
         };
-        panneau.lignes.push(forme("Forme de la grotte : au hasard".to_string(), HASARD, exp.profil.is_none()));
-        for preset in world::icebreaker::grotte_presets() {
+        let de = lieu.de();
+        panneau.lignes.push(forme(format!("Forme {de} : au hasard"), HASARD, exp.profil.is_none()));
+        for preset in lieu.presets() {
             let choisie = exp.profil.as_deref() == Some(preset.as_str());
-            panneau.lignes.push(forme(format!("Forme de la grotte : {preset}"), &preset, choisie));
+            panneau.lignes.push(forme(format!("Forme {de} : {preset}"), &preset, choisie));
         }
     }
     match exp.member(player) {
@@ -501,7 +536,7 @@ pub(crate) fn handle_expedition(
     let id = args.first().and_then(|word| answer_of_word(word));
     if (id.is_none() && !forme) || (forme && args.len() < 2) {
         return Err(Content::Plain(
-            "/expedition <numéro de destination> [preset de grotte], forme <preset|hasard>, rejoindre, pret, attendre \
+            "/expedition <numéro de destination> [preset de grotte ou de donjon], forme <preset|hasard>, rejoindre, pret, attendre \
              ou quitter"
                 .to_string(),
         ));
@@ -519,7 +554,8 @@ pub(crate) fn handle_expedition(
     // The preset after a destination: only if this made the player a member.
     let member = expedition().as_ref().is_some_and(|exp| exp.member(uid).is_some());
     if let Some(preset) = args.get(1).filter(|_| forme || (member && id.is_some_and(|id| id < JOIN))) {
-        let chosen = choose_forme_on(&mut expedition(), uid, &alias, preset, &world::icebreaker::grotte_presets());
+        let presets = expedition().as_ref().and_then(Expedition::forme).map_or_else(Vec::new, FormeLieu::presets);
+        let chosen = choose_forme_on(&mut expedition(), uid, &alias, preset, &presets);
         outcome.reply = chosen.reply.or(outcome.reply);
         outcome.announce.extend(chosen.announce);
     }
@@ -532,8 +568,8 @@ pub(crate) fn handle_expedition(
     Ok(())
 }
 
-/// Icebreaker U.11: `player`, a member of the expedition to a cave, chooses
-/// its shape among `presets` (`HASARD`: left to the seed).
+/// Icebreaker U.11: `player`, a member of the expedition to a cave (F.33: or a
+/// generated dungeon), chooses its shape among `presets` (`HASARD`: left to the seed).
 fn choose_forme_on(
     expedition: &mut Option<Expedition>,
     player: Uid,
@@ -543,25 +579,26 @@ fn choose_forme_on(
 ) -> Outcome {
     let mut outcome = Outcome::default();
     let Some(exp) = expedition.as_mut().filter(|exp| exp.member(player).is_some()) else {
-        outcome.reply = Some("Il faut être inscrit à l'expédition pour choisir la forme de la grotte.".to_string());
+        outcome.reply = Some("Il faut être inscrit à l'expédition pour en choisir la forme.".to_string());
         return outcome;
     };
-    if !exp.is_grotte() {
-        outcome.reply = Some("La forme ne se choisit que pour une grotte.".to_string());
+    let Some(lieu) = exp.forme() else {
+        outcome.reply = Some("La forme ne se choisit que pour une grotte ou un donjon généré.".to_string());
         return outcome;
-    }
+    };
+    let de = lieu.de();
     let profil = if forme == HASARD {
         None
     } else if presets.iter().any(|preset| preset == forme) {
         Some(forme.to_string())
     } else {
-        outcome.reply = Some(format!("Pas de preset de grotte « {forme} ». Presets : {}.", presets.join(", ")));
+        outcome.reply = Some(format!("Pas de preset {de} « {forme} ». Presets : {}.", presets.join(", ")));
         return outcome;
     };
     if exp.profil != profil {
         outcome.announce.push(match &profil {
-            Some(profil) => format!("{alias} choisit la forme de la grotte : {profil}."),
-            None => format!("{alias} laisse le hasard choisir la forme de la grotte."),
+            Some(profil) => format!("{alias} choisit la forme {de} : {profil}."),
+            None => format!("{alias} laisse le hasard choisir la forme {de}."),
         });
         exp.profil = profil;
     }
@@ -995,12 +1032,18 @@ mod tests {
                 .map(|(index, _)| index as u16)
                 .unwrap()
         };
-        // Nobody registered, or not a cave: nothing to choose.
+        // Nobody registered: nothing to choose.
         let mut exp = None;
         assert!(choose_forme_on(&mut exp, flo, "Flo", "gouffre", &presets).reply.is_some());
-        answer_to(&mut exp, flo, "Flo", site("Genere"), 0.0);
-        assert!(choose_forme_on(&mut exp, flo, "Flo", "gouffre", &presets).reply.is_some());
-        assert_eq!(exp.as_ref().unwrap().profil, None);
+        // Icebreaker F.33: the generated dungeon has its shapes too.
+        answer_to(&mut exp, flo, "Flo", site(SITE_GENERE), 0.0);
+        let donjon = FormeLieu::Donjon.presets();
+        assert!(donjon.iter().any(|p| p == "plat"), "{donjon:?}");
+        let chosen = choose_forme_on(&mut exp, flo, "Flo", "plat", &donjon);
+        assert!(chosen.announce[0].contains("forme du donjon : plat"), "{:?}", chosen.announce);
+        let panneau = panneau_de(exp.as_ref(), flo, false, 0.0);
+        assert!(panneau.lignes.iter().any(|l| matches!(&l.titre, Content::Plain(t) if t == "Forme du donjon : plat")));
+        assert_eq!(exp.as_ref().unwrap().profil.as_deref(), Some("plat"));
 
         let mut exp = None;
         answer_to(&mut exp, flo, "Flo", site(SITE_GROTTE), 0.0);
@@ -1034,6 +1077,6 @@ mod tests {
         choose_forme_on(&mut exp, flo, "Flo", HASARD, &presets);
         let (departure, _) = tick_on(&mut exp, DEPARTURE_DELAY, |_| true, |_| true);
         assert_eq!(departure.unwrap().2, None);
-        assert_eq!(annonce_grotte("gouffre", 48213), "Grotte « gouffre », graine 48213.");
+        assert_eq!(annonce_forme("Grotte", "gouffre", 48213), "Grotte « gouffre », graine 48213.");
     }
 }

@@ -44,6 +44,9 @@ pub struct IcebreakerDungeon {
     floor0: i32,
     /// Icebreaker F.31: where one arrives, a block one stands in, in the safe room.
     arrival: Vec3<i32>,
+    /// Icebreaker F.33: the profile of `formes.ron` it was drawn with, and the seed of its mission (the same in the
+    /// dungeon workshop gives its plan).
+    forme: (String, u64),
 }
 
 impl IcebreakerDungeon {
@@ -69,6 +72,7 @@ impl IcebreakerDungeon {
             base,
             floor0,
             arrival: Vec3::zero(),
+            forme: (String::new(), 0),
         };
         plot.arrival = plot.spot(arrival);
         plot
@@ -102,10 +106,18 @@ impl IcebreakerDungeon {
                 && b.max.x <= inside.max.x.min(kept.max.x)
                 && b.max.y <= inside.max.y.min(kept.max.y)
         };
+        // Icebreaker F.33: the shape, asked for by the mission or drawn by its seed.
+        let formes = dungeon::formes::Formes::load()?;
         let mut plot = None;
         for attempt in 1..=placement.fit_tries {
-            let dungeon = dungeon::generate(&settings, &mission(rng.random())?)?;
-            let tried = Self::new(dungeon, settings.render.clone(), settings.placement.profondeur, land, origin);
+            let mission = mission(rng.random())?;
+            let (profil, settings) = match formes.tirer(mission.seed, mission.profil.as_deref()) {
+                Some((nom, forme)) => (nom.to_string(), forme.appliquer(settings.clone())),
+                None => ("generation.ron".to_string(), settings.clone()),
+            };
+            let dungeon = dungeon::generate(&settings, &mission)?;
+            let mut tried = Self::new(dungeon, settings.render.clone(), settings.placement.profondeur, land, origin);
+            tried.forme = (profil, mission.seed);
             let bounds = tried.bounds();
             if fits(bounds) {
                 if attempt > 1 {
@@ -134,6 +146,9 @@ impl IcebreakerDungeon {
             max: origin + half,
         }
     }
+
+    /// Icebreaker F.33: the profile it was drawn with, and the seed of its mission.
+    pub fn forme(&self) -> (&str, u64) { (&self.forme.0, self.forme.1) }
 
     /// Icebreaker F.31: where players arrive, in the safe room (a block one stands in).
     pub fn arrival(&self) -> Vec3<i32> { self.arrival }
@@ -779,7 +794,7 @@ impl Site {
 impl IcebreakerDungeon {
     /// Tells what was generated.
     fn log(&self) {
-        info!("Icebreaker dungeon: {}\n{}", self.dungeon.summary, self.dungeon.plan.to_text());
+        info!(profil = %self.forme.0, seed = self.forme.1, "Icebreaker dungeon: {}\n{}", self.dungeon.summary, self.dungeon.plan.to_text());
         // Icebreaker F.10 : where to stand to look at a room (`/goto`) : the free floor of the entrance level
         // nearest to the middle of the plan, and the corner of the plan (a cell is `cell` blocks wide).
         let floor: Vec<plan::Cell> =
@@ -810,11 +825,15 @@ impl Remplacable<IcebreakerDungeon> {
     /// Icebreaker I.11: draws in its place a new dungeon of `seed`, its
     /// safe room under the same `origin` (F.31), within the area kept for it.
     /// The current one stays if none fits; says whether it was replaced.
-    pub fn regenerate(&self, land: &Land, origin: Vec2<i32>, seed: u64) -> Result<bool, String> {
+    /// Icebreaker F.33: `profil`, the shape asked for (none: as the launcher says, or drawn by the seed).
+    pub fn regenerate(&self, land: &Land, origin: Vec2<i32>, seed: u64, profil: Option<&str>) -> Result<bool, String> {
         let world = land.size().map(|e| e as i32);
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
         let (plot, fits) =
-            IcebreakerDungeon::generate_inside(land, world, &mut rng, origin, dungeon::Mission::from_env)?;
+            IcebreakerDungeon::generate_inside(land, world, &mut rng, origin, |seed| {
+                let mission = dungeon::Mission::from_env(seed)?;
+                Ok(dungeon::Mission { profil: profil.map(String::from).or(mission.profil.clone()), ..mission })
+            })?;
         if fits {
             plot.log();
             self.replace(plot);
@@ -881,6 +900,27 @@ mod tests {
         assert_eq!(plot.decor_loot(SpriteKind::Crate).as_deref(), caisse);
         for kind in [SpriteKind::CrateBlock, SpriteKind::Barrel, SpriteKind::SackLeatherM] {
             assert_eq!(plot.decor_loot(kind), None, "{kind:?}");
+        }
+    }
+
+    /// Icebreaker F.33: every preset of `formes.ron` gives a dungeon that fits, drawn with it.
+    #[test]
+    fn every_preset_gives_a_dungeon() {
+        let origin = Vec2::broadcast(64 * 32);
+        for profil in crate::icebreaker::dungeon_presets() {
+            for seed in 0..4 {
+                let mission = |seed| Ok(dungeon::Mission { seed, profil: Some(profil.clone()), ..dungeon::Mission::default() });
+                let (plot, fits) = IcebreakerDungeon::generate_inside(
+                    &Land::empty(),
+                    Vec2::broadcast(128),
+                    &mut ChaCha8Rng::seed_from_u64(seed),
+                    origin,
+                    mission,
+                )
+                .unwrap_or_else(|e| panic!("{profil} {seed} : {e}"));
+                assert!(fits, "{profil} {seed} : ne tient pas");
+                assert_eq!(plot.forme().0, profil);
+            }
         }
     }
 

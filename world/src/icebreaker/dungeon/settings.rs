@@ -4,11 +4,11 @@
 
 use super::rooms::RoomRole;
 use rand::RngExt;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// An inclusive range `(min, max)`.
-#[derive(Copy, Clone, Debug, PartialEq, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct Range(pub i32, pub i32);
 
 impl Range {
@@ -627,6 +627,8 @@ pub struct Mission {
     pub threat: Option<i32>,
     /// Number of enemies: `low`, `medium`, `high` (none: the default one).
     pub density: Option<String>,
+    /// Icebreaker F.33: the profile of `formes.ron` asked for (none: drawn by the seed).
+    pub profil: Option<String>,
 }
 
 impl Default for Mission {
@@ -640,6 +642,7 @@ impl Default for Mission {
             region: None,
             season: None,
             threat: None,
+            profil: None,
             density: None,
         }
     }
@@ -670,6 +673,7 @@ impl Mission {
             season: var("SAISON"),
             threat,
             density: var("ENNEMIS"),
+            profil: var("PROFIL"),
         })
     }
 }

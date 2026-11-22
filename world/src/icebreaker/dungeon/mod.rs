@@ -3,6 +3,8 @@
 //! (`site/plot/icebreaker_dungeon.rs`).
 
 pub mod assemble;
+// Icebreaker F.33 : the shapes (profiles) of the dungeon.
+pub mod formes;
 pub mod graph;
 // Icebreaker F.27 : sol, murs et plafond des salles.
 pub mod materiaux;
