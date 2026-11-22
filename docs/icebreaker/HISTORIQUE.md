@@ -391,12 +391,12 @@ Le village est toujours le même et presque plat, disposé comme le croquis de F
   dans la Guilde (Q63). Pas vu : chaque PNJ à sa porte, engager une recrue. `41d70ec977`
 - [x] **VF.3 Emplacements vides et paliers** — un lieu au palier > 0 est un terrain à bâtir, caché jusqu'à
   son chantier, nu et plat (vu à l'exemple) ; bâtis et chantiers gardés par id du plan, `/batir <id>`. Aucun
-  lieu au palier > 0 pour l'instant (Flo : la mécanique seule). Pas vu en jeu. `07923c7a00`
+  lieu au palier > 0 pour l'instant (Flo : la mécanique seule). Pas vu en jeu. `f297468e9c`
 - [x] **VF.4 Champs, cimetière, écurie** — `decor` d'un terrain au plan : champs de Veloren clôturés, tombes en
   rangs le long d'une allée, enclos de terre battue avec du foin. Vus au vrai client, sauf les rangs de tombes
-  de près. `a8fbde05b5`
+  de près. `9bb915186b`
 - [x] **VF.5 Vue du dessus fidèle** — au village fixe, le plan est à l'échelle : sol (place, chemins, champs,
   cimetière, écurie), bâtiments à leur place, étiquettes sans chevauchement ; caisse et charrette côte à côte.
-  Vu au vrai client. Pas vu : une ville tirée au hasard (garde la grille). `0a6c918db1`
+  Vu au vrai client. Pas vu : une ville tirée au hasard (garde la grille). `f568001e8d`
 - [x] **VF.6 Apparition sous la place** — la recherche du sol s'arrêtait sous le sommet du tronçon : sur une place plate
   au sommet (graine 949093 en campagne, 2), on apparaissait 2 blocs sous terre. Vu en jeu (Flo, 2026-11-22). `d8fda3e396`
