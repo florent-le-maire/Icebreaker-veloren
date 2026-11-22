@@ -436,6 +436,10 @@ impl Block {
                 | SpriteKind::IcebreakerChandelier => 16,
                 // Icebreaker F.38 : le vitrail de la salle du trône luit doucement.
                 SpriteKind::IcebreakerVitrail => 12,
+                // Icebreaker F.42 : grand vitrail, rosace et lustre de la grande salle du trône.
+                SpriteKind::IcebreakerVitrailHaut => 12,
+                SpriteKind::IcebreakerRosace => 14,
+                SpriteKind::IcebreakerLustre => 20,
                 SpriteKind::DiamondLight => 30,
                 SpriteKind::VeloriteFrag
                 | SpriteKind::GrassBlueShort

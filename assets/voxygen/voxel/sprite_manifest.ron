@@ -7910,4 +7910,69 @@ IcebreakerChandelier: [(
     ],
     wind_sway: 0.0,
 )],
+// Icebreaker F.42 : le lot 2 de la salle du trône ; 14 et 15 sont les flammes des bougies du lustre.
+IcebreakerBanniere: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.banniere",
+            offset: (-16.5, 1.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerStatue: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.statue",
+            offset: (-16.5, -16.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerLustre: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.lustre",
+            offset: (-16.5, -16.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+            custom_indices: {
+                14: (attr: Fire),
+                15: (attr: Fire),
+            },
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerRosace: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.rosace",
+            offset: (-27.5, 2.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerVitrailHaut: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.vitrail_haut",
+            offset: (-16.5, 2.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerPilierHaut: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.pilier_haut",
+            offset: (-16.5, -16.5, 0.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
 }

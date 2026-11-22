@@ -287,6 +287,13 @@ sprites! {
         IcebreakerPilier = 0xE0,
         IcebreakerVitrail = 0xE1,
         IcebreakerChandelier = 0xE2,
+        // Icebreaker F.42 : le lot 2 de la salle du trône (grande salle haute).
+        IcebreakerBanniere = 0xE3,
+        IcebreakerStatue = 0xE4,
+        IcebreakerLustre = 0xE5,
+        IcebreakerRosace = 0xE6,
+        IcebreakerVitrailHaut = 0xE7,
+        IcebreakerPilierHaut = 0xE8,
     },
     // Sprites representing plants that may grow over time (this does not include plant parts, like fruit).
     Plant = 3 has Growth, Owned, SnowCovered, Collectable {
@@ -941,6 +948,8 @@ impl SpriteKind {
             SpriteKind::IcebreakerTrone | SpriteKind::IcebreakerEstrade => 1.0,
             SpriteKind::IcebreakerMarche | SpriteKind::IcebreakerTapisMarche => 0.5,
             SpriteKind::IcebreakerPilier => 3.0,
+            // Icebreaker F.42 : la statue (socle et roi) et le pilier haut ; bannière, lustre et vitraux ne gênent pas.
+            SpriteKind::IcebreakerStatue | SpriteKind::IcebreakerPilierHaut => 3.0,
             SpriteKind::IcebreakerChandelier => 1.5,
             _ => return None,
         })
