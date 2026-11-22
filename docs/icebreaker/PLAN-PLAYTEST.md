@@ -191,7 +191,7 @@ destructibilité » (2026-11-11) commence ici ; les matières et la foreuse rest
   minerai sur 30 % de son sol (`grotte.ron` → `filons.salle`) : fer, cuivre, étain, charbon, argent, et un peu d'or,
   de cobalt et de gemmes ; ni créature ni coffre. Bille dorée dans l'atelier. Testé : tests du générateur et de
   `veloren-world`, 160 grottes (160 salles, toutes fermées), contrôle sur 12 mondes (49 à 103 minerais par salle,
-  0 problème), capture de l'atelier, serveur lancé. Pas vu en jeu. — HASH_U15
+  0 problème), capture de l'atelier, serveur lancé. Pas vu en jeu. — bd7fe14097
 
 Reste du jalon U, inchangé : régler les profils dans l'atelier et voir une grotte de chaque forme en jeu.
 
