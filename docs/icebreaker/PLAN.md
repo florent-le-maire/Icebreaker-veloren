@@ -95,7 +95,7 @@ Le village est toujours le même et presque plat, disposé comme le croquis de F
 - [ ] **VF.4 Champs, cimetière, écurie** — décor.
 - [ ] **VF.5 Vue du dessus fidèle** — les bâtiments à leur vraie place dans la vue du dessus.
 - [x] **VF.6 Apparition sous la place** — la recherche du sol s'arrêtait sous le sommet du tronçon : sur une place plate
-  au sommet (graine 949093 en campagne, 2), on apparaissait 2 blocs sous terre. Vu à l'exemple, pas en jeu. `d8fda3e396`
+  au sommet (graine 949093 en campagne, 2), on apparaissait 2 blocs sous terre. Vu en jeu (Flo, 2026-11-22). `d8fda3e396`
 
 ## Jalon X — Interface du village, suite (Flo, 2026-11-06)
 
@@ -335,7 +335,6 @@ tâche pour ce qui casse.
 - [ ] Faire le tour du village : chaque PNJ à sa porte (la caisse dans la Guilde), maisons d'aplomb sur le sol
   plat, bordure en pente douce ; une recrue engagée à la charrette.
 - [ ] Une fois, de nuit (graine 777), la caméra a montré le village vu d'en dessous, terrain absent ; de jour, rien.
-- [ ] VF.6 : en campagne (partie de graine 949093), on apparaît sur la place, pas dessous ; même chose au retour.
 
 **Donjon souterrain (F.31 à F.35, `PLAN-PLAYTEST.md`)**
 - [ ] En campagne, `/expedition 2` (donjon généré) : sortir de l'abri par la porte vers l'entrée ; personne ne vient
