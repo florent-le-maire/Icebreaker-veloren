@@ -151,10 +151,10 @@ et chandeliers ; peu d'objets, chacun travaillé.
 Grande salle du trône (Flo, 2026-11-22) : « fais tout », et une salle grande, surtout haute, pour montrer
 l'importance du lieu. Nef de 7×10 cases sur deux étages (14 blocs sous la voûte), lot 2 de modèles, gardes.
 
-- [ ] **F.41 Lot trône 2** — bannière, statue, lustre, rosace, grand vitrail, pilier haut (14 blocs). — *en cours : Veloren-donjon, 2026-11-22*
-- [ ] **F.42 Sprites du lot 2** — `0xE3` à `0xE8`, collisions, lueurs, manifeste, `pieces.ron`. — *en cours : Veloren-donjon, 2026-11-22*
-- [ ] **F.43 Grande salle du trône** — 7×10 cases, deux étages ouverts, gardes de part et d'autre du tapis. — *en cours : Veloren-donjon, 2026-11-22*
-- [ ] **F.44 La grande salle vue** — atelier et vrai client. — *en cours : Veloren-donjon, 2026-11-22*
+- [x] **F.41 Lot trône 2** — bannière, statue, lustre, rosace, grand vitrail, pilier haut ; vus dans le vrai client. 280191db4b
+- [x] **F.42 Sprites du lot 2** — `0xE3` à `0xE8`, lueurs, `pieces.ron`. Pas vu : les collisions au contact. 0377b8bd59
+- [x] **F.43 Grande salle du trône** — 7×10 cases, 14 blocs sous la voûte, 185 meubles ; pas vue dans un donjon généré. 455152560f
+- [x] **F.44 La grande salle vue** — atelier et vrai client (salle seule, sans créatures) ; pas `cap` du client sans les mains. Commit « F.44 ».
 
 ## 2. Grotte : casser pour avancer, miner pour de bon (jalon U, suite)
 

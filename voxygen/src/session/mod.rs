@@ -1916,6 +1916,11 @@ impl PlayState for SessionState {
                             .handle_input(InputKind::Ability(n), appuyee, None, None);
                     },
                     icebreaker_auto::Pas::Lanterne => self.client.borrow_mut().enable_lantern(),
+                    // Icebreaker F.44 : cadrer une capture.
+                    icebreaker_auto::Pas::Cap(lacet, inclinaison) => self
+                        .scene
+                        .camera_mut()
+                        .set_orientation_instant(Vec3::new((lacet as f32).to_radians(), (inclinaison as f32).to_radians(), 0.0)),
                     icebreaker_auto::Pas::Rituel => {
                         // Comme la touche d'interaction devant le portail éteint ou l'autel (T.10, T.12).
                         let mut client = self.client.borrow_mut();

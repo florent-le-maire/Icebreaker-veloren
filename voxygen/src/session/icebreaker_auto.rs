@@ -45,6 +45,9 @@ pub enum Pas {
     Rituel,
     /// Allumer la lanterne (`lanterne`), pour voir une salle sombre.
     Lanterne,
+    /// Icebreaker F.44 : tourner la caméra (`cap 180` ou `cap 180 -10` : lacet et inclinaison en degrés), pour
+    /// cadrer une capture.
+    Cap(i32, i32),
     /// Appuyer (`true`) ou relâcher (`false`) la touche de compétence `n` (comptée depuis zéro).
     Touche(usize, bool),
     /// Cliquer le bâtiment de cette sorte.
@@ -95,6 +98,11 @@ impl Auto {
                 .and_then(|n| n.checked_sub(1))
             {
                 a_faire.extend([Pas::Onglet(n), Pas::Capturer]);
+                continue;
+            }
+            if let Some(reste) = sorte.strip_prefix("cap ") {
+                let mut n = reste.split_whitespace().filter_map(|m| m.parse::<i32>().ok());
+                a_faire.extend([Pas::Cap(n.next().unwrap_or(0), n.next().unwrap_or(0)), Pas::Capturer]);
                 continue;
             }
             a_faire.push_back(match sorte.strip_prefix('/') {

@@ -100,7 +100,9 @@ x y z ori [miroir]`, puis le plan par cases (`#` mur, `.` sol, `+` porte).
   `world/src/icebreaker/dungeon/materiaux.rs` (`Materiau::bloc`) **et** dans `couleurSol` de
   `icebreaker-salles/web/index.html`. Rien de plus fin qu'un bloc : une dalle fait 2 ou 3 blocs.
 - **Taille** : plan murs compris ; dedans = (largeur − 2) × 7 blocs. La cuisine : 6×5 cases, 28×21 blocs dedans,
-  86 meubles. Compter environ un meuble pour 7 blocs² de sol.
+  86 meubles. Compter environ un meuble pour 7 blocs² de sol. Une salle haute (salle du trône, F.43) : un
+  `[étage 1]` tout en `_` au-dessus de `[étage 0]` donne 14 blocs sous la voûte ; les meubles restent posés de z 0 à
+  5, mais un modèle peut monter plus haut (pilier de 154 voxels, lustre posé à z 5 dont la chaîne monte de 9 blocs).
 - **Coordonnées** en blocs depuis le coin du plan : dedans de x = 7 à 7 × (largeur − 1) − 1, de même en y ; z 0 au
   sol, 5 sous le plafond.
 - **Sens (vérifié en jeu)** : dos au mur du haut (première ligne) **4**, mur est **6**, mur du bas **0**, mur ouest
@@ -139,7 +141,8 @@ nouveau dossier Edge pour chaque rechargement. Dans la vue, le haut du plan est 
    ICEBREAKER_AUTO_CAMPAGNE=1 ICEBREAKER_AUTO_ADRESSE=localhost:14170 ICEBREAKER_AUTO_PLAN="lanterne,fermer,/goto x y
    z,fermer,fermer,…" ./target/debug/veloren-voxygen.exe`. **`lanterne` d'abord** : une salle meublée seule n'a pas de
    torches, tout est noir. Deux `fermer` après chaque `/goto` (le premier part parfois avant le chargement). Le
-   personnage garde son regard : choisir des points en recul, face au point focal.
+   personnage garde son regard : `cap 180` (après le `/goto`) tourne la caméra vers le haut du plan (0 : vers le bas,
+   `cap 180 25` regarde un peu vers le bas) et prend une capture.
 5. Attendre le nombre de captures (`until [ $(ls <dossier> | wc -l) -ge N ]; do sleep 5; done` en tâche de fond),
    les lire, arrêter client et serveur (TaskStop), supprimer `userdata-essai` et `userdata-icebreaker` du worktree
    (chemins écrits en entier, pas de variable dans un `rm`). ~45 s avant de reconnecter le même pseudo.
