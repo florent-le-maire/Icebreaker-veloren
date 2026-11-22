@@ -62,6 +62,18 @@ fn main() {
         world.find_accessible_pos(index, place, false),
         world.find_accessible_pos_above(index, place, veloren_world::icebreaker::village_sol(site).unwrap_or(0) - 2)
     );
+    // Icebreaker VF.3 : `ICEBREAKER_CACHER=entrepot,depart` laisse ces lieux pas encore bâtis
+    // (cachés comme le fait le serveur) : leur terrain doit rester nu et plat.
+    let caches = std::env::var("ICEBREAKER_CACHER")
+        .unwrap_or_default()
+        .split(',')
+        .filter_map(|id| plan.lieu(id.trim()))
+        .filter_map(|lieu| site.tiles.get(lieu.porte_tuile()).plot)
+        .collect::<std::collections::HashSet<_>>();
+    if !caches.is_empty() {
+        let batis = site.plots.ids().filter(|id| !caches.contains(id)).collect();
+        veloren_world::icebreaker::set_village(site, &batis, 0, &[]);
+    }
     let emprise = plan.emprise();
     let bounds = Aabr {
         min: site.tile_wpos(emprise.min - plan.marge),
@@ -100,27 +112,44 @@ fn main() {
 
     // Le sol plat : place, chemins et terrains de l'emprise, loin des bords de tuile.
     let mut sols = Vec::new();
+    let mut nus = Vec::new();
     let tile = site.tile_wpos(Vec2::one()) - site.tile_wpos(Vec2::zero());
     for ty in emprise.min.y..emprise.max.y {
         for tx in emprise.min.x..emprise.max.x {
             let t = Vec2::new(tx, ty);
             let plat = site.tiles.get(t).plot.is_some_and(|p| {
-                matches!(site.plot(p).kind(), PlotKind::Plaza(_) | PlotKind::IcebreakerTerrain(_))
+                caches.contains(&p) || matches!(site.plot(p).kind(), PlotKind::Plaza(_) | PlotKind::IcebreakerTerrain(_))
             });
             if !plat {
                 continue;
             }
             let coin = site.tile_wpos(t);
+            let cache = site.tiles.get(t).plot.is_some_and(|p| caches.contains(&p));
             for dy in 1..tile.y - 1 {
                 for dx in 1..tile.x - 1 {
-                    if let Some((_, _, sol)) = colonne(coin + Vec2::new(dx, dy)) {
+                    if let Some((haut, _, sol)) = colonne(coin + Vec2::new(dx, dy)) {
                         sols.push(sol);
+                        if cache {
+                            nus.push((sol, haut == sol));
+                        }
                     }
                 }
             }
         }
     }
     sols.sort_unstable();
+    if !caches.is_empty() {
+        // Les lieux cachés : rien au-dessus du sol (hors plantes), à un bloc de la médiane du village.
+        let med = sols.get(sols.len() / 2).copied().unwrap_or(0);
+        let plats = nus.iter().filter(|(sol, _)| (*sol - med).abs() <= 1).count();
+        let vides = nus.iter().filter(|(_, nu)| *nu).count();
+        println!(
+            "lieux pas encore bâtis : {} colonnes, {:.1} % à un bloc de la médiane, {:.1} % sans rien dessus",
+            nus.len(),
+            plats as f32 * 100.0 / nus.len().max(1) as f32,
+            vides as f32 * 100.0 / nus.len().max(1) as f32
+        );
+    }
     let quantile = |q: f32| sols.get(((sols.len() as f32 - 1.0) * q) as usize).copied().unwrap_or(0);
     // Les toits qui débordent de leur tuile comptent comme un sol plus haut : on dit quelle part
     // des colonnes est à un bloc près de la médiane.

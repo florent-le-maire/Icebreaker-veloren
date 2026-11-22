@@ -610,16 +610,18 @@ impl Server {
             ];
             let square = spawn_point.0.xy().as_::<i32>();
             // Icebreaker VF : au village fixe, chaque bâtiment est le lieu de même id du plan.
-            let houses = instance_site
+            // Icebreaker VF.3 : avec l'id de chaque maison (vide pour la ville tirée au hasard).
+            let houses_ids = instance_site
                 .filter(|_| world::icebreaker::is_village())
                 .map(|site| {
                     icebreaker_village::houses_du_plan(&world::icebreaker::village_lieux(&index.sites[site]))
-                        .unwrap_or_else(|| world::icebreaker::village_houses(&index.sites[site], square))
+                        .unwrap_or_else(|| (world::icebreaker::village_houses(&index.sites[site], square), Vec::new()))
                 });
+            let houses = houses_ids.as_ref().map(|(houses, _)| houses.clone());
             // Icebreaker: only some of the town's houses stand (jalon C).
-            let village = match (instance_site, &houses) {
-                (Some(site), Some(houses)) => {
-                    icebreaker_village::IcebreakerVillage::new(&index.sites[site], houses)
+            let village = match (instance_site, &houses_ids) {
+                (Some(site), Some((houses, ids))) => {
+                    icebreaker_village::IcebreakerVillage::new(&index.sites[site], houses, ids)
                 },
                 _ => icebreaker_village::IcebreakerVillage::default(),
             };

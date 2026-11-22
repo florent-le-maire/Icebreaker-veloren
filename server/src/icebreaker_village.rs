@@ -47,24 +47,47 @@ struct SavedVillage {
     construites: Vec<usize>,
     #[serde(default)]
     chantiers: Vec<Chantier>,
+    /// Icebreaker VF.3 : au village fixe, les terrains bâtis par leur id dans le
+    /// plan (un rang change si l'on ajoute un lieu au plan, pas un id).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    batis: Vec<String>,
+    /// Icebreaker VF.3 : au village fixe, les chantiers par id du terrain (id, fin).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    chantiers_par_id: Vec<(String, f64)>,
 }
 
 fn village_file() -> Option<PathBuf> {
     std::env::var_os("ICEBREAKER_CAMPAIGN_DIR").map(|dir| PathBuf::from(dir).join(VILLAGE_FILE))
 }
 
-/// The ranks of the standing houses: those saved in the campaign, else the
-/// first ones; the buildings' always.
-fn standing_ranks(config: &VillageConfig, saved: Option<&str>) -> Vec<usize> {
-    let saved = saved.and_then(|text| {
+fn read_saved(saved: Option<&str>) -> Option<SavedVillage> {
+    saved.and_then(|text| {
         ron::from_str::<SavedVillage>(text)
             .inspect_err(|err| warn!(?err, "Icebreaker: unreadable village, as at the start"))
             .ok()
-    });
-    let mut ranks = saved.map_or_else(
-        || (0..config.maisons_au_depart).collect(),
-        |saved| saved.construites,
-    );
+    })
+}
+
+/// The ranks of the standing houses: those saved in the campaign, else the
+/// first ones; the buildings' always. Icebreaker VF.3 : au village fixe (`ids`,
+/// l'id de chaque maison), les bâtiments et les terrains bâtis enregistrés par
+/// id ; au départ, rien d'autre que les bâtiments (les lieux au palier 0 ne sont
+/// pas des terrains à bâtir).
+fn standing_ranks(config: &VillageConfig, saved: Option<&str>, ids: &[String]) -> Vec<usize> {
+    let saved = read_saved(saved);
+    let mut ranks = if ids.is_empty() {
+        saved.map_or_else(
+            || (0..config.maisons_au_depart).collect(),
+            |saved| saved.construites,
+        )
+    } else {
+        let batis = saved.map(|saved| saved.batis).unwrap_or_default();
+        ids.iter()
+            .enumerate()
+            .filter(|(_, id)| batis.contains(id))
+            .map(|(rank, _)| rank)
+            .collect()
+    };
     ranks.extend(0..Building::ALL.len());
     ranks.sort_unstable();
     ranks.dedup();
@@ -77,13 +100,15 @@ fn standing_ranks(config: &VillageConfig, saved: Option<&str>) -> Vec<usize> {
 /// le site n'a pas de plan ou s'il y manque un bâtiment (la ville tirée au
 /// hasard prend alors le relais). La caisse, absente du croquis (Q63), est
 /// dans la Guilde (le lieu de la charrette), une tuile plus loin que la porte ;
-/// au plan, elle en occupe la moitié ouest.
-pub fn houses_du_plan(lieux: &[(String, u32, VillageHouse)]) -> Option<Vec<VillageHouse>> {
+/// au plan, elle en occupe la moitié ouest. Rend aussi l'id de chaque maison
+/// (VF.3).
+pub fn houses_du_plan(lieux: &[(String, u32, VillageHouse)]) -> Option<(Vec<VillageHouse>, Vec<String>)> {
     if lieux.is_empty() {
         return None;
     }
     let lieu = |id: &str| lieux.iter().find(|(i, ..)| i == id).map(|(_, _, house)| *house);
     let mut houses = Vec::new();
+    let mut ids = Building::ALL.iter().map(|b| b.id().to_string()).collect::<Vec<_>>();
     for building in Building::ALL {
         let house = lieu(building.id()).or_else(|| {
             (building == Building::Treasury).then_some(())?;
@@ -104,8 +129,9 @@ pub fn houses_du_plan(lieux: &[(String, u32, VillageHouse)]) -> Option<Vec<Villa
         .filter(|(id, palier, _)| *palier > 0 && Building::ALL.iter().all(|b| b.id() != id))
         .collect::<Vec<_>>();
     terrains.sort_by_key(|(_, palier, _)| *palier);
-    houses.extend(terrains.into_iter().map(|(_, _, house)| *house));
-    Some(houses)
+    houses.extend(terrains.iter().map(|(_, _, house)| *house));
+    ids.extend(terrains.iter().map(|(id, ..)| id.clone()));
+    Some((houses, ids))
 }
 
 /// The first `count` plots to build on (rank, house): the houses not standing,
@@ -141,21 +167,21 @@ pub struct IcebreakerVillage {
     standing: Vec<usize>,
     chantiers: Vec<Chantier>,
     path: Option<PathBuf>,
+    /// Icebreaker VF.3 : l'id de chaque maison au village fixe (vide pour la
+    /// ville tirée au hasard).
+    ids: Vec<String>,
 }
 
 impl IcebreakerVillage {
     /// The village of the town of `site`, whose `houses` are ranked: tells the
-    /// world which ones stand and how many people live there.
-    pub fn new(site: &Site, houses: &[VillageHouse]) -> Self {
+    /// world which ones stand and how many people live there. Icebreaker VF.3 :
+    /// `ids`, l'id de chaque maison au village fixe (vide sinon).
+    pub fn new(site: &Site, houses: &[VillageHouse], ids: &[String]) -> Self {
         let config = config();
         let path = village_file();
         let saved = path.as_ref().and_then(|path| std::fs::read_to_string(path).ok());
-        let standing = standing_ranks(&config, saved.as_deref());
-        let chantiers = saved
-            .as_deref()
-            .and_then(|text| ron::from_str::<SavedVillage>(text).ok())
-            .map(|saved| saved.chantiers)
-            .unwrap_or_default();
+        let standing = standing_ranks(&config, saved.as_deref(), ids);
+        let chantiers = saved_chantiers(read_saved(saved.as_deref()), ids);
         let built = standing
             .iter()
             .filter_map(|rank| houses.get(*rank))
@@ -176,6 +202,7 @@ impl IcebreakerVillage {
             standing,
             chantiers,
             path,
+            ids: ids.to_vec(),
         };
         info!(plots = ?village.open_plots(), chantiers = ?village.chantiers, "Icebreaker: plots to build on");
         village
@@ -188,6 +215,9 @@ impl IcebreakerVillage {
             .map(|(rank, house)| (rank, house.bounds, house.alt))
             .collect()
     }
+
+    /// Icebreaker VF.3 : le rang du terrain d'id `id` au village fixe.
+    pub fn rang_de(&self, id: &str) -> Option<usize> { self.ids.iter().position(|i| i == id) }
 
     /// The house being built on the plot of rank `rang`, if any.
     pub fn chantier(&self, rang: usize) -> Option<Chantier> {
@@ -233,15 +263,58 @@ impl IcebreakerVillage {
         let Some(path) = &self.path else {
             return;
         };
-        let saved = SavedVillage {
-            construites: self.standing.clone(),
-            chantiers: self.chantiers.clone(),
-        };
+        let saved = self.to_saved();
         match crate::icebreaker_warehouse::write_campaign_file(path, &saved) {
             Ok(()) => info!(?saved, "Icebreaker: village saved"),
             Err(err) => warn!(?err, ?path, "Icebreaker: could not save the village"),
         }
     }
+
+    /// Ce qui s'enregistre : par rang pour la ville tirée au hasard, par id au
+    /// village fixe (VF.3 ; les bâtiments, toujours debout, n'y sont pas).
+    fn to_saved(&self) -> SavedVillage {
+        if self.ids.is_empty() {
+            return SavedVillage {
+                construites: self.standing.clone(),
+                chantiers: self.chantiers.clone(),
+                ..SavedVillage::default()
+            };
+        }
+        let id = |rang: usize| self.ids.get(rang).cloned();
+        SavedVillage {
+            batis: self
+                .standing
+                .iter()
+                .filter(|rang| **rang >= Building::ALL.len())
+                .filter_map(|rang| id(*rang))
+                .collect(),
+            chantiers_par_id: self
+                .chantiers
+                .iter()
+                .filter_map(|c| Some((id(c.rang)?, c.fin)))
+                .collect(),
+            ..SavedVillage::default()
+        }
+    }
+}
+
+/// Les chantiers enregistrés : par rang, ou par id au village fixe (VF.3 ; un
+/// id qui n'est plus au plan est oublié).
+fn saved_chantiers(saved: Option<SavedVillage>, ids: &[String]) -> Vec<Chantier> {
+    let Some(saved) = saved else {
+        return Vec::new();
+    };
+    if ids.is_empty() {
+        return saved.chantiers;
+    }
+    saved
+        .chantiers_par_id
+        .iter()
+        .filter_map(|(id, fin)| {
+            let rang = ids.iter().position(|i| i == id)?;
+            Some(Chantier { rang, fin: *fin })
+        })
+        .collect()
 }
 
 /// `/batir <terrain>` (the « Bâtir » button of a plot's panel, C.3): starts
@@ -257,10 +330,15 @@ pub(crate) fn handle_batir(
     use common::comp::{self, Content};
     use specs::WorldExt;
 
-    let Some(rang) = args.first().and_then(|arg| arg.parse::<usize>().ok()) else {
-        return Err(Content::Plain("Quel terrain ? (/batir <numéro>)".to_string()));
-    };
     let ecs = server.state.ecs();
+    // Icebreaker VF.3 : au village fixe, un terrain se désigne aussi par son id dans le plan.
+    let Some(rang) = args.first().and_then(|arg| {
+        arg.parse::<usize>()
+            .ok()
+            .or_else(|| ecs.read_resource::<IcebreakerVillage>().rang_de(arg))
+    }) else {
+        return Err(Content::Plain("Quel terrain ? (/batir <numéro ou id>)".to_string()));
+    };
     if let Some(why) = ecs.read_resource::<IcebreakerVillage>().cannot_build(rang) {
         return Err(Content::Plain(why));
     }
@@ -316,7 +394,8 @@ mod tests {
             .enumerate()
             .map(|(i, (id, palier))| (id.to_string(), palier, house(i as i32)))
             .collect::<Vec<_>>();
-        let houses = houses_du_plan(&lieux).unwrap();
+        let (houses, ids_plan) = houses_du_plan(&lieux).unwrap();
+        assert_eq!(ids_plan, ["entrepot", "caisse", "intendance", "forge", "depart", "charrette", "salle_armes", "terrain_a", "terrain_b"]);
         let plots = houses.iter().map(|h| h.plot).collect::<Vec<_>>();
         let id = |i: u64| common::store::Id::new(i);
         // entrepot, caisse (= charrette), intendance, forge, depart, charrette, salle_armes, puis les terrains.
@@ -331,13 +410,45 @@ mod tests {
     #[test]
     fn the_village_starts_small_and_keeps_its_buildings() {
         let config = config();
-        let start = standing_ranks(&config, None);
+        let start = standing_ranks(&config, None, &[]);
         assert_eq!(start, (0..config.maisons_au_depart).collect::<Vec<_>>());
         assert!(start.len() >= Building::ALL.len());
 
         // Saved: houses 0, 1 and 9; the buildings (0 to 6) always stand.
-        let saved = standing_ranks(&config, Some("(construites: [9, 1, 0])"));
+        let saved = standing_ranks(&config, Some("(construites: [9, 1, 0])"), &[]);
         assert_eq!(saved, vec![0, 1, 2, 3, 4, 5, 6, 9]);
+    }
+
+    // Icebreaker VF.3 : au village fixe, les terrains se gardent par id.
+    #[test]
+    fn le_village_fixe_garde_ses_terrains_par_id() {
+        let config = config();
+        let mut ids = Building::ALL.iter().map(|b| b.id().to_string()).collect::<Vec<_>>();
+        ids.extend(["terrain_a".to_string(), "terrain_b".to_string()]);
+        let n = Building::ALL.len();
+        // Au départ, les bâtiments seuls, quel que soit `maisons_au_depart`.
+        assert_eq!(standing_ranks(&config, None, &ids), (0..n).collect::<Vec<_>>());
+        // Un id enregistré tient debout ; un id qui n'est plus au plan est oublié.
+        let texte = "(construites: [], batis: [\"terrain_b\", \"ancien\"], chantiers_par_id: [(\"terrain_a\", 5.0), (\"ancien\", 1.0)])";
+        let mut attendu = (0..n).collect::<Vec<_>>();
+        attendu.push(n + 1);
+        assert_eq!(standing_ranks(&config, Some(texte), &ids), attendu);
+        let chantiers = saved_chantiers(read_saved(Some(texte)), &ids);
+        assert_eq!(chantiers, vec![Chantier { rang: n, fin: 5.0 }]);
+
+        // Et s'enregistrent par id, sans les bâtiments.
+        let village = IcebreakerVillage {
+            houses: Vec::new(),
+            standing: attendu,
+            chantiers,
+            path: None,
+            ids: ids.clone(),
+        };
+        let saved = village.to_saved();
+        assert_eq!(saved.batis, ["terrain_b"]);
+        assert_eq!(saved.chantiers_par_id, [("terrain_a".to_string(), 5.0)]);
+        assert!(saved.construites.is_empty());
+        assert_eq!(village.rang_de("terrain_a"), Some(n));
     }
 
     #[test]
@@ -377,6 +488,7 @@ mod tests {
             standing: (0..7).collect(),
             chantiers: Vec::new(),
             path: None,
+            ids: Vec::new(),
         };
         assert!(village.cannot_build(2).is_some(), "a standing house");
         assert!(village.cannot_build(19).is_some(), "too far, not offered yet");
