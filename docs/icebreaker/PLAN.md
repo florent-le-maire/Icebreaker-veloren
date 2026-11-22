@@ -91,9 +91,9 @@ Le village est toujours le même et presque plat, disposé comme le croquis de F
   place. Pas de lampadaires. `d3e12c0cc5`
 - [x] **VF.2 Bâtiments par id** — panneaux charrette, caisse, forge, départ vus au plan du vrai client ; la caisse est
   dans la Guilde (Q63). Pas vu : chaque PNJ à sa porte, engager une recrue. `41d70ec977`
-- [ ] **VF.3 Emplacements vides et paliers** — un lieu pas encore bâti reste terrain nu ; terrains désignés par id.
-- [ ] **VF.4 Champs, cimetière, écurie** — décor.
-- [ ] **VF.5 Vue du dessus fidèle** — les bâtiments à leur vraie place dans la vue du dessus.
+- [ ] **VF.3 Emplacements vides et paliers** — un lieu pas encore bâti reste terrain nu ; terrains désignés par id. — *en cours : Veloren-village, 2026-11-22*
+- [ ] **VF.4 Champs, cimetière, écurie** — décor. — *en cours : Veloren-village, 2026-11-22*
+- [ ] **VF.5 Vue du dessus fidèle** — les bâtiments à leur vraie place dans la vue du dessus. — *en cours : Veloren-village, 2026-11-22*
 - [x] **VF.6 Apparition sous la place** — la recherche du sol s'arrêtait sous le sommet du tronçon : sur une place plate
   au sommet (graine 949093 en campagne, 2), on apparaissait 2 blocs sous terre. Vu en jeu (Flo, 2026-11-22). `d8fda3e396`
 
