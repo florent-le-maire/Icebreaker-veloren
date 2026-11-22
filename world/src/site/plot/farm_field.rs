@@ -122,9 +122,33 @@ pub struct FarmField {
     ori: Vec2<f32>,
     is_desert: bool,
     step_size: Option<f32>,
+    /// Icebreaker VF.4 : un champ du village fixe, sol tenu à `alt`.
+    icebreaker: bool,
 }
 
 impl FarmField {
+    /// Icebreaker VF.4 : un champ du village fixe (`village_plan.ron`), sur les
+    /// tuiles `tile_aabr`, au sol plat du village (`alt`), rangs droits.
+    pub fn icebreaker(rng: &mut impl Rng, site: &Site, tile_aabr: Aabr<i32>, alt: i32) -> Self {
+        let crop = Crop::iter()
+            .filter(|crop| !matches!(crop, Crop::Cactus | Crop::Wildflower))
+            .choose(rng)
+            .unwrap();
+        let ori = if rng.random_bool(0.5) { Vec2::unit_x() } else { Vec2::unit_y() };
+        Self {
+            crop,
+            bounds: Aabr {
+                min: site.tile_wpos(tile_aabr.min),
+                max: site.tile_wpos(tile_aabr.max),
+            },
+            alt,
+            ori,
+            is_desert: false,
+            step_size: None,
+            icebreaker: true,
+        }
+    }
+
     pub fn generate(
         land: &Land,
         rng: &mut impl Rng,
@@ -169,6 +193,7 @@ impl FarmField {
             crop,
             is_desert,
             step_size,
+            icebreaker: false,
         }
     }
 
@@ -205,7 +230,10 @@ impl Structure for FarmField {
         wpos: Vec2<i32>,
         weight: f32,
     ) {
-        if let Some((_, step_alt)) = self.step(land.get_alt_approx(wpos)) {
+        // Icebreaker VF.4 : le champ du village reste au sol plat du village.
+        if self.icebreaker {
+            spawn_rules.prefer_alt(self.alt as f32, weight + weight.powi(8) * 25.0);
+        } else if let Some((_, step_alt)) = self.step(land.get_alt_approx(wpos)) {
             spawn_rules.prefer_alt(step_alt, weight);
         }
     }

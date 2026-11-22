@@ -362,6 +362,8 @@ pub fn set_village(
                         | PlotKind::Road(_)
                         | PlotKind::Bridge(_)
                         | PlotKind::FarmField(_)
+                        // Icebreaker VF.4 : le terrain du village dessine le cimetière et l'enclos.
+                        | PlotKind::IcebreakerTerrain(_)
                 )
         })
         .map(|(id, _)| id)

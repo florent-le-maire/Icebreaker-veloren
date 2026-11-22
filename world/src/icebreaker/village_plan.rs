@@ -50,6 +50,17 @@ impl Forme {
     }
 }
 
+/// Icebreaker VF.4 : ce qui est posé sur un terrain (forme `Terrain`).
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
+pub enum Decor {
+    /// Un champ cultivé de Veloren, clôturé (culture tirée par la graine).
+    Champ,
+    /// Des tombes en rangs, clôturées.
+    Cimetiere,
+    /// Un enclos de terre battue avec du foin (l'écurie).
+    Enclos,
+}
+
 /// Le côté d'un lieu où est sa porte.
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
 pub enum Cote {
@@ -85,6 +96,9 @@ pub struct Lieu {
     /// rectangle (dans la limite de la forme) si absent.
     #[serde(default)]
     pub bati: Option<(i32, i32)>,
+    /// VF.4 : le décor d'un terrain (rien si absent).
+    #[serde(default)]
+    pub decor: Option<Decor>,
 }
 
 impl Lieu {
@@ -169,6 +183,10 @@ impl VillagePlan {
             if plan.lieux[..i].iter().any(|l| l.id == lieu.id) {
                 errors.push(format!("{} : id en double", lieu.id));
             }
+            // VF.4 : le décor va sur un terrain, pas sur un bâtiment.
+            if lieu.decor.is_some() && lieu.forme != Forme::Terrain {
+                errors.push(format!("{} : un décor demande la forme Terrain", lieu.id));
+            }
         }
         if plan.marge < 0 {
             errors.push("marge négative".to_string());
@@ -205,6 +223,15 @@ mod tests {
             assert!(plan.lieu(id).is_some(), "{id} manque au plan");
         }
         assert!(plan.lieu("infirmerie").is_none());
+        // VF.4 : le décor du croquis.
+        for (id, decor) in [
+            ("champ_1", Decor::Champ),
+            ("champ_2", Decor::Champ),
+            ("cimetiere", Decor::Cimetiere),
+            ("ecurie", Decor::Enclos),
+        ] {
+            assert_eq!(plan.lieu(id).and_then(|l| l.decor), Some(decor), "{id}");
+        }
         // Le centre du village est sur la place.
         let place = plan.place.aabr();
         assert!(place.min.x <= 0 && 0 < place.max.x && place.min.y <= 0 && 0 < place.max.y);
@@ -243,6 +270,7 @@ mod tests {
             porte: Cote::Nord,
             palier: 0,
             bati: Some((2, 2)),
+            decor: None,
         };
         assert_eq!(lieu.bati_aabr(), Aabr { min: Vec2::new(2, 4), max: Vec2::new(4, 6) });
         assert_eq!(lieu.porte_tuile(), Vec2::new(3, 5));

@@ -28,17 +28,19 @@
     // rectangle est un terrain plat. Sans `bati`, le bâtiment prend tout le rectangle, dans la
     // limite de la forme (Maison 4, Atelier 4, Taverne 7 tuiles de côté).
     // Formes : Maison, Atelier, Taverne, Terrain (plat, rien dessus).
+    // `decor` (facultatif, sur un Terrain) : Champ (culture de Veloren), Cimetiere (tombes), Enclos
+    // (terre battue et foin) ; clôturés, ouverts du côté de la porte.
     lieux: [
         (id: "charrette", forme: Taverne, min: (-1, 9), taille: (8, 4), porte: Sud, palier: 0),
         (id: "carriole", forme: Terrain, min: (4, 6), taille: (3, 2), porte: Ouest, palier: 0),
         (id: "depart", forme: Maison, min: (8, 1), taille: (3, 3), porte: Ouest, palier: 0),
         (id: "salle_armes", forme: Maison, min: (8, -6), taille: (5, 6), porte: Ouest, palier: 0, bati: Some((4, 4))),
         (id: "forge", forme: Atelier, min: (4, -11), taille: (5, 4), porte: Nord, palier: 0),
-        (id: "ecurie", forme: Terrain, min: (9, -11), taille: (4, 4), porte: Nord, palier: 0),
+        (id: "ecurie", forme: Terrain, min: (9, -11), taille: (4, 4), porte: Nord, palier: 0, decor: Some(Enclos)),
         (id: "entrepot", forme: Maison, min: (-3, -13), taille: (7, 5), porte: Nord, palier: 0, bati: Some((4, 4))),
-        (id: "cimetiere", forme: Terrain, min: (-4, -24), taille: (15, 9), porte: Ouest, palier: 0),
-        (id: "champ_1", forme: Terrain, min: (-14, -18), taille: (7, 8), porte: Est, palier: 0),
+        (id: "cimetiere", forme: Terrain, min: (-4, -24), taille: (15, 9), porte: Ouest, palier: 0, decor: Some(Cimetiere)),
+        (id: "champ_1", forme: Terrain, min: (-14, -18), taille: (7, 8), porte: Est, palier: 0, decor: Some(Champ)),
         (id: "intendance", forme: Maison, min: (-12, -3), taille: (5, 7), porte: Est, palier: 0, bati: Some((4, 4))),
-        (id: "champ_2", forme: Terrain, min: (-13, 7), taille: (5, 6), porte: Sud, palier: 0),
+        (id: "champ_2", forme: Terrain, min: (-13, 7), taille: (5, 6), porte: Sud, palier: 0, decor: Some(Champ)),
     ],
 )
