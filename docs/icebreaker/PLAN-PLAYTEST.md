@@ -225,12 +225,12 @@ destructibilité » (2026-11-11) commence ici ; les matières et la foreuse rest
 pris dans la roche, cassés morceau par morceau, réglables minerai par minerai.
 
 - [x] **U.18 Le fichier des minerais** — `assets/icebreaker/grottes/minerais.ron` (couleur, lueur, coups, énergie,
-  objet, quantité, morceau, forme du filon, poids par niveau et dans la salle), lu et contrôlé par `veloren-common` ; onze minerais. Testé : 4 tests. — 0752019150
+  objet, quantité, morceau, forme du filon, poids par niveau et dans la salle), lu et contrôlé par `veloren-common` ; onze minerais. Testé : 4 tests. — 54b6b6088f
 - [x] **U.19 Les filons dans la roche** — le générateur pose des bandes de blocs selon la forme de chaque minerai, à la
-  place des traînées de sprites, dans les zones et sur les parois de la salle au minerai (14 filons). Testé : tests du filon et de la grotte, 12 mondes (0 problème). Pas vu en jeu. — cdd2d6b37c
+  place des traînées de sprites, dans les zones et sur les parois de la salle au minerai (14 filons). Testé : tests du filon et de la grotte, 12 mondes (0 problème). Pas vu en jeu. — 21384e7f11
 - [x] **U.20 Miner un filon** — dureté du minerai, l'objet qui tombe quand un bloc cède, le morceau ; le cône de U.17
-  laisse le minerai. Testé : tests de `veloren-common`, serveur de grotte lancé. Pas vérifié en jeu : miner. — da160a8c17
-- [x] **U.21 L'atelier et le wiki** — les filons sur la page de l'atelier des grottes, la fiche `grotte.md` ; la pose des filons vit dans `icebreaker-caverne`, la même au jeu et à l'atelier. Testé : capture d'ensemble de l'atelier, wiki régénéré. — 2e3795fe1d
+  laisse le minerai. Testé : tests de `veloren-common`, serveur de grotte lancé. Pas vérifié en jeu : miner. — 2d6cb776d2
+- [x] **U.21 L'atelier et le wiki** — les filons sur la page de l'atelier des grottes, la fiche `grotte.md` ; la pose des filons vit dans `icebreaker-caverne`, la même au jeu et à l'atelier. Testé : capture d'ensemble de l'atelier, wiki régénéré. — b09c1b0cd2
 
 - [x] **U.17 Un éclat en cône** — demandé par Flo (2026-11-23) : quand le bloc visé cède, un cône part avec lui, du corps
   de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : demi-largeur 1,9, demi-hauteur 1,4, pointe à 5 blocs ; boyau de 3 de large), un
