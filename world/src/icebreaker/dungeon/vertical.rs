@@ -115,9 +115,12 @@ impl Dessin {
         self.set((if x == 0 { -1 } else { self.width }, 1), level, '+');
     }
 
-    fn template(self, id: &str, weight: f64, rng: &mut ChaCha8Rng) -> Result<RoomTemplate, String> {
+    /// The room turned the four ways (mirrored or not, by the dice), `weight` shared between them: whatever the
+    /// door one comes from, one of them has a top door facing it, and the corridor to it is short.
+    fn templates(self, id: &str, weight: f64, rng: &mut ChaCha8Rng) -> Result<Vec<RoomTemplate>, String> {
         let room = RoomTemplate::from_plan(id, vec![RoomRole::Hall], Vec::new(), Vec::new(), self.plan)?;
-        Ok(RoomTemplate { weight, ..room.oriented(rng.random_range(0..8))? })
+        let mirror = 4 * rng.random_range(0..2u8);
+        (0..4).map(|turn| Ok(RoomTemplate { weight: weight / 4.0, ..room.oriented(mirror + turn)? })).collect()
     }
 }
 
@@ -203,7 +206,7 @@ impl RoomCatalog {
             let part = settings.escaliers_z.min(90) as f64 / 100.0;
             let weight = drawn.max(1.0) * part / (1.0 - part);
             for levels in heights {
-                generated.push(escalier_z(levels).template(&format!("{Z}{levels}"), weight, &mut rng)?);
+                generated.extend(escalier_z(levels).templates(&format!("{Z}{levels}"), weight, &mut rng)?);
             }
         }
         // Icebreaker F.56 : a tower for each height the path may go down at once; as heavy as all the rooms of
@@ -213,7 +216,7 @@ impl RoomCatalog {
             for levels in settings.tour_etages.0..=settings.tour_etages.1 {
                 let vide = rng.random_range(0..100) < settings.tour_vide;
                 let room = tour(levels, settings.tour_largeur, vide);
-                generated.push(room.template(&format!("{TOUR}{levels}"), drawn.max(1.0), &mut rng)?);
+                generated.extend(room.templates(&format!("{TOUR}{levels}"), drawn.max(1.0), &mut rng)?);
             }
         }
         if !generated.is_empty() {
@@ -264,7 +267,7 @@ mod tests {
         let catalog = RoomCatalog { rooms: Vec::new() };
         let settings = VerticalSettings { escaliers_z: 30, z_etages: Range(1, 4), ..VerticalSettings::default() };
         let catalog = catalog.with_vertical(&settings, 7).unwrap();
-        assert_eq!(catalog.rooms.len(), 4);
+        assert_eq!(catalog.rooms.len(), 4 * 4);
         for room in &catalog.rooms {
             sound(room);
             let levels = room.plan.cells.keys().map(|c| c.level).max().unwrap();
@@ -322,7 +325,7 @@ mod tests {
             };
             assert!(settings.errors().is_empty());
             let catalog = RoomCatalog { rooms: Vec::new() }.with_vertical(&settings, 3).unwrap();
-            assert_eq!(catalog.rooms.len(), 5);
+            assert_eq!(catalog.rooms.len(), 5 * 4);
             for room in &catalog.rooms {
                 sound(room);
                 let levels = hauteur(room).unwrap();

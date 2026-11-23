@@ -19,21 +19,21 @@
             poids: 2.0,
             forme: (),
         ),
-        // F.49 : une croix, peu d'étages : deux longues ailes qui se croisent à l'entrée. F.54 : un peu de labyrinthe
-        // et quelques salles hors mission au bout des ailes.
+        // F.49 : une croix, peu d'étages : deux longues ailes qui se croisent à l'entrée. F.57 : ses descentes par des
+        // escaliers en Z.
         "croix": (
             poids: 1.0,
-            forme: (levels: (1, 2), drops: (0, 0), silhouette: Croix, etendue: 42, remplissage: 40, salles_en_plus: (2, 4), escaliers_z: 40),
+            forme: (levels: (1, 2), drops: (0, 0), silhouette: Croix, etendue: 42, escaliers_z: 40),
         ),
         // F.49 : tout tient dans un cercle serré, avec des boucles et beaucoup de salles à forme tirée.
         "rond": (
             poids: 1.0,
-            forme: (levels: (2, 3), loops: (2, 3), formes_part: 70, silhouette: Rond, etendue: 30, remplissage: 60, salles_en_plus: (2, 3), escaliers_z: 30, tours: 30, tour_etages: (2, 2)),
+            forme: (levels: (2, 3), loops: (2, 3), formes_part: 70, silhouette: Rond, etendue: 30, escaliers_z: 30, tours: 30, tour_etages: (2, 2)),
         ),
         // F.49 : un anneau de salles collées l'une à l'autre, presque sans couloir : on fait le tour.
         "forteresse": (
             poids: 1.0,
-            forme: (levels: (1, 2), spacing: (1, 2), collees: 70, silhouette: Couronne, etendue: 34, remplissage: 30),
+            forme: (levels: (1, 2), spacing: (1, 2), collees: 70, silhouette: Couronne, etendue: 34),
         ),
         // F.49 : des salles écartées, reliées par des couloirs qui serpentent, avec des boucles ; le tout dans un
         // carré. F.54 : le carré est resserré et tout son vide est un labyrinthe (à la manière de donjon.bin.sh), avec
@@ -42,11 +42,11 @@
             poids: 1.0,
             forme: (loops: (2, 4), spacing: (3, 6), sinuosite: 80, silhouette: Carre, etendue: 28, remplissage: 100, boucles_labyrinthe: 4, salles_en_plus: (3, 5), escaliers_z: 30),
         ),
-        // F.57 : peu de salles, très profond : on descend par de grandes tours à colimaçon (5 cases de large, le plus
-        // souvent un vide au milieu) et des escaliers en Z ; quelques chutes pour couper.
+        // F.57 : très profond : on descend par de grandes tours à colimaçon (5 cases de large, le plus souvent un vide
+        // au milieu) et des escaliers en Z ; des salles serrées, souvent collées, et quelques chutes pour couper.
         "tours": (
             poids: 1.0,
-            forme: (main_path: (6, 8), levels: (3, 4), drops: (1, 2), escaliers_z: 40, tours: 80, tour_etages: (2, 4), tour_largeur: 5, tour_vide: 70, profondeur: 16),
+            forme: (levels: (3, 4), drops: (1, 2), spacing: (1, 2), collees: 40, escaliers_z: 40, tours: 80, tour_etages: (2, 4), tour_largeur: 5, tour_vide: 70, profondeur: 16),
         ),
         // Un seul étage, sans chute : tout se joue à plat.
         "plat": (
