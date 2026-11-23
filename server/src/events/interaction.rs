@@ -417,6 +417,40 @@ fn icebreaker_creuser(
     }
 }
 
+/// Icebreaker U.17 : quand le bloc visé cède, l'éclat en cône qui part avec lui (large du côté de qui
+/// creuse, pointu au fond) : les blocs pleins du cône qui ne sont pas plus durs que lui, dans le lieu.
+fn icebreaker_eclat(
+    ev: &MineBlockEvent,
+    vise: Block,
+    creuseur: Option<Vec3<f32>>,
+    terrain: &TerrainGrid,
+    block_change: &BlockChange,
+    world: &world::World,
+    index: world::IndexRef,
+) -> Vec<(Vec3<i32>, Block)> {
+    use common::icebreaker_destruction::{blocs_du_cone, destruction};
+    let regles = destruction();
+    // De la poitrine de qui creuse vers le milieu du bloc visé.
+    let axe = creuseur.map_or(Vec3::zero(), |p| ev.pos.as_::<f32>() + 0.5 - (p + Vec3::unit_z()));
+    let mut coups = ICEBREAKER_COUPS.lock().unwrap_or_else(|e| e.into_inner());
+    blocs_du_cone(ev.pos, axe, regles.cone())
+        .into_iter()
+        .filter_map(|pos| {
+            if pos == ev.pos {
+                return Some((pos, vise));
+            }
+            let block = terrain.get(pos).ok().copied()?;
+            (regles.part_avec(vise.kind(), &block)
+                && block_change.can_set_block(pos)
+                && world::icebreaker::se_creuse_ici(world, index, pos.xy()))
+            .then(|| {
+                coups.remove(&pos);
+                (pos, block)
+            })
+        })
+        .collect()
+}
+
 impl ServerEvent for MineBlockEvent {
     type SystemData<'a> = (
         WriteExpect<'a, BlockChange>,
@@ -434,6 +468,7 @@ impl ServerEvent for MineBlockEvent {
         WriteStorage<'a, comp::Energy>,
         ReadExpect<'a, std::sync::Arc<world::World>>,
         ReadExpect<'a, world::IndexOwned>,
+        ReadStorage<'a, comp::Pos>,
     );
 
     fn handle(
@@ -453,6 +488,7 @@ impl ServerEvent for MineBlockEvent {
             mut energies,
             world,
             index,
+            positions,
         ): Self::SystemData<'_>,
     ) {
         use rand::RngExt;
@@ -472,20 +508,31 @@ impl ServerEvent for MineBlockEvent {
                         IcebreakerCreuse::Veloren => {},
                         IcebreakerCreuse::Rien => continue,
                         IcebreakerCreuse::Entame | IcebreakerCreuse::Casse => {
-                            outcome_emitter.emit(if creuse == IcebreakerCreuse::Casse {
-                                block_change.set(ev.pos, block.into_vacant());
-                                Outcome::BreakBlock {
-                                    pos: ev.pos,
-                                    tool: ev.tool,
-                                    color: block.get_color(),
+                            if creuse == IcebreakerCreuse::Casse {
+                                // Icebreaker U.17 : c'est un éclat en cône qui part.
+                                for (pos, parti) in icebreaker_eclat(
+                                    &ev,
+                                    block,
+                                    positions.get(ev.entity).map(|p| p.0),
+                                    &terrain,
+                                    &block_change,
+                                    &world,
+                                    index.as_index_ref(),
+                                ) {
+                                    block_change.set(pos, parti.into_vacant());
+                                    outcome_emitter.emit(Outcome::BreakBlock {
+                                        pos,
+                                        tool: ev.tool,
+                                        color: parti.get_color(),
+                                    });
                                 }
                             } else {
-                                Outcome::DamagedBlock {
+                                outcome_emitter.emit(Outcome::DamagedBlock {
                                     pos: ev.pos,
                                     stage_changed: false,
                                     tool: ev.tool,
-                                }
-                            });
+                                });
+                            }
                             sound_event_emitter.emit(SoundEvent {
                                 sound: Sound::new(SoundKind::Mine, ev.pos.as_(), 20.0, time.0),
                             });
