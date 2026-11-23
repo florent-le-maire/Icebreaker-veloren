@@ -222,7 +222,7 @@ mod tests {
         assert!(m.de_bloc(&Block::new(BlockKind::Wood, Rgb::new(r, g, b))).is_none());
     }
 
-    /// Plus on descend, plus c'est rare et dur : l'or n'est qu'au fond et plus dur que le cuivre.
+    /// Plus on descend, plus c'est rare et cher : l'or n'est qu'au fond et coûte plus d'énergie que le cuivre.
     #[test]
     fn les_filons_sont_plus_riches_au_fond() {
         let m = fichier();
@@ -235,7 +235,7 @@ mod tests {
         // Au-delà du dernier niveau, le dernier poids.
         assert_eq!(trouves(9), fond);
         let par_nom = |n: &str| &m.liste().iter().find(|(nom, _)| nom == n).unwrap().1;
-        assert!(par_nom("or").coups > par_nom("cuivre").coups);
+        assert!(par_nom("or").energie > par_nom("cuivre").energie);
         assert!(m.tirer_salle(0.0).is_some() && m.tirer_salle(0.999).is_some());
     }
 
