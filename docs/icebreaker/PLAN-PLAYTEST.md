@@ -157,7 +157,7 @@ clé contournée) ; les tours restent sous le sol ; leur milieu est vide ou plei
   haut fait toujours face) : 5,0 cases de couloir par salle au lieu de 6,7 (standard : 5,8). Pas vu en jeu. e6dae485
 - [x] **F.59 Six formes vraiment différentes** (Flo, 2026-11-23) — croix, forteresse, rond, labyrinthe (avec
   dedale), tour (tours et profond), plat (avec standard), toutes de poids 1 ; chacune pousse son réglage (tableau
-  dans `design/generation.md`). Silhouettes presque jamais abandonnées ; blocs contrôlés. Pas vu en jeu. HASH59
+  dans `design/generation.md`). Silhouettes presque jamais abandonnées ; blocs contrôlés. Pas vu en jeu. 7738d78f
 
 Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,
 Veloren n'a presque rien pour une cuisine. Nos modèles sont générés par du code ; la vie vient des traces d'activité,
