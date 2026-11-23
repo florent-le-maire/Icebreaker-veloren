@@ -154,7 +154,7 @@ clé contournée) ; les tours restent sous le sol ; leur milieu est vide ou plei
 - [x] **F.58 Moins de couloirs hors des dédales** (Flo, 2026-11-23 : trop de couloirs pour peu de salles) — le
   labyrinthe et les salles lointaines ne restent que dans `dedale` et `labyrinthe` (retirés de croix, rond,
   forteresse) ; `tours` : salles serrées et collées, tours et escaliers en Z tournés des quatre côtés (une porte du
-  haut fait toujours face) : 5,0 cases de couloir par salle au lieu de 6,7 (standard : 5,8). Pas vu en jeu. HASH58
+  haut fait toujours face) : 5,0 cases de couloir par salle au lieu de 6,7 (standard : 5,8). Pas vu en jeu. e6dae485
 
 Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,
 Veloren n'a presque rien pour une cuisine. Nos modèles sont générés par du code ; la vie vient des traces d'activité,
