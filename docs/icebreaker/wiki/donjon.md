@@ -54,8 +54,10 @@ arrive dans l'**abri**, une petite salle sûre (un feu, des couchages) accroché
 grotte.
 
 Comme la grotte, le donjon a des **formes** (`donjons/formes.ron`) : « plat », « profond », « labyrinthe »…
-Chacune change le graphe, l'écart entre les salles ou la roche au-dessus. La graine en tire une, ou l'équipe la
-choisit au départ. On les règle dans l'**atelier du donjon** (`.\icebreaker.ps1 donjon-atelier`). L'atelier montre
+Chacune change le graphe, l'écart entre les salles ou la roche au-dessus. Depuis F.46, une forme peut aussi donner
+une **silhouette** au plan (croix, rond, anneau, losange…), faire **serpenter les couloirs**, ajouter des
+**impasses** ou **coller les salles** l'une à l'autre : « croix », « rond », « forteresse », « dedale ». La graine en
+tire une (les donjons changent donc d'une expédition à l'autre), ou l'équipe la choisit au départ. On les règle dans l'**atelier du donjon** (`.\icebreaker.ps1 donjon-atelier`). L'atelier montre
 le donjon en 3D (comme la grotte) ou étage par étage, avec des curseurs, et enregistre la forme.
 
 ## Ce qui reste à faire

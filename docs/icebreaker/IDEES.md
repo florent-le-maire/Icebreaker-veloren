@@ -36,6 +36,11 @@ Ce que les lectures apprennent :
 6. **Sorties secondaires** (M) — corde, puits, éboulis à dégager, à découvrir en plus de l'entrée ; le parchemin de
    retour reste l'assurance qu'on achète. *Hunt: Showdown.*
 
+6 bis. **Formes du donjon, la suite** (P à M, 2026-11-23, après F.46 à F.49) — ce que donjon.bin.sh a et que nous
+   n'avons pas repris : un plan **symétrique** (difficile avec un graphe de mission) ; une silhouette en plusieurs
+   morceaux (château : enceinte, cour, donjon au milieu). Et de notre côté : un petit butin ou un piège au bout
+   d'une impasse, une silhouette différente par étage.
+
 ### Village et campagne
 
 7. **Bâtiments débloqués par un trophée** (P) — forge niveau 2 : un croc d'adlet ; taverne niveau 2 : un totem

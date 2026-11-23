@@ -118,10 +118,14 @@ style des couloirs, disposition et taille des salles, et des presets vraiment ti
   suivante prend le relais) ; trop serré (32), une sur deux. Pas vu en jeu. de047d77
 - [x] **F.47 Style des couloirs** — `sinuosite` (0 droit à 100 dédale, visible si les salles sont écartées) et
   `impasses` (couloirs sans issue de 2 à 5 cases, qui ne contournent rien). Pas vu en jeu. 426b3cb6
-- [ ] **F.48 Disposition et taille des salles** — `collees` (salles posées l'une contre l'autre, sans couloir), part
-  et taille des salles à forme tirée.
-- [ ] **F.49 Presets variés** — croix, rond, forteresse, dédale… avec un poids : la graine en tire un.
-- [ ] **F.50 Atelier et docs** — contour de la silhouette dans l'atelier, `design/generation.md`, wiki.
+- [x] **F.48 Disposition et taille des salles** — `collees` (porte contre porte, chacune son mur ; 110 cases de
+  couloir par donjon à 0 %, 20 à 100 %), part et taille des salles à forme tirée. Pas vu en jeu : deux portes dos à
+  dos. b8f69447
+- [x] **F.49 Presets variés** — croix, rond, forteresse, dedale (poids 1, standard 2) ; l'étendue suit la taille du
+  donjon ; une silhouette trop serrée est abandonnée (3 grandes forteresses sur 15), jamais de mission sans donjon.
+  Blocs contrôlés (exemple) ; pas vu en jeu. b151f7ae
+- [x] **F.50 Atelier et docs** — bord de la silhouette en doré (plan et 3D), `?preset=&graine=&vue=plan` ;
+  `design/generation.md`, wiki, idées. Vu dans Edge sans affichage ; pas encore essayé par l'équipe.
 
 Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,
 Veloren n'a presque rien pour une cuisine. Nos modèles sont générés par du code ; la vie vient des traces d'activité,

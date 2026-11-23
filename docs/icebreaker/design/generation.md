@@ -53,6 +53,27 @@ l'assemblage à placer boucles et chutes.
 - Un couloir ne longe jamais une porte inutilisée (elle reste disponible) et ne s'ouvre jamais sur un autre couloir.
 - Réglages dans `generation.json` → `assembly` (tentatives, essais, espacement, limite de recherche).
 
+### Formes du plan (F.46 à F.49, Veloren)
+
+Des réglages repris de donjon.bin.sh (ses idées, pas son code), sans changer de générateur : le graphe de mission
+décide toujours des salles, des verrous et des clés. Ils sont dans `generation.ron` → `assembly` et se fixent par
+preset (`donjons/formes.ron`, atelier du donjon). À leur valeur par défaut, une graine donne le même donjon qu'avant.
+
+- **Silhouette** (`silhouette`, `etendue`) : salles et couloirs restent dans une forme, la même à chaque étage :
+  Carre, Rectangle, Croix, Rond, Couronne, Diagonales, Losange, Hexagone (`Libre` : aucune). Le milieu de la forme
+  est posé au plus près de l'entrée, pour que le donjon reste dans son emprise. `etendue` (cases du milieu au bord)
+  vaut pour 18 salles et suit la racine du nombre de salles, sans dépasser 56.
+- Dans une silhouette, l'assemblage part plutôt d'une porte qui a du champ devant elle, essaie trois fois plus, et
+  d'essai en essai pose la salle plus loin de la porte (jusqu'à 14 cases). Une forme trop serrée fait échouer des
+  graines ; après 6 graines sur 10, elle est abandonnée et le résumé du donjon le dit.
+- **Couloirs** (`sinuosite`, `impasses`) : de 0 (le plus court) à 100 (un dédale), par un coût tiré pour chaque
+  case ; ne se voit que si les salles sont écartées (`spacing`). Une impasse est un couloir sans issue de 2 à 5
+  cases, creusé depuis un autre couloir ; elle ne touche rien d'autre de praticable (aucun passage autour d'un verrou).
+- **Salles collées** (`collees`, en %) : la salle est posée contre celle d'où l'on vient, porte contre porte, au
+  même étage ; chacune garde son mur (deux murs, deux portes). Si elle ne tient pas, un couloir.
+- **Salles à forme tirée** (`formes_part`, `salle_largeur`, `salle_profondeur`) : leur part et leur taille ; les
+  salles dessinées gardent la leur.
+
 ## Habitants crédibles (tâche 2.5)
 
 Règles de voisinage (`generation.json` → `rules`), vérifiées sur 1000 graines par taille :

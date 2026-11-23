@@ -138,7 +138,8 @@ struct Demande {
 }
 
 /// The plan of the dungeon of `graine`, of size `taille`, with the settings changed by `forme`: its cells
-/// `[x, y, level, symbol, room]` (room: index in `salles`, -1 out of the rooms), its rooms, where one arrives.
+/// `[x, y, level, symbol, room]` (room: index in `salles`, -1 out of the rooms), its rooms, where one arrives,
+/// the edge of its outline (`contour`, cells `[x, y]`; empty without one).
 fn plan_json(corps: &str) -> Result<String, String> {
     let demande: Demande = serde_json::from_str(corps).map_err(|e| format!("demande illisible : {e}"))?;
     let erreurs = demande.forme.erreurs();
@@ -171,8 +172,18 @@ fn plan_json(corps: &str) -> Result<String, String> {
         .iter()
         .map(|s| json!({ "role": s.role, "id": s.id, "cases": s.cells.iter().map(|c| [c.x, c.y, c.level]).collect::<Vec<_>>() }))
         .collect();
+    // Icebreaker F.50 : the edge of the outline the dungeon was assembled in (its cells that touch the outside).
+    let contour: Vec<[i32; 2]> = donjon.silhouette.map_or_else(Vec::new, |(forme, (cx, cy), r)| {
+        let dedans = |x: i32, y: i32| forme.dedans(x - cx, y - cy, r);
+        (cx - r..=cx + r)
+            .flat_map(|x| (cy - r..=cy + r).map(move |y| (x, y)))
+            .filter(|&(x, y)| dedans(x, y) && [(1, 0), (-1, 0), (0, 1), (0, -1)].iter().any(|(dx, dy)| !dedans(x + dx, y + dy)))
+            .map(|(x, y)| [x, y])
+            .collect()
+    });
     let a = donjon.arrival;
     Ok(json!({
+        "contour": contour,
         "cases": cases,
         "salles": salles,
         "niveaux": niveaux,
