@@ -218,7 +218,7 @@ destructibilité » (2026-11-11) commence ici ; les matières et la foreuse rest
   de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : demi-largeur 1,9, demi-hauteur 1,4, pointe à 5 blocs ; boyau de 3 de large), un
   seul bruit ; les blocs plus durs que le bloc visé restent. Testé : 4 tests de `veloren-common`, serveur compilé.
   Roche à 3 coups au lieu de 5 (Flo, 2026-11-23).
-  Pas vérifié en jeu : la forme au vrai client, avancer en piochant, le prix en énergie. — 30e3edb7f1, puis le cône parti du corps
+  Vu en jeu (Flo, 2026-11-23). — 30e3edb7f1 à eee318b3e2
 - [x] **U.16 La pioche casse tout** — tranché par Flo (2026-11-22) : tout est destructible à la pioche, dans la
   Grotte et le donjon généré, plus ou moins facilement selon la matière (`assets/icebreaker/destruction.ron` : coups
   et énergie par coup ; roche 5 coups à 15, bois 3 à 10, roche tendre 1 à 5). À sec, le coup ne fait rien ; hors de

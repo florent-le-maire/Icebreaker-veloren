@@ -460,10 +460,6 @@ tâche pour ce qui casse.
   (`butin.ron`) ; rien d'inutile. B.14 : ce que lâchent les créatures, le chef, le boss.
 
 **Grotte**
-- U.17 : collé à la roche de la grotte, piocher en avançant : au 3e coup, un boyau de 3 blocs de large et 2 de haut
-  s'ouvre autour du personnage et devant lui (cône qui part du corps, pointe à 5 blocs) ; avance-t-on debout sans
-  réfléchir, la largeur suffit-elle, le sol tient-il quand on vise le mur, descend-on en visant le sol devant soi ; un seul bruit par cône ; taper la roche
-  tendre contre un mur de pierre n'emporte pas le mur ; l'énergie (15 par coup, à sec après 6 coups : Q à trancher).
 - U.16 : pioche en main, creuser un passage dans la roche de la grotte (3 coups, depuis le 2026-11-23, l'énergie baisse, plus
   rien à sec) ; dans un donjon généré, percer un mur de pierre et une porte en bois ; au village, la roche ne se
   creuse pas.
