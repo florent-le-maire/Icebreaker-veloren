@@ -260,7 +260,7 @@ impl Settings {
         if placement.entrance_margin < 0 || placement.edge_margin < 0 || placement.fit_tries < 1 || placement.emprise < 1 {
             errors.push("placement : marges positives, fit_tries et emprise au moins 1".into());
         }
-        if !(8..=56).contains(&settings.assembly.etendue) {
+        if !(8..=super::assemble::OUTLINE_WIDEST).contains(&settings.assembly.etendue) {
             errors.push("assembly : etendue de 8 à 56 cases (le donjon doit tenir dans son emprise)".into());
         }
         if !(0..=100).contains(&settings.assembly.sinuosite) || !settings.assembly.impasses.valid(0) {

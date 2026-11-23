@@ -80,6 +80,9 @@ pub struct Dungeon {
     pub speciaux: Vec<Special>,
     /// Icebreaker F.28 : the floor, walls and ceiling of each room.
     pub habillage: materiaux::Habillages,
+    /// Icebreaker F.46 : the outline the dungeon was assembled in (none: `Libre`, or given up): the shape, the
+    /// cell of its middle, the cells from its middle to its edge.
+    pub silhouette: Option<(silhouette::Silhouette, (i32, i32), i32)>,
 }
 
 /// Icebreaker B.5: the tier of each chest and creature of `plan` by its
@@ -442,6 +445,7 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
         rondes: Vec::new(),
         speciaux,
         habillage,
+        silhouette: None,
     })
 }
 
@@ -453,6 +457,8 @@ pub fn plan_atelier(settings: &Settings, seed: u64, size: &str) -> Result<Dungeo
 
 /// Seeds tried one after the other when a dungeon can't be assembled.
 const SEED_TRIES: u64 = 10;
+/// Icebreaker F.46 : those of them tried inside the outline of the dungeon (the others without).
+const OUTLINE_SEEDS: u64 = 6;
 
 /// Generates the dungeon of a mission: its graph, then the assembly of the
 /// rooms. A seed whose dungeon can't be assembled gives way to the next one.
@@ -497,13 +503,18 @@ fn generate_mission(settings: &Settings, mission: &Mission) -> Result<Dungeon, S
     };
     let butin = Butin::load()?;
     let mut failures = Vec::new();
+    // Icebreaker F.46 : an outline too tight for the dungeon is given up for the last seeds: a preset never
+    // leaves a mission without its dungeon.
+    let free = assemble::AssemblySettings { silhouette: silhouette::Silhouette::Libre, ..settings.assembly.clone() };
     for seed in mission.seed..mission.seed + SEED_TRIES {
+        let assembly = if seed - mission.seed < OUTLINE_SEEDS { &settings.assembly } else { &free };
+        let outlined = assembly.silhouette != silhouette::Silhouette::Libre;
         let graph = graph::generate(&resolved, seed);
         let assembled = assemble::assemble(
             &graph,
             &catalog,
             seed,
-            &settings.assembly,
+            assembly,
             |failure| failures.push(format!("graine {seed}, {failure}")),
         );
         if let Some(mut assembled) = assembled {
@@ -571,13 +582,18 @@ fn generate_mission(settings: &Settings, mission: &Mission) -> Result<Dungeon, S
                 arrival: assembled.arrival,
                 salles,
                 summary: format!(
-                    "{} {} ({}), race {}, graine {seed} ({} tentative(s)), {creatures} créature(s), {chests} \
+                    "{} {} ({}), race {}, graine {seed} ({} tentative(s)){}, {creatures} créature(s), {chests} \
                      coffre(s) ({} par palier) ; salles : {}\n{}",
                     mission.size,
                     mission.objective,
                     resolved.modifiers.join(", "),
                     resolved.species.as_deref().unwrap_or("des fichiers"),
                     assembled.attempts,
+                    match (settings.assembly.silhouette, outlined) {
+                        (silhouette::Silhouette::Libre, _) => String::new(),
+                        (s, true) => format!(", silhouette {}", s.nom()),
+                        (s, false) => format!(", silhouette {} abandonnée (trop serrée)", s.nom()),
+                    },
                     chests_by_tier.join(" / "),
                     rooms.join(", "),
                     graph.describe()
@@ -594,6 +610,7 @@ fn generate_mission(settings: &Settings, mission: &Mission) -> Result<Dungeon, S
                 rondes,
                 speciaux,
                 habillage,
+                silhouette: outlined.then_some((assembly.silhouette, assembled.centre, assembled.etendue)),
             });
         }
     }

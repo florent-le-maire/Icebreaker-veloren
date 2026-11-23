@@ -908,9 +908,13 @@ mod tests {
     #[test]
     fn every_preset_gives_a_dungeon() {
         let origin = Vec2::broadcast(64 * 32);
-        for profil in crate::icebreaker::dungeon_presets() {
+        // Icebreaker F.49 : in every size (the outlines are the tightest for a large one).
+        let sizes: Vec<String> = dungeon::Settings::load().unwrap().sizes.keys().cloned().collect();
+        for (profil, size) in crate::icebreaker::dungeon_presets().into_iter().flat_map(|p| sizes.iter().map(move |s| (p.clone(), s.clone()))) {
             for seed in 0..4 {
-                let mission = |seed| Ok(dungeon::Mission { seed, profil: Some(profil.clone()), ..dungeon::Mission::default() });
+                let mission = |seed| {
+                    Ok(dungeon::Mission { seed, size: size.clone(), profil: Some(profil.clone()), ..dungeon::Mission::default() })
+                };
                 let (plot, fits) = IcebreakerDungeon::generate_inside(
                     &Land::empty(),
                     Vec2::broadcast(128),
@@ -918,8 +922,8 @@ mod tests {
                     origin,
                     mission,
                 )
-                .unwrap_or_else(|e| panic!("{profil} {seed} : {e}"));
-                assert!(fits, "{profil} {seed} : ne tient pas");
+                .unwrap_or_else(|e| panic!("{profil} {size} {seed} : {}", e.chars().take(400).collect::<String>()));
+                assert!(fits, "{profil} {size} {seed} : ne tient pas");
                 assert_eq!(plot.forme().0, profil);
             }
         }

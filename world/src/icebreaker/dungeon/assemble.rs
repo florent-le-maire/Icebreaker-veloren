@@ -49,7 +49,8 @@ pub struct AssemblySettings {
     #[serde(default = "default_theme_bias")]
     pub theme_bias: f64,
     /// Icebreaker F.46 : the outline rooms and corridors stay inside (`Libre`: none), and how many cells it
-    /// reaches on each side of its middle.
+    /// reaches on each side of its middle for a dungeon of `OUTLINE_ROOMS` rooms (F.49: more for a bigger one,
+    /// less for a smaller one, as the square root of its rooms: the same crowding in every size).
     #[serde(default)]
     pub silhouette: Silhouette,
     #[serde(default = "default_etendue")]
@@ -130,8 +131,10 @@ pub struct Assembled {
     pub passages: Vec<Passage>,
     /// Attempts it took (1 = at once).
     pub attempts: usize,
-    /// Icebreaker F.46 : the middle of the outline (`assembly.silhouette`), the entrance being at (0, 0).
+    /// Icebreaker F.46 : the middle of the outline (`assembly.silhouette`), the entrance being at (0, 0), and
+    /// the cells from it to its edge.
     pub centre: (i32, i32),
+    pub etendue: i32,
 }
 
 impl Assembled {
@@ -241,8 +244,9 @@ struct Attempt<'a> {
     degree: Vec<usize>,
     theme: Option<String>,
     placement_failure: String,
-    /// Icebreaker F.46 : the middle of the outline.
+    /// Icebreaker F.46 : the middle of the outline, and the cells from it to its edge for this dungeon.
     centre: (i32, i32),
+    etendue: i32,
     /// Icebreaker F.47 : the seed of the dungeon (the noise of the corridors), the cells of the rooms and the floor
     /// cells of the corridors (where a dead end may start).
     seed: u64,
@@ -254,6 +258,11 @@ struct Attempt<'a> {
 /// door it comes from.
 const OUTLINE_TRIES: usize = 3;
 const OUTLINE_SLACK: usize = 14;
+
+/// Icebreaker F.49 : the rooms of the dungeon `assembly.etendue` is given for, and the widest outline (the dungeon
+/// must hold in the area kept for it, `placement.emprise`).
+const OUTLINE_ROOMS: f32 = 18.0;
+pub const OUTLINE_WIDEST: i32 = 56;
 
 /// A free door of a placed room: the door, the free cell in front, the way out.
 type FreeDoor = (Cell, Cell, (i32, i32));
@@ -272,7 +281,9 @@ impl<'a> Attempt<'a> {
         theme: Option<String>,
         seed: u64,
     ) -> Self {
+        let crowd = (graph.rooms.len() as f32 / OUTLINE_ROOMS).sqrt();
         Self {
+            etendue: ((settings.etendue as f32 * crowd).round() as i32).clamp(8, OUTLINE_WIDEST),
             seed,
             in_rooms: BTreeSet::new(),
             corridors: Vec::new(),
@@ -295,7 +306,7 @@ impl<'a> Attempt<'a> {
 
     /// Icebreaker F.46 : whether the cell is inside the outline of the dungeon (the same on every level).
     fn dedans(&self, c: Cell) -> bool {
-        self.settings.silhouette.dedans(c.x - self.centre.0, c.y - self.centre.1, self.settings.etendue)
+        self.settings.silhouette.dedans(c.x - self.centre.0, c.y - self.centre.1, self.etendue)
     }
 
     /// Icebreaker F.46 : lays the outline around the entrance (at the origin): its middle as near the middle of
@@ -309,7 +320,7 @@ impl<'a> Attempt<'a> {
         }
         let (width, depth) = template_size(entrance);
         let first = self.rng.random_range(0..DIRECTIONS.len());
-        for away in 0..=self.settings.etendue {
+        for away in 0..=self.etendue {
             for turn in 0..DIRECTIONS.len() {
                 let (dx, dy) = DIRECTIONS[(first + turn) % DIRECTIONS.len()];
                 let at = |away: i32| (width / 2 + dx * away, depth / 2 + dy * away);
@@ -317,7 +328,7 @@ impl<'a> Attempt<'a> {
                 if entrance.plan.cells.keys().all(|c| self.dedans(*c)) {
                     // Not in the middle (a ring): a little farther in, off the edge it has just cleared.
                     if away > 0 {
-                        self.centre = at(away + self.settings.etendue / 4);
+                        self.centre = at(away + self.etendue / 4);
                         if !entrance.plan.cells.keys().all(|c| self.dedans(*c)) {
                             self.centre = at(away);
                         }
@@ -338,7 +349,7 @@ impl<'a> Attempt<'a> {
         if self.settings.silhouette == Silhouette::Libre {
             return self.pick(doors);
         }
-        let reach = 2 * self.settings.etendue;
+        let reach = 2 * self.etendue;
         let weights: Vec<i32> = doors
             .iter()
             .map(|(_, outside, (dx, dy))| {
@@ -928,6 +939,7 @@ impl<'a> Attempt<'a> {
             passages: self.passages.clone(),
             attempts,
             centre: self.centre,
+            etendue: self.etendue,
         }
     }
 }
@@ -1043,8 +1055,7 @@ mod tests {
             }
             settings.assembly.silhouette = silhouette;
             // Tighter, more seeds fail (a third at 32 cells for the narrow shapes).
-            let r = 44;
-            settings.assembly.etendue = r;
+            settings.assembly.etendue = 44;
             let (mut failures, mut tries) = (0, 0);
             for seed in 0..50 {
                 let graph = graph::generate(&resolved, seed);
@@ -1054,7 +1065,7 @@ mod tests {
                 };
                 tries += dungeon.attempts;
                 assert!(dungeon.check().is_empty());
-                let (cx, cy) = dungeon.centre;
+                let ((cx, cy), r) = (dungeon.centre, dungeon.etendue);
                 for (cell, symbol) in &dungeon.plan.cells {
                     assert!(
                         *symbol == '#' || silhouette.dedans(cell.x - cx, cell.y - cy, r),
@@ -1063,7 +1074,7 @@ mod tests {
                 }
             }
             let mean = tries as f32 / (50 - failures).max(1) as f32;
-            println!("{silhouette:?} {r} : {failures} échec(s) sur 50, {mean:.1} tentative(s) par donjon");
+            println!("{silhouette:?} : {failures} échec(s) sur 50, {mean:.1} tentative(s) par donjon");
             // A seed that fails gives way to the next one (`SEED_TRIES`).
             assert!(failures <= 10, "{silhouette:?} : {failures} donjons sur 50 non assemblés");
         }
