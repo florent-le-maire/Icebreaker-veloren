@@ -472,9 +472,6 @@ tâche pour ce qui casse.
   trop peu de pépites isolées.
 - U.15 : trouver la salle au minerai (au bout d'une galerie murée, bille dorée dans l'atelier pour la même graine),
   percer son mur, la miner ; est-elle assez riche, trop ?
-- U.18 à U.21 : les filons à la Deep Rock Galactic (`design/filons.md`) : se voient-ils dans la paroi (couleurs,
-  bosses), les miner morceau par morceau (dureté de chaque minerai, l'objet qui tombe, le charbon par morceaux), le
-  cône qui laisse le minerai ; régler `minerais.ron` ; les voir de près dans l'atelier des grottes.
 - U.4 : descendre dans une grotte de chaque forme (`donjon -Site Grotte -Profil gouffre`, `plaine`, `chaos`, `mixte`) :
   le sentier se suit-il à l'aller et au retour, les puits et leurs lacets, la caméra sous les plafonds bas, la
   lumière, la densité des sprites et des créatures dans les très grandes zones ; atelier : glisser les curseurs,
