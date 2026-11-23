@@ -16,9 +16,10 @@
     },
     // Toute autre matière pleine.
     defaut: (coups: 3, energie: 15.0),
-    // U.17 : quand le bloc visé cède, c'est un éclat en cône qui part, large du côté de qui creuse
-    // et pointu au fond (les blocs plus durs que le bloc visé restent).
-    //   rayon      : rayon à l'ouverture, en blocs (0 : seul le bloc visé cède) ;
-    //   profondeur : profondeur de la pointe derrière le bloc visé, en blocs.
-    cone: (rayon: 1.5, profondeur: 3.0),
+    // U.17 : quand le bloc visé cède, c'est un éclat en cône qui part : il part du corps de qui creuse
+    // (large comme lui) et se referme devant lui, vers le bloc visé ; on avance en piochant. Les blocs
+    // plus durs que le bloc visé restent.
+    //   rayon      : rayon au corps de qui creuse, en blocs (0 : seul le bloc visé cède) ;
+    //   profondeur : distance de la pointe devant lui, en blocs.
+    cone: (rayon: 1.8, profondeur: 5.0),
 )

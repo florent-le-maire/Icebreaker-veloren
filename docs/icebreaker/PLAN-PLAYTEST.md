@@ -209,11 +209,11 @@ roche tendre (`WeakRock`) à la pioche et à l'explosion ; la roche ordinaire ne
 2026-11-16)** : la pioche casse aussi la roche dure, contre de l'énergie. Le todo « Ajouter la
 destructibilité » (2026-11-11) commence ici ; les matières et la foreuse restent dans `PLAN-DONJON.md` (E.5, E.6).
 
-- [x] **U.17 Un éclat en cône** — demandé par Flo (2026-11-23) : quand le bloc visé cède, un cône part avec lui, large
-  du côté de qui creuse et pointu au fond (`destruction.ron` → `cone` : rayon 1,5, profondeur 3, soit 9 + 5 + 1
-  blocs de face) ; les blocs plus durs que le bloc visé restent. Testé : 3 tests de `veloren-common`, serveur compilé.
+- [x] **U.17 Un éclat en cône** — demandé par Flo (2026-11-23) : quand le bloc visé cède, un cône part avec lui, du corps
+  de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : rayon 1,8, pointe à 5 blocs), un
+  seul bruit ; les blocs plus durs que le bloc visé restent. Testé : 4 tests de `veloren-common`, serveur compilé.
   Roche à 3 coups au lieu de 5 (Flo, 2026-11-23).
-  Pas vérifié en jeu : la forme au vrai client, le bruit de 15 blocs d'un coup, le prix (coups et énergie inchangés). — 30e3edb7f1
+  Pas vérifié en jeu : la forme au vrai client, avancer en piochant, le prix en énergie. — 30e3edb7f1, puis le cône parti du corps
 - [x] **U.16 La pioche casse tout** — tranché par Flo (2026-11-22) : tout est destructible à la pioche, dans la
   Grotte et le donjon généré, plus ou moins facilement selon la matière (`assets/icebreaker/destruction.ron` : coups
   et énergie par coup ; roche 5 coups à 15, bois 3 à 10, roche tendre 1 à 5). À sec, le coup ne fait rien ; hors de

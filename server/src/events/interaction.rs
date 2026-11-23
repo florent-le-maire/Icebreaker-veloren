@@ -417,8 +417,8 @@ fn icebreaker_creuser(
     }
 }
 
-/// Icebreaker U.17 : quand le bloc visé cède, l'éclat en cône qui part avec lui (large du côté de qui
-/// creuse, pointu au fond) : les blocs pleins du cône qui ne sont pas plus durs que lui, dans le lieu.
+/// Icebreaker U.17 : quand le bloc visé cède, l'éclat en cône qui part avec lui (du corps de qui creuse
+/// vers le bloc visé, où il se referme) : les blocs pleins du cône qui ne sont pas plus durs que lui, dans le lieu.
 fn icebreaker_eclat(
     ev: &MineBlockEvent,
     vise: Block,
@@ -430,10 +430,10 @@ fn icebreaker_eclat(
 ) -> Vec<(Vec3<i32>, Block)> {
     use common::icebreaker_destruction::{blocs_du_cone, destruction};
     let regles = destruction();
-    // De la poitrine de qui creuse vers le milieu du bloc visé.
-    let axe = creuseur.map_or(Vec3::zero(), |p| ev.pos.as_::<f32>() + 0.5 - (p + Vec3::unit_z()));
+    // Le milieu du corps de qui creuse.
+    let origine = creuseur.map(|p| p + Vec3::unit_z());
     let mut coups = ICEBREAKER_COUPS.lock().unwrap_or_else(|e| e.into_inner());
-    blocs_du_cone(ev.pos, axe, regles.cone())
+    blocs_du_cone(ev.pos, origine, regles.cone())
         .into_iter()
         .filter_map(|pos| {
             if pos == ev.pos {
@@ -520,12 +520,13 @@ impl ServerEvent for MineBlockEvent {
                                     index.as_index_ref(),
                                 ) {
                                     block_change.set(pos, parti.into_vacant());
-                                    outcome_emitter.emit(Outcome::BreakBlock {
-                                        pos,
-                                        tool: ev.tool,
-                                        color: parti.get_color(),
-                                    });
                                 }
+                                // Un seul bruit et une seule gerbe d'éclats, au bloc visé.
+                                outcome_emitter.emit(Outcome::BreakBlock {
+                                    pos: ev.pos,
+                                    tool: ev.tool,
+                                    color: block.get_color(),
+                                });
                             } else {
                                 outcome_emitter.emit(Outcome::DamagedBlock {
                                     pos: ev.pos,
