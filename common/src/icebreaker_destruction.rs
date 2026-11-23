@@ -11,7 +11,7 @@ use crate::{
 use hashbrown::HashMap;
 use serde::Deserialize;
 use std::{str::FromStr, sync::LazyLock};
-use vek::Vec3;
+use vek::{Vec2, Vec3};
 
 /// Ce qu'il en coûte de casser un bloc d'une matière.
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
@@ -22,21 +22,23 @@ pub struct Matiere {
     pub energie: f32,
 }
 
-/// U.17 : l'éclat qui part quand un bloc cède, un cône qui part du corps de qui creuse (large comme
-/// lui) et se referme devant lui, vers le bloc visé.
+/// U.17 : l'éclat qui part quand un bloc cède, un cône qui part du corps de qui creuse (un peu plus
+/// large que lui, haut comme lui) et se referme devant lui, vers le bloc visé.
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
 pub struct Cone {
-    /// Rayon au corps de qui creuse, en blocs (0 : seul le bloc visé cède).
-    pub rayon: f32,
+    /// Demi-largeur au corps de qui creuse, en blocs (0 : seul le bloc visé cède).
+    pub largeur: f32,
+    /// Demi-hauteur au corps, en blocs ; sous 1,5 le sol sous les pieds et la voûte restent.
+    pub hauteur: f32,
     /// Distance de la pointe devant qui creuse, en blocs.
     pub profondeur: f32,
 }
 
-const CONE_DEFAUT: Cone = Cone { rayon: 1.8, profondeur: 5.0 };
+const CONE_DEFAUT: Cone = Cone { largeur: 1.9, hauteur: 1.4, profondeur: 5.0 };
 
-/// En deçà de cette distance le long de l'axe, rien ne part : ni le sol sous les pieds de qui
-/// creuse, ni la voûte sur sa tête.
-const CONE_DEBUT: f32 = 0.5;
+/// Le cône commence un demi-bloc derrière le milieu du corps : les blocs à côté de qui creuse
+/// partent aussi, et le boyau garde sa largeur quand on avance.
+const CONE_DEBUT: f32 = -0.5;
 
 #[derive(Clone, Debug, Deserialize)]
 struct Fichier {
@@ -69,8 +71,8 @@ impl Destruction {
                 return Err("il faut au moins un coup, et une énergie positive ou nulle".into());
             }
         }
-        if !(fichier.cone.rayon >= 0.0 && fichier.cone.profondeur > 0.0) {
-            return Err("cône : rayon positif ou nul, profondeur positive".into());
+        if !(fichier.cone.largeur >= 0.0 && fichier.cone.hauteur >= 0.0 && fichier.cone.profondeur > 0.0) {
+            return Err("cône : largeur et hauteur positives ou nulles, profondeur positive".into());
         }
         Ok(Self { matieres, defaut: fichier.defaut, cone: fichier.cone })
     }
@@ -133,18 +135,28 @@ pub fn coup(matiere: Matiere, energie: f32, deja: u8) -> Coup {
 }
 
 /// U.17 : les blocs du cône qui part quand `vise` cède, pour qui creuse et a le milieu du corps en
-/// `origine`. Le cône part de là (rayon `cone.rayon`) et se referme `cone.profondeur` blocs plus
-/// loin, dans l'axe du bloc visé ; le bloc visé en fait toujours partie.
+/// `origine`. Le cône part de là (`cone.largeur` de chaque côté, `cone.hauteur` au-dessus et en
+/// dessous) et se referme `cone.profondeur` blocs plus loin, dans l'axe du bloc visé ; le bloc visé
+/// en fait toujours partie.
 pub fn blocs_du_cone(vise: Vec3<i32>, origine: Option<Vec3<f32>>, cone: Cone) -> Vec<Vec3<i32>> {
     let mut blocs = vec![vise];
     let milieu = |b: Vec3<i32>| b.map(|e| e as f32 + 0.5);
-    let Some((origine, axe)) = origine.and_then(|o| Some((o, (milieu(vise) - o).try_normalized()?))) else {
+    // Un bloc visé à hauteur du corps (pieds ou tête) : on creuse droit devant soi, à plat.
+    let vers = |o: Vec3<f32>| {
+        let v = milieu(vise) - o;
+        if v.z.abs() < 1.0 { v.with_z(0.0) } else { v }
+    };
+    let Some((origine, axe)) = origine.and_then(|o| Some((o, vers(o).try_normalized()?))) else {
         return blocs;
     };
-    if cone.rayon <= 0.0 {
+    if cone.largeur <= 0.0 || cone.hauteur <= 0.0 {
         return blocs;
     }
-    let portee = cone.rayon.max(cone.profondeur).ceil() as i32 + 1;
+    // Le côté (à l'horizontale) et le haut du cône, en travers de l'axe ; à la verticale, le
+    // côté est pris au hasard.
+    let cote = axe.cross(Vec3::unit_z()).try_normalized().unwrap_or(Vec3::unit_x());
+    let haut = cote.cross(axe);
+    let portee = cone.largeur.max(cone.hauteur).max(cone.profondeur).ceil() as i32 + 1;
     let centre = origine.map(|e| e.floor() as i32);
     for x in -portee..=portee {
         for y in -portee..=portee {
@@ -154,10 +166,11 @@ pub fn blocs_du_cone(vise: Vec3<i32>, origine: Option<Vec3<f32>>, cone: Cone) ->
                     continue;
                 }
                 let d = milieu(bloc) - origine;
-                // Le long de l'axe (0 au corps), et l'écart à l'axe.
+                // Le long de l'axe (0 au corps) ; le cône se referme de 1 au corps à 0 à la pointe.
                 let t = d.dot(axe);
-                let ecart = (d - axe * t).magnitude();
-                if t > CONE_DEBUT && t < cone.profondeur && ecart <= cone.rayon * (1.0 - t / cone.profondeur) + 0.01 {
+                let ouverture = 1.0 - t.max(0.0) / cone.profondeur;
+                let ecart = Vec2::new(d.dot(cote) / cone.largeur, d.dot(haut) / cone.hauteur).magnitude();
+                if t > CONE_DEBUT && t < cone.profondeur && ecart <= ouverture + 0.01 {
                     blocs.push(bloc);
                 }
             }
@@ -198,42 +211,47 @@ mod tests {
         assert_eq!(coup(roche, 10.0, 2), Coup::Casse);
     }
 
+    /// Les pieds en z = 30 au milieu d'un bloc (milieu du corps un bloc plus haut), face à +x.
+    const CORPS: Vec3<f32> = Vec3::new(10.5, 20.5, 31.0);
+
     #[test]
     fn le_cone_part_du_corps_et_se_referme_devant() {
-        let cone = Cone { rayon: 1.5, profondeur: 5.0 };
-        // Bien dans l'axe : une croix devant le corps, puis un boyau jusqu'à la pointe.
-        let vise = Vec3::new(12, 20, 30);
-        let blocs = blocs_du_cone(vise, Some(Vec3::new(10.5, 20.5, 30.5)), cone);
-        let tranche = |x: i32| blocs.iter().filter(|b| b.x == x).count();
-        assert_eq!((tranche(10), tranche(11), tranche(12), tranche(13), tranche(14), tranche(15)), (0, 5, 1, 1, 1, 0));
-        assert_eq!(blocs.len(), 8);
+        // On vise le mur à hauteur de tête.
+        let blocs = blocs_du_cone(Vec3::new(12, 20, 31), Some(CORPS), CONE_DEFAUT);
+        // Largeur du boyau à hauteur des pieds et de la tête, tranche par tranche.
+        let largeur = |x: i32, z: i32| blocs.iter().filter(|b| b.x == x && b.z == z).count();
+        // Trois blocs de large autour du corps et devant lui, puis ça se referme.
+        for (x, large) in [(10, 3), (11, 3), (12, 1), (13, 1), (14, 0)] {
+            assert_eq!((largeur(x, 30), largeur(x, 31)), (large, large), "x = {x}");
+        }
+        // Rien derrière soi.
+        assert!(blocs.iter().all(|b| b.x >= 10));
     }
 
     #[test]
     fn on_avance_debout_sans_perdre_le_sol() {
-        // Les pieds en z = 30 (milieu du corps un bloc plus haut), on vise le mur à hauteur de tête.
-        let blocs =
-            blocs_du_cone(Vec3::new(12, 20, 31), Some(Vec3::new(10.5, 20.5, 31.0)), CONE_DEFAUT);
-        // Les deux blocs à hauteur du corps partent, sur deux blocs de profondeur au moins.
-        for bloc in [(11, 20, 30), (11, 20, 31), (12, 20, 30), (12, 20, 31)] {
-            assert!(blocs.contains(&Vec3::from(bloc)), "{bloc:?}");
+        // Qu'on vise à hauteur de tête ou des pieds, le sol sous les pieds et devant reste.
+        for vise in [Vec3::new(12, 20, 31), Vec3::new(12, 20, 30)] {
+            let blocs = blocs_du_cone(vise, Some(CORPS), CONE_DEFAUT);
+            for bloc in [(11, 20, 30), (11, 20, 31), (12, 20, 30), (12, 20, 31)] {
+                assert!(blocs.contains(&Vec3::from(bloc)), "{bloc:?} pour {vise:?}");
+            }
+            assert!(blocs.iter().all(|b| b.z == 30 || b.z == 31), "le sol ou la voûte part pour {vise:?}");
         }
-        // Le sol sous les pieds et devant, et la voûte sur la tête, restent.
-        for bloc in [(10, 20, 29), (11, 20, 29), (10, 20, 32)] {
-            assert!(!blocs.contains(&Vec3::from(bloc)), "{bloc:?}");
-        }
-        // Rien derrière soi.
-        assert!(blocs.iter().all(|b| b.x >= 11));
+        // En visant le sol devant soi, on descend.
+        assert!(blocs_du_cone(Vec3::new(11, 20, 29), Some(CORPS), CONE_DEFAUT).iter().any(|b| b.z < 29));
     }
 
     #[test]
-    fn sans_rayon_ou_sans_creuseur_seul_le_bloc_vise_cede() {
+    fn sans_largeur_ou_sans_creuseur_seul_le_bloc_vise_cede() {
         let vise = Vec3::new(1, 2, 3);
         let ici = Some(Vec3::new(1.5, 2.5, 1.0));
-        assert_eq!(blocs_du_cone(vise, ici, Cone { rayon: 0.0, profondeur: 3.0 }), vec![vise]);
+        assert_eq!(blocs_du_cone(vise, ici, Cone { largeur: 0.0, ..CONE_DEFAUT }), vec![vise]);
         assert_eq!(blocs_du_cone(vise, None, CONE_DEFAUT), vec![vise]);
         // Visé de loin, le bloc cède quand même.
         assert!(blocs_du_cone(Vec3::new(1, 2, 20), ici, CONE_DEFAUT).contains(&Vec3::new(1, 2, 20)));
+        // Droit vers le bas, un puits.
+        assert!(blocs_du_cone(Vec3::new(1, 2, -1), ici, CONE_DEFAUT).contains(&Vec3::new(1, 2, -2)));
     }
 
     #[test]

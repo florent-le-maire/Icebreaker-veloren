@@ -215,7 +215,7 @@ roche tendre (`WeakRock`) à la pioche et à l'explosion ; la roche ordinaire ne
 destructibilité » (2026-11-11) commence ici ; les matières et la foreuse restent dans `PLAN-DONJON.md` (E.5, E.6).
 
 - [x] **U.17 Un éclat en cône** — demandé par Flo (2026-11-23) : quand le bloc visé cède, un cône part avec lui, du corps
-  de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : rayon 1,8, pointe à 5 blocs), un
+  de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : demi-largeur 1,9, demi-hauteur 1,4, pointe à 5 blocs ; boyau de 3 de large), un
   seul bruit ; les blocs plus durs que le bloc visé restent. Testé : 4 tests de `veloren-common`, serveur compilé.
   Roche à 3 coups au lieu de 5 (Flo, 2026-11-23).
   Pas vérifié en jeu : la forme au vrai client, avancer en piochant, le prix en énergie. — 30e3edb7f1, puis le cône parti du corps

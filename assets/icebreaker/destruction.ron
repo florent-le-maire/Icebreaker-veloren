@@ -19,7 +19,10 @@
     // U.17 : quand le bloc visé cède, c'est un éclat en cône qui part : il part du corps de qui creuse
     // (large comme lui) et se referme devant lui, vers le bloc visé ; on avance en piochant. Les blocs
     // plus durs que le bloc visé restent.
-    //   rayon      : rayon au corps de qui creuse, en blocs (0 : seul le bloc visé cède) ;
+    //   largeur    : demi-largeur au corps de qui creuse, en blocs (0 : seul le bloc visé cède) ;
+    //   hauteur    : demi-hauteur au corps (sous 1.5, le sol sous les pieds et la voûte restent) ;
     //   profondeur : distance de la pointe devant lui, en blocs.
-    cone: (rayon: 1.8, profondeur: 5.0),
+    // 1.9 de large : un boyau de 3 blocs ; 2.9 : de 5 blocs. Un bloc visé à hauteur du corps : on
+    // creuse à plat, droit devant ; plus haut ou plus bas, dans l'axe du bloc.
+    cone: (largeur: 1.9, hauteur: 1.4, profondeur: 5.0),
 )

@@ -19,10 +19,11 @@ nombre de **coups** et une **énergie par coup** (`assets/icebreaker/destruction
 | Toute autre | 3 | 15 |
 
 **Un éclat en cône** (U.17, Flo, 2026-11-23) : les coups se comptent sur le bloc visé ; quand il cède, c'est un cône
-qui part. Le cône part du milieu du corps de qui creuse, large comme lui, et se referme devant lui dans l'axe du
-bloc visé (`destruction.ron` → `cone` : rayon 1,8 bloc au corps, pointe 5 blocs plus loin) : collé au mur, on ouvre un
-boyau à sa taille et on avance en piochant ; de loin, seul le bloc visé cède. Viser à hauteur de tête garde le sol,
-viser vers les pieds creuse une marche. Dans le cône, seuls les blocs pleins qui ne demandent ni plus de coups ni
+qui part. Le cône part du milieu du corps de qui creuse, haut comme lui et un peu plus large (les blocs à ses côtés partent
+aussi), et se referme devant lui (`destruction.ron` → `cone` : demi-largeur 1,9, demi-hauteur 1,4, pointe 5 blocs
+plus loin) : collé au mur, on ouvre un boyau de 3 blocs de large et 2 de haut et on avance en piochant ; de loin,
+seul le bloc visé cède. Un bloc visé à hauteur du corps (pieds ou tête) : on creuse à plat, le sol et la voûte
+restent ; visé plus bas ou plus haut : dans l'axe du bloc, on descend ou on monte. Dans le cône, seuls les blocs pleins qui ne demandent ni plus de coups ni
 plus d'énergie par coup que le bloc visé partent : la roche tendre tapée contre un mur de pierre n'emporte pas le
 mur. Un seul bruit et une seule gerbe d'éclats, au bloc visé. Rayon 0 : bloc par bloc.
 
