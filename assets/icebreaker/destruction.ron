@@ -11,11 +11,11 @@
         "Sand": (coups: 2, energie: 8.0),
         "Grass": (coups: 2, energie: 8.0),
         "Wood": (coups: 3, energie: 10.0),
-        "Rock": (coups: 5, energie: 15.0),
-        "GlowingRock": (coups: 5, energie: 15.0),
+        "Rock": (coups: 3, energie: 15.0),
+        "GlowingRock": (coups: 3, energie: 15.0),
     },
     // Toute autre matière pleine.
-    defaut: (coups: 5, energie: 15.0),
+    defaut: (coups: 3, energie: 15.0),
     // U.17 : quand le bloc visé cède, c'est un éclat en cône qui part, large du côté de qui creuse
     // et pointu au fond (les blocs plus durs que le bloc visé restent).
     //   rayon      : rayon à l'ouverture, en blocs (0 : seul le bloc visé cède) ;

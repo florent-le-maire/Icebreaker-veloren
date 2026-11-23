@@ -457,7 +457,7 @@ tâche pour ce qui casse.
   devant, pointu au fond) ; on avance debout en répétant ; le bruit et les éclats de 15 blocs d'un coup sont-ils
   supportables ; taper la roche tendre contre un mur de pierre n'emporte pas le mur ; les coups et l'énergie
   (inchangés) sont-ils encore au bon prix.
-- U.16 : pioche en main, creuser un passage dans la roche de la grotte (5 coups par bloc, l'énergie baisse, plus
+- U.16 : pioche en main, creuser un passage dans la roche de la grotte (3 coups, depuis le 2026-11-23, l'énergie baisse, plus
   rien à sec) ; dans un donjon généré, percer un mur de pierre et une porte en bois ; au village, la roche ne se
   creuse pas.
 - U.13 : dans une grotte, suivre le sentier jusqu'à un mur (la galerie s'arrête sur de la roche), le percer à la

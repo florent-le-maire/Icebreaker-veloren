@@ -15,13 +15,13 @@ nombre de **coups** et une **énergie par coup** (`assets/icebreaker/destruction
 | Roche tendre | 1 | 5 |
 | Terre, sable, herbe | 2 | 8 |
 | Bois | 3 | 10 |
-| Roche, murs de pierre | 5 | 15 |
-| Toute autre | 5 | 15 |
+| Roche, murs de pierre | 3 | 15 |
+| Toute autre | 3 | 15 |
 
 **Un éclat en cône** (U.17, Flo, 2026-11-23) : les coups se comptent sur le bloc visé ; quand il cède, c'est un cône
 qui part, large du côté de qui creuse et pointu au fond, dans l'axe joueur → bloc (`destruction.ron` → `cone` : rayon
 1,5 bloc à l'ouverture, pointe 3 blocs plus loin ; de face : 9 blocs, puis 5, puis 1). Dans le cône, seuls les blocs
-pleins qui ne demandent pas plus de coups que le bloc visé partent : la roche tendre tapée contre un mur de pierre
+pleins qui ne demandent ni plus de coups ni plus d'énergie par coup que le bloc visé partent : la roche tendre tapée contre un mur de pierre
 n'emporte pas le mur. Rayon 0 : bloc par bloc.
 
 Sans assez d'énergie, le coup ne fait rien et ne coûte rien : on attend qu'elle remonte. Les coups s'additionnent

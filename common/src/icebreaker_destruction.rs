@@ -77,11 +77,13 @@ impl Destruction {
 
     /// U.17 : un bloc pris dans le cône part avec le bloc visé s'il n'est pas plus dur que lui.
     pub fn part_avec(&self, vise: BlockKind, autre: &Block) -> bool {
-        se_creuse(autre) && self.matiere(autre.kind()).coups <= self.matiere(vise).coups
+        let (a, v) = (self.matiere(autre.kind()), self.matiere(vise));
+        // Ni plus de coups, ni plus d'énergie par coup : le bois n'emporte pas la pierre.
+        se_creuse(autre) && a.coups <= v.coups && a.energie <= v.energie
     }
 }
 
-/// Les réglages du fichier ; s'il est illisible, tout prend 5 coups à 15 d'énergie.
+/// Les réglages du fichier ; s'il est illisible, tout prend 3 coups à 15 d'énergie.
 pub fn destruction() -> &'static Destruction {
     static DESTRUCTION: LazyLock<Destruction> = LazyLock::new(|| {
         Ron::<Fichier>::load("icebreaker.destruction")
@@ -91,7 +93,7 @@ pub fn destruction() -> &'static Destruction {
                 tracing::error!("Icebreaker : assets/icebreaker/destruction.ron illisible ({e})");
                 Destruction {
                     matieres: HashMap::new(),
-                    defaut: Matiere { coups: 5, energie: 15.0 },
+                    defaut: Matiere { coups: 3, energie: 15.0 },
                     cone: CONE_DEFAUT,
                 }
             })
@@ -222,6 +224,7 @@ mod tests {
         assert!(d.part_avec(BlockKind::Rock, &tendre));
         assert!(d.part_avec(BlockKind::Rock, &roche));
         assert!(!d.part_avec(BlockKind::WeakRock, &roche));
+        assert!(!d.part_avec(BlockKind::Wood, &roche));
         assert!(!d.part_avec(BlockKind::Rock, &Block::air(crate::terrain::SpriteKind::Iron)));
         assert!(d.cone().profondeur > 0.0);
     }
