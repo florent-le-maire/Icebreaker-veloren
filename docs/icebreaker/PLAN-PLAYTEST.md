@@ -125,7 +125,7 @@ style des couloirs, disposition et taille des salles, et des presets vraiment ti
   donjon ; une silhouette trop serrée est abandonnée (3 grandes forteresses sur 15), jamais de mission sans donjon.
   Blocs contrôlés (exemple) ; pas vu en jeu. b151f7ae
 - [x] **F.50 Atelier et docs** — bord de la silhouette en doré (plan et 3D), `?preset=&graine=&vue=plan` ;
-  `design/generation.md`, wiki, idées. Vu dans Edge sans affichage ; pas encore essayé par l'équipe.
+  `design/generation.md`, wiki, idées. Vu dans Edge sans affichage ; pas encore essayé par l'équipe. 05126c5a
 
 Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,
 Veloren n'a presque rien pour une cuisine. Nos modèles sont générés par du code ; la vie vient des traces d'activité,
