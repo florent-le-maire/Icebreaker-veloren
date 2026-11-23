@@ -5,7 +5,7 @@
 //! What the ore is, and where the vein starts, is up to the caller (the game,
 //! or the workshop page).
 
-use crate::{Grille, bruit::Alea};
+use crate::{Caverne, Genre, Grille, Zone, bruit::Alea};
 use std::collections::HashSet;
 
 /// The shape of one vein, its values drawn.
@@ -165,6 +165,265 @@ pub fn tracer(g: &Grille, depart: [i32; 3], forme: &FormeFilon, rng: &mut Alea, 
     Filon { roche, relief }
 }
 
+/// One ore as the placing sees it (`minerais.ron`): the shape of its veins
+/// (ranges drawn per vein), its weight by level and in the ore room.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Gisement {
+    pub longueur: (i32, i32),
+    pub epaisseur: (i32, i32),
+    pub profondeur: i32,
+    pub sinuosite: f32,
+    pub relief: f32,
+    pub poids: Vec<f32>,
+    pub salle: f32,
+}
+
+impl Gisement {
+    fn poids_au(&self, niveau: i32) -> f32 {
+        let i = (niveau.max(0) as usize).min(self.poids.len().saturating_sub(1));
+        self.poids.get(i).copied().unwrap_or(0.0)
+    }
+}
+
+/// A vein placed: its ore (its place among the `Gisement`s), its blocks, and
+/// whether it lies in the ore room.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Pose {
+    pub minerai: usize,
+    pub filon: Filon,
+    pub salle: bool,
+}
+
+/// An ore by the weights `poids`; `tirage` from 0 to 1.
+fn tirer(gisements: &[Gisement], tirage: f32, poids: impl Fn(&Gisement) -> f32) -> Option<usize> {
+    let total: f32 = gisements.iter().map(&poids).sum();
+    if total <= 0.0 {
+        return None;
+    }
+    let mut reste = tirage * total;
+    let mut dernier = None;
+    for (i, g) in gisements.iter().enumerate() {
+        let p = poids(g);
+        if p <= 0.0 {
+            continue;
+        }
+        if reste < p {
+            return Some(i);
+        }
+        reste -= p;
+        dernier = Some(i);
+    }
+    dernier
+}
+
+/// The level of each zone: by how far it is along the trail, from 0 to
+/// `niveaux - 1`; a niche and the ore room have the level of the zone they
+/// open on.
+pub fn niveaux_des_zones(c: &Caverne, niveaux: i32) -> Vec<i32> {
+    let niveaux = niveaux.max(1);
+    (0..c.zones.len())
+        .map(|i| {
+            let i = if matches!(c.zones[i].genre, Genre::Niche | Genre::Minerai) { c.zones[i].parent.unwrap_or(i) } else { i };
+            ((c.avancee(i) * niveaux as f32) as i32).min(niveaux - 1)
+        })
+        .collect()
+}
+
+/// Places the veins of a cave: in each zone (not a niche, the safe room or
+/// the ore room) `par_zone` veins by its level (the last value for the deeper
+/// levels), starting at a wall within reach; `salle` veins over the walls and
+/// ceiling of the ore room. Never on the trail, a wall to break, in the safe
+/// room; no bump over the trail nor where something stands (`occupe`, the
+/// blocks one stands in).
+pub fn poser(c: &Caverne, gisements: &[Gisement], niveaux: &[i32], par_zone: &[i32], salle: i32, occupe: &dyn Fn([i32; 3]) -> bool, graine: u64) -> Vec<Pose> {
+    let g = &c.grille;
+    let zones = &c.zones;
+    let mut rng = Alea::new(graine ^ 0xf11_0115);
+    let mut pris: HashSet<[i32; 3]> = HashSet::new();
+    let mut poses: Vec<Pose> = Vec::new();
+    let abri = c.abri.map(|a| &zones[a]);
+    let tracer_un = |depart: [i32; 3], minerai: usize, rng: &mut Alea, pris: &mut HashSet<[i32; 3]>, dans: Option<&Zone>| {
+        let gi = &gisements[minerai];
+        let entre = |rng: &mut Alea, (a, b): (i32, i32)| a + rng.indice((b - a).max(0) as usize + 1) as i32;
+        let forme = FormeFilon {
+            longueur: entre(rng, gi.longueur),
+            epaisseur: entre(rng, gi.epaisseur),
+            profondeur: gi.profondeur,
+            sinuosite: gi.sinuosite,
+            relief: gi.relief,
+        };
+        let libre = |p: [i32; 3]| {
+            if pris.contains(&p)
+                || abri.is_some_and(|a| a.contient(p, 1.3))
+                || dans.is_some_and(|z| !z.contient(p, 1.6))
+                || g.mur(p[0], p[1], p[2])
+                || g.sentier(p[0], p[1], p[2])
+            {
+                return false;
+            }
+            if !g.air(p[0], p[1], p[2]) {
+                return true;
+            }
+            let sentier = (-2..=2).any(|dx| (-2..=2).any(|dy| (1..=3).any(|dz| g.sentier(p[0] + dx, p[1] + dy, p[2] - dz))));
+            !sentier && !(0..=2).any(|dz| occupe([p[0], p[1], p[2] - dz]))
+        };
+        let filon = tracer(g, depart, &forme, rng, &libre);
+        // Too short to be seen as a vein: another place.
+        if filon.roche.len() < (forme.longueur as usize).min(4) {
+            return None;
+        }
+        pris.extend(filon.blocs().copied());
+        Some(filon)
+    };
+    for (i, zone) in zones.iter().enumerate() {
+        if matches!(zone.genre, Genre::Niche | Genre::Abri | Genre::Minerai) {
+            continue;
+        }
+        let n = par_zone.get((niveaux[i].max(0) as usize).min(par_zone.len().saturating_sub(1))).copied().unwrap_or(0);
+        // Rock at the surface of a wall beside a floor block, within reach.
+        let mut departs: Vec<[i32; 3]> = zone
+            .sols
+            .iter()
+            .flat_map(|p| {
+                [(1, 0), (-1, 0), (0, 1), (0, -1)]
+                    .into_iter()
+                    .flat_map(move |(dx, dy)| (0..=2).map(move |dz| [p[0] + dx, p[1] + dy, p[2] + dz]))
+            })
+            .filter(|q| surface(g, *q))
+            .collect();
+        departs.sort();
+        departs.dedup();
+        if departs.is_empty() {
+            continue;
+        }
+        for _ in 0..n.max(0) {
+            let Some(minerai) = tirer(gisements, rng.unite(), |x| x.poids_au(niveaux[i])) else { break };
+            for _ in 0..12 {
+                let depart = departs[rng.indice(departs.len())];
+                if let Some(filon) = tracer_un(depart, minerai, &mut rng, &mut pris, None) {
+                    poses.push(Pose { minerai, filon, salle: false });
+                    break;
+                }
+            }
+        }
+    }
+    if let Some(m) = c.minerai {
+        let room = &zones[m];
+        let reach = room.rayon.map(|r| (r as f32 * 1.6) as i32 + 2);
+        let mut departs = Vec::new();
+        for x in -reach[0]..=reach[0] {
+            for y in -reach[1]..=reach[1] {
+                for z in -reach[2]..=reach[2] {
+                    let p = [room.centre[0] + x, room.centre[1] + y, room.centre[2] + z];
+                    if room.contient(p, 1.5) && surface(g, p) {
+                        departs.push(p);
+                    }
+                }
+            }
+        }
+        for _ in 0..salle.max(0) {
+            let Some(minerai) = tirer(gisements, rng.unite(), |x| x.salle) else { break };
+            for _ in 0..12 {
+                if departs.is_empty() {
+                    break;
+                }
+                let depart = departs[rng.indice(departs.len())];
+                if let Some(filon) = tracer_un(depart, minerai, &mut rng, &mut pris, Some(room)) {
+                    poses.push(Pose { minerai, filon, salle: true });
+                    break;
+                }
+            }
+        }
+    }
+    poses
+}
+
+/// Icebreaker U.21: what the workshop page needs to place the veins as the
+/// game does, read from `minerais.ron` and `grotte.ron` (the rest of those
+/// files is left to the game).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Reglages {
+    pub gisements: Vec<Gisement>,
+    /// The colour of each ore, in the same order.
+    pub couleurs: Vec<[u8; 3]>,
+    pub par_zone: Vec<i32>,
+    pub salle: i32,
+    pub niveaux: i32,
+}
+
+#[derive(serde::Deserialize)]
+struct MineraisRon {
+    minerais: std::collections::BTreeMap<String, MineraiRon>,
+}
+
+#[derive(serde::Deserialize)]
+struct MineraiRon {
+    couleur: (u8, u8, u8),
+    filon: FormeRon,
+    poids: Vec<f32>,
+    salle: f32,
+}
+
+#[derive(serde::Deserialize)]
+struct FormeRon {
+    longueur: (i32, i32),
+    epaisseur: (i32, i32),
+    profondeur: i32,
+    sinuosite: f32,
+    relief: f32,
+}
+
+#[derive(serde::Deserialize)]
+struct GrotteRon {
+    filons: FilonsRon,
+}
+
+#[derive(serde::Deserialize)]
+struct FilonsRon {
+    veines: VeinesRon,
+    salle: SalleRon,
+    paliers: Vec<serde::de::IgnoredAny>,
+}
+
+#[derive(serde::Deserialize)]
+struct VeinesRon {
+    par_zone: Vec<i32>,
+}
+
+#[derive(serde::Deserialize)]
+struct SalleRon {
+    filons: i32,
+}
+
+pub fn lire_reglages(minerais: &str, grotte: &str) -> Result<Reglages, String> {
+    let m: MineraisRon = ron::from_str(minerais).map_err(|e| format!("minerais.ron : {e}"))?;
+    let g: GrotteRon = ron::from_str(grotte).map_err(|e| format!("grotte.ron : {e}"))?;
+    let (gisements, couleurs) = m
+        .minerais
+        .into_values()
+        .map(|m| {
+            let f = m.filon;
+            let gisement = Gisement {
+                longueur: f.longueur,
+                epaisseur: f.epaisseur,
+                profondeur: f.profondeur,
+                sinuosite: f.sinuosite,
+                relief: f.relief,
+                poids: m.poids,
+                salle: m.salle,
+            };
+            (gisement, [m.couleur.0, m.couleur.1, m.couleur.2])
+        })
+        .unzip();
+    Ok(Reglages {
+        gisements,
+        couleurs,
+        par_zone: g.filons.veines.par_zone,
+        salle: g.filons.salle.filons,
+        niveaux: g.filons.paliers.len().max(1) as i32,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -226,5 +485,22 @@ mod tests {
         assert!(b.roche.len() > a.roche.len() * 2, "{} / {}", b.roche.len(), a.roche.len());
         // Épaisseur 1, profondeur 1 : rien que la surface.
         assert!(a.roche.iter().all(|p| surface(&g, *p)));
+    }
+
+    /// Les réglages du jeu se lisent, et une grotte de l'atelier porte ses filons.
+    #[test]
+    fn l_atelier_pose_les_filons_du_jeu() {
+        let r = lire_reglages(
+            include_str!("../../assets/icebreaker/grottes/minerais.ron"),
+            include_str!("../../assets/icebreaker/grottes/grotte.ron"),
+        )
+        .unwrap();
+        assert!(r.gisements.len() >= 5 && r.couleurs.len() == r.gisements.len() && r.niveaux >= 2);
+        let c = crate::generer(&crate::Forme::default(), 3, &|_, _| 0, i32::MIN);
+        let niveaux = niveaux_des_zones(&c, r.niveaux);
+        let poses = poser(&c, &r.gisements, &niveaux, &r.par_zone, r.salle, &|_| false, 3);
+        assert!(poses.iter().filter(|p| !p.salle).count() >= 3, "{} filon(s)", poses.len());
+        assert!(c.minerai.is_none() || poses.iter().any(|p| p.salle));
+        assert_eq!(poses, poser(&c, &r.gisements, &niveaux, &r.par_zone, r.salle, &|_| false, 3));
     }
 }

@@ -13,7 +13,11 @@ pub struct Maillage {
     pub indices: Vec<u32>,
 }
 
-pub fn mailler(c: &Caverne) -> Maillage {
+pub fn mailler(c: &Caverne) -> Maillage { mailler_avec(c, &|_| None) }
+
+/// Icebreaker U.21: the same, with the blocks of ore `minerai` gives a colour
+/// to (a block of the rock, or a bump in the air, then solid).
+pub fn mailler_avec(c: &Caverne, minerai: &dyn Fn([i32; 3]) -> Option<[u8; 3]>) -> Maillage {
     let g = &c.grille;
     let mut m = Maillage {
         sommets: Vec::new(),
@@ -23,18 +27,24 @@ pub fn mailler(c: &Caverne) -> Maillage {
     let (bas, haut) = (g.min[2] as f32, g.max()[2] as f32);
     for i in g.cellules_air() {
         let p = g.position(i);
+        if minerai(p).is_some() {
+            continue;
+        }
         // How closed in the block is: the rock among its 26 neighbours darkens it.
         let mut closed = None;
         for axis in 0..3 {
             for side in [1, -1] {
                 let mut n = p;
                 n[axis] += side;
-                if g.air(n[0], n[1], n[2]) {
+                let ore = minerai(n);
+                if g.air(n[0], n[1], n[2]) && ore.is_none() {
                     continue;
                 }
                 // What the rock is, then the light: by the way the face
                 // looks, the depth, and a grain by block.
-                let base: [f32; 3] = if g.sentier(n[0], n[1], n[2]) {
+                let base: [f32; 3] = if let Some(o) = ore {
+                    o.map(f32::from)
+                } else if g.sentier(n[0], n[1], n[2]) {
                     [240.0, 190.0, 70.0]
                 } else if g.concretion(n[0], n[1], n[2]) {
                     [205.0, 210.0, 225.0]

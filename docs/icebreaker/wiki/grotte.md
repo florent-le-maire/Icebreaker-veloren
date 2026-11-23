@@ -3,10 +3,12 @@ ordre = 7
 titre = "La grotte"
 icone = "voxygen/element/weapons/pickaxe.png"
 resume = "Des cavernes creusées dans la roche, plates ou en gouffre selon la graine, des filons à la pioche, un chef au fond. Façon Deep Rock Galactic."
-reglages = ["grottes/grotte.ron", "grottes/formes.ron", "butin.ron"]
+reglages = ["grottes/grotte.ron", "grottes/minerais.ron", "grottes/formes.ron", "butin.ron"]
 taches = ["K", "U", "B.5", "B.14"]
 systemes = [
   "icebreaker-caverne/src/lib.rs",
+  "icebreaker-caverne/src/filon.rs",
+  "common/src/icebreaker_minerais.rs",
   "world/src/icebreaker/grotte/mod.rs",
   "world/src/site/plot/icebreaker_grotte.rs",
   "world/src/icebreaker/butin.rs",
@@ -26,7 +28,7 @@ nom = "Créatures en plus par niveau"
 
 [[chiffre]]
 cle = "chance"
-nom = "Chance d'une pépite isolée par bloc au pied d'une paroi"
+nom = "Chance d'une pépite isolée par bloc (0 : tout le minerai est en filons)"
 pourcent = true
 +++
 
@@ -49,15 +51,19 @@ Chaque grotte tire aussi une **ambiance** (champignons, cristaux, ossuaire) : la
 luisante, les sprites au sol et au plafond, les créatures. Le **chef** attend dans la zone la plus loin de l'entrée.
 Le tuer, c'est la victoire.
 
-Au pied des parois, des **filons** à miner à la pioche (chaque personnage en a une) : une traînée d'un seul minerai
-le long de la roche, un à trois par zone ; cuivre et étain près de l'entrée, or et gemmes au fond. Les pépites isolées
-sont rares.
+Dans les parois, des **filons** à miner à la pioche (chaque personnage en a une), comme dans Deep Rock Galactic :
+une bande de minerai prise dans la roche, de la couleur de son minerai, qui serpente le long de la paroi et ressort
+çà et là d'un bloc. Elle part **morceau par morceau, là où l'on tape** : chaque bloc a la dureté de son minerai et
+donne son minerai en cédant ; le charbon part par gros morceaux. En creusant la roche autour, le filon reste. Un à
+trois filons par zone ; cuivre et étain près de l'entrée, or et gemmes au fond. Chaque minerai se règle à part
+(`minerais.ron` : couleur, dureté, ce qu'il donne, longueur, épaisseur, profondeur, sinuosité, relief, où il
+apparaît) ; l'atelier des grottes montre les filons en couleur.
 
 Une partie des passages entre deux zones est **bouchée par la roche** : la galerie s'arrête, il faut creuser. Dans la
 grotte, la pioche casse tout, bloc après bloc, contre de l'énergie ; à sec, on attend. La salle sûre où l'on arrive
 s'ouvre toujours sur sa zone.
 
-Chaque grotte cache une **salle au minerai**, au bout d'une galerie murée : du minerai partout au sol, du fer et du
+Chaque grotte cache une **salle au minerai**, au bout d'une galerie murée : ses parois couvertes de filons, du fer et du
 cuivre surtout, un peu d'or, de cobalt et de gemmes. Personne ne la garde : son mur suffit. Coffres et créatures donnent le butin de leur niveau (`butin.ron`), le chef bien plus.
 
 ## Régler la forme
@@ -83,4 +89,4 @@ Les captures ci-dessous datent de la première forme (jalon K) ; elles sont à r
 
 ![La bouche de la grotte en surface et le boyau d’entrée](images/grotte-bouche.png)
 
-![Une poche d’ambiance « cristaux », avec un filon au pied de la paroi](images/grotte-poche.png)
+![Une poche d’ambiance « cristaux », avec un filon au pied de la paroi (avant U.19 : des sprites)](images/grotte-poche.png)

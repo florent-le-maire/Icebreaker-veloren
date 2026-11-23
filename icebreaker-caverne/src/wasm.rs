@@ -2,10 +2,13 @@
 //! generator. The page writes the settings in `entree`, calls `generer`, and
 //! reads the outputs as bytes.
 
-use crate::{CHAMPS, Forme, Formes, Genre, generer as generer_caverne, maillage::mailler};
+use crate::{CHAMPS, Forme, Formes, Genre, filon, generer as generer_caverne, maillage::mailler_avec};
 use std::sync::Mutex;
 
 static FORMES: &str = include_str!("../../assets/icebreaker/grottes/formes.ron");
+// Icebreaker U.21: the ores and how many veins, to show them.
+static MINERAIS: &str = include_str!("../../assets/icebreaker/grottes/minerais.ron");
+static GROTTE: &str = include_str!("../../assets/icebreaker/grottes/grotte.ron");
 
 struct Etat {
     entree: Vec<f32>,
@@ -45,7 +48,19 @@ pub extern "C" fn formes(n: usize) -> *mut u8 {
 pub extern "C" fn generer(graine: f64) -> u32 {
     let mut etat = ETAT.lock().unwrap();
     let caverne = generer_caverne(&Forme::depuis_valeurs(&etat.entree), graine as u64, &|_, _| 0, i32::MIN);
-    let m = mailler(&caverne);
+    // Icebreaker U.21: the veins, placed as the game does (minerais.ron,
+    // grotte.ron), in the colour of their ore.
+    let mut ores = std::collections::HashMap::new();
+    let mut veines = 0;
+    if let Ok(r) = filon::lire_reglages(MINERAIS, GROTTE) {
+        let niveaux = filon::niveaux_des_zones(&caverne, r.niveaux);
+        let poses = filon::poser(&caverne, &r.gisements, &niveaux, &r.par_zone, r.salle, &|_| false, graine as u64);
+        veines = poses.len();
+        for pose in &poses {
+            ores.extend(pose.filon.blocs().map(|p| (*p, r.couleurs[pose.minerai])));
+        }
+    }
+    let m = mailler_avec(&caverne, &|p| ores.get(&p).copied());
     etat.sorties[0] = m.sommets.iter().flat_map(|v| v.to_le_bytes()).collect();
     etat.sorties[1] = m.couleurs;
     etat.sorties[2] = m.indices.iter().flat_map(|v| v.to_le_bytes()).collect();
@@ -67,7 +82,7 @@ pub extern "C" fn generer(graine: f64) -> u32 {
     // Icebreaker U.13: the walls to break.
     marks.extend(caverne.liens.iter().filter_map(|l| l.mur).map(|m| [m[0], m[1], m[2], 5]));
     etat.sorties[3] = marks.iter().flatten().flat_map(|v| (*v as i16).to_le_bytes()).collect();
-    etat.sorties[4] = caverne.resume.into_bytes();
+    etat.sorties[4] = format!("{} ; {veines} filon(s), {} blocs de minerai", caverne.resume, ores.len()).into_bytes();
     caverne.praticable as u32
 }
 
