@@ -554,10 +554,16 @@ fn generate_mission(settings: &Settings, mission: &Mission) -> Result<Dungeon, S
                 &room_cells,
                 &keys,
                 &settings.lighting,
-                &furnished_cells(&furnished, &speciaux),
+                // Icebreaker F.57 : nor where the party arrives (a brazier there sent it up to the surface).
+                &furnished_cells(&furnished, &speciaux).into_iter().chain([assembled.arrival]).collect(),
                 seed,
             );
-            let taken = keys.iter().map(|(c, _)| *c).chain(lights.iter().map(|(c, _)| *c)).collect();
+            let taken = keys
+                .iter()
+                .map(|(c, _)| *c)
+                .chain(lights.iter().map(|(c, _)| *c))
+                .chain([assembled.arrival])
+                .collect();
             let decor = place_decor(&assembled.plan, &room_cells, &furnished, &taken, &settings.decor, seed);
             // Icebreaker B.5: the tier of each chest and creature.
             let paliers = place_tiers(&assembled.plan, &assembled.rooms, &graph, &butin);

@@ -13,7 +13,7 @@ interface du village) et se cochent ici ; les âmes ouvrent le jalon **AM**.
 
 | # | Chantier | Tâches | Worktree | État |
 |---|---|---|---|---|
-| 1 | Donjon : des pièces travaillées | F.10 à F.18 | `Veloren-donjon` | catalogue et atelier des salles faits (F.10, F.14 à F.17) ; salles à meubler dans l'atelier (F.18), puis F.11 à F.13 |
+| 1 | Donjon : des pièces travaillées | F.10 à F.18 | `Veloren-donjon` | catalogue et atelier des salles faits (F.10, F.14 à F.17) ; formes, labyrinthe et relief faits (F.45 à F.57) ; salles à meubler dans l'atelier (F.18), puis F.11 à F.13 |
 | 2 | Grotte : murs à casser, filons, salle au minerai | U.13 à U.16 | `Veloren-caverne` | fait (2026-11-22), à voir en jeu |
 | 3 | Missions : sablier, zones, types de mission, boss | B.16 à B.20 | `Veloren-boucles` | tranché ; B.19 et B.20 peuvent suivre le premier playtest |
 | 4 | Âmes | AM.1 à AM.9 | `Veloren-ames` | attend le tableau de Sayanel (Q58) ; AM.6 peut suivre le premier playtest |
@@ -145,10 +145,12 @@ clé contournée) ; les tours restent sous le sol ; leur milieu est vide ou plei
 - [x] **F.55 Escalier en Z** — `escaliers_z` (part des salles de passage) : salle générée à deux volées opposées,
   posée là où le chemin descend d'autant d'étages ; on entre par le haut, on repart par le pied (14 sur 14 sur 30
   donjons à 30 %). Pas vu dans l'atelier ni en jeu. 0ecce96c
-- [x] **F.56 Tours à colimaçon** —  (chance qu'un changement d'étage descende  étages d'un coup),
-   (3 à 7),  : une volée par mur, portes à chaque palier ; 40 tours sur 41 prises du haut
-  au pied, jusqu'à 8 étages de fond. Pas de branche aux paliers du milieu ; pas vu dans l'atelier ni en jeu.
-- [ ] **F.57 Presets, atelier, docs** — preset `tours`, vue 3D vérifiée, design, wiki, idées.
+- [x] **F.56 Tours à colimaçon** — `tours` (chance qu'un changement d'étage descende `tour_etages` étages d'un coup),
+  `tour_largeur` (3 à 7), `tour_vide` : une volée par mur, portes à chaque palier ; 40 tours sur 41 prises du haut
+  au pied, jusqu'à 8 étages de fond. Pas de branche aux paliers du milieu ; pas vu en jeu. 1c00b4c1
+- [x] **F.57 Presets, atelier, docs** — preset `tours` (poids 1), relief dans `profond`, `croix`, `rond`, `dedale` ;
+  `design/generation.md`, wiki, idées, Q64 et Q65. Blocs contrôlés dans un vrai monde (tours, dedale : rien de neuf en défaut), serveur lancé avec `-Profil tours`, tour vue
+  dans l'atelier (Edge sans affichage) ; pas vu à pied dans le vrai client.
 
 Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,
 Veloren n'a presque rien pour une cuisine. Nos modèles sont générés par du code ; la vie vient des traces d'activité,

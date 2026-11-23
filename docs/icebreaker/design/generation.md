@@ -74,6 +74,32 @@ preset (`donjons/formes.ron`, atelier du donjon). À leur valeur par défaut, un
 - **Salles à forme tirée** (`formes_part`, `salle_largeur`, `salle_profondeur`) : leur part et leur taille ; les
   salles dessinées gardent la leur.
 
+### Remplir la forme et relief (F.51 à F.57, Veloren)
+
+Trois manques à côté de donjon.bin.sh : le donjon n'occupait que 18 à 33 % des cases de sa forme, ses couloirs ne
+faisaient pas un labyrinthe, et il était presque plat. Mêmes principes : la mission ne change pas, tout est en
+réglage (`assembly`, `vertical` de `generation.ron`, presets, curseurs de l'atelier), et à 0 une graine donne le
+donjon d'avant. Le résumé du donjon dit la part de la silhouette occupée.
+
+- **Labyrinthe de remplissage** (`remplissage`, 0 à 100 % de la roche libre) : une fois la mission assemblée, un
+  labyrinthe est creusé dans le vide de la silhouette, à chaque étage. Chaque morceau part d'une case de couloir
+  et avance de deux cases (couloir, mur, couloir) ; une case n'est creusée que si rien de praticable ne la touche
+  hors celle d'où elle vient. **Le labyrinthe ne touche donc le donjon que par le pied de chaque morceau** : il ne
+  contourne aucune porte à clé, et on en ressort toujours. `boucles_labyrinthe` ouvre des murs à l'intérieur d'un
+  même morceau, `elagage` rebouche des culs-de-sac, `sinuosite` allonge ses couloirs. À 100 %, 98 à 99 % des cases
+  de la forme sont prises. Les créatures de couloir y sont rares (`corridors.labyrinthe_per_cells`).
+- **Salles en plus** (`salles_en_plus`) : des culs-de-sac hors mission, tirés et peuplés comme une salle de
+  branche, posés loin de la salle où ils s'accrochent, là où la forme est vide.
+- **Salles tout en hauteur** (`vertical`), générées avec les symboles des plans (`design/donjon.md`) :
+  l'**escalier en Z** (`escaliers_z` : deux volées opposées l'une au-dessus de l'autre) et la **tour** (`tours`,
+  `tour_etages`, `tour_largeur`, `tour_vide` : un puits carré, une volée par mur, un palier à portes par coin, un
+  vide ou un pilier au milieu). Elles ne sont posées que là où le chemin descend d'autant d'étages qu'elles en
+  montent : on entre par le haut, on repart par le pied. Avec `tours`, un changement d'étage du chemin principal
+  peut descendre plusieurs étages d'un coup. Les tours restent sous le sol (F.31).
+- Limites connues : un étage entier est rempli alors que les salles se partagent entre les étages, donc le
+  labyrinthe est grand (3 400 cases pour 1 200 de salles dans `dedale` en taille moyenne) ; resserrer la forme
+  fait échouer l'assemblage. Rien ne part encore des paliers du milieu d'une tour.
+
 ## Habitants crédibles (tâche 2.5)
 
 Règles de voisinage (`generation.json` → `rules`), vérifiées sur 1000 graines par taille :

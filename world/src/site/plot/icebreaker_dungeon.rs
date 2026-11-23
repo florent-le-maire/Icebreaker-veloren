@@ -336,7 +336,8 @@ impl IcebreakerDungeon {
             }
             if (1..=2).any(|dz| solid(block_at(spot.with_z(ground + dz)))) {
                 problems.push(format!(
-                    "{cell:?} '{symbol}' : bouché au-dessus de {:?}",
+                    "{cell:?} '{symbol}' ({}) : bouché au-dessus de {:?}",
+                    self.dungeon.salles.iter().find(|s| s.cells.contains(&cell)).map_or("couloir", |s| s.id.as_str()),
                     spot.with_z(ground)
                 ));
             }

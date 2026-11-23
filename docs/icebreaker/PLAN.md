@@ -337,6 +337,13 @@ tâche pour ce qui casse.
 - [ ] L'atelier du donjon (`.\icebreaker.ps1 donjon-atelier`) en main : vue 3D (tourner, couper les étages), curseurs, enregistrer un preset, le retrouver
   au panneau Départ.
 
+**Labyrinthe et relief du donjon (F.51 à F.57, `PLAN-PLAYTEST.md`)**
+- [ ] `donjon -Site Genere -Profil dedale` : se perdre dans le labyrinthe et en ressortir ; est-il trop grand, trop
+  vide ? Trouver une salle hors mission. La porte à clé ne se contourne pas.
+- [ ] `donjon -Site Genere -Profil tours` : descendre une tour par ses volées (les marches se montent sans sauter),
+  regarder dans le vide, y tomber (dégâts de chute : Q64) ; un escalier en Z, monté et descendu.
+- [ ] L'atelier du donjon en main : les groupes « Remplissage » et « Relief », une tour en vue 3D.
+
 **Formes du donjon (F.45 à F.50, `PLAN-PLAYTEST.md`)**
 - [ ] `donjon -Site Genere -Profil forteresse` : deux salles collées, portes dos à dos (on passe, les portes
   s'ouvrent, rien ne coince) ; `-Profil dedale` : une impasse et un couloir qui serpente, à pied.

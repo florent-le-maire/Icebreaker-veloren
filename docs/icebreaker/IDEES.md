@@ -39,7 +39,10 @@ Ce que les lectures apprennent :
 6 bis. **Formes du donjon, la suite** (P à M, 2026-11-23, après F.46 à F.49) — ce que donjon.bin.sh a et que nous
    n'avons pas repris : un plan **symétrique** (difficile avec un graphe de mission) ; une silhouette en plusieurs
    morceaux (château : enceinte, cour, donjon au milieu). Et de notre côté : un petit butin ou un piège au bout
-   d'une impasse, une silhouette différente par étage.
+   d'une impasse, une silhouette différente par étage. Après F.51 à F.57 (labyrinthe, tours) : des tours qui
+   **dépassent à la surface** (revient sur F.31, rendu dehors à faire) ; des branches aux **paliers du milieu**
+   d'une tour ; un **puits à échelle** sur plusieurs étages (`H` ne monte que d'un étage) ; un labyrinthe par
+   étage seulement là où il y a des salles, pour qu'il soit moins grand ; des salles rondes (vrai colimaçon).
 
 ### Village et campagne
 
