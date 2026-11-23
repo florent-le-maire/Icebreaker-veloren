@@ -577,6 +577,7 @@ fn generate_mission(settings: &Settings, mission: &Mission) -> Result<Dungeon, S
                 .zip(&room_cells)
                 .map(|(r, (role, cells))| Salle { role: *role, id: r.template.id.clone(), cells: cells.clone() })
                 .collect();
+            let couverture = assembled.couverture(assembly.silhouette);
             return Ok(Dungeon {
                 plan: assembled.plan,
                 arrival: assembled.arrival,
@@ -591,7 +592,11 @@ fn generate_mission(settings: &Settings, mission: &Mission) -> Result<Dungeon, S
                     assembled.attempts,
                     match (settings.assembly.silhouette, outlined) {
                         (silhouette::Silhouette::Libre, _) => String::new(),
-                        (s, true) => format!(", silhouette {}", s.nom()),
+                        // Icebreaker F.51 : and how much of it the dungeon takes.
+                        (s, true) => {
+                            let (cases, largeur) = couverture.unwrap_or_default();
+                            format!(", silhouette {} occupée à {cases} % (largeur {largeur} %)", s.nom())
+                        },
                         (s, false) => format!(", silhouette {} abandonnée (trop serrée)", s.nom()),
                     },
                     chests_by_tier.join(" / "),

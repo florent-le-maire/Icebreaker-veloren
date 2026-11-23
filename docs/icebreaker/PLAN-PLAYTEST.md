@@ -127,6 +127,24 @@ style des couloirs, disposition et taille des salles, et des presets vraiment ti
 - [x] **F.50 Atelier et docs** — bord de la silhouette en doré (plan et 3D), `?preset=&graine=&vue=plan` ;
   `design/generation.md`, wiki, idées. Vu dans Edge sans affichage ; pas encore essayé par l'équipe. 05126c5a
 
+Remplir la forme, vrai labyrinthe, verticalité (Flo, 2026-11-23) : le donjon n'occupe que 64 à 84 % de la largeur de
+sa forme, ses couloirs ne font pas un labyrinthe, et il manque de relief (tours à colimaçon, escaliers en Z, puits).
+Décidé : le vide est rempli par un labyrinthe et des salles hors mission, branchés en un seul point (aucune porte à
+clé contournée) ; les tours restent sous le sol ; leur milieu est vide ou plein, au choix du preset.
+
+- [ ] **F.51 Mesurer la couverture** — part de la forme occupée (cases et largeur), dans le résumé du donjon donc
+  dans l'atelier ; test qui donne le chiffre de départ. — *en cours : Veloren-donjon, 2026-11-23*
+- [ ] **F.52 Labyrinthe de remplissage** — `remplissage` (0 à 100 % du vide) : un labyrinthe creusé dans la roche
+  libre de la forme, à chaque étage, depuis les couloirs ; `elagage` des culs-de-sac, boucles dans un même arbre.
+- [ ] **F.53 Salles en plus** — `salles_en_plus` : des salles hors mission dans les grands vides, reliées par le
+  labyrinthe, peuplées comme une branche.
+- [ ] **F.54 Forme resserrée et presets** — l'étendue suit la surface des salles ; `dedale` et `labyrinthe` remplis
+  à 100 % ; couverture ≥ 95 % testée.
+- [ ] **F.55 Escalier en Z** — salle générée à deux volées opposées, 2 à 4 étages, portes en bas et en haut.
+- [ ] **F.56 Tours à colimaçon** — salle générée en anneau (3 ou 5 cases), une volée par côté, portes aux paliers,
+  milieu vide ou plein, 2 à 5 étages ; une tour peut remplacer l'escalier entre deux étages du chemin principal.
+- [ ] **F.57 Presets, atelier, docs** — preset `tours`, vue 3D vérifiée, design, wiki, idées.
+
 Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,
 Veloren n'a presque rien pour une cuisine. Nos modèles sont générés par du code ; la vie vient des traces d'activité,
 de la densité et de la hauteur ; la cuisine passe à 6×5 cases. Premier lot de six modèles, puis essai en jeu (F.13).

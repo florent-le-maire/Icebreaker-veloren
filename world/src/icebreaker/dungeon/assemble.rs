@@ -200,6 +200,33 @@ impl Assembled {
         }
         errors
     }
+
+    /// Icebreaker F.51 : how much of its outline the dungeon takes, out of 100: the cells of the outline that hold
+    /// something (room, corridor, wall) on a level at least, and the width taken (both ways) of the width of the
+    /// outline. `None` without an outline.
+    pub fn couverture(&self, silhouette: Silhouette) -> Option<(i32, i32)> {
+        if silhouette == Silhouette::Libre {
+            return None;
+        }
+        let ((cx, cy), r) = (self.centre, self.etendue);
+        let taken: BTreeSet<(i32, i32)> = self.plan.cells.keys().map(|c| (c.x - cx, c.y - cy)).collect();
+        let outline: Vec<(i32, i32)> = (-r..=r)
+            .flat_map(|x| (-r..=r).map(move |y| (x, y)))
+            .filter(|(x, y)| silhouette.dedans(*x, *y, r))
+            .collect();
+        let span = |cells: &mut dyn Iterator<Item = (i32, i32)>| {
+            let cells: Vec<_> = cells.collect();
+            let side = |of: fn(&(i32, i32)) -> i32| {
+                let (min, max) = (cells.iter().map(of).min(), cells.iter().map(of).max());
+                min.zip(max).map_or(0, |(min, max)| max - min + 1)
+            };
+            side(|c| c.0) + side(|c| c.1)
+        };
+        let inside = outline.iter().filter(|c| taken.contains(c)).count() as i32;
+        let width = span(&mut taken.iter().copied());
+        let whole = span(&mut outline.iter().copied());
+        Some((100 * inside / (outline.len() as i32).max(1), (100 * width / whole.max(1)).min(100)))
+    }
 }
 
 /// Assembles `graph`; `None` if no attempt succeeded. `log` gets the reason of
@@ -1173,5 +1200,37 @@ mod tests {
         let mean = rooms as f32 / dungeons as f32;
         println!("medium : {mean:.1} salles en moyenne sur {dungeons} donjons, dont {shaped} de formes variées");
         assert!((12.0..=18.0).contains(&mean), "medium : {mean:.1} salles en moyenne");
+    }
+
+    /// Icebreaker F.51 : how much of its outline a dungeon takes (the figures to beat: before the filling of
+    /// F.52, a tenth to a quarter of the cells).
+    #[test]
+    fn the_cover_of_the_outline_is_measured() {
+        let mut settings = Settings::load().unwrap();
+        let catalog = settings.catalog(0).unwrap();
+        let resolved = settings.resolve(&Mission::default()).unwrap();
+        let graph = graph::generate(&resolved, 3);
+        let free = assemble(&graph, &catalog, 3, &settings.assembly, |_| {}).unwrap();
+        assert_eq!(free.couverture(Silhouette::Libre), None);
+        for silhouette in [Silhouette::Carre, Silhouette::Croix, Silhouette::Rond, Silhouette::Couronne] {
+            settings.assembly.silhouette = silhouette;
+            let (mut cells, mut width, mut dungeons) = (0, 0, 0);
+            for seed in 0..20 {
+                let graph = graph::generate(&resolved, seed);
+                if let Some(dungeon) = assemble(&graph, &catalog, seed, &settings.assembly, |_| {}) {
+                    let (c, w) = dungeon.couverture(silhouette).unwrap();
+                    assert!((1..=100).contains(&c) && (1..=100).contains(&w), "{silhouette:?} : {c} %, {w} %");
+                    cells += c;
+                    width += w;
+                    dungeons += 1;
+                }
+            }
+            assert!(dungeons > 0);
+            println!(
+                "{silhouette:?} : {} % des cases, {} % de la largeur ({dungeons} donjons)",
+                cells / dungeons,
+                width / dungeons
+            );
+        }
     }
 }
