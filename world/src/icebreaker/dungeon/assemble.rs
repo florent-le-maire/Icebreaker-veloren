@@ -77,6 +77,10 @@ pub struct AssemblySettings {
     pub boucles_labyrinthe: i32,
     #[serde(default)]
     pub elagage: i32,
+    /// Icebreaker F.53 : rooms out of the mission (dead ends, drawn as the rooms of a branch), put far from the
+    /// room they hang on, where the outline is still empty.
+    #[serde(default = "no_dead_end")]
+    pub salles_en_plus: super::settings::Range,
 }
 
 fn no_dead_end() -> super::settings::Range { super::settings::Range(0, 0) }
@@ -299,6 +303,8 @@ struct Attempt<'a> {
 /// door it comes from.
 const OUTLINE_TRIES: usize = 3;
 const OUTLINE_SLACK: usize = 14;
+/// Icebreaker F.53 : without an outline, cells a room out of the mission may end up from the door it comes from.
+const FAR_SLACK: i32 = 20;
 
 /// Icebreaker F.49 : the rooms of the dungeon `assembly.etendue` is given for, and the widest outline (the dungeon
 /// must hold in the area kept for it, `placement.emprise`).
@@ -475,6 +481,8 @@ impl<'a> Attempt<'a> {
         });
 
         // The tree: each passage links a placed room to a room still to place.
+        // Icebreaker F.53 : the rooms out of the mission wait for the others to be placed.
+        let mut later = Vec::new();
         let mut queue = VecDeque::from([0]);
         while let Some(parent) = queue.pop_front() {
             for passage in tree.iter().filter(|p| p.from == parent || p.to == parent) {
@@ -482,7 +490,11 @@ impl<'a> Attempt<'a> {
                 if self.placed.contains_key(&child) {
                     continue;
                 }
-                if !self.place_child(parent, child, passage) {
+                if self.graph.rooms[child].en_plus {
+                    later.push((parent, child, passage.clone()));
+                    continue;
+                }
+                if !self.place_child(parent, child, passage, false) {
                     return Err(format!(
                         "pas de place pour la salle {child} ({}) après la salle {parent} : {}",
                         self.graph.rooms[child].role.name(),
@@ -498,6 +510,13 @@ impl<'a> Attempt<'a> {
             if self.connect_extra(&passage) {
                 self.passages.push(passage);
             }
+        }
+        // Icebreaker F.53 : far from the room it hangs on, else next to it as any room.
+        for (parent, child, passage) in later {
+            if !self.place_child(parent, child, &passage, true) && !self.place_child(parent, child, &passage, false) {
+                return Err(format!("pas de place pour la salle en plus {child} : {}", self.placement_failure));
+            }
+            self.passages.push(passage);
         }
         // Icebreaker F.47 : nothing drawn when there is none: the dungeon of the seed is the one it was.
         if self.settings.impasses.1 > 0 {
@@ -609,7 +628,8 @@ impl<'a> Attempt<'a> {
         (tree, extras)
     }
 
-    fn place_child(&mut self, parent: usize, child: usize, passage: &Passage) -> bool {
+    /// `far` (Icebreaker F.53) : anywhere ahead of a door of the parent, as far as the outline goes.
+    fn place_child(&mut self, parent: usize, child: usize, passage: &Passage, far: bool) -> bool {
         let templates = self.templates_for(child);
         if templates.is_empty() {
             self.placement_failure = "aucune salle pour ce rôle".into();
@@ -618,7 +638,8 @@ impl<'a> Attempt<'a> {
         let (mut overlaps, mut no_corridor) = (0, 0);
         let level = -self.graph.rooms[child].level;
         // Icebreaker F.48 : nothing drawn at 0: the dungeon of the seed is the one it was.
-        if self.settings.collees > 0
+        if !far
+            && self.settings.collees > 0
             && self.rng.random_range(0..100) < self.settings.collees
             && self.glue_child(parent, child, passage, &templates, level)
         {
@@ -628,9 +649,14 @@ impl<'a> Attempt<'a> {
         // farther from the door it comes from, ahead and aside (a longer corridor, that bends), up to
         // `OUTLINE_SLACK` cells: it ends up where there is room left.
         let outlined = self.settings.silhouette != Silhouette::Libre;
-        let tries = self.settings.placement_tries * if outlined { OUTLINE_TRIES } else { 1 };
+        let tries = self.settings.placement_tries * if outlined || far { OUTLINE_TRIES } else { 1 };
         for attempt in 0..tries {
-            let slack = if outlined { (attempt * OUTLINE_SLACK / tries) as i32 } else { 0 };
+            let slack = match (far, outlined) {
+                (true, true) => self.etendue,
+                (true, false) => FAR_SLACK,
+                (false, true) => (attempt * OUTLINE_SLACK / tries) as i32,
+                (false, false) => 0,
+            };
             let from: Vec<FreeDoor> = self.free_connectors(&self.placed[&parent]).collect();
             if from.is_empty() {
                 self.placement_failure = format!(
@@ -1278,5 +1304,44 @@ mod tests {
                 width / dungeons
             );
         }
+    }
+
+    /// Icebreaker F.53 : rooms out of the mission are added, farther from the room they hang on than the others,
+    /// and the dungeon stays sound, filled or not.
+    #[test]
+    fn rooms_out_of_the_mission_are_placed_far() {
+        let mut settings = Settings::load().unwrap();
+        let catalog = settings.catalog(0).unwrap();
+        let before = graph::generate(&settings.resolve(&Mission::default()).unwrap(), 5).rooms.len();
+        settings.assembly.salles_en_plus = Range(5, 5);
+        settings.assembly.silhouette = Silhouette::Carre;
+        let resolved = settings.resolve(&Mission::default()).unwrap();
+        let (mut far, mut near, mut dungeons) = (0, 0, 0);
+        for seed in 0..30 {
+            settings.assembly.remplissage = if seed % 2 == 0 { 100 } else { 0 };
+            let graph = graph::generate(&resolved, seed);
+            assert!(graph.check().is_empty(), "graine {seed}");
+            assert_eq!(graph.rooms.iter().filter(|r| r.en_plus).count(), 5);
+            if seed == 5 {
+                assert_eq!(graph.rooms.len(), before + 5);
+            }
+            let Some(dungeon) = assemble(&graph, &catalog, seed, &settings.assembly, |_| {}) else {
+                continue;
+            };
+            assert!(dungeon.check().is_empty(), "graine {seed}");
+            for passage in &dungeon.passages {
+                let (a, b) = (dungeon.rooms[passage.from].middle(), dungeon.rooms[passage.to].middle());
+                let distance = (a.x - b.x).abs() + (a.y - b.y).abs();
+                if graph.rooms[passage.to].en_plus {
+                    far += distance;
+                } else if passage.kind != PassageKind::Drop {
+                    near += distance * 5 / (dungeon.passages.len() as i32 - 5);
+                }
+            }
+            dungeons += 1;
+        }
+        assert!(dungeons >= 24, "{dungeons} donjons sur 30");
+        println!("d'une salle à la suivante : {} cases, à une salle en plus : {}", near / 5 / dungeons, far / 5 / dungeons);
+        assert!(far > 2 * near, "salles en plus à {far} cases, les autres à {near}");
     }
 }

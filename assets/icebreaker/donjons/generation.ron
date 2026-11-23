@@ -146,6 +146,9 @@
         remplissage: 0,
         boucles_labyrinthe: 0,
         elagage: 0,
+        // Icebreaker F.53 : des salles hors mission (culs-de-sac, rôle tiré comme une salle de branche), posées loin
+        // de la salle où elles s'accrochent, là où la forme est encore vide ; le labyrinthe remplit le reste.
+        salles_en_plus: (0, 0),
 
     ),
     // Habitants et butin selon le rôle de la salle (tâche G.5). creatures : nombre par sorte (brute, archer, lookout,

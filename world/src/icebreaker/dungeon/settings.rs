@@ -566,6 +566,7 @@ impl Settings {
             population,
             corridors,
             calme: self.abri.calme,
+            en_plus: self.assembly.salles_en_plus,
             faction,
             species,
             modifiers: names,
@@ -720,6 +721,8 @@ pub struct Resolved {
     pub species: Option<String>,
     /// Names of the parameters applied, for the summary.
     pub modifiers: Vec<String>,
+    /// Icebreaker F.53 : rooms out of the mission (`assembly.salles_en_plus`).
+    pub en_plus: Range,
 }
 
 /// Decor by role of room (Icebreaker F.6): sprites of Veloren placed in the

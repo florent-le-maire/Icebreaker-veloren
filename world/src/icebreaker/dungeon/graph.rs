@@ -17,6 +17,8 @@ pub struct MissionRoom {
     pub level: i32,
     pub on_main_path: bool,
     pub key: Option<usize>,
+    /// Icebreaker F.53 : a room out of the mission, placed where the outline is still empty.
+    pub en_plus: bool,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -170,6 +172,7 @@ impl Builder {
             level,
             on_main_path,
             key: None,
+            en_plus: false,
         });
         self.zone.push(zone);
         id
@@ -410,6 +413,27 @@ pub fn generate(settings: &Resolved, seed: u64) -> MissionGraph {
             }
             let anchor = found[rng.random_range(0..found.len())];
             let room = b.add_room(*role, b.level(anchor), false, b.zone[anchor]);
+            b.connect(anchor, room, None);
+        }
+    }
+
+    // 5 bis. Icebreaker F.53 : the rooms out of the mission, each a dead end hooked on a room that has few
+    // passages; the assembly puts them far from it, where the outline is still empty. Their own dice, and none
+    // drawn without them.
+    if settings.en_plus.1 > 0 {
+        let mut rng = ChaCha8Rng::seed_from_u64(seed ^ 0xE2_9105);
+        for _ in 0..settings.en_plus.roll(&mut rng).max(0) {
+            let passages = |room: usize| {
+                b.passages.iter().filter(|p| p.from == room || p.to == room).count() + usize::from(room == main[0])
+            };
+            let free = |r: &&MissionRoom| r.id != goal && !r.en_plus && !RoomRole::SPECIAL.contains(&r.role);
+            let fewest = b.rooms.iter().filter(free).map(|r| passages(r.id)).min();
+            let anchors: Vec<usize> =
+                b.rooms.iter().filter(free).filter(|r| Some(passages(r.id)) == fewest).map(|r| r.id).collect();
+            let anchor = anchors[rng.random_range(0..anchors.len())];
+            let role = b.pick_branch_role(&mut rng, settings, b.rooms[anchor].role, 2);
+            let room = b.add_room(role, b.level(anchor), false, b.zone[anchor]);
+            b.rooms[room].en_plus = true;
             b.connect(anchor, room, None);
         }
     }

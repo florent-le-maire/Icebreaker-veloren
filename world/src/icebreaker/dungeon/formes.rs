@@ -125,6 +125,8 @@ forme! {
     remplissage: Nombre(i32) [0, 100] "Remplissage" "Labyrinthe dans le vide de la forme (%)";
     boucles_labyrinthe: Nombre(i32) [0, 20] "Remplissage" "Boucles du labyrinthe (pour 100 cases)";
     elagage: Nombre(i32) [0, 100] "Remplissage" "Culs-de-sac du labyrinthe rebouchés (%)";
+    /// Icebreaker F.53 : rooms out of the mission where the outline is still empty (`assembly.salles_en_plus`).
+    salles_en_plus: Plage(Range) [0, 30] "Remplissage" "Salles en plus, hors mission";
     /// Blocks of rock at least above the dungeon (`placement.profondeur`).
     profondeur: Nombre(i32) [1, 60] "Sous le sol" "Roche au-dessus (blocs)";
 }
@@ -182,6 +184,9 @@ impl Forme {
         if let Some(elagage) = self.elagage {
             settings.assembly.elagage = elagage;
         }
+        if let Some(en_plus) = self.salles_en_plus {
+            settings.assembly.salles_en_plus = en_plus;
+        }
         if let Some(profondeur) = self.profondeur {
             settings.placement.profondeur = profondeur;
         }
@@ -212,6 +217,7 @@ impl Forme {
             remplissage: Some(settings.assembly.remplissage),
             boucles_labyrinthe: Some(settings.assembly.boucles_labyrinthe),
             elagage: Some(settings.assembly.elagage),
+            salles_en_plus: Some(settings.assembly.salles_en_plus),
             profondeur: Some(settings.placement.profondeur),
         })
     }

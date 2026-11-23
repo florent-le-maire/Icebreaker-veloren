@@ -137,8 +137,8 @@ clé contournée) ; les tours restent sous le sol ; leur milieu est vide ou plei
 - [x] **F.52 Labyrinthe de remplissage** — `remplissage` (0 à 100 % du vide), `boucles_labyrinthe`, `elagage` : à
   100 %, 98 à 99 % des cases de la forme occupées ; chaque morceau ne touche le donjon que par une case. Trop grand
   tant que la forme n'est pas resserrée (F.54 : 4 000 à 7 500 cases) ; pas vu dans l'atelier ni en jeu. be6d6fe5
-- [ ] **F.53 Salles en plus** — `salles_en_plus` : des salles hors mission dans les grands vides, reliées par le
-  labyrinthe, peuplées comme une branche.
+- [x] **F.53 Salles en plus** — `salles_en_plus` : des culs-de-sac hors mission (rôle et habitants d'une salle de
+  branche), posés loin de leur salle d'attache (44 cases contre 12), reliés par un long couloir. Pas vu en jeu.
 - [ ] **F.54 Forme resserrée et presets** — l'étendue suit la surface des salles ; `dedale` et `labyrinthe` remplis
   à 100 % ; couverture ≥ 95 % testée.
 - [ ] **F.55 Escalier en Z** — salle générée à deux volées opposées, 2 à 4 étages, portes en bas et en haut.
