@@ -112,6 +112,9 @@ forme! {
     /// Icebreaker F.46 : the outline of the plan and how far it reaches (`assembly.silhouette`, `etendue`).
     silhouette: Choix(Silhouette) [0, 0] "Silhouette" "Forme du plan";
     etendue: Nombre(i32) [12, 56] "Silhouette" "Étendue (cases du milieu au bord)";
+    /// Icebreaker F.47 : how the corridors go (`assembly.sinuosite`, `impasses`).
+    sinuosite: Nombre(i32) [0, 100] "Couloirs" "Sinuosité (0 droit, 100 labyrinthe)";
+    impasses: Plage(Range) [0, 8] "Couloirs" "Impasses (couloirs sans issue)";
     /// Blocks of rock at least above the dungeon (`placement.profondeur`).
     profondeur: Nombre(i32) [1, 60] "Sous le sol" "Roche au-dessus (blocs)";
 }
@@ -142,6 +145,12 @@ impl Forme {
         if let Some(etendue) = self.etendue {
             settings.assembly.etendue = etendue;
         }
+        if let Some(sinuosite) = self.sinuosite {
+            settings.assembly.sinuosite = sinuosite;
+        }
+        if let Some(impasses) = self.impasses {
+            settings.assembly.impasses = impasses;
+        }
         if let Some(profondeur) = self.profondeur {
             settings.placement.profondeur = profondeur;
         }
@@ -163,6 +172,8 @@ impl Forme {
             spacing: Some(settings.assembly.spacing),
             silhouette: Some(settings.assembly.silhouette),
             etendue: Some(settings.assembly.etendue),
+            sinuosite: Some(settings.assembly.sinuosite),
+            impasses: Some(settings.assembly.impasses),
             profondeur: Some(settings.placement.profondeur),
         })
     }

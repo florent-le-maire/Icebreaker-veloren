@@ -113,8 +113,9 @@ style des couloirs, disposition et taille des salles, et des presets vraiment ti
 
 - [x] **F.45 Réglages du preset dits une seule fois** — table `CHAMPS` de `formes.rs`, envoyée à l'atelier qui en
   tire ses curseurs, rangés par groupe ; bornes contrôlées. Vu dans Edge sans affichage. 6879f195
-- [ ] **F.46 Silhouette du plan** — `silhouette` (carré, rectangle, croix, rond, couronne, diagonales, losange,
-  hexagone) et `etendue` : salles et couloirs restent dedans. — *en cours : Veloren-donjon, 2026-11-23*
+- [x] **F.46 Silhouette du plan** — `silhouette` (carré, rectangle, croix, rond, couronne, diagonales, losange,
+  hexagone) et `etendue` ; sans silhouette, mêmes donjons qu'avant. À 44 cases, 0 à 4 graines sur 50 échouent (la
+  suivante prend le relais) ; trop serré (32), une sur deux. Pas vu en jeu. de047d77
 - [ ] **F.47 Style des couloirs** — `sinuosite` (droit à labyrinthe) et `impasses` (faux couloirs en cul-de-sac).
 - [ ] **F.48 Disposition et taille des salles** — `collees` (salles posées l'une contre l'autre, sans couloir), part
   et taille des salles à forme tirée.

@@ -54,7 +54,20 @@ pub struct AssemblySettings {
     pub silhouette: Silhouette,
     #[serde(default = "default_etendue")]
     pub etendue: i32,
+    /// Icebreaker F.47 : how much the corridors wander, from 0 (the shortest way) to 100 (a maze): the cost of a
+    /// step grows with a noise drawn for each cell of the dungeon.
+    #[serde(default)]
+    pub sinuosite: i32,
+    /// Icebreaker F.47 : corridors that lead nowhere, dug from the other corridors.
+    #[serde(default = "no_dead_end")]
+    pub impasses: super::settings::Range,
 }
+
+fn no_dead_end() -> super::settings::Range { super::settings::Range(0, 0) }
+
+/// Icebreaker F.47 : cells of a dead end, and places tried for each.
+const DEAD_END_LENGTH: (i32, i32) = (2, 5);
+const DEAD_END_TRIES: usize = 30;
 
 fn default_etendue() -> i32 { 40 }
 
@@ -190,7 +203,7 @@ pub fn assemble(
     let mut rng = ChaCha8Rng::seed_from_u64(seed);
     let theme = dominant_theme(catalog, seed);
     for attempt in 1..=settings.attempts {
-        let mut state = Attempt::new(graph, catalog, &mut rng, settings, theme.clone());
+        let mut state = Attempt::new(graph, catalog, &mut rng, settings, theme.clone(), seed);
         match state.run() {
             Err(failure) => log(format!("tentative {attempt} : {failure}")),
             Ok(()) => {
@@ -222,6 +235,11 @@ struct Attempt<'a> {
     placement_failure: String,
     /// Icebreaker F.46 : the middle of the outline.
     centre: (i32, i32),
+    /// Icebreaker F.47 : the seed of the dungeon (the noise of the corridors), the cells of the rooms and the floor
+    /// cells of the corridors (where a dead end may start).
+    seed: u64,
+    in_rooms: BTreeSet<Cell>,
+    corridors: Vec<Cell>,
 }
 
 /// Icebreaker F.46 : inside an outline, times more tries to place a room, and cells farther it may end up from the
@@ -244,8 +262,12 @@ impl<'a> Attempt<'a> {
         rng: &'a mut ChaCha8Rng,
         settings: &'a AssemblySettings,
         theme: Option<String>,
+        seed: u64,
     ) -> Self {
         Self {
+            seed,
+            in_rooms: BTreeSet::new(),
+            corridors: Vec::new(),
             theme,
             graph,
             catalog,
@@ -416,7 +438,61 @@ impl<'a> Attempt<'a> {
                 self.passages.push(passage);
             }
         }
+        // Icebreaker F.47 : nothing drawn when there is none: the dungeon of the seed is the one it was.
+        if self.settings.impasses.1 > 0 {
+            for _ in 0..self.settings.impasses.roll(self.rng) {
+                self.dig_dead_end();
+            }
+        }
         Ok(())
+    }
+
+    /// Icebreaker F.47 : a corridor that leads nowhere, straight from a cell of another corridor through its wall.
+    /// It touches nothing one walks on but the cell it starts from (no way around a locked door, no hole above):
+    /// given up if no place is found.
+    fn dig_dead_end(&mut self) -> bool {
+        for _ in 0..DEAD_END_TRIES {
+            if self.corridors.is_empty() {
+                return false;
+            }
+            let from = self.pick(&self.corridors.clone());
+            let (dx, dy) = self.pick(&DIRECTIONS);
+            let length = self.rng.random_range(DEAD_END_LENGTH.0..=DEAD_END_LENGTH.1);
+            let cells: Vec<Cell> = (1..=length).map(|k| from.offset(dx * k, dy * k, 0)).collect();
+            // Rock, or the wall of a corridor (never of a room).
+            let solid = |c: Cell| self.grid.is_free(c) || (self.grid.get(c) == '#' && !self.in_rooms.contains(&c));
+            let quiet = |c: Cell| self.grid.is_free(c) || self.grid.get(c) == '#';
+            let fine = cells.iter().enumerate().all(|(i, c)| {
+                let before = if i == 0 { from } else { cells[i - 1] };
+                self.dedans(*c)
+                    && solid(*c)
+                    && self.grid.get(c.offset(0, 0, 1)) != '_'
+                    && DIRECTIONS.iter().all(|(nx, ny)| {
+                        let n = c.offset(*nx, *ny, 0);
+                        n == before || quiet(n)
+                    })
+            });
+            if fine {
+                let corridor: Vec<(Cell, char)> = cells.into_iter().map(|c| (c, '.')).collect();
+                self.carve(&corridor);
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Icebreaker F.47 : what a step into `cell` costs more than 1, for a corridor that wanders: a noise of the
+    /// cell (0 to 3, the same all along the assembly of this seed) times the sinuosity.
+    fn detour(&self, cell: Cell) -> i32 {
+        if self.settings.sinuosite <= 0 {
+            return 0;
+        }
+        let mut h = self.seed ^ 0x51_4E_05;
+        for v in [cell.x, cell.y, cell.level] {
+            h = (h ^ v as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15);
+            h ^= h >> 29;
+        }
+        (h % 4) as i32 * self.settings.sinuosite / 25
     }
 
     /// Spanning tree = passages in the order of the graph (main path and
@@ -550,7 +626,7 @@ impl<'a> Attempt<'a> {
             pairs.into_iter().take(self.settings.extra_passage_tries)
         {
             if let Some(corridor) = self.route(start, goal, drop)
-                && corridor.len() <= self.settings.max_extra_length
+                && corridor.len() <= self.settings.max_extra_length * (50 + self.settings.sinuosite.max(0) as usize) / 50
             {
                 self.carve(&corridor);
                 self.open_door(from_door);
@@ -602,6 +678,7 @@ impl<'a> Attempt<'a> {
                 written.push(at);
             }
         }
+        self.in_rooms.extend(written.iter().copied());
         self.placed.insert(room.graph_room, room);
         written
     }
@@ -609,6 +686,7 @@ impl<'a> Attempt<'a> {
     fn erase(&mut self, written: &[Cell], graph_room: usize) {
         for cell in written {
             self.grid.cells.remove(cell);
+            self.in_rooms.remove(cell);
         }
         self.placed.remove(&graph_room);
     }
@@ -623,6 +701,9 @@ impl<'a> Attempt<'a> {
     fn carve(&mut self, corridor: &[(Cell, char)]) {
         for (cell, symbol) in corridor {
             self.grid.cells.insert(*cell, *symbol);
+            if *symbol == '.' {
+                self.corridors.push(*cell);
+            }
         }
         for (cell, _) in corridor {
             for (dx, dy) in DIRECTIONS {
@@ -679,7 +760,8 @@ impl<'a> Attempt<'a> {
 
         while let Some(Reverse((_, _, state))) = open.pop() {
             examined += 1;
-            if examined > self.settings.search_limit {
+            // Icebreaker F.47 : a wandering corridor looks farther.
+            if examined > self.settings.search_limit * (1 + self.settings.sinuosite.max(0) as usize / 25) {
                 break;
             }
             let (cell, fallen) = state;
@@ -715,7 +797,7 @@ impl<'a> Attempt<'a> {
             for (dx, dy) in DIRECTIONS {
                 let next = cell.offset(dx, dy, 0);
                 if free(next) {
-                    visit((next, fallen), 1, vec![(next, '.')]);
+                    visit((next, fallen), 1 + self.detour(next), vec![(next, '.')]);
                 }
                 if !drop {
                     // Up: stairs here, a hole above them, a landing on the level above.
@@ -918,6 +1000,40 @@ mod tests {
             // A seed that fails gives way to the next one (`SEED_TRIES`).
             assert!(failures <= 10, "{silhouette:?} : {failures} donjons sur 50 non assemblés");
         }
+    }
+
+    /// Icebreaker F.47 : corridors grow longer with the sinuosity, dead ends are dug, and the dungeon stays sound.
+    #[test]
+    fn corridors_wander_and_dead_ends_are_dug() {
+        let mut settings = Settings::load().unwrap();
+        let catalog = settings.catalog(0).unwrap();
+        let resolved = settings.resolve(&Mission::default()).unwrap();
+        // Room for the corridors to wander.
+        settings.assembly.spacing = Range(4, 7);
+        let mut measure = |sinuosite: i32, impasses: Range| {
+            settings.assembly.sinuosite = sinuosite;
+            settings.assembly.impasses = impasses;
+            let (mut cells, mut dungeons) = (0, 0);
+            for seed in 0..40 {
+                let graph = graph::generate(&resolved, seed);
+                if let Some(dungeon) = assemble(&graph, &catalog, seed, &settings.assembly, |_| {}) {
+                    assert!(dungeon.check().is_empty(), "sinuosité {sinuosite}, graine {seed}");
+                    let (c, bad_stairs) = corridor_stats(&dungeon);
+                    assert_eq!(bad_stairs, 0);
+                    cells += c;
+                    dungeons += 1;
+                }
+            }
+            assert!(dungeons >= 36, "sinuosité {sinuosite} : {dungeons} donjons sur 40");
+            cells as f32 / dungeons as f32
+        };
+        let straight = measure(0, Range(0, 0));
+        let winding = measure(100, Range(0, 0));
+        let dead_ends = measure(0, Range(6, 6));
+        println!("couloirs par donjon : {straight:.0} cases droit, {winding:.0} sinueux, {dead_ends:.0} avec 6 impasses");
+        assert!(winding >= straight * 1.2, "{winding:.0} cases sinueux pour {straight:.0} droit");
+        // Six dead ends of 2 to 5 cells, most of them dug.
+        assert!(dead_ends >= straight + 9.0, "{dead_ends:.0} cases avec impasses pour {straight:.0} sans");
     }
 
     /// Icebreaker F.3: a medium dungeon has 12 to 18 rooms on average.

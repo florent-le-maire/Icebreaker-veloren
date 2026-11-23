@@ -127,6 +127,11 @@
         // formes.ron les change.
         silhouette: Libre,
         etendue: 40,
+        // Icebreaker F.47 : le style des couloirs (idée des « corridors » de donjon.bin.sh). sinuosite : 0 = le plus
+        // court chemin, 100 = un dédale (ne se voit que si les salles sont écartées : spacing) ; impasses : couloirs
+        // sans issue de 2 à 5 cases, creusés depuis les autres couloirs.
+        sinuosite: 0,
+        impasses: (0, 0),
     ),
     // Habitants et butin selon le rôle de la salle (tâche G.5). creatures : nombre par sorte (brute, archer, lookout,
     // chief, boss, beast) ; chests : coffres ; awake : éveillées (false : endormies, voir `sleep`).

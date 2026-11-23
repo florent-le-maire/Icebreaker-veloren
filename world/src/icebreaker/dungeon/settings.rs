@@ -263,6 +263,9 @@ impl Settings {
         if !(8..=56).contains(&settings.assembly.etendue) {
             errors.push("assembly : etendue de 8 à 56 cases (le donjon doit tenir dans son emprise)".into());
         }
+        if !(0..=100).contains(&settings.assembly.sinuosite) || !settings.assembly.impasses.valid(0) {
+            errors.push("assembly : sinuosite de 0 à 100, impasses 0 ≤ min ≤ max".into());
+        }
         if placement.profondeur < 1 {
             errors.push("placement : profondeur au moins 1".into());
         }
