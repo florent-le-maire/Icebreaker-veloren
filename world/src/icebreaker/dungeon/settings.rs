@@ -266,6 +266,9 @@ impl Settings {
         if !(0..=100).contains(&settings.assembly.sinuosite) || !settings.assembly.impasses.valid(0) {
             errors.push("assembly : sinuosite de 0 à 100, impasses 0 ≤ min ≤ max".into());
         }
+        if !(0..=100).contains(&settings.assembly.collees) {
+            errors.push("assembly : collees de 0 à 100".into());
+        }
         if placement.profondeur < 1 {
             errors.push("placement : profondeur au moins 1".into());
         }

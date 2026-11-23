@@ -61,9 +61,17 @@ pub struct AssemblySettings {
     /// Icebreaker F.47 : corridors that lead nowhere, dug from the other corridors.
     #[serde(default = "no_dead_end")]
     pub impasses: super::settings::Range,
+    /// Icebreaker F.48 : chances out of 100 that a room is put right against the one it comes from, door to
+    /// door, without a corridor (the « salles collées » of `design/generation.md`); when it does not fit, a
+    /// corridor as usual.
+    #[serde(default)]
+    pub collees: i32,
 }
 
 fn no_dead_end() -> super::settings::Range { super::settings::Range(0, 0) }
+
+/// Icebreaker F.48 : rooms and doors tried to put a room against the one it comes from.
+const GLUE_TRIES: usize = 12;
 
 /// Icebreaker F.47 : cells of a dead end, and places tried for each.
 const DEAD_END_LENGTH: (i32, i32) = (2, 5);
@@ -526,6 +534,13 @@ impl<'a> Attempt<'a> {
         }
         let (mut overlaps, mut no_corridor) = (0, 0);
         let level = -self.graph.rooms[child].level;
+        // Icebreaker F.48 : nothing drawn at 0: the dungeon of the seed is the one it was.
+        if self.settings.collees > 0
+            && self.rng.random_range(0..100) < self.settings.collees
+            && self.glue_child(parent, child, passage, &templates, level)
+        {
+            return true;
+        }
         // Icebreaker F.46 : inside an outline there is less room: more tries, and try after try the room may sit
         // farther from the door it comes from, ahead and aside (a longer corridor, that bends), up to
         // `OUTLINE_SLACK` cells: it ends up where there is room left.
@@ -603,6 +618,58 @@ impl<'a> Attempt<'a> {
         }
         self.placement_failure =
             format!("{overlaps} chevauchement(s), {no_corridor} couloir(s) impossible(s)");
+        false
+    }
+
+    /// Icebreaker F.48 : the child right against its parent: its door on the cell in front of a free door of the
+    /// parent, facing it, on the same level; one walks from a door into the other.
+    fn glue_child(
+        &mut self,
+        parent: usize,
+        child: usize,
+        passage: &Passage,
+        templates: &[&'a RoomTemplate],
+        level: i32,
+    ) -> bool {
+        for _ in 0..GLUE_TRIES {
+            let from: Vec<FreeDoor> = self.free_connectors(&self.placed[&parent]).collect();
+            if from.is_empty() {
+                return false;
+            }
+            let (from_door, start, (dx, dy)) = self.pick(&from);
+            let template = self.pick_template(templates);
+            let facing: Vec<_> = template
+                .doors()
+                .copied()
+                .filter(|c| c.direction() == (-dx, -dy) && level + c.cell.level == start.level)
+                .collect();
+            if facing.is_empty() {
+                continue;
+            }
+            let to = self.pick(&facing);
+            let origin = Cell::new(start.x - to.cell.x, start.y - to.cell.y, level);
+            let room = PlacedRoom {
+                graph_room: child,
+                template: template.clone(),
+                origin,
+            };
+            // As `fits`, but its door takes the cell kept free in front of the door of the parent.
+            let reserved = self.reserved();
+            if !room
+                .footprint()
+                .all(|c| self.grid.is_free(c) && self.dedans(c) && (c == start || !reserved.contains(&c)))
+            {
+                continue;
+            }
+            let child_door = room.to_dungeon(to.cell);
+            self.write(room);
+            self.open_door(from_door);
+            self.open_door(child_door);
+            if let Some(lock) = passage.lock {
+                self.locks.push((child_door, lock));
+            }
+            return true;
+        }
         false
     }
 
@@ -1034,6 +1101,40 @@ mod tests {
         assert!(winding >= straight * 1.2, "{winding:.0} cases sinueux pour {straight:.0} droit");
         // Six dead ends of 2 to 5 cells, most of them dug.
         assert!(dead_ends >= straight + 9.0, "{dead_ends:.0} cases avec impasses pour {straight:.0} sans");
+    }
+
+    /// Icebreaker F.48 : rooms put against each other, door to door: fewer corridors, and the dungeon stays sound.
+    #[test]
+    fn rooms_are_glued_door_to_door() {
+        let mut settings = Settings::load().unwrap();
+        let catalog = settings.catalog(0).unwrap();
+        let resolved = settings.resolve(&Mission::default()).unwrap();
+        let mut measure = |collees: i32| {
+            settings.assembly.collees = collees;
+            let (mut cells, mut glued, mut dungeons) = (0, 0, 0);
+            for seed in 0..40 {
+                let graph = graph::generate(&resolved, seed);
+                if let Some(dungeon) = assemble(&graph, &catalog, seed, &settings.assembly, |_| {}) {
+                    assert!(dungeon.check().is_empty(), "collées {collees}, graine {seed}");
+                    cells += corridor_stats(&dungeon).0;
+                    // Two doors side by side: two rooms against each other.
+                    let doors = dungeon.plan.cells.iter().filter(|(_, s)| **s == 'D');
+                    glued += doors
+                        .filter(|(c, _)| DIRECTIONS.iter().any(|(dx, dy)| dungeon.plan.get(c.offset(*dx, *dy, 0)) == 'D'))
+                        .count()
+                        / 2;
+                    dungeons += 1;
+                }
+            }
+            assert!(dungeons >= 36, "collées {collees} : {dungeons} donjons sur 40");
+            (cells as f32 / dungeons as f32, glued as f32 / dungeons as f32)
+        };
+        let (apart, none) = measure(0);
+        let (close, glued) = measure(100);
+        println!("par donjon : {apart:.0} cases de couloir sans salles collées, {close:.0} avec ; {glued:.1} paires collées");
+        assert_eq!(none, 0.0);
+        assert!(glued >= 5.0, "{glued:.1} paires de salles collées par donjon");
+        assert!(close <= apart * 0.8, "{close:.0} cases de couloir collé pour {apart:.0}");
     }
 
     /// Icebreaker F.3: a medium dungeon has 12 to 18 rooms on average.

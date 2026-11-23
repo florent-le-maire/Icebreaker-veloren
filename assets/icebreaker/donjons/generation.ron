@@ -132,6 +132,9 @@
         // sans issue de 2 à 5 cases, creusés depuis les autres couloirs.
         sinuosite: 0,
         impasses: (0, 0),
+        // Icebreaker F.48 : chances sur 100 qu'une salle soit posée contre celle d'où l'on vient, porte contre porte,
+        // sans couloir (les « salles collées » de design/generation.md) ; si elle ne tient pas, un couloir.
+        collees: 0,
     ),
     // Habitants et butin selon le rôle de la salle (tâche G.5). creatures : nombre par sorte (brute, archer, lookout,
     // chief, boss, beast) ; chests : coffres ; awake : éveillées (false : endormies, voir `sleep`).

@@ -116,7 +116,8 @@ style des couloirs, disposition et taille des salles, et des presets vraiment ti
 - [x] **F.46 Silhouette du plan** — `silhouette` (carré, rectangle, croix, rond, couronne, diagonales, losange,
   hexagone) et `etendue` ; sans silhouette, mêmes donjons qu'avant. À 44 cases, 0 à 4 graines sur 50 échouent (la
   suivante prend le relais) ; trop serré (32), une sur deux. Pas vu en jeu. de047d77
-- [ ] **F.47 Style des couloirs** — `sinuosite` (droit à labyrinthe) et `impasses` (faux couloirs en cul-de-sac).
+- [x] **F.47 Style des couloirs** — `sinuosite` (0 droit à 100 dédale, visible si les salles sont écartées) et
+  `impasses` (couloirs sans issue de 2 à 5 cases, qui ne contournent rien). Pas vu en jeu. 426b3cb6
 - [ ] **F.48 Disposition et taille des salles** — `collees` (salles posées l'une contre l'autre, sans couloir), part
   et taille des salles à forme tirée.
 - [ ] **F.49 Presets variés** — croix, rond, forteresse, dédale… avec un poids : la graine en tire un.

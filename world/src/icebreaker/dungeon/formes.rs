@@ -109,6 +109,12 @@ forme! {
     drops: Plage(Range) [0, 4] "Graphe" "Chutes (sens unique)";
     /// Cells between a door and the next room (`assembly.spacing`).
     spacing: Plage(Range) [1, 8] "Salles" "Cases entre deux salles";
+    /// Icebreaker F.48 : rooms against each other (`assembly.collees`), and the generated rooms of varied shapes:
+    /// their share among the rooms of a role and their size, walls included (`variety.shapes`).
+    collees: Nombre(i32) [0, 100] "Salles" "Salles collées, sans couloir (%)";
+    formes_part: Nombre(i32) [0, 90] "Salles" "Salles à forme tirée (%)";
+    salle_largeur: Plage(Range) [6, 16] "Salles" "Largeur des salles tirées (cases)";
+    salle_profondeur: Plage(Range) [6, 16] "Salles" "Profondeur des salles tirées (cases)";
     /// Icebreaker F.46 : the outline of the plan and how far it reaches (`assembly.silhouette`, `etendue`).
     silhouette: Choix(Silhouette) [0, 0] "Silhouette" "Forme du plan";
     etendue: Nombre(i32) [12, 56] "Silhouette" "Étendue (cases du milieu au bord)";
@@ -138,6 +144,18 @@ impl Forme {
         }
         if let Some(spacing) = self.spacing {
             settings.assembly.spacing = spacing;
+        }
+        if let Some(collees) = self.collees {
+            settings.assembly.collees = collees;
+        }
+        if let Some(part) = self.formes_part {
+            settings.variety.shapes.share = part as f64 / 100.0;
+        }
+        if let Some(largeur) = self.salle_largeur {
+            settings.variety.shapes.width = largeur;
+        }
+        if let Some(profondeur) = self.salle_profondeur {
+            settings.variety.shapes.depth = profondeur;
         }
         if let Some(silhouette) = self.silhouette {
             settings.assembly.silhouette = silhouette;
@@ -170,6 +188,10 @@ impl Forme {
             loops: Some(shape.loops),
             drops: Some(shape.drops),
             spacing: Some(settings.assembly.spacing),
+            collees: Some(settings.assembly.collees),
+            formes_part: Some((settings.variety.shapes.share * 100.0).round() as i32),
+            salle_largeur: Some(settings.variety.shapes.width),
+            salle_profondeur: Some(settings.variety.shapes.depth),
             silhouette: Some(settings.assembly.silhouette),
             etendue: Some(settings.assembly.etendue),
             sinuosite: Some(settings.assembly.sinuosite),
