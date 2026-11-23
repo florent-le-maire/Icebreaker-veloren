@@ -35,6 +35,8 @@ pub mod icebreaker_arene;
 pub mod icebreaker_fantome;
 // Icebreaker : tout se casse à la pioche (U.16).
 pub mod icebreaker_destruction;
+// Icebreaker : les minerais des filons de la grotte (U.18).
+pub mod icebreaker_minerais;
 pub mod comp;
 pub mod consts;
 pub mod resources;
