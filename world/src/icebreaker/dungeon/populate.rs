@@ -140,7 +140,10 @@ pub fn populate(dungeon: &mut Assembled, graph: &MissionGraph, settings: &Resolv
         .collect();
     shuffle(&mut cells, &mut rng);
     let corridors = &settings.corridors;
-    for _ in 0..cells.len() / corridors.per_cells.max(1) {
+    // Icebreaker F.52 : the maze that fills the outline is far emptier than the corridors of the mission.
+    let maze = cells.iter().filter(|c| dungeon.labyrinthe.contains(c)).count();
+    let slices = (cells.len() - maze) / corridors.per_cells.max(1) + maze / corridors.labyrinthe_per_cells.max(1);
+    for _ in 0..slices {
         for (kind, marker) in KINDS {
             let Some(range) = corridors.creatures.get(kind) else {
                 continue;

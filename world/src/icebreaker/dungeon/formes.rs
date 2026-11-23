@@ -121,6 +121,10 @@ forme! {
     /// Icebreaker F.47 : how the corridors go (`assembly.sinuosite`, `impasses`).
     sinuosite: Nombre(i32) [0, 100] "Couloirs" "Sinuosité (0 droit, 100 labyrinthe)";
     impasses: Plage(Range) [0, 8] "Couloirs" "Impasses (couloirs sans issue)";
+    /// Icebreaker F.52 : the maze that fills the outline (`assembly.remplissage`, `boucles_labyrinthe`, `elagage`).
+    remplissage: Nombre(i32) [0, 100] "Remplissage" "Labyrinthe dans le vide de la forme (%)";
+    boucles_labyrinthe: Nombre(i32) [0, 20] "Remplissage" "Boucles du labyrinthe (pour 100 cases)";
+    elagage: Nombre(i32) [0, 100] "Remplissage" "Culs-de-sac du labyrinthe rebouchés (%)";
     /// Blocks of rock at least above the dungeon (`placement.profondeur`).
     profondeur: Nombre(i32) [1, 60] "Sous le sol" "Roche au-dessus (blocs)";
 }
@@ -169,6 +173,15 @@ impl Forme {
         if let Some(impasses) = self.impasses {
             settings.assembly.impasses = impasses;
         }
+        if let Some(remplissage) = self.remplissage {
+            settings.assembly.remplissage = remplissage;
+        }
+        if let Some(boucles) = self.boucles_labyrinthe {
+            settings.assembly.boucles_labyrinthe = boucles;
+        }
+        if let Some(elagage) = self.elagage {
+            settings.assembly.elagage = elagage;
+        }
         if let Some(profondeur) = self.profondeur {
             settings.placement.profondeur = profondeur;
         }
@@ -196,6 +209,9 @@ impl Forme {
             etendue: Some(settings.assembly.etendue),
             sinuosite: Some(settings.assembly.sinuosite),
             impasses: Some(settings.assembly.impasses),
+            remplissage: Some(settings.assembly.remplissage),
+            boucles_labyrinthe: Some(settings.assembly.boucles_labyrinthe),
+            elagage: Some(settings.assembly.elagage),
             profondeur: Some(settings.placement.profondeur),
         })
     }

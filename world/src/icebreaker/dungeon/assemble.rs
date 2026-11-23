@@ -15,6 +15,7 @@
 use super::{
     graph::{MissionGraph, Passage, PassageKind},
     plan::{self, Cell, DIRECTIONS, Plan},
+    remplissage,
     rooms::{RoomCatalog, RoomTemplate},
 };
 use rand::{RngExt, SeedableRng};
@@ -67,6 +68,15 @@ pub struct AssemblySettings {
     /// corridor as usual.
     #[serde(default)]
     pub collees: i32,
+    /// Icebreaker F.52 : the maze dug in the rock left inside the outline once the mission is assembled
+    /// (`remplissage.rs`): the share of that rock it takes out of 100 (0: none), the walls opened between two of
+    /// its corridors for 100 cells of maze, and its dead ends filled again out of 100.
+    #[serde(default)]
+    pub remplissage: i32,
+    #[serde(default)]
+    pub boucles_labyrinthe: i32,
+    #[serde(default)]
+    pub elagage: i32,
 }
 
 fn no_dead_end() -> super::settings::Range { super::settings::Range(0, 0) }
@@ -135,6 +145,8 @@ pub struct Assembled {
     /// the cells from it to its edge.
     pub centre: (i32, i32),
     pub etendue: i32,
+    /// Icebreaker F.52 : the cells of the maze that fills the outline.
+    pub labyrinthe: BTreeSet<Cell>,
 }
 
 impl Assembled {
@@ -279,6 +291,8 @@ struct Attempt<'a> {
     seed: u64,
     in_rooms: BTreeSet<Cell>,
     corridors: Vec<Cell>,
+    /// Icebreaker F.52 : the cells of the maze.
+    labyrinthe: BTreeSet<Cell>,
 }
 
 /// Icebreaker F.46 : inside an outline, times more tries to place a room, and cells farther it may end up from the
@@ -314,6 +328,7 @@ impl<'a> Attempt<'a> {
             seed,
             in_rooms: BTreeSet::new(),
             corridors: Vec::new(),
+            labyrinthe: BTreeSet::new(),
             theme,
             graph,
             catalog,
@@ -490,7 +505,37 @@ impl<'a> Attempt<'a> {
                 self.dig_dead_end();
             }
         }
+        // Icebreaker F.52 : the same: without filling, no draw.
+        if self.settings.remplissage > 0 {
+            self.fill();
+        }
         Ok(())
+    }
+
+    /// Icebreaker F.52 : the maze in the rock left inside the outline, from the corridors (`remplissage.rs`). The
+    /// more the corridors wander (`sinuosite`), the longer its own.
+    fn fill(&mut self) {
+        let (silhouette, (cx, cy), r) = (self.settings.silhouette, self.centre, self.etendue);
+        let reglages = remplissage::Reglages {
+            part: self.settings.remplissage,
+            suite: 50 + self.settings.sinuosite.clamp(0, 100) / 2,
+            boucles: self.settings.boucles_labyrinthe,
+            elagage: self.settings.elagage,
+        };
+        // Without an outline, the maze stays within the dungeon as it is.
+        let boite = match (silhouette, self.grid.bounds()) {
+            (Silhouette::Libre, Some(bounds)) => bounds,
+            _ => (cx - r, cx + r, cy - r, cy + r),
+        };
+        self.labyrinthe = remplissage::creuser(
+            &mut self.grid,
+            &self.in_rooms,
+            &self.corridors,
+            &|c| silhouette.dedans(c.x - cx, c.y - cy, r),
+            boite,
+            reglages,
+            self.rng,
+        );
     }
 
     /// Icebreaker F.47 : a corridor that leads nowhere, straight from a cell of another corridor through its wall.
@@ -967,6 +1012,7 @@ impl<'a> Attempt<'a> {
             attempts,
             centre: self.centre,
             etendue: self.etendue,
+            labyrinthe: self.labyrinthe.clone(),
         }
     }
 }

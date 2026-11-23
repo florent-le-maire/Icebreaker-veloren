@@ -137,6 +137,16 @@
         // Icebreaker F.48 : chances sur 100 qu'une salle soit posée contre celle d'où l'on vient, porte contre porte,
         // sans couloir (les « salles collées » de design/generation.md) ; si elle ne tient pas, un couloir.
         collees: 0,
+        // Icebreaker F.52 : le labyrinthe qui remplit la forme (idée de donjon.bin.sh). remplissage : part de la
+        // roche restée libre dans la silhouette, à chaque étage, qu'un labyrinthe prend une fois la mission
+        // assemblée (0 = aucun, 100 = tout) ; il part des couloirs et ne touche le donjon qu'au pied de chaque
+        // morceau (aucune porte à clé contournée) ; plus sinuosite est haut, plus ses couloirs sont longs.
+        // boucles_labyrinthe : murs ouverts entre deux de ses couloirs, pour 100 cases ; elagage : culs-de-sac
+        // rebouchés, sur 100.
+        remplissage: 0,
+        boucles_labyrinthe: 0,
+        elagage: 0,
+
     ),
     // Habitants et butin selon le rôle de la salle (tâche G.5). creatures : nombre par sorte (brute, archer, lookout,
     // chief, boss, beast) ; chests : coffres ; awake : éveillées (false : endormies, voir `sleep`).
@@ -159,7 +169,9 @@
     },
     // Les couloirs aussi (F.4) : pour chaque tranche de per_cells cases de couloir, ces créatures (jamais sur un
     // escalier, un palier ni devant une porte) ; mêmes facteurs de menace et de nombre d'ennemis que les salles.
-    corridors: (creatures: {"lookout": (1, 1)}, per_cells: 10),
+    // F.52 : le labyrinthe de remplissage est bien plus vide : une tranche pour labyrinthe_per_cells de ses cases.
+
+    corridors: (creatures: {"lookout": (1, 1)}, per_cells: 10, labyrinthe_per_cells: 60),
     // Qui habite le donjon : pour chaque sorte des plans, des créatures de Veloren (tirées au hasard dans la liste) ;
     // chest : le sprite du coffre (DungeonChest0 = gnarlings, 1 = adlets, 5 = cultistes) ; son butin vient de butin.ron (B.5).
     // H.2 : la faction « races » (par défaut) = des humanoïdes d'une race, une seule par donjon, tirée par la graine

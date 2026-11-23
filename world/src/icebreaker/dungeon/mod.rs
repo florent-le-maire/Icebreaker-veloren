@@ -11,6 +11,8 @@ pub mod materiaux;
 pub mod plan;
 pub mod populate;
 // Icebreaker Y.3: the rounds of a race.
+// Icebreaker F.52 : the maze that fills the outline.
+pub mod remplissage;
 pub mod rondes;
 pub mod rooms;
 pub mod settings;

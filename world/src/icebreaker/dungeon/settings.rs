@@ -226,7 +226,12 @@ impl Default for RoomPopulation {
 pub struct CorridorPopulation {
     pub creatures: BTreeMap<String, Range>,
     pub per_cells: usize,
+    /// Icebreaker F.52 : the same in the maze that fills the outline, far emptier.
+    #[serde(default = "default_maze_cells")]
+    pub labyrinthe_per_cells: usize,
 }
+
+fn default_maze_cells() -> usize { 60 }
 
 /// The Veloren creatures (entity configs) of each kind, and the chest sprite.
 #[derive(Clone, Debug, Deserialize)]

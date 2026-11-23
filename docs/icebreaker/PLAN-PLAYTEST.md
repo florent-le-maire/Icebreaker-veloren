@@ -132,10 +132,11 @@ sa forme, ses couloirs ne font pas un labyrinthe, et il manque de relief (tours 
 Décidé : le vide est rempli par un labyrinthe et des salles hors mission, branchés en un seul point (aucune porte à
 clé contournée) ; les tours restent sous le sol ; leur milieu est vide ou plein, au choix du preset.
 
-- [ ] **F.51 Mesurer la couverture** — part de la forme occupée (cases et largeur), dans le résumé du donjon donc
-  dans l'atelier ; test qui donne le chiffre de départ. — *en cours : Veloren-donjon, 2026-11-23*
-- [ ] **F.52 Labyrinthe de remplissage** — `remplissage` (0 à 100 % du vide) : un labyrinthe creusé dans la roche
-  libre de la forme, à chaque étage, depuis les couloirs ; `elagage` des culs-de-sac, boucles dans un même arbre.
+- [x] **F.51 Mesurer la couverture** — part de la forme occupée (cases et largeur), dans le résumé du donjon donc
+  dans l'atelier. Au départ : 18 à 33 % des cases, 67 à 79 % de la largeur. Pas vu dans l'atelier. 2422f9c9
+- [x] **F.52 Labyrinthe de remplissage** — `remplissage` (0 à 100 % du vide), `boucles_labyrinthe`, `elagage` : à
+  100 %, 98 à 99 % des cases de la forme occupées ; chaque morceau ne touche le donjon que par une case. Trop grand
+  tant que la forme n'est pas resserrée (F.54 : 4 000 à 7 500 cases) ; pas vu dans l'atelier ni en jeu.
 - [ ] **F.53 Salles en plus** — `salles_en_plus` : des salles hors mission dans les grands vides, reliées par le
   labyrinthe, peuplées comme une branche.
 - [ ] **F.54 Forme resserrée et presets** — l'étendue suit la surface des salles ; `dedale` et `labyrinthe` remplis

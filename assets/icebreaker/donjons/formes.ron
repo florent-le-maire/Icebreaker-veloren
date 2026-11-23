@@ -4,6 +4,8 @@
 // branch_length, locks, loops, drops), l'écart entre les salles (spacing) et la roche au-dessus (profondeur) ; ce
 // qu'il ne dit pas garde sa valeur. F.46 à F.48, à la manière de donjon.bin.sh : la silhouette du plan (silhouette,
 // etendue), les couloirs (sinuosite, impasses), les salles (collees, formes_part, salle_largeur, salle_profondeur).
+// F.52 : le labyrinthe qui remplit le vide de la forme (remplissage, boucles_labyrinthe, elagage).
+
 // La liste des réglages et leurs bornes : `CHAMPS` de world/src/icebreaker/dungeon/formes.rs. La graine d'un donjon en tire un selon les poids (poids 0 : jamais tiré, seulement
 // choisi) ; ICEBREAKER_DONJON_PROFIL (-Profil du lanceur) en demande un ; en campagne, l'équipe le choisit au
 // panneau Départ ou par `/expedition 3 <profil>`.
