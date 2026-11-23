@@ -174,7 +174,7 @@
     // escalier, un palier ni devant une porte) ; mêmes facteurs de menace et de nombre d'ennemis que les salles.
     // F.52 : le labyrinthe de remplissage est bien plus vide : une tranche pour labyrinthe_per_cells de ses cases.
 
-    corridors: (creatures: {"lookout": (1, 1)}, per_cells: 10, labyrinthe_per_cells: 60),
+    corridors: (creatures: {"lookout": (1, 1)}, per_cells: 10, labyrinthe_per_cells: 150),
     // Qui habite le donjon : pour chaque sorte des plans, des créatures de Veloren (tirées au hasard dans la liste) ;
     // chest : le sprite du coffre (DungeonChest0 = gnarlings, 1 = adlets, 5 = cultistes) ; son butin vient de butin.ron (B.5).
     // H.2 : la faction « races » (par défaut) = des humanoïdes d'une race, une seule par donjon, tirée par la graine

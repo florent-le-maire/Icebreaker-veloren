@@ -18,26 +18,28 @@
             poids: 2.0,
             forme: (),
         ),
-        // F.49 : une croix, peu d'étages : deux longues ailes qui se croisent à l'entrée.
+        // F.49 : une croix, peu d'étages : deux longues ailes qui se croisent à l'entrée. F.54 : un peu de labyrinthe
+        // et quelques salles hors mission au bout des ailes.
         "croix": (
             poids: 1.0,
-            forme: (levels: (1, 2), drops: (0, 0), silhouette: Croix, etendue: 42),
+            forme: (levels: (1, 2), drops: (0, 0), silhouette: Croix, etendue: 42, remplissage: 40, salles_en_plus: (2, 4)),
         ),
         // F.49 : tout tient dans un cercle serré, avec des boucles et beaucoup de salles à forme tirée.
         "rond": (
             poids: 1.0,
-            forme: (levels: (2, 3), loops: (2, 3), formes_part: 70, silhouette: Rond, etendue: 30),
+            forme: (levels: (2, 3), loops: (2, 3), formes_part: 70, silhouette: Rond, etendue: 30, remplissage: 60, salles_en_plus: (2, 3)),
         ),
         // F.49 : un anneau de salles collées l'une à l'autre, presque sans couloir : on fait le tour.
         "forteresse": (
             poids: 1.0,
-            forme: (levels: (1, 2), spacing: (1, 2), collees: 70, silhouette: Couronne, etendue: 34),
+            forme: (levels: (1, 2), spacing: (1, 2), collees: 70, silhouette: Couronne, etendue: 34, remplissage: 30),
         ),
-        // F.49 : des salles écartées, reliées par des couloirs qui serpentent, avec des boucles et des impasses ; le
-        // tout dans un carré, pour que ces longs couloirs ne sortent pas de l'emprise du donjon.
+        // F.49 : des salles écartées, reliées par des couloirs qui serpentent, avec des boucles ; le tout dans un
+        // carré. F.54 : le carré est resserré et tout son vide est un labyrinthe (à la manière de donjon.bin.sh), avec
+        // des salles hors mission à y trouver.
         "dedale": (
             poids: 1.0,
-            forme: (loops: (2, 4), spacing: (3, 6), sinuosite: 80, impasses: (4, 7), silhouette: Carre, etendue: 44),
+            forme: (loops: (2, 4), spacing: (3, 6), sinuosite: 80, silhouette: Carre, etendue: 28, remplissage: 100, boucles_labyrinthe: 4, salles_en_plus: (3, 5)),
         ),
         // Un seul étage, sans chute : tout se joue à plat.
         "plat": (
@@ -49,10 +51,11 @@
             poids: 0.0,
             forme: (main_path: (9, 11), levels: (4, 5), drops: (1, 2), profondeur: 20),
         ),
-        // Beaucoup de branches et de boucles, des salles plus écartées.
+        // Beaucoup de branches et de boucles, des salles plus écartées. F.54 : sans silhouette, le labyrinthe remplit
+        // le rectangle que prend le donjon.
         "labyrinthe": (
             poids: 0.0,
-            forme: (branches: (6, 9), loops: (2, 3), spacing: (2, 4)),
+            forme: (branches: (6, 9), loops: (2, 3), spacing: (2, 4), remplissage: 100, boucles_labyrinthe: 3),
         ),
     },
 )

@@ -27,6 +27,9 @@ pub struct Reglages {
     pub elagage: i32,
 }
 
+/// Cells of corridor for one of the first trees of the maze.
+const ROOT_EVERY: usize = 8;
+
 fn solid(grid: &Plan, in_rooms: &BTreeSet<Cell>, c: Cell) -> bool {
     grid.is_free(c) || (grid.get(c) == '#' && !in_rooms.contains(&c))
 }
@@ -74,9 +77,9 @@ pub fn creuser(
     let mut tree: BTreeMap<Cell, usize> = BTreeMap::new();
     let mut order: Vec<Cell> = roots.to_vec();
     super::graph::shuffle(&mut order, rng);
-    for (id, root) in order.into_iter().enumerate() {
-        let mut active = vec![root];
-        while !active.is_empty() && budget >= 2 {
+    // One step of the tree `id` from one of its cells `active`; false when it can't grow any more.
+    let grow = |grid: &mut Plan, tree: &mut BTreeMap<Cell, usize>, id: usize, active: &mut Vec<Cell>, rng: &mut ChaCha8Rng| {
+        while !active.is_empty() {
             let at = if rng.random_range(0..100) < reglages.suite {
                 active.len() - 1
             } else {
@@ -97,8 +100,33 @@ pub fn creuser(
                 grid.cells.insert(cell, '.');
                 tree.insert(cell, id);
             }
-            budget -= 2;
             active.push(from.offset(2 * dx, 2 * dy, 0));
+            return true;
+        }
+        false
+    };
+    // Some of the roots first (one for `ROOT_EVERY` cells of corridor, one a level at least), their trees growing
+    // in turn: the maze spreads over the whole dungeon, even when it does not take all the rock. Then the other
+    // roots, for the rock the first ones could not reach.
+    let mut first: Vec<Cell> = Vec::new();
+    for level in &levels {
+        first.extend(order.iter().find(|c| c.level == *level));
+    }
+    first.extend(order.iter().filter(|c| !first.contains(c)).take(order.len() / ROOT_EVERY).copied().collect::<Vec<_>>());
+    let mut growing: Vec<(usize, Vec<Cell>)> = first.iter().map(|root| vec![*root]).enumerate().collect();
+    while !growing.is_empty() && budget >= 2 {
+        let turn = rng.random_range(0..growing.len());
+        let (id, active) = &mut growing[turn];
+        if grow(grid, &mut tree, *id, active, rng) {
+            budget -= 2;
+        } else {
+            growing.swap_remove(turn);
+        }
+    }
+    for (id, root) in order.into_iter().enumerate().filter(|(_, root)| !first.contains(root)) {
+        let mut active = vec![root];
+        while budget >= 2 && grow(grid, &mut tree, first.len() + id, &mut active, rng) {
+            budget -= 2;
         }
     }
 
@@ -238,6 +266,8 @@ mod tests {
                 maze / dungeons as usize
             );
             assert!(maze > 0);
+            // Icebreaker F.54 : the whole outline, but for the corners nothing leads to.
+            assert!(silhouette == Silhouette::Libre || cover / dungeons >= 95, "{silhouette:?} : {} %", cover / dungeons);
         }
     }
 

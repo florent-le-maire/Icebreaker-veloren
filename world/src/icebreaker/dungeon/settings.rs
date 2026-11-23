@@ -231,7 +231,7 @@ pub struct CorridorPopulation {
     pub labyrinthe_per_cells: usize,
 }
 
-fn default_maze_cells() -> usize { 60 }
+fn default_maze_cells() -> usize { 150 }
 
 /// The Veloren creatures (entity configs) of each kind, and the chest sprite.
 #[derive(Clone, Debug, Deserialize)]
