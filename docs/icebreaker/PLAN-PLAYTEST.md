@@ -14,7 +14,7 @@ interface du village) et se cochent ici ; les âmes ouvrent le jalon **AM**.
 | # | Chantier | Tâches | Worktree | État |
 |---|---|---|---|---|
 | 1 | Donjon : des pièces travaillées | F.10 à F.18 | `Veloren-donjon` | catalogue et atelier des salles faits (F.10, F.14 à F.17) ; formes, labyrinthe et relief faits (F.45 à F.57) ; salles à meubler dans l'atelier (F.18), puis F.11 à F.13 |
-| 2 | Grotte : murs à casser, filons, salle au minerai | U.13 à U.16 | `Veloren-caverne` | fait (2026-11-22), à voir en jeu |
+| 2 | Grotte : murs à casser, filons, salle au minerai | U.13 à U.21 | `Veloren-caverne` | fait (2026-11-23 : filons à la Deep Rock Galactic, U.18 à U.21), à voir en jeu |
 | 3 | Missions : sablier, zones, types de mission, boss | B.16 à B.20 | `Veloren-boucles` | tranché ; B.19 et B.20 peuvent suivre le premier playtest |
 | 4 | Âmes | AM.1 à AM.9 | `Veloren-ames` | attend le tableau de Sayanel (Q58) ; AM.6 peut suivre le premier playtest |
 | 5 | Améliorations : village sans dégâts, bouton Rentrer | L.6, X.18 | `Veloren-village` | prêt à coder |
@@ -222,15 +222,15 @@ roche tendre (`WeakRock`) à la pioche et à l'explosion ; la roche ordinaire ne
 destructibilité » (2026-11-11) commence ici ; les matières et la foreuse restent dans `PLAN-DONJON.md` (E.5, E.6).
 
 **Filons à la Deep Rock Galactic** (Flo, 2026-11-23, `design/filons.md`) : le minerai devient des blocs de couleur
-pris dans la roche, cassés morceau par morceau, réglables minerai par minerai. — *en cours : Veloren-caverne, 2026-11-23*
+pris dans la roche, cassés morceau par morceau, réglables minerai par minerai.
 
-- [ ] **U.18 Le fichier des minerais** — `assets/icebreaker/grottes/minerais.ron` (couleur, lueur, coups, énergie,
-  objet, quantité, morceau, forme du filon, poids par niveau et dans la salle), lu et contrôlé par `veloren-common`.
-- [ ] **U.19 Les filons dans la roche** — le générateur pose des bandes de blocs selon la forme de chaque minerai, à la
-  place des traînées de sprites, dans les zones et sur les parois de la salle au minerai.
-- [ ] **U.20 Miner un filon** — dureté du minerai, l'objet qui tombe quand un bloc cède, le morceau ; le cône de U.17
-  laisse le minerai.
-- [ ] **U.21 L'atelier et le wiki** — les filons sur la page de l'atelier des grottes, la fiche `grotte.md`.
+- [x] **U.18 Le fichier des minerais** — `assets/icebreaker/grottes/minerais.ron` (couleur, lueur, coups, énergie,
+  objet, quantité, morceau, forme du filon, poids par niveau et dans la salle), lu et contrôlé par `veloren-common` ; onze minerais. Testé : 4 tests. — 0752019150
+- [x] **U.19 Les filons dans la roche** — le générateur pose des bandes de blocs selon la forme de chaque minerai, à la
+  place des traînées de sprites, dans les zones et sur les parois de la salle au minerai (14 filons). Testé : tests du filon et de la grotte, 12 mondes (0 problème). Pas vu en jeu. — cdd2d6b37c
+- [x] **U.20 Miner un filon** — dureté du minerai, l'objet qui tombe quand un bloc cède, le morceau ; le cône de U.17
+  laisse le minerai. Testé : tests de `veloren-common`, serveur de grotte lancé. Pas vérifié en jeu : miner. — da160a8c17
+- [x] **U.21 L'atelier et le wiki** — les filons sur la page de l'atelier des grottes, la fiche `grotte.md` ; la pose des filons vit dans `icebreaker-caverne`, la même au jeu et à l'atelier. Testé : capture d'ensemble de l'atelier, wiki régénéré. — 2e3795fe1d
 
 - [x] **U.17 Un éclat en cône** — demandé par Flo (2026-11-23) : quand le bloc visé cède, un cône part avec lui, du corps
   de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : demi-largeur 1,9, demi-hauteur 1,4, pointe à 5 blocs ; boyau de 3 de large), un
