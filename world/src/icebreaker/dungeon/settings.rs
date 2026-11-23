@@ -106,6 +106,9 @@ pub struct Settings {
     pub special_rooms: BTreeMap<String, SpecialRoom>,
     /// Icebreaker F.32 : the safe room where the party arrives.
     pub abri: AbriSettings,
+    /// Icebreaker F.55 : the generated rooms that are all height.
+    #[serde(default)]
+    pub vertical: super::vertical::VerticalSettings,
 }
 
 /// Icebreaker F.32 : the safe room (`abri`): no creature within `calme` cells of where the party arrives (on its
@@ -339,6 +342,7 @@ impl Settings {
                 errors.push(format!("special_rooms.{name} : il faut min ≤ max et des chances ≥ 0"));
             }
         }
+        errors.extend(settings.vertical.errors());
         if settings.corridors.per_cells == 0 {
             errors.push("corridors : per_cells doit être au moins 1".into());
         }
@@ -411,7 +415,8 @@ impl Settings {
     pub fn catalog(&self, seed: u64) -> Result<super::rooms::RoomCatalog, String> {
         super::rooms::RoomCatalog::load()?
             .with_orientations(self.variety.orientations)?
-            .with_shapes(&self.variety.shapes, seed)
+            .with_shapes(&self.variety.shapes, seed)?
+            .with_vertical(&self.vertical, seed)
     }
 
     /// The modifiers of a mission: its region, season, threat, number of

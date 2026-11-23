@@ -460,4 +460,11 @@
     // Icebreaker F.32 : l'abri, la salle sûre où l'on arrive (salle `abri.txt`, rôle safeRoom) : aucune créature à moins
     // de `calme` cases de l'arrivée (couloirs compris, sur son étage et ceux d'à côté), comme dans la grotte.
     abri: (calme: 4),
+    // Icebreaker F.55 : les salles tout en hauteur, générées (vertical.rs). escaliers_z : la part sur 100 des
+    // escaliers en Z (deux volées opposées l'une au-dessus de l'autre, des portes à chaque palier) parmi les salles de
+    // passage à tirer (0 = aucun) ; z_etages : les étages qu'ils montent.
+    vertical: (
+        escaliers_z: 0,
+        z_etages: (1, 3),
+    ),
 )

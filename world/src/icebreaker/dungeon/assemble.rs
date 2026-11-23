@@ -630,7 +630,10 @@ impl<'a> Attempt<'a> {
 
     /// `far` (Icebreaker F.53) : anywhere ahead of a door of the parent, as far as the outline goes.
     fn place_child(&mut self, parent: usize, child: usize, passage: &Passage, far: bool) -> bool {
-        let templates = self.templates_for(child);
+        let mut templates = self.templates_for(child);
+        // Icebreaker F.55 : a room that is all height, only where the dungeon goes down as many levels as it climbs.
+        let descent = self.graph.rooms[child].level - self.graph.rooms[parent].level;
+        templates.retain(|t| super::vertical::hauteur(t).is_none_or(|levels| levels == descent));
         if templates.is_empty() {
             self.placement_failure = "aucune salle pour ce rôle".into();
             return false;
@@ -657,7 +660,13 @@ impl<'a> Attempt<'a> {
                 (false, true) => (attempt * OUTLINE_SLACK / tries) as i32,
                 (false, false) => 0,
             };
-            let from: Vec<FreeDoor> = self.free_connectors(&self.placed[&parent]).collect();
+            let mut from: Vec<FreeDoor> = self.free_connectors(&self.placed[&parent]).collect();
+            // Icebreaker F.55 : out of a room that is all height, rather by a door on the level of the child.
+            if super::vertical::hauteur(&self.placed[&parent].template).is_some()
+                && from.iter().any(|(_, outside, _)| outside.level == level)
+            {
+                from.retain(|(_, outside, _)| outside.level == level);
+            }
             if from.is_empty() {
                 self.placement_failure = format!(
                     "plus de porte libre (après {overlaps} chevauchement(s), {no_corridor} couloir(s) \
@@ -672,7 +681,10 @@ impl<'a> Attempt<'a> {
             // among those, one at the parent's level when there is one: a flat
             // corridor, the stairs of the room do the descent.
             let template = self.pick_template(&templates);
-            let doors: Vec<_> = template.doors().copied().collect();
+            // Icebreaker F.55 : one comes into a room that is all height by its top.
+            let top = super::vertical::hauteur(template);
+            let doors: Vec<_> =
+                template.doors().copied().filter(|c| top.is_none_or(|top| c.cell.level == top)).collect();
             let facing: Vec<_> = doors.iter().copied().filter(|c| c.direction() == (-dx, -dy)).collect();
             let candidates = if facing.is_empty() { doors } else { facing };
             let flat: Vec<_> =

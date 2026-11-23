@@ -141,8 +141,10 @@ clé contournée) ; les tours restent sous le sol ; leur milieu est vide ou plei
   branche), posés loin de leur salle d'attache (44 cases contre 12), reliés par un long couloir. Pas vu en jeu. ec757b25
 - [x] **F.54 Presets remplis** — `dedale` (carré resserré de 44 à 28) et `labyrinthe` remplis à 100 %, croix, rond,
   forteresse à 30-60 % ; les arbres poussent à tour de rôle ; couverture ≥ 95 % testée. Vu dans l'atelier (Edge sans
-  affichage) ; pas en jeu. À équilibrer : 3 400 cases de labyrinthe et 90 à 130 créatures en taille moyenne.
-- [ ] **F.55 Escalier en Z** — salle générée à deux volées opposées, 2 à 4 étages, portes en bas et en haut.
+  affichage) ; pas en jeu. À équilibrer : 3 400 cases de labyrinthe et 90 à 130 créatures en taille moyenne. 922ccddd
+- [x] **F.55 Escalier en Z** — `escaliers_z` (part des salles de passage) : salle générée à deux volées opposées,
+  posée là où le chemin descend d'autant d'étages ; on entre par le haut, on repart par le pied (14 sur 14 sur 30
+  donjons à 30 %). Pas vu dans l'atelier ni en jeu.
 - [ ] **F.56 Tours à colimaçon** — salle générée en anneau (3 ou 5 cases), une volée par côté, portes aux paliers,
   milieu vide ou plein, 2 à 5 étages ; une tour peut remplacer l'escalier entre deux étages du chemin principal.
 - [ ] **F.57 Presets, atelier, docs** — preset `tours`, vue 3D vérifiée, design, wiki, idées.

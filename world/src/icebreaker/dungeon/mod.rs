@@ -17,6 +17,8 @@ pub mod rondes;
 pub mod rooms;
 pub mod settings;
 pub mod silhouette;
+// Icebreaker F.55 : the generated rooms that are all height (Z stairs, towers).
+pub mod vertical;
 pub mod shapes;
 
 use super::butin::Butin;
