@@ -121,6 +121,22 @@
         // Icebreaker : chaque donjon a un thème dominant (tiré de sa graine : militaire, culte, bestial…, ceux que
         // nomment les salles `@theme:`) ; une salle de ce thème pèse autant de fois plus dans le tirage (1 = sans effet).
         theme_bias: 4.0,
+        // Icebreaker F.46 : la silhouette du plan (idée des « dungeon layouts » de donjon.bin.sh) : salles et couloirs
+        // restent dans cette forme, la même à chaque étage. Libre (aucune), Carre, Rectangle, Croix, Rond, Couronne,
+        // Diagonales, Losange, Hexagone ; etendue : cases du milieu de la forme à son bord (8 à 56) pour un donjon de
+        // 18 salles ; elle suit la taille du donjon (racine du nombre de salles : un grand a une forme plus large, un
+        // petit plus serrée), sans dépasser 56. Trop serrée, la forme est abandonnée (le résumé du donjon le dit).
+        // Un preset de formes.ron les change.
+        silhouette: Libre,
+        etendue: 40,
+        // Icebreaker F.47 : le style des couloirs (idée des « corridors » de donjon.bin.sh). sinuosite : 0 = le plus
+        // court chemin, 100 = un dédale (ne se voit que si les salles sont écartées : spacing) ; impasses : couloirs
+        // sans issue de 2 à 5 cases, creusés depuis les autres couloirs.
+        sinuosite: 0,
+        impasses: (0, 0),
+        // Icebreaker F.48 : chances sur 100 qu'une salle soit posée contre celle d'où l'on vient, porte contre porte,
+        // sans couloir (les « salles collées » de design/generation.md) ; si elle ne tient pas, un couloir.
+        collees: 0,
     ),
     // Habitants et butin selon le rôle de la salle (tâche G.5). creatures : nombre par sorte (brute, archer, lookout,
     // chief, boss, beast) ; chests : coffres ; awake : éveillées (false : endormies, voir `sleep`).

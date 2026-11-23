@@ -2,7 +2,9 @@
 // Icebreaker F.33 : la forme du donjon généré, comme les profils des grottes (grottes/formes.ron). Chaque profil change
 // quelques réglages de generation.ron : le graphe (pour toutes les tailles : main_path, levels, branches,
 // branch_length, locks, loops, drops), l'écart entre les salles (spacing) et la roche au-dessus (profondeur) ; ce
-// qu'il ne dit pas garde sa valeur. La graine d'un donjon en tire un selon les poids (poids 0 : jamais tiré, seulement
+// qu'il ne dit pas garde sa valeur. F.46 à F.48, à la manière de donjon.bin.sh : la silhouette du plan (silhouette,
+// etendue), les couloirs (sinuosite, impasses), les salles (collees, formes_part, salle_largeur, salle_profondeur).
+// La liste des réglages et leurs bornes : `CHAMPS` de world/src/icebreaker/dungeon/formes.rs. La graine d'un donjon en tire un selon les poids (poids 0 : jamais tiré, seulement
 // choisi) ; ICEBREAKER_DONJON_PROFIL (-Profil du lanceur) en demande un ; en campagne, l'équipe le choisit au
 // panneau Départ ou par `/expedition 3 <profil>`.
 // Pour régler : `.\icebreaker.ps1 donjon-atelier` ouvre l'atelier ; « Enregistrer le preset » écrit ici le profil.
@@ -10,8 +12,29 @@
     profils: {
         // Les tailles de generation.ron telles quelles.
         "standard": (
-            poids: 1.0,
+            poids: 2.0,
             forme: (),
+        ),
+        // F.49 : une croix, peu d'étages : deux longues ailes qui se croisent à l'entrée.
+        "croix": (
+            poids: 1.0,
+            forme: (levels: (1, 2), drops: (0, 0), silhouette: Croix, etendue: 42),
+        ),
+        // F.49 : tout tient dans un cercle serré, avec des boucles et beaucoup de salles à forme tirée.
+        "rond": (
+            poids: 1.0,
+            forme: (levels: (2, 3), loops: (2, 3), formes_part: 70, silhouette: Rond, etendue: 30),
+        ),
+        // F.49 : un anneau de salles collées l'une à l'autre, presque sans couloir : on fait le tour.
+        "forteresse": (
+            poids: 1.0,
+            forme: (levels: (1, 2), spacing: (1, 2), collees: 70, silhouette: Couronne, etendue: 34),
+        ),
+        // F.49 : des salles écartées, reliées par des couloirs qui serpentent, avec des boucles et des impasses ; le
+        // tout dans un carré, pour que ces longs couloirs ne sortent pas de l'emprise du donjon.
+        "dedale": (
+            poids: 1.0,
+            forme: (loops: (2, 4), spacing: (3, 6), sinuosite: 80, impasses: (4, 7), silhouette: Carre, etendue: 44),
         ),
         // Un seul étage, sans chute : tout se joue à plat.
         "plat": (

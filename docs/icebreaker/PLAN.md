@@ -337,6 +337,13 @@ tâche pour ce qui casse.
 - [ ] L'atelier du donjon (`.\icebreaker.ps1 donjon-atelier`) en main : vue 3D (tourner, couper les étages), curseurs, enregistrer un preset, le retrouver
   au panneau Départ.
 
+**Formes du donjon (F.45 à F.50, `PLAN-PLAYTEST.md`)**
+- [ ] `donjon -Site Genere -Profil forteresse` : deux salles collées, portes dos à dos (on passe, les portes
+  s'ouvrent, rien ne coince) ; `-Profil dedale` : une impasse et un couloir qui serpente, à pied.
+- [ ] En campagne, plusieurs `/expedition 2` de suite : la forme change (« Donjon « croix », graine N » à l'arrivée).
+- [ ] L'atelier du donjon en main : le menu « Forme du plan », le bord doré de la silhouette, les groupes de curseurs
+  (Couloirs, Salles), régler l'étendue des presets à l'œil.
+
 **Portail, cristal et autel (F.19 à F.22, T.10 à T.12)**
 - Un donjon généré entier : trouver la salle du portail et celle de l'autel, voir qu'elles ne gênent pas le chemin.
 - Portail : « Allumer » (E), la jauge de 5 s, l'annulation par un coup ; le portail allumé de face (surface bleue,

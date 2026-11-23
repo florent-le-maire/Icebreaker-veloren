@@ -35,7 +35,7 @@
   .champ .tete label { display: flex; gap: 6px; align-items: center; }
   .champ .valeur { color: var(--accent); font-variant-numeric: tabular-nums; }
   .champ.libre .valeur { color: var(--discret); }
-  .champ.libre input[type=range] { opacity: .35; }
+  .champ.libre input[type=range], .champ.libre select { opacity: .35; }
   .curseurs { display: flex; gap: 8px; }
   input[type=range] { width: 100%; margin: 2px 0 0; accent-color: var(--accent); }
   #scene { flex: 1; position: relative; min-width: 0; display: flex; flex-direction: column; }
@@ -94,18 +94,9 @@
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
-// Les réglages d'un preset (formes.rs, `Forme`) : une plage (min, max) ou un nombre.
-const CHAMPS = [
-  { cle: 'main_path', libelle: 'Salles du chemin principal', min: 2, max: 20, plage: true },
-  { cle: 'levels', libelle: 'Étages', min: 1, max: 8, plage: true },
-  { cle: 'branches', libelle: 'Branches (culs-de-sac)', min: 0, max: 14, plage: true },
-  { cle: 'branch_length', libelle: 'Longueur des branches', min: 1, max: 5, plage: true },
-  { cle: 'locks', libelle: 'Portes à clé', min: 0, max: 4, plage: true },
-  { cle: 'loops', libelle: 'Boucles', min: 0, max: 5, plage: true },
-  { cle: 'drops', libelle: 'Chutes (sens unique)', min: 0, max: 4, plage: true },
-  { cle: 'spacing', libelle: 'Cases entre deux salles', min: 1, max: 8, plage: true },
-  { cle: 'profondeur', libelle: 'Roche au-dessus (blocs)', min: 1, max: 60, plage: false },
-];
+// Icebreaker F.45 : les réglages d'un preset, donnés par le serveur (formes.rs, `CHAMPS`) : une plage (min, max) ou
+// un nombre, rangés par groupe.
+let CHAMPS = [];
 const COULEURS = {
   safeRoom: ['#5fd16a', 'Abri (arrivée)'], entrance: ['#8fd3ff', 'Entrée'], hall: ['#6b7686', 'Salle de passage'],
   guardRoom: ['#c77b4a', 'Salle de garde'], barracks: ['#a0654a', 'Caserne'], storage: ['#8a7a55', 'Réserve'],
@@ -114,7 +105,7 @@ const COULEURS = {
   sanctum: ['#9a7ad6', 'Sanctuaire'], bossLair: ['#ff2d6d', 'Antre du boss'], portal: ['#4ab0ff', 'Portail'],
   altar: ['#e0e0ff', 'Autel'],
 };
-let base = null;      // réglages de generation.ron (tailles)
+let base = null;      // par taille, ce que donne generation.ron sans preset
 let formes = {};      // presets de formes.ron
 let plan = null;      // dernière réponse de /plan
 let etage = 0;
@@ -126,14 +117,16 @@ let recadrer = true;  // 3D : replacer la caméra au prochain plan (nouvelle gra
 const creature = (s) => s.length === 1 && 'bagcxefijklnpqrtuwyz'.includes(s.toLowerCase());
 
 function champsHtml() {
-  $('champs').innerHTML = CHAMPS.map((c) => `
+  const groupes = [...new Set(CHAMPS.map((c) => c.groupe))];
+  $('champs').innerHTML = groupes.map((g) => `<fieldset><legend>${g}</legend>` + CHAMPS.filter((c) => c.groupe === g).map((c) => `
     <div class="champ libre" id="c-${c.cle}">
       <div class="tete"><label><input type="checkbox" id="f-${c.cle}">${c.libelle}</label><span class="valeur" id="v-${c.cle}"></span></div>
       <div class="curseurs">
-        <input type="range" id="a-${c.cle}" min="${c.min}" max="${c.max}" step="1">
+        ${c.menu ? `<select id="a-${c.cle}">${c.choix.map((n) => `<option>${n}</option>`).join('')}</select>`
+          : `<input type="range" id="a-${c.cle}" min="${c.min}" max="${c.max}" step="1">`}
         ${c.plage ? `<input type="range" id="b-${c.cle}" min="${c.min}" max="${c.max}" step="1">` : ''}
       </div>
-    </div>`).join('');
+    </div>`).join('') + '</fieldset>').join('');
   for (const c of CHAMPS) {
     const maj = () => { majChamp(c); demander(); };
     $(`f-${c.cle}`).addEventListener('change', maj);
@@ -144,10 +137,7 @@ function champsHtml() {
 const cocher = (c) => { $(`f-${c.cle}`).checked = true; };
 // La valeur de la taille choisie pour un réglage (ce que donne generation.ron sans preset).
 function valeurBase(c) {
-  if (!base) return c.plage ? [c.min, c.min] : c.min;
-  if (c.cle === 'spacing') return base.spacing;
-  if (c.cle === 'profondeur') return base.profondeur;
-  return base.tailles[$('taille').value][c.cle];
+  return base[$('taille').value][c.cle];
 }
 function majChamp(c) {
   const fixe = $(`f-${c.cle}`).checked;
@@ -156,15 +146,15 @@ function majChamp(c) {
     const v = valeurBase(c);
     if (c.plage) { $(`a-${c.cle}`).value = v[0]; $(`b-${c.cle}`).value = v[1]; } else { $(`a-${c.cle}`).value = v; }
   }
-  const a = +$(`a-${c.cle}`).value;
-  $(`v-${c.cle}`).textContent = c.plage ? (a === +$(`b-${c.cle}`).value ? `${a}` : `${a} à ${$(`b-${c.cle}`).value}`) : `${a}`;
+  const a = c.menu ? $(`a-${c.cle}`).value : +$(`a-${c.cle}`).value;
+  $(`v-${c.cle}`).textContent = c.menu ? '' : c.plage ? (a === +$(`b-${c.cle}`).value ? `${a}` : `${a} à ${$(`b-${c.cle}`).value}`) : `${a}`;
 }
 // La forme des curseurs, au format de formes.ron (null : la valeur de la taille).
 function forme() {
   const f = {};
   for (const c of CHAMPS) {
     if (!$(`f-${c.cle}`).checked) { f[c.cle] = null; continue; }
-    f[c.cle] = c.plage ? [+$(`a-${c.cle}`).value, +$(`b-${c.cle}`).value] : +$(`a-${c.cle}`).value;
+    f[c.cle] = c.plage ? [+$(`a-${c.cle}`).value, +$(`b-${c.cle}`).value] : c.menu ? $(`a-${c.cle}`).value : +$(`a-${c.cle}`).value;
   }
   return f;
 }
@@ -219,6 +209,7 @@ function afficher() {
   const roles = {};
   for (const s of plan.salles) roles[s.role] = (roles[s.role] || 0) + 1;
   $('legende').innerHTML = Object.keys(roles).map((r) => `<span><i style="background:${(COULEURS[r] || ['#888'])[0]}"></i>${(COULEURS[r] || [0, r])[1]} ×${roles[r]}</span>`).join('')
+    + (plan.contour && plan.contour.length ? '<span><i style="background:#f0be4688"></i>Bord de la silhouette</span>' : '')
     + '<span><i style="background:#3a404a"></i>Couloir</span><span><i style="background:#ff6b5e;border-radius:50%"></i>Créature</span><span><i style="background:#ffd34d;border-radius:50%"></i>Coffre</span>';
   $('etat').textContent = `${plan.salles.length} salles, ${plan.creatures} créatures, ${plan.coffres} coffres, ${plan.niveaux.length} étage(s). `
     + `Preset en jeu : « ${$('profil').value || 'aucun'} », graine ${$('graine').value}.\n${plan.resume}`;
@@ -234,7 +225,7 @@ function cadrer() {
   const cs = plan.cases;
   if (!cs.length) return;
   let [x0, x1, y0, y1] = [Infinity, -Infinity, Infinity, -Infinity];
-  for (const [x, y] of cs) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  for (const [x, y] of cs.concat(plan.contour || [])) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
   const l = toile.clientWidth, h = toile.clientHeight;
   vue.echelle = Math.max(3, Math.floor(Math.min((l - 40) / (x1 - x0 + 1), (h - 40) / (y1 - y0 + 1))));
   vue.x = (l - (x1 - x0 + 1) * vue.echelle) / 2 - x0 * vue.echelle;
@@ -251,6 +242,9 @@ function dessiner() {
   if (!plan || plan.erreur) return;
   const e = vue.echelle;
   const px = (x) => vue.x + x * e, py = (y) => vue.y + y * e;
+  // Icebreaker F.50 : le bord de la silhouette du plan (la même à chaque étage).
+  g.fillStyle = '#f0be4655';
+  for (const [x, y] of plan.contour || []) g.fillRect(px(x), py(y), e, e);
   // L'étage du dessus en filigrane.
   for (const [x, y, n, s] of plan.cases) {
     if (n === etage + 1 && s !== '#') { g.fillStyle = '#ffffff10'; g.fillRect(px(x), py(y), e, e); }
@@ -378,6 +372,10 @@ function construire3d() {
     (o, [x, y, n]) => o.position.set(x + 0.5, n * E + 0.25, y + 0.5));
   placer(de((s) => s === '$'), new T.BoxGeometry(0.34, 0.26, 0.26), new T.MeshLambertMaterial({ color: 0xffd34d }),
     (o, [x, y, n]) => o.position.set(x + 0.5, n * E + 0.13, y + 0.5));
+  // Icebreaker F.50 : le bord de la silhouette, à plat sous l'étage de l'entrée.
+  placer((plan.contour || []).map(([x, y]) => [x, y, 0]), new T.BoxGeometry(1, 0.04, 1),
+    new T.MeshBasicMaterial({ color: 0xf0be46, transparent: true, opacity: 0.4 }),
+    (o, [x, y, n]) => o.position.set(x + 0.5, n * E - 0.3, y + 0.5));
   // L'arrivée : un anneau blanc et un faisceau.
   const [ax, ay, an] = plan.arrivee;
   if (coupe === null || an <= coupe) {
@@ -475,7 +473,11 @@ window.addEventListener('resize', () => {
 async function chargerFormes(choisir) {
   const r = await fetch('/formes').then((r) => r.json());
   base = r.base; formes = r.formes.profils;
-  const tailles = Object.keys(base.tailles);
+  if (!CHAMPS.length) {
+    CHAMPS = r.champs.map((c) => ({ ...c, plage: c.genre === 'plage', menu: c.genre === 'choix' }));
+    champsHtml();
+  }
+  const tailles = Object.keys(base);
   if (!$('taille').options.length) {
     $('taille').innerHTML = tailles.map((t) => `<option ${t === 'medium' ? 'selected' : ''}>${t}</option>`).join('');
   }
@@ -508,10 +510,12 @@ $('profil').addEventListener('change', () => { recadrer = true; choisirProfil();
 $('enregistrer').onclick = () => enregistrer(false);
 $('supprimer').onclick = () => { if (confirm(`Retirer le preset « ${$('nom').value} » de formes.ron ?`)) enregistrer(true); };
 
-champsHtml();
 // La 3D d'abord, comme pour la grotte ; hors ligne, le plan.
-initTrois().then(() => changerMode('3d'), () => changerMode('plan'))
-  .then(() => chargerFormes(''))
+// Icebreaker F.46 : `?preset=<nom>&graine=<n>&vue=plan` ouvre l'atelier sur ce preset, cette graine, à plat.
+const demande = new URLSearchParams(location.search);
+if (demande.get('graine')) $('graine').value = demande.get('graine');
+(demande.get('vue') === 'plan' ? Promise.reject() : initTrois()).then(() => changerMode('3d'), () => changerMode('plan'))
+  .then(() => chargerFormes(demande.get('preset') || ''))
   .then(() => { choisirProfil(); })
   .catch((e) => { $('etat').innerHTML = `<span class="erreur">${e}</span>`; });
 </script>

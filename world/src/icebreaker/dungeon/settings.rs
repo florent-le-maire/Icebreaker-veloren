@@ -260,6 +260,15 @@ impl Settings {
         if placement.entrance_margin < 0 || placement.edge_margin < 0 || placement.fit_tries < 1 || placement.emprise < 1 {
             errors.push("placement : marges positives, fit_tries et emprise au moins 1".into());
         }
+        if !(8..=super::assemble::OUTLINE_WIDEST).contains(&settings.assembly.etendue) {
+            errors.push("assembly : etendue de 8 à 56 cases (le donjon doit tenir dans son emprise)".into());
+        }
+        if !(0..=100).contains(&settings.assembly.sinuosite) || !settings.assembly.impasses.valid(0) {
+            errors.push("assembly : sinuosite de 0 à 100, impasses 0 ≤ min ≤ max".into());
+        }
+        if !(0..=100).contains(&settings.assembly.collees) {
+            errors.push("assembly : collees de 0 à 100".into());
+        }
         if placement.profondeur < 1 {
             errors.push("placement : profondeur au moins 1".into());
         }
