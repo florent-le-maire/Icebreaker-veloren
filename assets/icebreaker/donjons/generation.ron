@@ -466,5 +466,14 @@
     vertical: (
         escaliers_z: 0,
         z_etages: (1, 3),
+        // Icebreaker F.56 : les tours, des puits carrés de plusieurs étages : une volée d'escalier le long de chaque
+        // mur à tour de rôle (un étage par mur), un palier et ses portes à chaque coin. tours : chances sur 100 qu'un
+        // changement d'étage du chemin principal descende tour_etages étages d'un coup, par une tour (ou un
+        // escalier en Z de cette hauteur) ; tour_largeur : cases d'un mur à l'autre (3 à 7) ; tour_vide : chances sur
+        // 100 que le milieu soit un vide (on voit tout le puits, on peut y tomber), sinon un pilier de roche.
+        tours: 0,
+        tour_etages: (2, 4),
+        tour_largeur: 3,
+        tour_vide: 50,
     ),
 )

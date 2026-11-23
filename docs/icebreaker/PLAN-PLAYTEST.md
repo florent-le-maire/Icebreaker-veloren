@@ -144,9 +144,10 @@ clé contournée) ; les tours restent sous le sol ; leur milieu est vide ou plei
   affichage) ; pas en jeu. À équilibrer : 3 400 cases de labyrinthe et 90 à 130 créatures en taille moyenne. 922ccddd
 - [x] **F.55 Escalier en Z** — `escaliers_z` (part des salles de passage) : salle générée à deux volées opposées,
   posée là où le chemin descend d'autant d'étages ; on entre par le haut, on repart par le pied (14 sur 14 sur 30
-  donjons à 30 %). Pas vu dans l'atelier ni en jeu.
-- [ ] **F.56 Tours à colimaçon** — salle générée en anneau (3 ou 5 cases), une volée par côté, portes aux paliers,
-  milieu vide ou plein, 2 à 5 étages ; une tour peut remplacer l'escalier entre deux étages du chemin principal.
+  donjons à 30 %). Pas vu dans l'atelier ni en jeu. 0ecce96c
+- [x] **F.56 Tours à colimaçon** —  (chance qu'un changement d'étage descende  étages d'un coup),
+   (3 à 7),  : une volée par mur, portes à chaque palier ; 40 tours sur 41 prises du haut
+  au pied, jusqu'à 8 étages de fond. Pas de branche aux paliers du milieu ; pas vu dans l'atelier ni en jeu.
 - [ ] **F.57 Presets, atelier, docs** — preset `tours`, vue 3D vérifiée, design, wiki, idées.
 
 Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,

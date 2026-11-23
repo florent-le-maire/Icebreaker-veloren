@@ -572,6 +572,8 @@ impl Settings {
             corridors,
             calme: self.abri.calme,
             en_plus: self.assembly.salles_en_plus,
+            tours: self.vertical.tours,
+            tour_etages: self.vertical.tour_etages,
             faction,
             species,
             modifiers: names,
@@ -728,6 +730,9 @@ pub struct Resolved {
     pub modifiers: Vec<String>,
     /// Icebreaker F.53 : rooms out of the mission (`assembly.salles_en_plus`).
     pub en_plus: Range,
+    /// Icebreaker F.56 : descents of several levels at once (`vertical.tours`, `tour_etages`).
+    pub tours: i32,
+    pub tour_etages: Range,
 }
 
 /// Decor by role of room (Icebreaker F.6): sprites of Veloren placed in the

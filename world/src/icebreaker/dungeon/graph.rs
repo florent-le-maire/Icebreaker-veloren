@@ -291,9 +291,17 @@ pub fn generate(settings: &Resolved, seed: u64) -> MissionGraph {
     let cuts: BTreeSet<usize> = candidates.into_iter().take(level_count - 1).collect();
     let mut level = 0;
     let mut main = Vec::new();
+    // Icebreaker F.56 : a change of level may go down several levels at once (a tower); never to the goal. Their
+    // own dice, and none drawn without towers.
+    let mut towers = (settings.tours > 0).then(|| ChaCha8Rng::seed_from_u64(seed ^ 0x70_0125));
     for i in 0..main_count {
         if cuts.contains(&i) {
-            level += 1;
+            level += match &mut towers {
+                Some(dice) if i < main_count - 1 => {
+                    if dice.random_range(0..100) < settings.tours { settings.tour_etages.roll(dice).max(1) } else { 1 }
+                },
+                _ => 1,
+            };
         }
         let role = if i == 0 {
             RoomRole::Entrance

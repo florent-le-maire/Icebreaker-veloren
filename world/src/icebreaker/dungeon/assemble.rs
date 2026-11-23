@@ -16,7 +16,7 @@ use super::{
     graph::{MissionGraph, Passage, PassageKind},
     plan::{self, Cell, DIRECTIONS, Plan},
     remplissage,
-    rooms::{RoomCatalog, RoomTemplate},
+    rooms::{RoomCatalog, RoomRole, RoomTemplate},
 };
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -634,6 +634,14 @@ impl<'a> Attempt<'a> {
         // Icebreaker F.55 : a room that is all height, only where the dungeon goes down as many levels as it climbs.
         let descent = self.graph.rooms[child].level - self.graph.rooms[parent].level;
         templates.retain(|t| super::vertical::hauteur(t).is_none_or(|levels| levels == descent));
+        // Icebreaker F.56 : several levels at once: by a tower (or Z stairs) of that height when there is one.
+        if descent >= 2 && matches!(self.graph.rooms[child].role, RoomRole::Hall | RoomRole::GuardRoom) {
+            let tall: Vec<&'a RoomTemplate> =
+                self.catalog.rooms.iter().filter(|t| super::vertical::hauteur(t) == Some(descent)).collect();
+            if !tall.is_empty() {
+                templates = tall;
+            }
+        }
         if templates.is_empty() {
             self.placement_failure = "aucune salle pour ce rôle".into();
             return false;

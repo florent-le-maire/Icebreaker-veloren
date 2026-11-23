@@ -129,6 +129,11 @@ forme! {
     salles_en_plus: Plage(Range) [0, 30] "Remplissage" "Salles en plus, hors mission";
     /// Icebreaker F.55 : the rooms that are all height (`vertical`).
     escaliers_z: Nombre(i32) [0, 90] "Relief" "Escaliers en Z parmi les salles de passage (%)";
+    /// Icebreaker F.56 : the towers (`vertical.tours`, `tour_etages`, `tour_largeur`, `tour_vide`).
+    tours: Nombre(i32) [0, 100] "Relief" "Descentes de plusieurs étages d'un coup, par une tour (%)";
+    tour_etages: Plage(Range) [2, 8] "Relief" "Étages d'une tour";
+    tour_largeur: Nombre(i32) [3, 7] "Relief" "Largeur d'une tour (cases)";
+    tour_vide: Nombre(i32) [0, 100] "Relief" "Tours au milieu vide (%, sinon un pilier)";
     /// Blocks of rock at least above the dungeon (`placement.profondeur`).
     profondeur: Nombre(i32) [1, 60] "Sous le sol" "Roche au-dessus (blocs)";
 }
@@ -192,6 +197,18 @@ impl Forme {
         if let Some(poids) = self.escaliers_z {
             settings.vertical.escaliers_z = poids;
         }
+        if let Some(tours) = self.tours {
+            settings.vertical.tours = tours;
+        }
+        if let Some(etages) = self.tour_etages {
+            settings.vertical.tour_etages = etages;
+        }
+        if let Some(largeur) = self.tour_largeur {
+            settings.vertical.tour_largeur = largeur;
+        }
+        if let Some(vide) = self.tour_vide {
+            settings.vertical.tour_vide = vide;
+        }
         if let Some(profondeur) = self.profondeur {
             settings.placement.profondeur = profondeur;
         }
@@ -224,6 +241,10 @@ impl Forme {
             elagage: Some(settings.assembly.elagage),
             salles_en_plus: Some(settings.assembly.salles_en_plus),
             escaliers_z: Some(settings.vertical.escaliers_z),
+            tours: Some(settings.vertical.tours),
+            tour_etages: Some(settings.vertical.tour_etages),
+            tour_largeur: Some(settings.vertical.tour_largeur),
+            tour_vide: Some(settings.vertical.tour_vide),
             profondeur: Some(settings.placement.profondeur),
         })
     }
