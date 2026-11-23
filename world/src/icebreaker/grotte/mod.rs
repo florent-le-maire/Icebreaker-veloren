@@ -9,7 +9,11 @@ use super::dungeon::settings::sprite_kind;
 use crate::util::RandomField;
 use common::{comp::item::tool::ToolKind, terrain::SpriteKind, vol::RectVolSize};
 use hashbrown::HashSet;
-use icebreaker_caverne::{Caverne, Forme, Formes, Genre};
+use icebreaker_caverne::{
+    Caverne, Forme, Formes, Genre,
+    bruit::Alea,
+    filon::{self, FormeFilon},
+};
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use serde::Deserialize;
@@ -58,31 +62,41 @@ pub struct VeinSettings {
     pub salle: SalleSettings,
 }
 
-/// Icebreaker U.15: the ore room, one per cave behind a wall: the chance of
-/// an ore on each of its floor blocks, and the ores (sprite name, weight),
-/// common ones and a few rare ones.
+/// Icebreaker U.15, U.19: the ore room, one per cave behind a wall: how many
+/// veins cover its walls (their ores: `salle` in `minerais.ron`).
 #[derive(Clone, Debug, Deserialize)]
 pub struct SalleSettings {
-    pub chance: f32,
-    pub minerais: Vec<(String, f32)>,
+    pub filons: i32,
 }
 
-/// Icebreaker U.14: how many veins a zone holds and how long they are, by
-/// level (the last value for the deeper levels).
+/// Icebreaker U.14, U.19: how many veins a zone holds, by level (the last
+/// value for the deeper levels); their ore and shape: `minerais.ron`.
 #[derive(Clone, Debug, Deserialize)]
 pub struct VeineSettings {
     pub par_zone: Vec<i32>,
-    pub longueur: Vec<i32>,
 }
 
 impl VeineSettings {
-    fn at(list: &[i32], level: i32) -> i32 {
+    pub fn count(&self, level: i32) -> i32 {
+        let list = &self.par_zone;
         list.get((level.max(0) as usize).min(list.len().saturating_sub(1))).copied().unwrap_or(0)
     }
+}
 
-    pub fn count(&self, level: i32) -> i32 { Self::at(&self.par_zone, level) }
+/// Icebreaker U.19: a vein of ore, blocks in the rock (`rock`) and bumps in
+/// the air (`relief`), in the world; `ore` is its place in `minerais.ron`.
+#[derive(Clone, Debug)]
+pub struct Vein {
+    pub ore: usize,
+    pub rock: Vec<Vec3<i32>>,
+    pub relief: Vec<Vec3<i32>>,
+    pub in_ore_room: bool,
+}
 
-    pub fn length(&self, level: i32) -> i32 { Self::at(&self.longueur, level) }
+impl Vein {
+    pub fn blocks(&self) -> impl Iterator<Item = &Vec3<i32>> { self.rock.iter().chain(&self.relief) }
+
+    pub fn len(&self) -> usize { self.rock.len() + self.relief.len() }
 }
 
 impl VeinSettings {
@@ -179,13 +193,21 @@ impl Settings {
             errors.push("filons : chance entre 0 et 1, au moins un palier".into());
         }
         let v = &veins.veines;
-        if v.par_zone.is_empty() || v.longueur.is_empty() || v.par_zone.iter().any(|n| *n < 0) || v.longueur.iter().any(|l| *l < 2) {
-            errors.push("filons.veines : par_zone (≥ 0) et longueur (≥ 2), au moins une valeur chacun".into());
+        if v.par_zone.is_empty() || v.par_zone.iter().any(|n| *n < 0) {
+            errors.push("filons.veines : par_zone (≥ 0), au moins une valeur".into());
         }
-        if !(0.0..=1.0).contains(&veins.salle.chance) || veins.salle.minerais.is_empty() {
-            errors.push("filons.salle : chance entre 0 et 1, au moins un minerai".into());
+        if veins.salle.filons < 0 {
+            errors.push("filons.salle : filons ≥ 0".into());
         }
-        for (sprite, weight) in veins.paliers.iter().flatten().chain(&veins.salle.minerais) {
+        // Icebreaker U.19: an ore is known by its colour, which no rock of a mood has.
+        for (name, ambiance) in &settings.ambiances {
+            for (ore, m) in common::icebreaker_minerais::minerais().liste() {
+                if m.couleur == ambiance.roche || m.couleur == ambiance.lueur {
+                    errors.push(format!("ambiances.{name} : la couleur de sa roche est celle du minerai « {ore} »"));
+                }
+            }
+        }
+        for (sprite, weight) in veins.paliers.iter().flatten() {
             match sprite_kind(sprite) {
                 None => errors.push(format!("filons : sprite inconnu « {sprite} »")),
                 Some(kind) if kind.mine_tool() != Some(ToolKind::Pick) => {
@@ -293,12 +315,11 @@ pub struct Grotte {
     pub ambiance: String,
     pub look: Ambiance,
     pub filons: VeinSettings,
-    /// Icebreaker U.14: the veins (the ore, the blocks its sprites stand in,
-    /// one after the other along the wall), and the ore of each block.
-    pub veins: Vec<(SpriteKind, Vec<Vec3<i32>>)>,
-    pub vein_blocks: Arc<hashbrown::HashMap<Vec3<i32>, SpriteKind>>,
-    /// Icebreaker U.15: the ores of the ore room (they are in `vein_blocks` too).
-    pub ore_room: Vec<(Vec3<i32>, SpriteKind)>,
+    /// Icebreaker U.19: the veins (bands of ore blocks in the rock, those of
+    /// the ore room among them), and the ore of each block (its place in
+    /// `minerais.ron`).
+    pub veins: Vec<Vein>,
+    pub vein_blocks: Arc<hashbrown::HashMap<Vec3<i32>, usize>>,
     /// The inhabitants (Icebreaker K.5), the chief among them.
     pub inhabitants: Vec<Inhabitant>,
     /// Icebreaker H.4: the species of its people (none: their own bodies).
@@ -476,97 +497,114 @@ pub fn generate(
             }
         }
     }
-    // The veins (Icebreaker U.14): in each zone, by its level, a few trails of
-    // one ore along the foot of a wall, off the trail and out of the safe room.
-    let mut veins: Vec<(SpriteKind, Vec<Vec3<i32>>)> = Vec::new();
+    // The veins (Icebreaker U.19, `design/filons.md`): bands of ore blocks in
+    // the rock of the walls, shaped by their ore (`minerais.ron`). In each zone
+    // by its level, starting at a wall within reach; in the ore room (U.15),
+    // all over its walls and ceiling.
+    let minerais = common::icebreaker_minerais::minerais();
     let g = &caverne.grille;
-    for (i, zone) in zones.iter().enumerate().filter(|(_, z)| !matches!(z.genre, Genre::Niche | Genre::Abri | Genre::Minerai)) {
-        let (count, length) = (settings.filons.veines.count(levels[i]), settings.filons.veines.length(levels[i]).max(2) as usize);
-        if count <= 0 {
-            continue;
+    let mut veins: Vec<Vein> = Vec::new();
+    let mut ore_at: hashbrown::HashMap<[i32; 3], usize> = hashbrown::HashMap::new();
+    let abri = caverne.abri;
+    let in_safe_room = |p: [i32; 3]| abri.is_some_and(|a| zones[a].contient(p, 1.3));
+    let trace = |start: [i32; 3], ore: usize, rng: &mut ChaCha8Rng, ore_at: &mut hashbrown::HashMap<[i32; 3], usize>, taken: &HashSet<[i32; 3]>, within: Option<&icebreaker_caverne::Zone>| {
+        let m = minerais.get(ore)?;
+        let f = &m.filon;
+        let forme = FormeFilon {
+            longueur: rng.random_range(f.longueur.0..=f.longueur.1),
+            epaisseur: rng.random_range(f.epaisseur.0..=f.epaisseur.1),
+            profondeur: f.profondeur,
+            sinuosite: f.sinuosite,
+            relief: f.relief,
+        };
+        let libre = |p: [i32; 3]| {
+            if ore_at.contains_key(&p) || in_safe_room(p) || within.is_some_and(|z| !z.contient(p, 1.6)) || g.mur(p[0], p[1], p[2]) || g.sentier(p[0], p[1], p[2]) {
+                return false;
+            }
+            if !g.air(p[0], p[1], p[2]) {
+                return true;
+            }
+            // A bump in the air: never where one walks along the trail, nor
+            // where someone stands or something lies.
+            let trail = (-2..=2).any(|dx| (-2..=2).any(|dy| (1..=3).any(|dz| g.sentier(p[0] + dx, p[1] + dy, p[2] - dz))));
+            !trail && !(0..=2).any(|dz| taken.contains(&[p[0], p[1], p[2] - dz]))
+        };
+        let filon = filon::tracer(g, start, &forme, &mut Alea::new(rng.random::<u64>()), &libre);
+        // Too short to be seen as a vein: another place.
+        if filon.roche.len() < (forme.longueur as usize).min(4) {
+            return None;
         }
-        // Where an ore may lie: a floor block beside a wall.
-        let mut feet: Vec<[i32; 3]> = zone
+        for p in filon.blocs() {
+            ore_at.insert(*p, ore);
+        }
+        Some(filon)
+    };
+    // Rock at the surface of a wall beside a floor block, within reach.
+    let wall_starts = |zone: &icebreaker_caverne::Zone| -> Vec<[i32; 3]> {
+        let mut starts: Vec<[i32; 3]> = zone
             .sols
             .iter()
-            .filter(|p| {
-                [(1, 0), (-1, 0), (0, 1), (0, -1)].iter().any(|(dx, dy)| !g.air(p[0] + dx, p[1] + dy, p[2]) && !g.air(p[0] + dx, p[1] + dy, p[2] + 1))
-                    && !(-2..=2).any(|dx| (-2..=2).any(|dy| g.sentier(p[0] + dx, p[1] + dy, p[2] - 1)))
-                    && !taken.contains(*p)
-                    && !caverne.abri.is_some_and(|a| zones[a].contient(**p, 1.3))
+            .flat_map(|p| {
+                [(1, 0), (-1, 0), (0, 1), (0, -1)]
+                    .into_iter()
+                    .flat_map(move |(dx, dy)| (0..=2).map(move |dz| [p[0] + dx, p[1] + dy, p[2] + dz]))
             })
-            .copied()
+            .filter(|q| filon::surface(g, *q))
             .collect();
-        feet.sort();
-        let mut free: HashSet<[i32; 3]> = feet.iter().copied().collect();
+        starts.sort();
+        starts.dedup();
+        starts
+    };
+    for (i, zone) in zones.iter().enumerate().filter(|(_, z)| !matches!(z.genre, Genre::Niche | Genre::Abri | Genre::Minerai)) {
+        let count = settings.filons.veines.count(levels[i]);
+        let starts = wall_starts(zone);
+        if count <= 0 || starts.is_empty() {
+            continue;
+        }
         for _ in 0..count {
+            let Some(ore) = minerais.tirer(levels[i], rng.random::<f32>()) else { break };
             for _ in 0..12 {
-                if feet.is_empty() {
+                let start = starts[rng.random_range(0..starts.len())];
+                if let Some(filon) = trace(start, ore, &mut rng, &mut ore_at, &taken, None) {
+                    veins.push(Vein { ore, rock: filon.roche.iter().map(|p| monde(*p)).collect(), relief: filon.relief.iter().map(|p| monde(*p)).collect(), in_ore_room: false });
                     break;
                 }
-                // From a block drawn, step by step to a neighbour along the wall.
-                let mut trail = vec![feet[rng.random_range(0..feet.len())]];
-                if !free.contains(&trail[0]) {
-                    continue;
-                }
-                let mut used: HashSet<[i32; 3]> = HashSet::from([trail[0]]);
-                while trail.len() < length {
-                    let p = trail[trail.len() - 1];
-                    let next = [(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (-1, 1), (-1, -1), (1, -1)]
-                        .iter()
-                        .flat_map(|(dx, dy)| [0, 1, -1].map(|dz| [p[0] + dx, p[1] + dy, p[2] + dz]))
-                        .find(|q| free.contains(q) && !used.contains(q));
-                    let Some(next) = next else { break };
-                    used.insert(next);
-                    trail.push(next);
-                }
-                // Too short to be seen as a vein: another place.
-                if trail.len() < length.min(4) {
-                    continue;
-                }
-                let Some(ore) = settings.filons.draw(levels[i], rng.random::<f32>()) else { break };
-                // The next vein keeps a block away from this one.
-                for p in &trail {
-                    taken.insert(*p);
-                    for dx in -1..=1 {
-                        for dy in -1..=1 {
-                            for dz in -1..=1 {
-                                free.remove(&[p[0] + dx, p[1] + dy, p[2] + dz]);
-                            }
-                        }
+            }
+        }
+    }
+    if let Some(m) = caverne.minerai {
+        let room = &zones[m];
+        let reach = room.rayon.map(|r| (r as f32 * 1.6) as i32 + 2);
+        let mut starts = Vec::new();
+        for x in -reach[0]..=reach[0] {
+            for y in -reach[1]..=reach[1] {
+                for z in -reach[2]..=reach[2] {
+                    let p = [room.centre[0] + x, room.centre[1] + y, room.centre[2] + z];
+                    if room.contient(p, 1.5) && filon::surface(g, p) {
+                        starts.push(p);
                     }
                 }
-                veins.push((ore, trail.into_iter().map(monde).collect()));
-                break;
+            }
+        }
+        for _ in 0..settings.filons.salle.filons.max(0) {
+            let Some(ore) = minerais.tirer_salle(rng.random::<f32>()) else { break };
+            for _ in 0..12 {
+                if starts.is_empty() {
+                    break;
+                }
+                let start = starts[rng.random_range(0..starts.len())];
+                if let Some(filon) = trace(start, ore, &mut rng, &mut ore_at, &taken, Some(room)) {
+                    veins.push(Vein { ore, rock: filon.roche.iter().map(|p| monde(*p)).collect(), relief: filon.relief.iter().map(|p| monde(*p)).collect(), in_ore_room: true });
+                    break;
+                }
             }
         }
     }
-    // The ore room (Icebreaker U.15): ores all over its floor, common ones and
-    // a few rare ones; the trail stays free, one walks in.
-    let mut ore_room: Vec<(Vec3<i32>, SpriteKind)> = Vec::new();
-    if let Some(m) = caverne.minerai {
-        let salle = &settings.filons.salle;
-        let total: f32 = salle.minerais.iter().map(|(_, w)| w).sum();
-        let mut sols = zones[m].sols.clone();
-        sols.sort();
-        for p in sols {
-            let trail = (-1..=1).any(|dx| (-1..=1).any(|dy| g.sentier(p[0] + dx, p[1] + dy, p[2] - 1)));
-            if trail || !zones[m].contient(p, 1.3) || !rng.random_bool(salle.chance as f64) {
-                continue;
-            }
-            let mut draw = rng.random::<f32>() * total;
-            let name = salle.minerais.iter().find(|(_, w)| {
-                draw -= w;
-                draw < 0.0
-            });
-            if let Some(ore) = name.or(salle.minerais.last()).and_then(|(n, _)| sprite_kind(n)) {
-                taken.insert(p);
-                ore_room.push((monde(p), ore));
-            }
-        }
+    // No crystal grows on a bump of ore.
+    for vein in &veins {
+        taken.extend(vein.relief.iter().map(|p| (*p - mouth).into_array()));
     }
-    let vein_blocks: hashbrown::HashMap<Vec3<i32>, SpriteKind> =
-        veins.iter().flat_map(|(ore, trail)| trail.iter().map(|p| (*p, *ore))).chain(ore_room.iter().copied()).collect();
+    let vein_blocks: hashbrown::HashMap<Vec3<i32>, usize> = ore_at.into_iter().map(|(p, ore)| (monde(p), ore)).collect();
 
     // Glowing crystals (K.3): on the floors, off the trail.
     let mut crystals = Vec::new();
@@ -616,13 +654,14 @@ pub fn generate(
         arrival: monde(caverne.depart),
         seed,
         summary: format!(
-            "grotte {ambiance}, forme {profil}, race {}, graine {seed} : {} ; {} habitant(s), {} filon(s), {} minerai(s) dans la salle au minerai, {} cristal(aux), {} coffre(s) \
+            "grotte {ambiance}, forme {profil}, race {}, graine {seed} : {} ; {} habitant(s), {} filon(s) dont {} dans la salle au minerai ({} blocs de minerai), {} cristal(aux), {} coffre(s) \
              ({} par palier), fond en {:?}",
             species.as_deref().unwrap_or("des fichiers"),
             caverne.resume,
             inhabitants.len(),
             veins.len(),
-            ore_room.len(),
+            veins.iter().filter(|v| v.in_ore_room).count(),
+            vein_blocks.len(),
             crystals.len(),
             chests.len(),
             chests_by_tier.join(" / "),
@@ -638,7 +677,6 @@ pub fn generate(
         filons: settings.filons.clone(),
         veins,
         vein_blocks: Arc::new(vein_blocks),
-        ore_room,
         inhabitants,
         species,
         chests,
@@ -726,67 +764,82 @@ mod tests {
         assert!(bottom.contains(&SpriteKind::Gold) && !top.contains(&SpriteKind::Gold), "l'or n'est pas au fond");
     }
 
-    /// Icebreaker U.14: from the second level on, every zone has a vein: a
-    /// trail of one ore, block after block at the foot of a wall, off the
-    /// trail; and the lone nuggets are ten times fewer than they were (K.4,
-    /// U.6: 0.008 per block).
+    /// Icebreaker U.19: from the second level on, every zone has a vein: a
+    /// band of ore blocks in the rock of a wall, bumps in the air, never on
+    /// the trail nor in the safe room; no lone nuggets any more.
     #[test]
-    fn veins_run_along_the_walls() {
+    fn veins_lie_in_the_walls() {
         let settings = Settings::load().unwrap();
-        assert!(settings.filons.chance <= 0.001, "pépites : {}", settings.filons.chance);
+        let minerais = common::icebreaker_minerais::minerais();
+        assert_eq!(settings.filons.chance, 0.0, "pépites : {}", settings.filons.chance);
+        let mut ores = std::collections::HashSet::new();
         for seed in 0..6 {
             let grotte = cave(&settings, seed);
             let c = &grotte.caverne;
             for (i, zone) in c.zones.iter().enumerate() {
-                let inside = grotte.veins.iter().filter(|(_, t)| zone.sols.contains(&(t[0] - MOUTH).into_array())).count();
-                if !matches!(zone.genre, Genre::Niche | Genre::Abri | Genre::Minerai) && grotte.levels[i] >= 1 {
-                    assert!(inside >= 1, "graine {seed} : zone {i} (niveau {}) sans filon", grotte.levels[i]);
+                if matches!(zone.genre, Genre::Niche | Genre::Abri | Genre::Minerai) || grotte.levels[i] < 1 {
+                    continue;
                 }
+                let near = |p: &Vec3<i32>| zone.sols.iter().any(|s| (0..3).all(|k| (s[k] - (p[k] - MOUTH[k])).abs() <= 3));
+                let inside = grotte.veins.iter().filter(|v| !v.in_ore_room && v.rock.iter().any(near)).count();
+                assert!(inside >= 1, "graine {seed} : zone {i} (niveau {}) sans filon", grotte.levels[i]);
             }
-            for (ore, trail) in &grotte.veins {
-                assert!(trail.len() >= 4, "graine {seed} : filon de {} bloc(s)", trail.len());
-                assert_eq!(ore.mine_tool(), Some(ToolKind::Pick));
-                for pair in trail.windows(2) {
-                    let d = (pair[1] - pair[0]).map(i32::abs);
-                    assert!(d.x <= 1 && d.y <= 1 && d.z <= 1 && d != Vec3::zero(), "graine {seed} : filon coupé");
-                }
-                for p in trail {
-                    assert!(grotte.air(*p) && !grotte.air(*p - Vec3::unit_z()), "graine {seed} : minerai en l'air ou dans la roche");
-                    assert!(!grotte.in_safe_room(*p) && grotte.vein_blocks.get(p) == Some(ore));
+            let mut total = 0;
+            for vein in &grotte.veins {
+                let m = minerais.get(vein.ore).unwrap();
+                assert!(vein.rock.len() >= (m.filon.longueur.0 as usize).min(4), "graine {seed} : filon de {} bloc(s)", vein.rock.len());
+                ores.insert(vein.ore);
+                for p in &vein.rock {
+                    assert!(!grotte.air(*p), "graine {seed} : minerai dans l'air");
                     let q = *p - MOUTH;
-                    assert!(!c.grille.sentier(q.x, q.y, q.z - 1), "graine {seed} : filon sur le sentier");
+                    assert!(!c.grille.sentier(q.x, q.y, q.z) && !grotte.wall(*p), "graine {seed} : filon sur le sentier ou un mur");
+                }
+                for p in &vein.relief {
+                    assert!(grotte.air(*p), "graine {seed} : bosse dans la roche");
+                    let q = *p - MOUTH;
+                    let trail = (-2..=2).any(|dx| (-2..=2).any(|dy| (1..=3).any(|dz| c.grille.sentier(q.x + dx, q.y + dy, q.z - dz))));
+                    assert!(!trail, "graine {seed} : bosse sur le sentier");
                     assert!(grotte.inhabitants.iter().all(|i| i.pos != *p) && grotte.chests.iter().all(|c| c != p));
                 }
+                for p in vein.blocks() {
+                    assert!(!grotte.in_safe_room(*p) && grotte.vein_blocks.get(p) == Some(&vein.ore));
+                }
+                total += vein.len();
             }
-            let total: usize = grotte.veins.iter().map(|(_, t)| t.len()).sum();
-            assert_eq!(total + grotte.ore_room.len(), grotte.vein_blocks.len(), "graine {seed} : deux filons sur un bloc");
+            assert_eq!(total, grotte.vein_blocks.len(), "graine {seed} : deux filons sur un bloc");
         }
+        assert!(ores.len() >= 6, "{ores:?}");
     }
 
-    /// Icebreaker U.15: every cave has an ore room behind a wall, full of ore,
-    /// with no one in it; over a few caves, common ores and rare ones.
+    /// Icebreaker U.15, U.19: every cave has an ore room behind a wall, its
+    /// walls covered with veins, with no one in it; over a few caves, common
+    /// ores and rare ones.
     #[test]
     fn the_ore_room_is_full_behind_its_wall() {
         let settings = Settings::load().unwrap();
-        let mut found = std::collections::HashSet::new();
+        let minerais = common::icebreaker_minerais::minerais();
+        let mut found = std::collections::BTreeSet::new();
         for seed in 0..6 {
             let grotte = cave(&settings, seed);
             let c = &grotte.caverne;
             let m = c.minerai.unwrap_or_else(|| panic!("graine {seed} : pas de salle au minerai"));
             assert!(c.fermees.contains(&m), "graine {seed} : la salle au minerai est ouverte");
-            assert!(grotte.ore_room.len() >= 20, "graine {seed} : {} minerai(s) dans la salle", grotte.ore_room.len());
-            let richest = grotte.veins.iter().map(|(_, t)| t.len()).max().unwrap_or(0);
-            assert!(grotte.ore_room.len() > 2 * richest, "graine {seed} : la salle n'est pas plus riche qu'un filon");
-            for (p, ore) in &grotte.ore_room {
-                assert!(grotte.air(*p) && !grotte.air(*p - Vec3::unit_z()) && grotte.vein_blocks.get(p) == Some(ore));
-                assert!(c.zones[m].contient((*p - MOUTH).into_array(), 1.3), "graine {seed} : minerai hors de la salle");
-                found.insert(*ore);
+            let room: Vec<&Vein> = grotte.veins.iter().filter(|v| v.in_ore_room).collect();
+            let blocks: usize = room.iter().map(|v| v.len()).sum();
+            assert!(room.len() * 2 >= settings.filons.salle.filons as usize, "graine {seed} : {} filon(s) dans la salle", room.len());
+            let richest = grotte.veins.iter().filter(|v| !v.in_ore_room).map(|v| v.len()).max().unwrap_or(0);
+            assert!(blocks > 2 * richest, "graine {seed} : la salle n'est pas plus riche qu'un filon");
+            for vein in &room {
+                for p in vein.blocks() {
+                    assert!(c.zones[m].contient((*p - MOUTH).into_array(), 1.6), "graine {seed} : minerai hors de la salle");
+                }
+                found.insert(minerais.liste()[vein.ore].0.clone());
             }
             let inside = |p: Vec3<i32>| c.zones[m].contient((p - MOUTH).into_array(), 1.3);
             assert!(grotte.inhabitants.iter().all(|i| !inside(i.pos)) && grotte.chests.iter().all(|p| !inside(*p)), "graine {seed}");
             assert_eq!(grotte.levels[m], grotte.levels[c.zones[m].parent.unwrap()]);
         }
-        assert!(found.contains(&SpriteKind::Iron) && found.contains(&SpriteKind::Gold) && found.contains(&SpriteKind::Cobalt), "{found:?}");
+        assert!(found.contains("fer") && found.len() >= 5, "{found:?}");
     }
 
     /// Icebreaker B.5: each chest has a tier (the level of its zone); over a

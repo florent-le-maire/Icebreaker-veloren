@@ -790,42 +790,50 @@ pub fn check_generated_grotte(
             problems.push(format!("coffre en {pos:?} : butin {table:?} au lieu de {expected:?}"));
         }
     }
-    // The ores (K.4): one stands on them (a mineable sprite is solid); counted
-    // by the level of the zone they lie in.
-    let mut ores = vec![0usize; grotte.niveaux.max(1) as usize];
+    // The lone nuggets (K.4): one stands on them (a mineable sprite is solid).
     let mut lone = 0;
     for p in &seen {
         let mined = block_at(*p - vek::Vec3::unit_z())
             .and_then(|b| b.get_sprite())
             .is_some_and(|s| s.mine_tool() == Some(common::comp::item::tool::ToolKind::Pick));
-        if mined {
-            ores[grotte.level_at(*p) as usize] += 1;
-            lone += usize::from(!grotte.vein_blocks.contains_key(&(*p - vek::Vec3::unit_z())));
+        lone += usize::from(mined);
+    }
+    // Icebreaker U.19: the veins, counted by the level of the zone they lie in.
+    let mut ores = vec![0usize; grotte.niveaux.max(1) as usize];
+    for vein in grotte.veins.iter().filter(|v| !v.in_ore_room) {
+        if let Some(p) = vein.rock.first() {
+            let last = ores.len() - 1;
+            ores[(grotte.level_at(*p).max(0) as usize).min(last)] += 1;
         }
     }
     if ores.iter().sum::<usize>() == 0 {
-        problems.push("aucun filon sur lequel marcher".into());
+        problems.push("aucun filon dans les zones".into());
     }
     // Icebreaker U.15: the ore room, full, behind its wall (a zone closed by a wall is checked above).
+    let room = grotte.veins.iter().filter(|v| v.in_ore_room).count();
     match grotte.caverne.minerai {
-        Some(m) if grotte.caverne.fermees.contains(&m) && !grotte.ore_room.is_empty() => {},
-        m => problems.push(format!("salle au minerai absente, ouverte ou vide : {m:?}, {} minerai(s)", grotte.ore_room.len())),
+        Some(m) if grotte.caverne.fermees.contains(&m) && room > 0 => {},
+        m => problems.push(format!("salle au minerai absente, ouverte ou vide : {m:?}, {room} filon(s)")),
     }
-    // Icebreaker U.14: every block of a vein holds its ore.
-    let missing = grotte.vein_blocks.iter().filter(|(p, ore)| block_at(**p).and_then(|b| b.get_sprite()) != Some(**ore)).count();
+    // Icebreaker U.19: every block of a vein is a block of its ore.
+    let minerais = common::icebreaker_minerais::minerais();
+    let missing = grotte
+        .vein_blocks
+        .iter()
+        .filter(|(p, ore)| block_at(**p).and_then(|b| minerais.de_bloc(&b)).map(|(i, _)| i) != Some(**ore))
+        .count();
     if missing > 0 {
         problems.push(format!("{missing} bloc(s) de filon sans leur minerai sur {}", grotte.vein_blocks.len()));
     }
     let summary = format!(
-        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, minerais par niveau {:?} dont {} filon(s) et {lone} pépite(s), {} minerai(s) dans la salle au minerai, {} habitant(s) ({appeared} \
+        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, filons par niveau {:?}, {room} dans la salle au minerai, {} blocs de minerai, {lone} pépite(s), {} habitant(s) ({appeared} \
          apparus), {} coffre(s)\nzones :\n  {}",
         grotte.summary,
         grotte.mouth,
         plot.entrance(),
         seen.len(),
         ores,
-        grotte.veins.len(),
-        grotte.ore_room.len(),
+        grotte.vein_blocks.len(),
         grotte.inhabitants.len(),
         grotte.chests.len(),
         zones.join("\n  ")

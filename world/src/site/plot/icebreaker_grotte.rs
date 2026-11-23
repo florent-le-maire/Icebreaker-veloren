@@ -149,15 +149,18 @@ impl Structure for IcebreakerGrotte {
                     && !(a(pos + Vec3::unit_x()) && a(pos - Vec3::unit_x()) && a(pos + Vec3::unit_y()) && a(pos - Vec3::unit_y()))
             })
             .fill(Fill::Sampling(Arc::new(move |pos| ores.filons.ore(ores.level_at(pos), pos).map(Block::air))));
-        // The veins (Icebreaker U.14): one ore, block after block along a wall.
-        let (veins, ores) = (Arc::clone(&grotte.vein_blocks), Arc::clone(&grotte.vein_blocks));
-        frame
-            .sample(move |pos| veins.contains_key(&pos))
-            .fill(Fill::Sampling(Arc::new(move |pos| ores.get(&pos).copied().map(Block::air))));
         // The crystals: tapered spikes of glowing rock.
         for (base, height) in &grotte.crystals {
             painter.line_two_radius(*base, *base + up * *height, 2.0, 0.5).fill(Fill::Block(glow));
         }
+        // The veins (Icebreaker U.19): blocks of the colour of their ore
+        // (`minerais.ron`), in the rock and in bumps out of it; over a crystal
+        // that would reach them.
+        let minerais = common::icebreaker_minerais::minerais();
+        let (veins, ores) = (Arc::clone(&grotte.vein_blocks), Arc::clone(&grotte.vein_blocks));
+        frame
+            .sample(move |pos| veins.contains_key(&pos))
+            .fill(Fill::Sampling(Arc::new(move |pos| Some(minerais.get(*ores.get(&pos)?)?.bloc()))));
         // The inhabitants and the chests (Icebreaker K.5). The painter's area
         // includes its far edge, shared with the next chunk: spawn there only
         // once.

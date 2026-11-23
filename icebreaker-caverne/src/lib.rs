@@ -10,6 +10,8 @@
 //! code.
 
 pub mod bruit;
+// Icebreaker U.19: the veins of ore.
+pub mod filon;
 pub mod grille;
 pub mod maillage;
 pub mod presets;
