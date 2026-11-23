@@ -218,6 +218,17 @@ roche tendre (`WeakRock`) à la pioche et à l'explosion ; la roche ordinaire ne
 2026-11-16)** : la pioche casse aussi la roche dure, contre de l'énergie. Le todo « Ajouter la
 destructibilité » (2026-11-11) commence ici ; les matières et la foreuse restent dans `PLAN-DONJON.md` (E.5, E.6).
 
+**Filons à la Deep Rock Galactic** (Flo, 2026-11-23, `design/filons.md`) : le minerai devient des blocs de couleur
+pris dans la roche, cassés morceau par morceau, réglables minerai par minerai. — *en cours : Veloren-caverne, 2026-11-23*
+
+- [ ] **U.18 Le fichier des minerais** — `assets/icebreaker/grottes/minerais.ron` (couleur, lueur, coups, énergie,
+  objet, quantité, morceau, forme du filon, poids par niveau et dans la salle), lu et contrôlé par `veloren-common`.
+- [ ] **U.19 Les filons dans la roche** — le générateur pose des bandes de blocs selon la forme de chaque minerai, à la
+  place des traînées de sprites, dans les zones et sur les parois de la salle au minerai.
+- [ ] **U.20 Miner un filon** — dureté du minerai, l'objet qui tombe quand un bloc cède, le morceau ; le cône de U.17
+  laisse le minerai.
+- [ ] **U.21 L'atelier et le wiki** — les filons sur la page de l'atelier des grottes, la fiche `grotte.md`.
+
 - [x] **U.17 Un éclat en cône** — demandé par Flo (2026-11-23) : quand le bloc visé cède, un cône part avec lui, du corps
   de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : demi-largeur 1,9, demi-hauteur 1,4, pointe à 5 blocs ; boyau de 3 de large), un
   seul bruit ; les blocs plus durs que le bloc visé restent. Testé : 4 tests de `veloren-common`, serveur compilé.
