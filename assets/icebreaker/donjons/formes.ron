@@ -14,55 +14,45 @@
 // Pour régler : `.\icebreaker.ps1 donjon-atelier` ouvre l'atelier ; « Enregistrer le preset » écrit ici le profil.
 (
     profils: {
-        // Les tailles de generation.ron telles quelles.
-        "standard": (
-            poids: 2.0,
-            forme: (),
-        ),
-        // F.49 : une croix, peu d'étages : deux longues ailes qui se croisent à l'entrée. F.57 : ses descentes par des
-        // escaliers en Z.
+        // F.59 (Flo, 2026-11-23) : six formes, chacune vraiment différente, toutes tirées par la graine.
+        // Trois silhouettes :
+        // la croix : deux longues ailes qui se croisent à l'entrée ; presque à plat, sans boucle ni chute : on va au
+        // bout d'une aile et on revient ; ses rares descentes par un escalier en Z.
         "croix": (
             poids: 1.0,
-            forme: (levels: (1, 2), drops: (0, 0), silhouette: Croix, etendue: 42, escaliers_z: 40),
+            forme: (levels: (1, 2), loops: (0, 0), drops: (0, 0), silhouette: Croix, etendue: 48, escaliers_z: 40),
         ),
-        // F.49 : tout tient dans un cercle serré, avec des boucles et beaucoup de salles à forme tirée.
-        "rond": (
-            poids: 1.0,
-            forme: (levels: (2, 3), loops: (2, 3), formes_part: 70, silhouette: Rond, etendue: 30, escaliers_z: 30, tours: 30, tour_etages: (2, 2)),
-        ),
-        // F.49 : un anneau de salles collées l'une à l'autre, presque sans couloir : on fait le tour.
+        // la forteresse : un anneau de salles carrées collées l'une à l'autre, presque sans couloir, sur un seul
+        // étage, avec des portes à clé : on fait le tour.
         "forteresse": (
             poids: 1.0,
-            forme: (levels: (1, 2), spacing: (1, 2), collees: 70, silhouette: Couronne, etendue: 34),
+            forme: (levels: (1, 1), locks: (1, 2), drops: (0, 0), spacing: (1, 1), collees: 85, formes_part: 20, silhouette: Couronne, etendue: 38),
         ),
-        // F.49 : des salles écartées, reliées par des couloirs qui serpentent, avec des boucles ; le tout dans un
-        // carré. F.54 : le carré est resserré et tout son vide est un labyrinthe (à la manière de donjon.bin.sh), avec
-        // des salles hors mission à y trouver.
-        "dedale": (
+        // le rond : tout tient dans un cercle serré, sur plusieurs étages, plein de boucles et de salles à forme
+        // tirée (rondes, en croix, en grotte) reliées par des escaliers en Z.
+        "rond": (
             poids: 1.0,
-            forme: (loops: (2, 4), spacing: (3, 6), sinuosite: 80, silhouette: Carre, etendue: 28, remplissage: 100, boucles_labyrinthe: 4, salles_en_plus: (3, 5), escaliers_z: 30),
+            forme: (levels: (2, 3), loops: (3, 4), formes_part: 80, silhouette: Rond, etendue: 30, escaliers_z: 50),
         ),
-        // F.57 : très profond : on descend par de grandes tours à colimaçon (5 cases de large, le plus souvent un vide
-        // au milieu) et des escaliers en Z ; des salles serrées, souvent collées, et quelques chutes pour couper.
-        "tours": (
-            poids: 1.0,
-            forme: (levels: (3, 4), drops: (1, 2), spacing: (1, 2), collees: 40, escaliers_z: 40, tours: 80, tour_etages: (2, 4), tour_largeur: 5, tour_vide: 70, profondeur: 16),
-        ),
-        // Un seul étage, sans chute : tout se joue à plat.
-        "plat": (
-            poids: 0.0,
-            forme: (levels: (1, 1), drops: (0, 0)),
-        ),
-        // Une longue descente : beaucoup d'étages et de chutes. F.57 : par des escaliers en Z et quelques tours.
-        "profond": (
-            poids: 0.0,
-            forme: (main_path: (9, 11), levels: (4, 5), drops: (1, 2), escaliers_z: 50, tours: 30, tour_etages: (2, 3), profondeur: 20),
-        ),
-        // Beaucoup de branches et de boucles, des salles plus écartées. F.54 : sans silhouette, le labyrinthe remplit
-        // le rectangle que prend le donjon.
+        // Le labyrinthe (dedale et labyrinthe réunis) : un carré dont tout le vide est un labyrinthe, à la manière de
+        // donjon.bin.sh ; des salles écartées, des couloirs qui serpentent, des salles hors mission à y trouver ; peu
+        // d'étages, chacun étant rempli.
         "labyrinthe": (
-            poids: 0.0,
-            forme: (branches: (6, 9), loops: (2, 3), spacing: (2, 4), remplissage: 100, boucles_labyrinthe: 3),
+            poids: 1.0,
+            forme: (levels: (1, 2), loops: (2, 4), spacing: (2, 4), sinuosite: 80, silhouette: Carre, etendue: 32, remplissage: 100, boucles_labyrinthe: 4, salles_en_plus: (3, 5)),
+        ),
+        // La tour (tours et profond réunis) : étroite et très profonde ; on descend par de grandes tours à colimaçon
+        // (5 cases de large, le plus souvent un vide au milieu), des escaliers en Z et des chutes ; salles serrées,
+        // souvent collées.
+        "tour": (
+            poids: 1.0,
+            forme: (levels: (4, 5), drops: (1, 2), spacing: (1, 2), collees: 40, silhouette: Carre, etendue: 20, escaliers_z: 50, tours: 80, tour_etages: (2, 4), tour_largeur: 5, tour_vide: 70, profondeur: 20),
+        ),
+        // Le plat (plat et standard réunis) : le donjon ordinaire, sans silhouette, sur un seul étage et sans chute :
+        // tout se joue à plat.
+        "plat": (
+            poids: 1.0,
+            forme: (levels: (1, 1), drops: (0, 0)),
         ),
     },
 )

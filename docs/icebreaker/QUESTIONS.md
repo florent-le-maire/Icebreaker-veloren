@@ -66,12 +66,12 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
   sentier garanti, ou vouloir de vraies chutes sans retour à pied quand les cordes (E.7) existeront ? Lié à Q15.
   *Proposé* : garder le sentier tant qu'il n'y a pas de cordes. *Qui* : Flo, Sayanel. *2026-11-16* : Flo veut des
   murs à casser entre les zones (U.13) : le sentier reste, mais il passe par des murs.
-- **Q64 Tomber dans le vide d'une tour** (F.56, preset `tours`) : une tour au milieu vide fait jusqu'à 4 étages de
+- **Q64 Tomber dans le vide d'une tour** (F.56, preset `tour`) : une tour au milieu vide fait jusqu'à 4 étages de
   7 blocs, et Veloren blesse au-delà de 4,5 m (`design/donjon.md`). Garder ces dégâts (le vide est un danger et un
   raccourci risqué), les couper en donjon, ou ne garder que des tours à pilier ? Lié à Q17. *Proposé* : les garder,
   le réglage `tour_vide` du preset permet de revenir aux piliers. *Qui* : Flo, Sayanel.
-- **Q65 Taille du labyrinthe** (F.52, preset `dedale`) : rempli à 100 %, un donjon moyen a 3 400 cases de labyrinthe
-  pour 1 200 de salles, sur 3 étages, et 90 à 130 créatures. Est-ce le dédale voulu, ou faut-il moins (curseur
+- **Q65 Taille du labyrinthe** (F.52, preset `labyrinthe`) : rempli à 100 %, un donjon moyen a 4 500 cases de couloir
+  pour 19 salles, sur 1 à 2 étages, et une centaine de créatures. Est-ce le dédale voulu, ou faut-il moins (curseur
   `remplissage`, labyrinthe seulement autour des salles) et y mettre de quoi récompenser l'exploration (butin au
   bout des impasses, `IDEES.md` 6 bis) ? *Qui* : Flo, Sayanel.
 

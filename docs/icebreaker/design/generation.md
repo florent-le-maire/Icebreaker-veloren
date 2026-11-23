@@ -97,8 +97,20 @@ donjon d'avant. Le résumé du donjon dit la part de la silhouette occupée.
   montent : on entre par le haut, on repart par le pied. Avec `tours`, un changement d'étage du chemin principal
   peut descendre plusieurs étages d'un coup. Les tours restent sous le sol (F.31).
 - Limites connues : un étage entier est rempli alors que les salles se partagent entre les étages, donc le
-  labyrinthe est grand (3 400 cases pour 1 200 de salles dans `dedale` en taille moyenne) ; resserrer la forme
-  fait échouer l'assemblage. Rien ne part encore des paliers du milieu d'une tour.
+  labyrinthe est grand (4 500 cases de couloir pour 19 salles dans `labyrinthe` en taille moyenne) ; resserrer la
+  forme fait échouer l'assemblage. Rien ne part encore des paliers du milieu d'une tour.
+
+**Les six formes** (F.59, `donjons/formes.ron`, toutes tirées par la graine avec le même poids) : chacune pousse un
+réglage que les autres n'ont pas.
+
+| Forme | Ce qui la fait | En taille moyenne |
+|---|---|---|
+| `croix` | deux longues ailes, presque à plat, ni boucle ni chute, escaliers en Z | 15 salles, 50 cases de large |
+| `forteresse` | anneau de salles carrées collées, un étage, portes à clé, presque pas de couloir | 3 cases de couloir par salle |
+| `rond` | cercle serré sur 2 à 3 étages, boucles, salles à forme tirée, escaliers en Z | 44 cases de large |
+| `labyrinthe` | carré rempli par le labyrinthe, couloirs sinueux, salles hors mission | 4 500 cases de couloir |
+| `tour` | étroite et très profonde : tours à colimaçon, escaliers en Z, chutes, salles collées | 9 étages, 35 cases de large |
+| `plat` | le donjon ordinaire sans silhouette, un seul étage, sans chute | 16 salles, 62 cases de large |
 
 ## Habitants crédibles (tâche 2.5)
 

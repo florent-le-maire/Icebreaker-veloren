@@ -53,11 +53,12 @@ du bruit à portée, ou si on s'approche trop (moins si on est accroupi) ; une r
 arrive dans l'**abri**, une petite salle sûre (un feu, des couchages) accrochée à la salle d'entrée, comme dans la
 grotte.
 
-Comme la grotte, le donjon a des **formes** (`donjons/formes.ron`) : « plat », « profond », « labyrinthe »…
-Chacune change le graphe, l'écart entre les salles ou la roche au-dessus. Depuis F.46, une forme peut aussi donner
-une **silhouette** au plan (croix, rond, anneau, losange…), faire **serpenter les couloirs**, ajouter des
-**impasses** ou **coller les salles** l'une à l'autre : « croix », « rond », « forteresse », « dedale ». La graine en
-tire une (les donjons changent donc d'une expédition à l'autre), ou l'équipe la choisit au départ. Depuis F.52, une forme peut aussi **remplir tout le vide de sa silhouette par un labyrinthe** (« dedale », « labyrinthe ») qui ne contourne jamais une porte à clé, y cacher des **salles en plus**, et donner du **relief** : des **escaliers en Z** et des **tours à colimaçon** de plusieurs étages, au milieu vide ou plein (« tours », « profond »). On les règle dans l'**atelier du donjon** (`.\icebreaker.ps1 donjon-atelier`). L'atelier montre
+Comme la grotte, le donjon a des **formes** (`donjons/formes.ron`), six, chacune vraiment différente : la
+**croix** (deux longues ailes presque à plat), la **forteresse** (un anneau de salles collées, des portes à clé), le
+**rond** (un cercle serré plein de boucles), le **labyrinthe** (un carré dont tout le vide est un dédale), la
+**tour** (étroite et très profonde, à descendre par des tours à colimaçon) et le **plat** (le donjon ordinaire sur
+un seul étage). Chacune règle le graphe, la **silhouette** du plan, les couloirs, les salles ou le relief. La graine en
+tire une (les donjons changent donc d'une expédition à l'autre), ou l'équipe la choisit au départ. Le labyrinthe ne contourne jamais une porte à clé et cache des **salles en plus** ; les **tours à colimaçon** descendent plusieurs étages d'un coup, autour d'un vide ou d'un pilier. On les règle dans l'**atelier du donjon** (`.\icebreaker.ps1 donjon-atelier`). L'atelier montre
 le donjon en 3D (comme la grotte) ou étage par étage, avec des curseurs, et enregistre la forme.
 
 ## Ce qui reste à faire
