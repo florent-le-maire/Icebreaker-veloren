@@ -10,22 +10,86 @@ use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-/// What a profile changes (`None`: the value of `generation.ron`).
-#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
-#[serde(default, deny_unknown_fields)]
-pub struct Forme {
+/// Icebreaker F.45: how a setting of a profile is written and shown.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Genre {
+    /// `(min, max)`, drawn by the seed.
+    Plage,
+    Nombre,
+}
+
+/// Icebreaker F.45: a setting of a profile: its name in `formes.ron`, what the workshop calls it and the group it
+/// shows it in, the values it may take (a range: both ends within them).
+#[derive(Copy, Clone, Debug, Serialize)]
+pub struct Champ {
+    pub cle: &'static str,
+    pub libelle: &'static str,
+    pub groupe: &'static str,
+    pub min: i32,
+    pub max: i32,
+    pub genre: Genre,
+}
+
+/// The value of a setting a profile fixes.
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum Valeur {
+    Plage(Range),
+    Nombre(i32),
+}
+
+impl From<Range> for Valeur {
+    fn from(r: Range) -> Self { Self::Plage(r) }
+}
+
+impl From<i32> for Valeur {
+    fn from(n: i32) -> Self { Self::Nombre(n) }
+}
+
+/// Icebreaker F.45: the settings of a profile, said once: the fields of `Forme`, the table `CHAMPS` the checks,
+/// the writing of `formes.ron` and the sliders of the workshop come from (as `forme!` of `icebreaker-caverne`).
+/// What a setting changes is in `Forme::appliquer` and `Forme::lire`.
+macro_rules! forme {
+    ($( $(#[$doc:meta])* $cle:ident : $genre:ident($ty:ty) [$min:expr, $max:expr] $groupe:literal $libelle:literal; )*) => {
+        /// What a profile changes (`None`: the value of `generation.ron`).
+        #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
+        #[serde(default, deny_unknown_fields)]
+        pub struct Forme {
+            $( $(#[$doc])* pub $cle: Option<$ty>, )*
+        }
+
+        /// The settings of a profile, in the order of the workshop.
+        pub const CHAMPS: &[Champ] = &[
+            $( Champ {
+                cle: stringify!($cle),
+                libelle: $libelle,
+                groupe: $groupe,
+                min: $min,
+                max: $max,
+                genre: Genre::$genre,
+            }, )*
+        ];
+
+        impl Forme {
+            /// What the profile fixes, in the order of `CHAMPS`.
+            fn valeurs(&self) -> Vec<Option<Valeur>> { vec![ $( self.$cle.map(Valeur::from), )* ] }
+        }
+    };
+}
+
+forme! {
     /// The graph, for every size (`sizes` of `generation.ron`).
-    pub main_path: Option<Range>,
-    pub levels: Option<Range>,
-    pub branches: Option<Range>,
-    pub branch_length: Option<Range>,
-    pub locks: Option<Range>,
-    pub loops: Option<Range>,
-    pub drops: Option<Range>,
+    main_path: Plage(Range) [2, 20] "Graphe" "Salles du chemin principal";
+    levels: Plage(Range) [1, 8] "Graphe" "Étages";
+    branches: Plage(Range) [0, 14] "Graphe" "Branches (culs-de-sac)";
+    branch_length: Plage(Range) [1, 5] "Graphe" "Longueur des branches";
+    locks: Plage(Range) [0, 4] "Graphe" "Portes à clé";
+    loops: Plage(Range) [0, 5] "Graphe" "Boucles";
+    drops: Plage(Range) [0, 4] "Graphe" "Chutes (sens unique)";
     /// Cells between a door and the next room (`assembly.spacing`).
-    pub spacing: Option<Range>,
+    spacing: Plage(Range) [1, 8] "Salles" "Cases entre deux salles";
     /// Blocks of rock at least above the dungeon (`placement.profondeur`).
-    pub profondeur: Option<i32>,
+    profondeur: Nombre(i32) [1, 60] "Sous le sol" "Roche au-dessus (blocs)";
 }
 
 impl Forme {
@@ -54,26 +118,36 @@ impl Forme {
         settings
     }
 
+    /// Icebreaker F.45: what `settings` give for a dungeon of size `taille` without a profile: every setting
+    /// fixed at its value there (the unticked sliders of the workshop).
+    pub fn lire(settings: &Settings, taille: &str) -> Option<Self> {
+        let shape = settings.sizes.get(taille)?;
+        Some(Self {
+            main_path: Some(shape.main_path),
+            levels: Some(shape.levels),
+            branches: Some(shape.branches),
+            branch_length: Some(shape.branch_length),
+            locks: Some(shape.locks),
+            loops: Some(shape.loops),
+            drops: Some(shape.drops),
+            spacing: Some(settings.assembly.spacing),
+            profondeur: Some(settings.placement.profondeur),
+        })
+    }
+
     /// What is wrong with the profile (empty: nothing).
     pub fn erreurs(&self) -> Vec<String> {
         let mut errors = Vec::new();
-        let ranges = [
-            ("main_path", self.main_path, 2),
-            ("levels", self.levels, 1),
-            ("branches", self.branches, 0),
-            ("branch_length", self.branch_length, 1),
-            ("locks", self.locks, 0),
-            ("loops", self.loops, 0),
-            ("drops", self.drops, 0),
-            ("spacing", self.spacing, 1),
-        ];
-        for (name, range, lowest) in ranges {
-            if range.is_some_and(|r| !r.valid(lowest)) {
-                errors.push(format!("{name} : plage invalide (au moins {lowest}, min ≤ max)"));
+        for (champ, valeur) in CHAMPS.iter().zip(self.valeurs()) {
+            let Champ { cle, min, max, .. } = champ;
+            let dedans = |n: i32| (*min..=*max).contains(&n);
+            match valeur {
+                Some(Valeur::Plage(r)) if !(dedans(r.0) && dedans(r.1) && r.0 <= r.1) => {
+                    errors.push(format!("{cle} : plage invalide (de {min} à {max}, min ≤ max)"));
+                },
+                Some(Valeur::Nombre(n)) if !dedans(n) => errors.push(format!("{cle} : de {min} à {max}")),
+                _ => {},
             }
-        }
-        if self.profondeur.is_some_and(|p| p < 1) {
-            errors.push("profondeur : au moins 1".into());
         }
         errors
     }
@@ -143,21 +217,16 @@ impl Formes {
 impl Forme {
     /// Icebreaker F.34: the lines of the profile in `formes.ron` (what it changes only).
     fn bloc(&self, nom: &str, poids: f64) -> String {
-        let plage = |name: &str, r: Option<Range>| r.map(|r| format!("{name}: ({}, {})", r.0, r.1));
-        let champs: Vec<String> = [
-            plage("main_path", self.main_path),
-            plage("levels", self.levels),
-            plage("branches", self.branches),
-            plage("branch_length", self.branch_length),
-            plage("locks", self.locks),
-            plage("loops", self.loops),
-            plage("drops", self.drops),
-            plage("spacing", self.spacing),
-            self.profondeur.map(|p| format!("profondeur: {p}")),
-        ]
-        .into_iter()
-        .flatten()
-        .collect();
+        let champs: Vec<String> = CHAMPS
+            .iter()
+            .zip(self.valeurs())
+            .filter_map(|(champ, valeur)| {
+                Some(match valeur? {
+                    Valeur::Plage(r) => format!("{}: ({}, {})", champ.cle, r.0, r.1),
+                    Valeur::Nombre(n) => format!("{}: {n}", champ.cle),
+                })
+            })
+            .collect();
         format!(
             "        \"{nom}\": (\n            poids: {poids:?},\n            forme: ({}),\n        ),\n",
             champs.join(", ")
@@ -239,6 +308,23 @@ mod tests {
         assert_eq!(retirer_profil(&remplace, "essai").unwrap(), texte);
         assert!(poser_profil(&texte, "Pas Bon", 1.0, &forme).is_err());
         assert!(poser_profil(&texte, "x", 1.0, &Forme { levels: Some(Range(3, 1)), ..Forme::default() }).is_err());
+    }
+
+    /// Icebreaker F.45: the table of the settings follows the fields of `Forme`, and what `generation.ron` gives
+    /// is within the bounds of the sliders.
+    #[test]
+    fn the_settings_are_said_once() {
+        let settings = Settings::load().unwrap();
+        for taille in settings.sizes.keys() {
+            let base = Forme::lire(&settings, taille).unwrap();
+            assert!(base.valeurs().iter().all(Option::is_some), "{taille} : un réglage sans valeur de base");
+            assert_eq!(base.erreurs(), Vec::<String>::new(), "{taille}");
+            // Fixing every setting at its own value changes nothing.
+            let same = base.appliquer(settings.clone());
+            assert_eq!(Forme::lire(&same, taille).unwrap(), base);
+        }
+        assert!(Forme { profondeur: Some(61), ..Forme::default() }.erreurs().len() == 1);
+        assert!(Forme { levels: Some(Range(1, 9)), ..Forme::default() }.erreurs().len() == 1);
     }
 
     #[test]

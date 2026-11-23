@@ -94,18 +94,9 @@
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
-// Les réglages d'un preset (formes.rs, `Forme`) : une plage (min, max) ou un nombre.
-const CHAMPS = [
-  { cle: 'main_path', libelle: 'Salles du chemin principal', min: 2, max: 20, plage: true },
-  { cle: 'levels', libelle: 'Étages', min: 1, max: 8, plage: true },
-  { cle: 'branches', libelle: 'Branches (culs-de-sac)', min: 0, max: 14, plage: true },
-  { cle: 'branch_length', libelle: 'Longueur des branches', min: 1, max: 5, plage: true },
-  { cle: 'locks', libelle: 'Portes à clé', min: 0, max: 4, plage: true },
-  { cle: 'loops', libelle: 'Boucles', min: 0, max: 5, plage: true },
-  { cle: 'drops', libelle: 'Chutes (sens unique)', min: 0, max: 4, plage: true },
-  { cle: 'spacing', libelle: 'Cases entre deux salles', min: 1, max: 8, plage: true },
-  { cle: 'profondeur', libelle: 'Roche au-dessus (blocs)', min: 1, max: 60, plage: false },
-];
+// Icebreaker F.45 : les réglages d'un preset, donnés par le serveur (formes.rs, `CHAMPS`) : une plage (min, max) ou
+// un nombre, rangés par groupe.
+let CHAMPS = [];
 const COULEURS = {
   safeRoom: ['#5fd16a', 'Abri (arrivée)'], entrance: ['#8fd3ff', 'Entrée'], hall: ['#6b7686', 'Salle de passage'],
   guardRoom: ['#c77b4a', 'Salle de garde'], barracks: ['#a0654a', 'Caserne'], storage: ['#8a7a55', 'Réserve'],
@@ -114,7 +105,7 @@ const COULEURS = {
   sanctum: ['#9a7ad6', 'Sanctuaire'], bossLair: ['#ff2d6d', 'Antre du boss'], portal: ['#4ab0ff', 'Portail'],
   altar: ['#e0e0ff', 'Autel'],
 };
-let base = null;      // réglages de generation.ron (tailles)
+let base = null;      // par taille, ce que donne generation.ron sans preset
 let formes = {};      // presets de formes.ron
 let plan = null;      // dernière réponse de /plan
 let etage = 0;
@@ -126,14 +117,15 @@ let recadrer = true;  // 3D : replacer la caméra au prochain plan (nouvelle gra
 const creature = (s) => s.length === 1 && 'bagcxefijklnpqrtuwyz'.includes(s.toLowerCase());
 
 function champsHtml() {
-  $('champs').innerHTML = CHAMPS.map((c) => `
+  const groupes = [...new Set(CHAMPS.map((c) => c.groupe))];
+  $('champs').innerHTML = groupes.map((g) => `<fieldset><legend>${g}</legend>` + CHAMPS.filter((c) => c.groupe === g).map((c) => `
     <div class="champ libre" id="c-${c.cle}">
       <div class="tete"><label><input type="checkbox" id="f-${c.cle}">${c.libelle}</label><span class="valeur" id="v-${c.cle}"></span></div>
       <div class="curseurs">
         <input type="range" id="a-${c.cle}" min="${c.min}" max="${c.max}" step="1">
         ${c.plage ? `<input type="range" id="b-${c.cle}" min="${c.min}" max="${c.max}" step="1">` : ''}
       </div>
-    </div>`).join('');
+    </div>`).join('') + '</fieldset>').join('');
   for (const c of CHAMPS) {
     const maj = () => { majChamp(c); demander(); };
     $(`f-${c.cle}`).addEventListener('change', maj);
@@ -144,10 +136,7 @@ function champsHtml() {
 const cocher = (c) => { $(`f-${c.cle}`).checked = true; };
 // La valeur de la taille choisie pour un réglage (ce que donne generation.ron sans preset).
 function valeurBase(c) {
-  if (!base) return c.plage ? [c.min, c.min] : c.min;
-  if (c.cle === 'spacing') return base.spacing;
-  if (c.cle === 'profondeur') return base.profondeur;
-  return base.tailles[$('taille').value][c.cle];
+  return base[$('taille').value][c.cle];
 }
 function majChamp(c) {
   const fixe = $(`f-${c.cle}`).checked;
@@ -475,7 +464,11 @@ window.addEventListener('resize', () => {
 async function chargerFormes(choisir) {
   const r = await fetch('/formes').then((r) => r.json());
   base = r.base; formes = r.formes.profils;
-  const tailles = Object.keys(base.tailles);
+  if (!CHAMPS.length) {
+    CHAMPS = r.champs.map((c) => ({ ...c, plage: c.genre === 'plage' }));
+    champsHtml();
+  }
+  const tailles = Object.keys(base);
   if (!$('taille').options.length) {
     $('taille').innerHTML = tailles.map((t) => `<option ${t === 'medium' ? 'selected' : ''}>${t}</option>`).join('');
   }
@@ -508,7 +501,6 @@ $('profil').addEventListener('change', () => { recadrer = true; choisirProfil();
 $('enregistrer').onclick = () => enregistrer(false);
 $('supprimer').onclick = () => { if (confirm(`Retirer le preset « ${$('nom').value} » de formes.ron ?`)) enregistrer(true); };
 
-champsHtml();
 // La 3D d'abord, comme pour la grotte ; hors ligne, le plan.
 initTrois().then(() => changerMode('3d'), () => changerMode('plan'))
   .then(() => chargerFormes(''))

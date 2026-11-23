@@ -4,7 +4,7 @@
 //! donjon par le générateur du jeu, et enregistre un preset dans `assets/icebreaker/donjons/formes.ron` (ce fichier
 //! seul, committé).
 //!
-//! `GET /` la page ; `GET /formes` les presets et les valeurs de `generation.ron` (JSON) ;
+//! `GET /` la page ; `GET /formes` les presets, les réglages et les valeurs de `generation.ron` (JSON) ;
 //! `POST /plan` `{graine, taille, forme}` → le plan (JSON) ; `POST /preset` `{nom, poids, forme}` et
 //! `POST /preset/supprimer` `{nom}` répondent « ok » ou l'erreur.
 
@@ -18,7 +18,7 @@ use std::{
 };
 use world::icebreaker::dungeon::{
     self, Settings,
-    formes::{Forme, Formes},
+    formes::{CHAMPS, Forme, Formes},
 };
 
 const FORMES: &str = "assets/icebreaker/donjons/formes.ron";
@@ -117,28 +117,16 @@ fn servir(mut flux: TcpStream, port: u16) -> std::io::Result<()> {
     }
 }
 
-/// The presets, and what `generation.ron` gives without one (the graph of each size, the spacing, the depth).
+/// The presets, the settings a preset may fix (Icebreaker F.45: `formes::CHAMPS`, the sliders of the page), and
+/// what `generation.ron` gives without one, for each size.
 fn formes_json() -> Result<String, String> {
     let settings = Settings::load()?;
-    let tailles: serde_json::Map<String, serde_json::Value> = settings
+    let base: serde_json::Map<String, serde_json::Value> = settings
         .sizes
-        .iter()
-        .map(|(nom, s)| {
-            (nom.clone(), json!({
-                "main_path": s.main_path, "levels": s.levels, "branches": s.branches,
-                "branch_length": s.branch_length, "locks": s.locks, "loops": s.loops, "drops": s.drops,
-            }))
-        })
+        .keys()
+        .filter_map(|taille| Some((taille.clone(), json!(Forme::lire(&settings, taille)?))))
         .collect();
-    Ok(json!({
-        "formes": Formes::load()?,
-        "base": {
-            "tailles": tailles,
-            "spacing": settings.assembly.spacing,
-            "profondeur": settings.placement.profondeur,
-        },
-    })
-    .to_string())
+    Ok(json!({ "formes": Formes::load()?, "champs": CHAMPS, "base": base }).to_string())
 }
 
 #[derive(Deserialize)]

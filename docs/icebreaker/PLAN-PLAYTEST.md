@@ -107,6 +107,20 @@ bouche en surface ; le donjon est tout entier sous le sol ; un atelier web règl
   billes (créatures, coffres), arrivée ; « Jusqu'à l'étage N » coupe le dessus ; le plan reste en onglet. Vu dans Edge sans
   affichage. 0805b919df
 
+Formes du donjon (Flo, 2026-11-23) : le donjon paraît simple à côté des grottes ; son preset ne règle que le graphe.
+On reprend les réglages de donjon.bin.sh (ses idées, pas son code) sans changer de générateur : silhouette du plan,
+style des couloirs, disposition et taille des salles, et des presets vraiment tirés par la graine.
+
+- [ ] **F.45 Réglages du preset dits une seule fois** — table `CHAMPS` de `formes.rs`, envoyée à l'atelier qui en
+  tire ses curseurs. — *en cours : Veloren-donjon, 2026-11-23*
+- [ ] **F.46 Silhouette du plan** — `silhouette` (carré, croix, rond, couronne, forteresse…) et `etendue` : salles
+  et couloirs restent dedans.
+- [ ] **F.47 Style des couloirs** — `sinuosite` (droit à labyrinthe) et `impasses` (faux couloirs en cul-de-sac).
+- [ ] **F.48 Disposition et taille des salles** — `collees` (salles posées l'une contre l'autre, sans couloir), part
+  et taille des salles à forme tirée.
+- [ ] **F.49 Presets variés** — croix, rond, forteresse, dédale… avec un poids : la graine en tire un.
+- [ ] **F.50 Atelier et docs** — contour de la silhouette dans l'atelier, `design/generation.md`, wiki.
+
 Cuisine vivante (Flo, 2026-11-21, ambiance de la cuisine de Dark Souls 3 sans la copier) : les salles paraissent vides,
 Veloren n'a presque rien pour une cuisine. Nos modèles sont générés par du code ; la vie vient des traces d'activité,
 de la densité et de la hauteur ; la cuisine passe à 6×5 cases. Premier lot de six modèles, puis essai en jeu (F.13).
