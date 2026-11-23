@@ -35,7 +35,7 @@
   .champ .tete label { display: flex; gap: 6px; align-items: center; }
   .champ .valeur { color: var(--accent); font-variant-numeric: tabular-nums; }
   .champ.libre .valeur { color: var(--discret); }
-  .champ.libre input[type=range] { opacity: .35; }
+  .champ.libre input[type=range], .champ.libre select { opacity: .35; }
   .curseurs { display: flex; gap: 8px; }
   input[type=range] { width: 100%; margin: 2px 0 0; accent-color: var(--accent); }
   #scene { flex: 1; position: relative; min-width: 0; display: flex; flex-direction: column; }
@@ -122,7 +122,8 @@ function champsHtml() {
     <div class="champ libre" id="c-${c.cle}">
       <div class="tete"><label><input type="checkbox" id="f-${c.cle}">${c.libelle}</label><span class="valeur" id="v-${c.cle}"></span></div>
       <div class="curseurs">
-        <input type="range" id="a-${c.cle}" min="${c.min}" max="${c.max}" step="1">
+        ${c.menu ? `<select id="a-${c.cle}">${c.choix.map((n) => `<option>${n}</option>`).join('')}</select>`
+          : `<input type="range" id="a-${c.cle}" min="${c.min}" max="${c.max}" step="1">`}
         ${c.plage ? `<input type="range" id="b-${c.cle}" min="${c.min}" max="${c.max}" step="1">` : ''}
       </div>
     </div>`).join('') + '</fieldset>').join('');
@@ -145,15 +146,15 @@ function majChamp(c) {
     const v = valeurBase(c);
     if (c.plage) { $(`a-${c.cle}`).value = v[0]; $(`b-${c.cle}`).value = v[1]; } else { $(`a-${c.cle}`).value = v; }
   }
-  const a = +$(`a-${c.cle}`).value;
-  $(`v-${c.cle}`).textContent = c.plage ? (a === +$(`b-${c.cle}`).value ? `${a}` : `${a} à ${$(`b-${c.cle}`).value}`) : `${a}`;
+  const a = c.menu ? $(`a-${c.cle}`).value : +$(`a-${c.cle}`).value;
+  $(`v-${c.cle}`).textContent = c.menu ? '' : c.plage ? (a === +$(`b-${c.cle}`).value ? `${a}` : `${a} à ${$(`b-${c.cle}`).value}`) : `${a}`;
 }
 // La forme des curseurs, au format de formes.ron (null : la valeur de la taille).
 function forme() {
   const f = {};
   for (const c of CHAMPS) {
     if (!$(`f-${c.cle}`).checked) { f[c.cle] = null; continue; }
-    f[c.cle] = c.plage ? [+$(`a-${c.cle}`).value, +$(`b-${c.cle}`).value] : +$(`a-${c.cle}`).value;
+    f[c.cle] = c.plage ? [+$(`a-${c.cle}`).value, +$(`b-${c.cle}`).value] : c.menu ? $(`a-${c.cle}`).value : +$(`a-${c.cle}`).value;
   }
   return f;
 }
@@ -465,7 +466,7 @@ async function chargerFormes(choisir) {
   const r = await fetch('/formes').then((r) => r.json());
   base = r.base; formes = r.formes.profils;
   if (!CHAMPS.length) {
-    CHAMPS = r.champs.map((c) => ({ ...c, plage: c.genre === 'plage' }));
+    CHAMPS = r.champs.map((c) => ({ ...c, plage: c.genre === 'plage', menu: c.genre === 'choix' }));
     champsHtml();
   }
   const tailles = Object.keys(base);
@@ -502,8 +503,11 @@ $('enregistrer').onclick = () => enregistrer(false);
 $('supprimer').onclick = () => { if (confirm(`Retirer le preset « ${$('nom').value} » de formes.ron ?`)) enregistrer(true); };
 
 // La 3D d'abord, comme pour la grotte ; hors ligne, le plan.
-initTrois().then(() => changerMode('3d'), () => changerMode('plan'))
-  .then(() => chargerFormes(''))
+// Icebreaker F.46 : `?preset=<nom>&graine=<n>&vue=plan` ouvre l'atelier sur ce preset, cette graine, à plat.
+const demande = new URLSearchParams(location.search);
+if (demande.get('graine')) $('graine').value = demande.get('graine');
+(demande.get('vue') === 'plan' ? Promise.reject() : initTrois()).then(() => changerMode('3d'), () => changerMode('plan'))
+  .then(() => chargerFormes(demande.get('preset') || ''))
   .then(() => { choisirProfil(); })
   .catch((e) => { $('etat').innerHTML = `<span class="erreur">${e}</span>`; });
 </script>

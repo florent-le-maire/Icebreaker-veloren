@@ -121,6 +121,12 @@
         // Icebreaker : chaque donjon a un thème dominant (tiré de sa graine : militaire, culte, bestial…, ceux que
         // nomment les salles `@theme:`) ; une salle de ce thème pèse autant de fois plus dans le tirage (1 = sans effet).
         theme_bias: 4.0,
+        // Icebreaker F.46 : la silhouette du plan (idée des « dungeon layouts » de donjon.bin.sh) : salles et couloirs
+        // restent dans cette forme, la même à chaque étage. Libre (aucune), Carre, Rectangle, Croix, Rond, Couronne,
+        // Diagonales, Losange, Hexagone ; etendue : cases du milieu de la forme à son bord (8 à 32). Un preset de
+        // formes.ron les change.
+        silhouette: Libre,
+        etendue: 40,
     ),
     // Habitants et butin selon le rôle de la salle (tâche G.5). creatures : nombre par sorte (brute, archer, lookout,
     // chief, boss, beast) ; chests : coffres ; awake : éveillées (false : endormies, voir `sleep`).

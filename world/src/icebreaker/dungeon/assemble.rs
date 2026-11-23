@@ -19,6 +19,7 @@ use super::{
 };
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
+use super::silhouette::Silhouette;
 use serde::Deserialize;
 use std::{
     cmp::Reverse,
@@ -47,7 +48,15 @@ pub struct AssemblySettings {
     /// many times more than one without (1 = no theme).
     #[serde(default = "default_theme_bias")]
     pub theme_bias: f64,
+    /// Icebreaker F.46 : the outline rooms and corridors stay inside (`Libre`: none), and how many cells it
+    /// reaches on each side of its middle.
+    #[serde(default)]
+    pub silhouette: Silhouette,
+    #[serde(default = "default_etendue")]
+    pub etendue: i32,
 }
+
+fn default_etendue() -> i32 { 40 }
 
 fn default_theme_bias() -> f64 { 1.0 }
 
@@ -100,6 +109,8 @@ pub struct Assembled {
     pub passages: Vec<Passage>,
     /// Attempts it took (1 = at once).
     pub attempts: usize,
+    /// Icebreaker F.46 : the middle of the outline (`assembly.silhouette`), the entrance being at (0, 0).
+    pub centre: (i32, i32),
 }
 
 impl Assembled {
@@ -209,7 +220,14 @@ struct Attempt<'a> {
     degree: Vec<usize>,
     theme: Option<String>,
     placement_failure: String,
+    /// Icebreaker F.46 : the middle of the outline.
+    centre: (i32, i32),
 }
+
+/// Icebreaker F.46 : inside an outline, times more tries to place a room, and cells farther it may end up from the
+/// door it comes from.
+const OUTLINE_TRIES: usize = 3;
+const OUTLINE_SLACK: usize = 14;
 
 /// A free door of a placed room: the door, the free cell in front, the way out.
 type FreeDoor = (Cell, Cell, (i32, i32));
@@ -241,10 +259,77 @@ impl<'a> Attempt<'a> {
             tree_degree: vec![0; graph.rooms.len()],
             degree: vec![0; graph.rooms.len()],
             placement_failure: String::new(),
+            centre: (0, 0),
         }
     }
 
+    /// Icebreaker F.46 : whether the cell is inside the outline of the dungeon (the same on every level).
+    fn dedans(&self, c: Cell) -> bool {
+        self.settings.silhouette.dedans(c.x - self.centre.0, c.y - self.centre.1, self.settings.etendue)
+    }
+
+    /// Icebreaker F.46 : lays the outline around the entrance (at the origin): its middle as near the middle of
+    /// the entrance as the shape allows (a ring has no middle to stand in), the whole entrance inside; the side is
+    /// drawn. The dungeon then spreads from the middle, and stays within `etendue` cells or so of where the party
+    /// arrives (the area kept for it, `placement.emprise`). No outline: nothing drawn, the dungeon of the seed is
+    /// the one it was.
+    fn place_outline(&mut self, entrance: &RoomTemplate) -> bool {
+        if self.settings.silhouette == Silhouette::Libre {
+            return true;
+        }
+        let (width, depth) = template_size(entrance);
+        let first = self.rng.random_range(0..DIRECTIONS.len());
+        for away in 0..=self.settings.etendue {
+            for turn in 0..DIRECTIONS.len() {
+                let (dx, dy) = DIRECTIONS[(first + turn) % DIRECTIONS.len()];
+                let at = |away: i32| (width / 2 + dx * away, depth / 2 + dy * away);
+                self.centre = at(away);
+                if entrance.plan.cells.keys().all(|c| self.dedans(*c)) {
+                    // Not in the middle (a ring): a little farther in, off the edge it has just cleared.
+                    if away > 0 {
+                        self.centre = at(away + self.settings.etendue / 4);
+                        if !entrance.plan.cells.keys().all(|c| self.dedans(*c)) {
+                            self.centre = at(away);
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     fn pick<T: Clone>(&mut self, items: &[T]) -> T { items[self.rng.random_range(0..items.len())].clone() }
+
+    /// A free door of the parent to go on from. Icebreaker F.46 : inside an outline, rather one with room ahead
+    /// (free cells straight on, squared), so the dungeon turns at the edge and fills the shape instead of failing
+    /// against it.
+    fn pick_door(&mut self, doors: &[FreeDoor]) -> FreeDoor {
+        if self.settings.silhouette == Silhouette::Libre {
+            return self.pick(doors);
+        }
+        let reach = 2 * self.settings.etendue;
+        let weights: Vec<i32> = doors
+            .iter()
+            .map(|(_, outside, (dx, dy))| {
+                let run = (0..reach)
+                    .take_while(|k| {
+                        let c = outside.offset(dx * k, dy * k, 0);
+                        self.dedans(c) && self.grid.is_free(c)
+                    })
+                    .count() as i32;
+                run * run + 1
+            })
+            .collect();
+        let mut roll = self.rng.random_range(0..weights.iter().sum::<i32>());
+        for (door, weight) in doors.iter().zip(&weights) {
+            roll -= weight;
+            if roll < 0 {
+                return *door;
+            }
+        }
+        doors[doors.len() - 1]
+    }
 
     /// Icebreaker : a template drawn by weight (`@poids`), the rooms of the dominant theme of the dungeon
     /// weighing `theme_bias` times more.
@@ -297,6 +382,9 @@ impl<'a> Attempt<'a> {
             return Err("aucune salle d'entrée".into());
         }
         let template = self.pick_template(&templates);
+        if !self.place_outline(template) {
+            return Err("l'entrée ne tient pas dans la silhouette".into());
+        }
         self.write(PlacedRoom {
             graph_room: 0,
             template: template.clone(),
@@ -362,7 +450,13 @@ impl<'a> Attempt<'a> {
         }
         let (mut overlaps, mut no_corridor) = (0, 0);
         let level = -self.graph.rooms[child].level;
-        for _ in 0..self.settings.placement_tries {
+        // Icebreaker F.46 : inside an outline there is less room: more tries, and try after try the room may sit
+        // farther from the door it comes from, ahead and aside (a longer corridor, that bends), up to
+        // `OUTLINE_SLACK` cells: it ends up where there is room left.
+        let outlined = self.settings.silhouette != Silhouette::Libre;
+        let tries = self.settings.placement_tries * if outlined { OUTLINE_TRIES } else { 1 };
+        for attempt in 0..tries {
+            let slack = if outlined { (attempt * OUTLINE_SLACK / tries) as i32 } else { 0 };
             let from: Vec<FreeDoor> = self.free_connectors(&self.placed[&parent]).collect();
             if from.is_empty() {
                 self.placement_failure = format!(
@@ -371,7 +465,7 @@ impl<'a> Attempt<'a> {
                 );
                 return false;
             }
-            let (from_door, start, (dx, dy)) = self.pick(&from);
+            let (from_door, start, (dx, dy)) = self.pick_door(&from);
 
             // A door facing the parent's when there is one (Icebreaker F.2: the room
             // then lies just beyond it, and turned rooms nearly always have one), and
@@ -392,8 +486,9 @@ impl<'a> Attempt<'a> {
             let (width, depth) = template_size(template);
             let ahead = self.settings.spacing.roll(self.rng)
                 + 2 * (start.level - (level + to.outside.level)).abs()
-                + if faces { 0 } else { width.max(depth) };
-            let side = self.rng.random_range(-1..=1);
+                + if faces { 0 } else { width.max(depth) }
+                + if slack > 0 { self.rng.random_range(0..=slack) } else { 0 };
+            let side = self.rng.random_range(-1 - slack..=1 + slack);
             let goal = Cell::new(
                 start.x + dx * ahead - dy * side,
                 start.y + dy * ahead + dx * side,
@@ -407,6 +502,7 @@ impl<'a> Attempt<'a> {
             };
             if !self.fits(&room)
                 || !self.grid.is_free(goal)
+                || !self.dedans(goal)
                 || self.reserved().contains(&goal)
                 || room.footprint().any(|c| c == goal)
             {
@@ -471,7 +567,7 @@ impl<'a> Attempt<'a> {
         room.template.doors().filter_map(move |c| {
             let door = room.to_dungeon(c.cell);
             let outside = room.to_dungeon(c.outside);
-            (!self.used_connectors.contains(&door) && self.grid.is_free(outside))
+            (!self.used_connectors.contains(&door) && self.grid.is_free(outside) && self.dedans(outside))
                 .then_some((door, outside, (outside.x - door.x, outside.y - door.y)))
         })
     }
@@ -488,7 +584,7 @@ impl<'a> Attempt<'a> {
 
     fn fits(&self, room: &PlacedRoom) -> bool {
         let reserved = self.reserved();
-        room.footprint().all(|c| self.grid.is_free(c) && !reserved.contains(&c))
+        room.footprint().all(|c| self.grid.is_free(c) && !reserved.contains(&c) && self.dedans(c))
     }
 
     fn write(&mut self, room: PlacedRoom) -> Vec<Cell> {
@@ -558,6 +654,7 @@ impl<'a> Attempt<'a> {
                 && (min_y..=max_y).contains(&c.y)
                 && (min_level..=max_level).contains(&c.level)
                 && self.grid.is_free(c)
+                && self.dedans(c)
                 && c != start
                 && !reserved.contains(&c)
                 && DIRECTIONS.iter().all(|(dx, dy)| !reserved.contains(&c.offset(*dx, *dy, 0)))
@@ -681,6 +778,7 @@ impl<'a> Attempt<'a> {
             keys,
             passages: self.passages.clone(),
             attempts,
+            centre: self.centre,
         }
     }
 }
@@ -781,6 +879,44 @@ mod tests {
             assert_eq!(bad_stairs, 0, "{size} : des escaliers de couloir débouchent sur un couloir");
             // Loops join rooms placed far apart: most are longer than the cap and given up.
             assert!(extras_dug * 10 >= extras, "{size} : {extras_dug} boucles et chutes creusées sur {extras}");
+        }
+    }
+
+    /// Icebreaker F.46 : with an outline, dungeons still assemble, and nothing one walks on lies outside it.
+    #[test]
+    fn dungeons_stay_inside_their_outline() {
+        let mut settings = Settings::load().unwrap();
+        let catalog = settings.catalog(0).unwrap();
+        let resolved = settings.resolve(&Mission::default()).unwrap();
+        for silhouette in Silhouette::TOUTES {
+            if silhouette == Silhouette::Libre {
+                continue;
+            }
+            settings.assembly.silhouette = silhouette;
+            // Tighter, more seeds fail (a third at 32 cells for the narrow shapes).
+            let r = 44;
+            settings.assembly.etendue = r;
+            let (mut failures, mut tries) = (0, 0);
+            for seed in 0..50 {
+                let graph = graph::generate(&resolved, seed);
+                let Some(dungeon) = assemble(&graph, &catalog, seed, &settings.assembly, |_| {}) else {
+                    failures += 1;
+                    continue;
+                };
+                tries += dungeon.attempts;
+                assert!(dungeon.check().is_empty());
+                let (cx, cy) = dungeon.centre;
+                for (cell, symbol) in &dungeon.plan.cells {
+                    assert!(
+                        *symbol == '#' || silhouette.dedans(cell.x - cx, cell.y - cy, r),
+                        "{silhouette:?}, graine {seed} : {cell:?} hors de la silhouette"
+                    );
+                }
+            }
+            let mean = tries as f32 / (50 - failures).max(1) as f32;
+            println!("{silhouette:?} {r} : {failures} échec(s) sur 50, {mean:.1} tentative(s) par donjon");
+            // A seed that fails gives way to the next one (`SEED_TRIES`).
+            assert!(failures <= 10, "{silhouette:?} : {failures} donjons sur 50 non assemblés");
         }
     }
 

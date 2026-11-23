@@ -14,6 +14,7 @@ pub mod populate;
 pub mod rondes;
 pub mod rooms;
 pub mod settings;
+pub mod silhouette;
 pub mod shapes;
 
 use super::butin::Butin;

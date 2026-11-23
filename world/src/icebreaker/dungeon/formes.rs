@@ -4,7 +4,10 @@
 //! draws one by weight, or the party chooses one (`/expedition N <profil>`, `-Profil` of the launcher); the
 //! dungeon workshop (`.\icebreaker.ps1 donjon-atelier`) writes them.
 
-use super::settings::{Range, Settings};
+use super::{
+    settings::{Range, Settings},
+    silhouette::Silhouette,
+};
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
@@ -17,6 +20,8 @@ pub enum Genre {
     /// `(min, max)`, drawn by the seed.
     Plage,
     Nombre,
+    /// One of the names of `Champ::choix`.
+    Choix,
 }
 
 /// Icebreaker F.45: a setting of a profile: its name in `formes.ron`, what the workshop calls it and the group it
@@ -29,6 +34,8 @@ pub struct Champ {
     pub min: i32,
     pub max: i32,
     pub genre: Genre,
+    /// Icebreaker F.46 : the names to choose from (`Genre::Choix`).
+    pub choix: &'static [&'static str],
 }
 
 /// The value of a setting a profile fixes.
@@ -36,14 +43,27 @@ pub struct Champ {
 enum Valeur {
     Plage(Range),
     Nombre(i32),
+    Choix(&'static str),
 }
 
-impl From<Range> for Valeur {
-    fn from(r: Range) -> Self { Self::Plage(r) }
+/// What a setting may be.
+trait Reglage: Copy {
+    const CHOIX: &'static [&'static str] = &[];
+    fn valeur(self) -> Valeur;
 }
 
-impl From<i32> for Valeur {
-    fn from(n: i32) -> Self { Self::Nombre(n) }
+impl Reglage for Range {
+    fn valeur(self) -> Valeur { Valeur::Plage(self) }
+}
+
+impl Reglage for i32 {
+    fn valeur(self) -> Valeur { Valeur::Nombre(self) }
+}
+
+impl Reglage for Silhouette {
+    const CHOIX: &'static [&'static str] = Silhouette::NOMS;
+
+    fn valeur(self) -> Valeur { Valeur::Choix(self.nom()) }
 }
 
 /// Icebreaker F.45: the settings of a profile, said once: the fields of `Forme`, the table `CHAMPS` the checks,
@@ -67,12 +87,13 @@ macro_rules! forme {
                 min: $min,
                 max: $max,
                 genre: Genre::$genre,
+                choix: <$ty as Reglage>::CHOIX,
             }, )*
         ];
 
         impl Forme {
             /// What the profile fixes, in the order of `CHAMPS`.
-            fn valeurs(&self) -> Vec<Option<Valeur>> { vec![ $( self.$cle.map(Valeur::from), )* ] }
+            fn valeurs(&self) -> Vec<Option<Valeur>> { vec![ $( self.$cle.map(Reglage::valeur), )* ] }
         }
     };
 }
@@ -88,6 +109,9 @@ forme! {
     drops: Plage(Range) [0, 4] "Graphe" "Chutes (sens unique)";
     /// Cells between a door and the next room (`assembly.spacing`).
     spacing: Plage(Range) [1, 8] "Salles" "Cases entre deux salles";
+    /// Icebreaker F.46 : the outline of the plan and how far it reaches (`assembly.silhouette`, `etendue`).
+    silhouette: Choix(Silhouette) [0, 0] "Silhouette" "Forme du plan";
+    etendue: Nombre(i32) [12, 56] "Silhouette" "Étendue (cases du milieu au bord)";
     /// Blocks of rock at least above the dungeon (`placement.profondeur`).
     profondeur: Nombre(i32) [1, 60] "Sous le sol" "Roche au-dessus (blocs)";
 }
@@ -112,6 +136,12 @@ impl Forme {
         if let Some(spacing) = self.spacing {
             settings.assembly.spacing = spacing;
         }
+        if let Some(silhouette) = self.silhouette {
+            settings.assembly.silhouette = silhouette;
+        }
+        if let Some(etendue) = self.etendue {
+            settings.assembly.etendue = etendue;
+        }
         if let Some(profondeur) = self.profondeur {
             settings.placement.profondeur = profondeur;
         }
@@ -131,6 +161,8 @@ impl Forme {
             loops: Some(shape.loops),
             drops: Some(shape.drops),
             spacing: Some(settings.assembly.spacing),
+            silhouette: Some(settings.assembly.silhouette),
+            etendue: Some(settings.assembly.etendue),
             profondeur: Some(settings.placement.profondeur),
         })
     }
@@ -224,6 +256,7 @@ impl Forme {
                 Some(match valeur? {
                     Valeur::Plage(r) => format!("{}: ({}, {})", champ.cle, r.0, r.1),
                     Valeur::Nombre(n) => format!("{}: {n}", champ.cle),
+                    Valeur::Choix(nom) => format!("{}: {nom}", champ.cle),
                 })
             })
             .collect();
@@ -297,7 +330,12 @@ mod tests {
     #[test]
     fn the_real_file_takes_a_preset() {
         let texte = std::fs::read_to_string(super::super::data_path(FICHIER)).unwrap();
-        let forme = Forme { levels: Some(Range(2, 2)), profondeur: Some(30), ..Forme::default() };
+        let forme = Forme {
+            levels: Some(Range(2, 2)),
+            silhouette: Some(Silhouette::Croix),
+            profondeur: Some(30),
+            ..Forme::default()
+        };
         let plus = poser_profil(&texte, "essai", 0.5, &forme).unwrap();
         let formes = Formes::parse(&plus).unwrap();
         assert_eq!(formes.profils["essai"].forme, forme);

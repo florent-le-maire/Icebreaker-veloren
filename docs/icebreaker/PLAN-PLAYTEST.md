@@ -111,10 +111,10 @@ Formes du donjon (Flo, 2026-11-23) : le donjon paraît simple à côté des grot
 On reprend les réglages de donjon.bin.sh (ses idées, pas son code) sans changer de générateur : silhouette du plan,
 style des couloirs, disposition et taille des salles, et des presets vraiment tirés par la graine.
 
-- [ ] **F.45 Réglages du preset dits une seule fois** — table `CHAMPS` de `formes.rs`, envoyée à l'atelier qui en
-  tire ses curseurs. — *en cours : Veloren-donjon, 2026-11-23*
-- [ ] **F.46 Silhouette du plan** — `silhouette` (carré, croix, rond, couronne, forteresse…) et `etendue` : salles
-  et couloirs restent dedans.
+- [x] **F.45 Réglages du preset dits une seule fois** — table `CHAMPS` de `formes.rs`, envoyée à l'atelier qui en
+  tire ses curseurs, rangés par groupe ; bornes contrôlées. Vu dans Edge sans affichage. 6879f195
+- [ ] **F.46 Silhouette du plan** — `silhouette` (carré, rectangle, croix, rond, couronne, diagonales, losange,
+  hexagone) et `etendue` : salles et couloirs restent dedans. — *en cours : Veloren-donjon, 2026-11-23*
 - [ ] **F.47 Style des couloirs** — `sinuosite` (droit à labyrinthe) et `impasses` (faux couloirs en cul-de-sac).
 - [ ] **F.48 Disposition et taille des salles** — `collees` (salles posées l'une contre l'autre, sans couloir), part
   et taille des salles à forme tirée.
