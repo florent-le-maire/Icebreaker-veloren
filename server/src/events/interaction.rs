@@ -395,7 +395,7 @@ fn icebreaker_creuser(
     let (Some(ToolKind::Pick), Some(mut energy)) = (ev.tool, energies.get_mut(ev.entity)) else {
         return IcebreakerCreuse::Rien;
     };
-    let matiere = destruction().matiere(block.kind());
+    let matiere = destruction().matiere_de(&block);
     let mut coups = ICEBREAKER_COUPS.lock().unwrap_or_else(|e| e.into_inner());
     // Un serveur qui tourne longtemps ne garde pas les blocs entamés puis laissés.
     if coups.len() > 20_000 {
@@ -428,19 +428,33 @@ fn icebreaker_eclat(
     world: &world::World,
     index: world::IndexRef,
 ) -> Vec<(Vec3<i32>, Block)> {
-    use common::icebreaker_destruction::{blocs_du_cone, destruction};
+    use common::{
+        icebreaker_destruction::{blocs_du_cone, blocs_du_morceau, destruction},
+        icebreaker_minerais::minerais,
+    };
     let regles = destruction();
     // Le milieu du corps de qui creuse.
     let origine = creuseur.map(|p| p + Vec3::unit_z());
     let mut coups = ICEBREAKER_COUPS.lock().unwrap_or_else(|e| e.into_inner());
-    blocs_du_cone(ev.pos, origine, regles.cone())
+    // Icebreaker U.20 : un bloc de minerai part seul, ou avec son morceau (les blocs du même
+    // minerai autour de lui, `minerais.ron`) ; pas de cône.
+    let minerai = minerais().de_bloc(&vise);
+    let blocs = match minerai {
+        Some((_, m)) => blocs_du_morceau(ev.pos, m.morceau),
+        None => blocs_du_cone(ev.pos, origine, regles.cone()),
+    };
+    blocs
         .into_iter()
         .filter_map(|pos| {
             if pos == ev.pos {
                 return Some((pos, vise));
             }
             let block = terrain.get(pos).ok().copied()?;
-            (regles.part_avec(vise.kind(), &block)
+            let part = match minerai {
+                Some((i, _)) => minerais().de_bloc(&block).is_some_and(|(j, _)| j == i),
+                None => regles.part_avec(vise.kind(), &block),
+            };
+            (part
                 && block_change.can_set_block(pos)
                 && world::icebreaker::se_creuse_ici(world, index, pos.xy()))
             .then(|| {
@@ -520,6 +534,40 @@ impl ServerEvent for MineBlockEvent {
                                     index.as_index_ref(),
                                 ) {
                                     block_change.set(pos, parti.into_vacant());
+                                    // Icebreaker U.20 : un bloc de minerai donne son objet.
+                                    let Some((_, minerai)) =
+                                        common::icebreaker_minerais::minerais().de_bloc(&parti)
+                                    else {
+                                        continue;
+                                    };
+                                    let (min, max) = minerai.quantite;
+                                    let n = rng.random_range(min..=max.max(min));
+                                    let Ok(mut item) = comp::Item::new_from_asset(&minerai.objet) else {
+                                        tracing::error!("Icebreaker : objet inconnu {}", minerai.objet);
+                                        continue;
+                                    };
+                                    if n == 0 || item.set_amount(n).is_err() {
+                                        continue;
+                                    }
+                                    let loot_owner = uids.get(ev.entity).copied().map(|uid| {
+                                        comp::LootOwner::new(
+                                            LootOwnerKind::Player(uid),
+                                            false,
+                                            ONWERSHIP_TIMEOUT_FAST,
+                                        )
+                                    });
+                                    create_item_drop_emitter.emit(CreateItemDropEvent {
+                                        pos: comp::Pos(pos.map(|e| e as f32) + Vec3::broadcast(0.5)),
+                                        vel: comp::Vel(
+                                            Vec2::unit_x()
+                                                .rotated_z(rng.random::<f32>() * PI * 2.0)
+                                                .mul(2.0)
+                                                .with_z(rng.random_range(3.0..6.0)),
+                                        ),
+                                        ori: comp::Ori::from(Dir::random_2d(&mut rng)),
+                                        item: comp::PickupItem::new(item, *program_time, false),
+                                        loot_owner,
+                                    });
                                 }
                                 // Un seul bruit et une seule gerbe d'éclats, au bloc visé.
                                 outcome_emitter.emit(Outcome::BreakBlock {

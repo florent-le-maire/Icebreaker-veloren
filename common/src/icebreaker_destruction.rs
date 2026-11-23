@@ -79,13 +79,24 @@ impl Destruction {
 
     pub fn matiere(&self, kind: BlockKind) -> Matiere { self.matieres.get(&kind).copied().unwrap_or(self.defaut) }
 
+    /// U.20 : la matière d'un bloc ; un bloc de minerai (`icebreaker_minerais`) a la dureté de son minerai.
+    pub fn matiere_de(&self, block: &Block) -> Matiere {
+        crate::icebreaker_minerais::minerais()
+            .de_bloc(block)
+            .map_or_else(|| self.matiere(block.kind()), |(_, m)| m.matiere())
+    }
+
     pub fn cone(&self) -> Cone { self.cone }
 
     /// U.17 : un bloc pris dans le cône part avec le bloc visé s'il n'est pas plus dur que lui.
     pub fn part_avec(&self, vise: BlockKind, autre: &Block) -> bool {
         let (a, v) = (self.matiere(autre.kind()), self.matiere(vise));
         // Ni plus de coups, ni plus d'énergie par coup : le bois n'emporte pas la pierre.
-        se_creuse(autre) && a.coups <= v.coups && a.energie <= v.energie
+        // U.20 : jamais un bloc de minerai : on le dégage morceau par morceau.
+        se_creuse(autre)
+            && a.coups <= v.coups
+            && a.energie <= v.energie
+            && crate::icebreaker_minerais::minerais().de_bloc(autre).is_none()
     }
 }
 
@@ -110,6 +121,23 @@ pub fn destruction() -> &'static Destruction {
 /// Un bloc que la pioche creuse matière comprise : plein, donc sans sprite (les minerais et les
 /// meubles gardent les règles de Veloren).
 pub fn se_creuse(block: &Block) -> bool { block.kind().is_filled() }
+
+/// U.20 : le morceau qui part quand un bloc de minerai cède : le bloc visé (en premier) et les blocs
+/// à `rayon` de lui ; l'appelant garde ceux du même minerai.
+pub fn blocs_du_morceau(vise: Vec3<i32>, rayon: f32) -> Vec<Vec3<i32>> {
+    let mut blocs = vec![vise];
+    let r = rayon.max(0.0).floor() as i32;
+    for x in -r..=r {
+        for y in -r..=r {
+            for z in -r..=r {
+                if (x, y, z) != (0, 0, 0) && ((x * x + y * y + z * z) as f32).sqrt() <= rayon + 0.01 {
+                    blocs.push(vise + Vec3::new(x, y, z));
+                }
+            }
+        }
+    }
+    blocs
+}
 
 /// Ce que fait un coup de pioche.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -278,5 +306,31 @@ mod tests {
         assert!(!se_creuse(&Block::air(SpriteKind::Empty)));
         assert!(!se_creuse(&Block::air(SpriteKind::Iron)));
         assert!(!se_creuse(&Block::new(BlockKind::Water, Rgb::zero())));
+    }
+
+    #[test]
+    fn le_minerai_a_sa_durete_et_reste_dans_le_cone() {
+        use vek::Rgb;
+        let fichier = Ron::<Fichier>::load_expect("icebreaker.destruction").read().0.clone();
+        let d = Destruction::depuis(fichier).expect("destruction.ron");
+        let minerais = crate::icebreaker_minerais::minerais();
+        let (_, or) = minerais.liste().iter().find(|(nom, _)| nom == "or").expect("de l'or");
+        let roche = Block::new(BlockKind::Rock, Rgb::broadcast(90));
+        assert_eq!(d.matiere_de(&or.bloc()), or.matiere());
+        assert_eq!(d.matiere_de(&roche), d.matiere(BlockKind::Rock));
+        // Le cône de la roche n'emporte pas le minerai, même tendre.
+        for (_, m) in minerais.liste() {
+            assert!(!d.part_avec(BlockKind::Rock, &m.bloc()));
+        }
+    }
+
+    #[test]
+    fn le_morceau_part_autour_du_bloc_vise() {
+        let vise = Vec3::new(5, 5, 5);
+        assert_eq!(blocs_du_morceau(vise, 0.0), vec![vise]);
+        let un = blocs_du_morceau(vise, 1.0);
+        assert_eq!(un.len(), 7);
+        assert_eq!(un[0], vise);
+        assert_eq!(blocs_du_morceau(vise, 1.5).len(), 19);
     }
 }
