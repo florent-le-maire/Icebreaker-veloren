@@ -393,6 +393,11 @@ fn echelle(g: &mut Grille, arbre: &Arbre, z0: Option<i32>, z1: i32, cote: (i32, 
     }
     g.degager(x, y, z1 + 1, true);
     g.degager(x, y, z1 + 2, true);
+    // A hatch in the platform next to it: in the game one climbs the ladder from there.
+    let (x, y) = (x + cote.0, y + cote.1);
+    for z in z1 - 1..z1 + 3 {
+        g.degager(x, y, z, true);
+    }
 }
 
 const COTES: [(i32, i32); 4] = [(1, 0), (0, 1), (-1, 0), (0, -1)];

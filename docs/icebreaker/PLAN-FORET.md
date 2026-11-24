@@ -63,18 +63,22 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   presets de départ. Essayé : page servie et capturée (Edge sans fenêtre), case « Feuillage », enregistrement et
   suppression d'un preset par la page (commits faits puis retirés). Pas essayé : la commande `foret` elle-même
   (compilation et serveur lancés à la main), les curseurs à la souris. — 0f571283a5
-- [ ] **FO.4 Le lieu jouable** — `SiteKind::IcebreakerForet`, plot qui pose les blocs (échelles et garde-corps en
-  sprites de Veloren), arrivée dans la clairière d'entrée, `donjon -Site Foret -Profil <preset>`, ligne dans
-  `lieux.ron`. Essai dans le vrai client avec captures, au sol et sur un pont ; chute puis remontée.
+- [x] **FO.4 Le lieu jouable** — `donjon -Site Foret -Profil <preset>` (port 14110) : site `IcebreakerForet`, sol
+  nivelé, blocs de la grille posés tels quels, échelles en sprites `Ladder`, arrivée dans la clairière du bord ;
+  couleurs et emprise dans `forets/foret.ron`. Vu dans le vrai client (preset `passerelles`) : arrivée dans la
+  clairière, troncs, buissons, une plateforme et ses garde-corps. Pas vérifié : monter un escalier et une échelle
+  (l'endurance suffit-elle ?), traverser un pont, tomber puis remonter ; de jour. Pas encore dans `lieux.ron`
+  (FO.6). — HASH4
 - [ ] **FO.5 Habitants et butin** — `assets/icebreaker/forets/foret.ron` : nids au sol, archers sur les plateformes,
-  chef dans la clairière du fond, coffres (certains en hauteur). Les règles qui manquent partent en question avant
-  de coder.
+  chef dans la clairière du fond, coffres (certains en hauteur). Attend la réponse à `QUESTIONS.md`, Q66.
 - [ ] **FO.6 En campagne** — `FormeLieu::Foret`, emplacement dans `campagne.ron`, `/expedition <n> <preset>`.
 - [ ] **FO.7 Wiki et doc** — `docs/icebreaker/wiki/foret.md`, captures.
 
 ## À savoir pour la suite
 
 - L'arrivée est au **bord** de la forêt (clairière 0), pas au centre : `Foret::depart`.
+- En jeu, une échelle se grimpe comme un mur (endurance) : à essayer sur 16 blocs et plus ; `echelles: 0` donne des
+  escaliers partout.
 - Un garde-corps est un bloc d'un de haut : il évite la chute par mégarde, pas le saut.
 - Les buissons font un ou deux blocs : on passe par-dessus ceux d'un bloc.
 - Le serveur de l'atelier est la troisième copie du petit serveur HTTP des ateliers (grottes, donjon) : à mettre en

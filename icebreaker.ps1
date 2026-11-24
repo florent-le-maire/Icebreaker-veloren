@@ -235,6 +235,8 @@ $env:ICEBREAKER_DONJON_FACTION = $Faction
 $env:ICEBREAKER_DONJON_RACE = $Race
 $env:ICEBREAKER_GROTTE_AMBIANCE = $Ambiance
 $env:ICEBREAKER_GROTTE_PROFIL = $Profil
+# Icebreaker FO.4 : et celle de la forêt (forets/formes.ron).
+$env:ICEBREAKER_FORET_PROFIL = $Profil
 # Icebreaker F.33 : la forme du donjon généré (donjons/formes.ron), même paramètre.
 $env:ICEBREAKER_DONJON_PROFIL = $Profil
 Write-Host "Icebreaker : $Lieu ($Site), partie « $Partie », graine $Seed, port $port"

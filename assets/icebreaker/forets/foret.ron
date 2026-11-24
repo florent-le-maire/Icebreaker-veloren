@@ -1,0 +1,20 @@
+// Icebreaker : réglages de la forêt (lieu « Foret », docs/icebreaker/PLAN-FORET.md, jalon FO).
+// Sa forme (clairières, sentiers, plateformes, ponts) vient de formes.ron, à côté ; ici, ce que le jeu en fait.
+(
+    // Tronçons (32 blocs) réservés autour du centre de la forêt, de chaque côté : l'emprise d'une forme (formes.ron)
+    // est ramenée à cette valeur, moins la marge des feuillages.
+    emprise: 7,
+    // Couleurs des blocs (rouge, vert, bleu).
+    couleurs: (
+        tronc: (92, 64, 42),
+        racine: (78, 56, 38),
+        feuilles: (44, 104, 34),
+        planche: (156, 118, 70),
+        rambarde: (112, 82, 52),
+        buisson: (62, 122, 44),
+        herbe: (58, 98, 40),
+        sentier: (128, 102, 66),
+        clairiere: (88, 128, 52),
+        sente: (104, 100, 58),
+    ),
+)

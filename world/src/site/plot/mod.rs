@@ -27,6 +27,8 @@ mod haniwa;
 // Icebreaker: the dungeon of our generator, and the cave.
 mod icebreaker_dungeon;
 mod icebreaker_grotte;
+// Icebreaker FO.4 : la forêt.
+mod icebreaker_foret;
 mod icebreaker_remplacable;
 // Icebreaker VF : le village fixe.
 mod icebreaker_village;
@@ -81,6 +83,7 @@ pub use self::{
     haniwa::Haniwa,
     icebreaker_dungeon::{IcebreakerDungeon, MissionTargets},
     icebreaker_grotte::IcebreakerGrotte,
+    icebreaker_foret::IcebreakerForet,
     icebreaker_remplacable::Remplacable,
     icebreaker_village::IcebreakerTerrain,
     house::House,
@@ -205,6 +208,8 @@ pub enum PlotKind {
     // Icebreaker: the dungeon of our generator.
     IcebreakerDungeon(Remplacable<IcebreakerDungeon>),
     IcebreakerGrotte(Remplacable<IcebreakerGrotte>),
+    // Icebreaker FO.4 : la forêt.
+    IcebreakerForet(Remplacable<IcebreakerForet>),
     // Icebreaker VF : le sol du village fixe.
     IcebreakerTerrain(IcebreakerTerrain),
 }
@@ -266,6 +271,7 @@ macro_rules! foreach_plot {
             PlotKind::Building($x) => $y,
             PlotKind::IcebreakerDungeon($x) => $y,
             PlotKind::IcebreakerGrotte($x) => $y,
+            PlotKind::IcebreakerForet($x) => $y,
             PlotKind::IcebreakerTerrain($x) => $y,
         }
     };

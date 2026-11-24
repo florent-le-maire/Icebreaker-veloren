@@ -191,6 +191,15 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q63 Où est la caisse ?** Le croquis du village (2026-11-21) n'a pas de caisse : en attendant, son PNJ est dans
   la Guilde, à côté de celui de la charrette. Faut-il un bâtiment à elle (banque, mairie), et où ? *Qui* : Flo.
 
+## 10. La région Forêt (`PLAN-FORET.md`, jalon FO)
+
+- **Q66 Qui vit dans la forêt, et où ?** Le lieu existe (clairières au sol, plateformes et ponts dans les arbres),
+  vide. *Proposé* : les mêmes races que le donjon et la grotte ; des archers sur les plateformes, des nids de bêtes
+  dans les clairières « nid », un camp dans les clairières « camp », le chef dans la clairière du fond ; un coffre
+  par clairière et quelques-uns en hauteur, butin de `butin.ron` selon la distance à l'arrivée ; rien à moins de
+  30 blocs de la clairière d'arrivée. La mission est-elle la même que dans la grotte (tuer le chef) ? *Origine* :
+  FO.5. *Qui* : Flo, Sayanel.
+
 ## Tranché
 
 Petites décisions, par date ; les règles qui en sortent sont dans le fichier indiqué.

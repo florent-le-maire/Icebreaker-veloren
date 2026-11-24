@@ -6,6 +6,8 @@
 pub mod arene;
 pub mod butin;
 pub mod dungeon;
+// Icebreaker FO.4 : la région Forêt.
+pub mod foret;
 pub mod grotte;
 pub mod races;
 // Icebreaker VF : le plan du village fixe.
@@ -117,6 +119,7 @@ pub fn site_kind(name: &str) -> Option<SiteKind> {
         "VampireCastle" => SiteKind::VampireCastle,
         "Genere" => SiteKind::IcebreakerDungeon,
         "Grotte" => SiteKind::IcebreakerGrotte,
+        "Foret" => SiteKind::IcebreakerForet,
         _ => return None,
     };
     Some(kind)
@@ -174,6 +177,11 @@ pub fn forme_info(site: &Site) -> Option<(&'static str, String, u64)> {
             let (profil, seed) = plot.forme();
             Some(("Donjon", profil.to_string(), seed))
         },
+        // Icebreaker FO.4.
+        PlotKind::IcebreakerForet(foret) => {
+            let plot = foret.get();
+            Some(("Forêt", plot.lieu().profil.clone(), plot.lieu().seed))
+        },
         _ => None,
     })
 }
@@ -213,6 +221,8 @@ pub fn dungeon_entrance(site: &Site) -> Option<vek::Vec2<i32>> {
     site.plots().find_map(|plot| match plot.kind() {
         PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get().arrival().xy()),
         PlotKind::IcebreakerGrotte(grotte) => Some(grotte.get().entrance()),
+        // Icebreaker FO.4: the clearing at the edge of the forest.
+        PlotKind::IcebreakerForet(foret) => Some(foret.get().entrance()),
         _ => None,
     })
 }
@@ -469,6 +479,8 @@ pub fn regenerate_slot(world: &crate::World, site: &Site, seed: u64, profil: Opt
         let replaced = match plot.kind() {
             PlotKind::IcebreakerDungeon(dungeon) => dungeon.regenerate(&land, site.origin, seed, profil)?,
             PlotKind::IcebreakerGrotte(grotte) => grotte.regenerate(&land, site.origin, seed, profil)?,
+            // Icebreaker FO.4.
+            PlotKind::IcebreakerForet(foret) => foret.regenerate(&land, site.origin, seed, profil)?,
             _ => continue,
         };
         if !replaced {

@@ -9609,6 +9609,7 @@ dependencies = [
  "fxhash",
  "hashbrown 0.17.1",
  "icebreaker-caverne",
+ "icebreaker-foret",
  "image",
  "indicatif",
  "itertools 0.14.0",
