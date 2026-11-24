@@ -6,5 +6,7 @@
         // Icebreaker H.5 : plus de fort gnarling, quatre donjons générés peuplés d'une race.
         ("Genere", 4),
         ("Grotte", 1),
+        // Icebreaker FO.6 : une forêt (docs/icebreaker/PLAN-FORET.md).
+        ("Foret", 1),
     ],
 )

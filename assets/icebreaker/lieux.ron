@@ -24,4 +24,7 @@
     (nom: "Entraînement", arguments: ["entrainement"], port: 14150, actif: true, au_menu: true, sans_partie: true,
         description: "Classe, armes et sorts libres ; ennemis et alliés à la demande."),
     (nom: "Route", arguments: ["route"], port: 14120, actif: false),
+    // Icebreaker FO.6 : la forêt (docs/icebreaker/PLAN-FORET.md). En dernier, pour ne pas changer le numéro des
+    // autres destinations de `/expedition`.
+    (nom: "Forêt", arguments: ["donjon", "-Site", "Foret"], port: 14170, actif: true),
 ]

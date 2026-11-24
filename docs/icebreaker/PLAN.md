@@ -331,6 +331,8 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 tâche pour ce qui casse.
 
 - [ ] U.26 : miner un filon ne retire pas d'énergie, même à sec ; la roche en coûte toujours.
+- [ ] FO.6, la Forêt en campagne (`/expedition 6 <preset>`) : choisir le preset au panneau Départ, rentrer, lire le
+  bilan (pas de mission tant que la forêt est vide).
 - [ ] FO.8, les bois immenses (`donjon -Site Foret -Profil immense`) : entrer dans un tronc creux, monter dedans,
   sortir sur une plateforme ; y voit-on quelque chose (lanternes de FO.9) ? Entrer dans une cabane par sa porte.
   Marcher sur une branche-pont et jusqu'au bout d'une branche sans issue (FO.10).

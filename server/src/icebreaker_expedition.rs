@@ -55,12 +55,15 @@ pub struct Partance {
 /// The sites (`-Site`) whose shape a party chooses: the cave (U.11), the generated dungeon (F.33).
 pub const SITE_GROTTE: &str = "Grotte";
 pub const SITE_GENERE: &str = "Genere";
+// Icebreaker FO.6 : la forêt.
+pub const SITE_FORET: &str = "Foret";
 
 /// Icebreaker F.33: a destination whose shape a party chooses.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FormeLieu {
     Grotte,
     Donjon,
+    Foret,
 }
 
 impl FormeLieu {
@@ -68,6 +71,7 @@ impl FormeLieu {
         match site {
             SITE_GROTTE => Some(Self::Grotte),
             SITE_GENERE => Some(Self::Donjon),
+            SITE_FORET => Some(Self::Foret),
             _ => None,
         }
     }
@@ -77,6 +81,7 @@ impl FormeLieu {
         match self {
             Self::Grotte => "de la grotte",
             Self::Donjon => "du donjon",
+            Self::Foret => "de la forêt",
         }
     }
 
@@ -85,6 +90,7 @@ impl FormeLieu {
         match self {
             Self::Grotte => world::icebreaker::grotte_presets(),
             Self::Donjon => world::icebreaker::dungeon_presets(),
+            Self::Foret => world::icebreaker::foret_presets(),
         }
     }
 }
@@ -846,6 +852,10 @@ mod tests {
     fn le_bilan_nomme_le_lieu_comme_le_depart() {
         assert_eq!(nom_du_site("Genere"), "Donjon généré");
         assert_eq!(nom_du_site("Grotte"), "Grotte");
+        // Icebreaker FO.6: the forest is a destination, of a shape one chooses.
+        assert_eq!(nom_du_site(SITE_FORET), "Forêt");
+        assert!(destinations().iter().any(|(_, lieu)| lieu.site() == Some(SITE_FORET)));
+        assert!(FormeLieu::of_site(SITE_FORET).is_some_and(|f| f.presets().contains(&"immense".to_string())));
         // Un site qui n'est pas dans `lieux.ron` garde son nom.
         assert_eq!(nom_du_site("Ailleurs"), "Ailleurs");
     }

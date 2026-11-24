@@ -202,6 +202,15 @@ pub fn grotte_presets() -> Vec<String> {
         .map_or_else(Vec::new, |formes| formes.profils.keys().cloned().collect())
 }
 
+/// Icebreaker FO.6: the presets a party may choose the shape of its forest
+/// from (`forets/formes.ron`, read again at each call).
+pub fn foret_presets() -> Vec<String> {
+    foret::Settings::load()
+        .ok()
+        .and_then(|settings| settings.formes)
+        .map_or_else(Vec::new, |formes| formes.profils.keys().cloned().collect())
+}
+
 /// Icebreaker : the objects of the special rooms of the dungeon of `site` (`/aller`): the role of the room
 /// (`portal`, `altar`), where the object stands, and a place in front of it.
 pub fn dungeon_specials(site: &Site) -> Vec<(&'static str, vek::Vec3<f32>, vek::Vec3<f32>)> {

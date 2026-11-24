@@ -71,7 +71,12 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   (FO.6). — 864f44132d
 - [ ] **FO.5 Habitants et butin** — `assets/icebreaker/forets/foret.ron` : nids au sol, archers sur les plateformes,
   chef dans la clairière du fond, coffres (certains en hauteur). Attend la réponse à `QUESTIONS.md`, Q66.
-- [ ] **FO.6 En campagne** — `FormeLieu::Foret`, emplacement dans `campagne.ron`, `/expedition <n> <preset>`.
+- [x] **FO.6 En campagne** (demande de Flo, 2026-11-24, avant FO.5) — la Forêt est une destination : dernière ligne
+  de `lieux.ron` (`/expedition 6 <preset>`, bouton « Forêt » du panneau Départ), un emplacement dans `campagne.ron`,
+  `FormeLieu::Foret` (le preset se choisit comme pour la grotte et le donjon). Vu dans le vrai client : le bouton,
+  le départ, « Forêt « geante », graine … », l'arrivée dans la clairière. La forêt est vide et sans mission tant que
+  FO.5 n'est pas faite : on s'y promène et on rentre par `/rentrer`. Pas vérifié : le retour, le bilan, le choix du
+  preset au panneau. Une campagne déjà créée doit refaire son monde pour avoir l'emplacement. — HASH6
 - [x] **FO.8 Très grands arbres creux, bois immenses** (demande de Flo, 2026-11-24, avec des images d'arbres-maisons) —
   les très grands arbres ont leur rayon (jusqu'à 30) et leur hauteur (jusqu'à 250) à eux et sont posés en premier ;
   une part (`creux`) est creuse : porte au sol, escalier en spirale à l'intérieur, une porte sur chaque plateforme,
