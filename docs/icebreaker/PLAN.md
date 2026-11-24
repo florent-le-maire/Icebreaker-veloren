@@ -331,6 +331,8 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 tâche pour ce qui casse.
 
 - [ ] U.26 : miner un filon ne retire pas d'énergie, même à sec ; la roche en coûte toujours.
+- [ ] FO.8, les bois immenses (`donjon -Site Foret -Profil immense`) : entrer dans un tronc creux, monter dedans,
+  sortir sur une plateforme ; y voit-on quelque chose ?
 - [ ] FO.4, la Forêt (`donjon -Site Foret -Profil passerelles`) : monter un escalier en spirale et une échelle,
   traverser un pont, tomber et remonter ; les couleurs de jour (`forets/foret.ron`).
 - [ ] Thème du village (2026-11-24, `musique.ron`) : il démarre au village, à bas volume, tourne en boucle, ne repart

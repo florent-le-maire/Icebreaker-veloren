@@ -63,10 +63,13 @@ forme! {
     "Forêt" {
         emprise: 90.0, 50.0, 200.0, 10.0, "Emprise (blocs de chaque côté du centre)";
         densite: 0.5, 0.0, 1.0, 0.01, "Densité des arbres";
-        arbre_rayon: 3.0, 2.0, 6.0, 0.5, "Rayon des troncs";
-        arbre_hauteur: 45.0, 25.0, 80.0, 1.0, "Hauteur des arbres";
+        arbre_rayon: 3.0, 2.0, 10.0, 0.5, "Rayon des troncs";
+        arbre_hauteur: 45.0, 25.0, 160.0, 1.0, "Hauteur des arbres";
         variation: 0.3, 0.0, 0.6, 0.01, "Variation des tailles";
-        geants: 0.08, 0.0, 0.5, 0.01, "Part de très grands arbres";
+        geants: 0.08, 0.0, 1.0, 0.01, "Part de très grands arbres";
+        geant_rayon: 10.0, 6.0, 30.0, 1.0, "Rayon des très grands arbres";
+        geant_hauteur: 80.0, 40.0, 250.0, 5.0, "Hauteur des très grands arbres";
+        creux: 0.8, 0.0, 1.0, 0.01, "Part de très grands arbres creux (escalier dedans, portes sur les plateformes)";
         feuillage: 1.0, 0.4, 1.6, 0.05, "Ampleur du feuillage (moins : plus de lumière au sol)";
     }
     "Clairières" {
@@ -81,14 +84,14 @@ forme! {
     }
     "Étage haut" {
         porteurs: 0.35, 0.0, 1.0, 0.01, "Part d'arbres à plateforme";
-        plateforme_hauteur: 16.0, 8.0, 40.0, 1.0, "Hauteur du premier niveau";
-        niveaux: 2.0, 1.0, 3.0, 1.0, "Nombre de niveaux";
-        niveau_ecart: 10.0, 7.0, 20.0, 1.0, "Écart entre deux niveaux";
-        plateforme_rayon: 5.0, 4.0, 10.0, 1.0, "Largeur des plateformes autour du tronc";
+        plateforme_hauteur: 16.0, 8.0, 120.0, 1.0, "Hauteur du premier niveau";
+        niveaux: 2.0, 1.0, 5.0, 1.0, "Nombre de niveaux";
+        niveau_ecart: 10.0, 7.0, 50.0, 1.0, "Écart entre deux niveaux";
+        plateforme_rayon: 5.0, 4.0, 16.0, 1.0, "Largeur des plateformes autour du tronc";
     }
     "Ponts" {
         ponts: 0.6, 0.0, 1.0, 0.01, "Part de ponts (0 : aucun, 1 : tous les ponts possibles)";
-        pont_longueur: 30.0, 8.0, 60.0, 1.0, "Longueur maximale";
+        pont_longueur: 30.0, 8.0, 100.0, 1.0, "Longueur maximale";
         pont_largeur: 1.0, 0.0, 2.0, 1.0, "Demi-largeur (0 : une planche)";
         pont_pente: 0.25, 0.0, 0.5, 0.01, "Pente maximale";
         pont_creux: 1.5, 0.0, 4.0, 0.5, "Creux au milieu (pont de corde)";
@@ -210,6 +213,48 @@ pub struct Arbre {
     pub echelle: bool,
     /// Whether each platform is reached on foot from the arrival.
     pub atteints: Vec<bool>,
+    /// Icebreaker FO.8: the radius of the hollow inside the trunk (0: a full
+    /// trunk). A stair winds up inside, from a door on the ground.
+    pub creux: i32,
+    /// Where the stair inside starts (an angle).
+    pub angle: f32,
+    /// The doors through the wall of a hollow trunk: the angle each opens at
+    /// and where one stands in it (the ground, then each platform).
+    pub portes: Vec<(f32, i32)>,
+}
+
+impl Arbre {
+    /// How far its roots go from the trunk: a slope one walks, a block down
+    /// for each block out.
+    pub fn racines(&self) -> i32 { (self.rayon / 2).max(2) }
+
+    /// The ring a stair winds in (inner and outer radius, squared) and the
+    /// radius of its middle: inside a hollow trunk, or around a full one.
+    fn anneau(&self) -> (f32, f32, f32) {
+        if self.creux > 0 {
+            let c = self.creux as f32;
+            ((c - 2.5).powi(2), (c + 0.5).powi(2), c - 1.0)
+        } else {
+            let r = self.rayon as f32;
+            ((r + 0.5).powi(2), (r + 2.5).powi(2), r + 1.5)
+        }
+    }
+
+    /// Whether a block of the trunk (at dx, dy from its middle) is left open:
+    /// the hollow, up to a ceiling over the last platform, and the doors.
+    fn ouvert(&self, dx: i32, dy: i32, z: i32) -> bool {
+        if self.creux == 0 || z < self.pied[2] {
+            return false;
+        }
+        let plafond = self.niveaux.last().copied().unwrap_or(self.pied[2]) + 7;
+        if ((dx * dx + dy * dy) as f32) <= (self.creux as f32 + 0.5).powi(2) {
+            return z < plafond;
+        }
+        self.portes.iter().any(|(a, zp)| {
+            let (along, across) = (dx as f32 * a.cos() + dy as f32 * a.sin(), dy as f32 * a.cos() - dx as f32 * a.sin());
+            (*zp..*zp + 3).contains(&z) && along > 0.0 && across.abs() <= 1.3
+        })
+    }
 }
 
 /// A bridge between the platforms `niveau` of two trees: where its deck starts
@@ -361,9 +406,8 @@ pub fn marcher(g: &Grille, depart: [i32; 3]) -> Pieds {
 /// starting at the angle `depart`; the angle it ends at.
 fn escalier(g: &mut Grille, arbre: &Arbre, z0: i32, z1: i32, depart: f32) -> f32 {
     let (cx, cy, r) = (arbre.pied[0], arbre.pied[1], arbre.rayon);
-    let milieu = r as f32 + 1.5;
+    let (dedans, dehors, milieu) = arbre.anneau();
     let fin = (z1 - z0) as f32 * PAS / milieu;
-    let (dedans, dehors) = ((r as f32 + 0.5).powi(2), (r as f32 + 2.5).powi(2));
     for dy in -(r + 3)..=r + 3 {
         for dx in -(r + 3)..=r + 3 {
             let d2 = (dx * dx + dy * dy) as f32;
@@ -540,18 +584,22 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
     let mut arbres: Vec<Arbre> = Vec::new();
     let ecart = 16.0 - 14.0 * f.densite;
     let jets = ((4.0 * e * e / (ecart + 2.0 * f.arbre_rayon).powi(2)) * 8.0).min(30_000.0) as usize;
-    for _ in 0..jets {
+    // Icebreaker FO.8: the very big trees first, while there is room for them:
+    // their share of the trees the forest would hold.
+    let cible = (jets as f32 / 8.0 * f.geants).round() as usize;
+    for jet in 0..jets {
         let (d, a) = (e * rng.unite().sqrt(), rng.entre(0.0, TAU));
         let p = [(d * a.cos()).round(), (d * a.sin()).round()];
-        let geant = rng.chance(f.geants);
+        let _ = rng.unite();
+        let geant = jet < cible * 8 && arbres.len() < cible;
         let taille = 1.0 + f.variation * rng.entre(-1.0, 1.0);
-        let r = (f.arbre_rayon * taille * if geant { 1.7 } else { 1.0 }).round().clamp(2.0, 10.0);
-        let h = (f.arbre_hauteur * taille * if geant { 1.4 } else { 1.0 }).round();
+        let r = (if geant { f.geant_rayon.max(f.arbre_rayon) } else { f.arbre_rayon } * taille).round().max(2.0);
+        let h = (if geant { f.geant_hauteur.max(f.arbre_hauteur) } else { f.arbre_hauteur } * taille).round();
         if arbres.iter().any(|t| dist(p, xy(t.pied)) < r + t.rayon as f32 + ecart) {
             continue;
         }
         let mut libre = true;
-        disque(p, r + 2.0, |x, y| libre &= col(x, y).is_some_and(|c| !degage[c]));
+        disque(p, r + (r / 2.0).max(2.0) + 1.0, |x, y| libre &= col(x, y).is_some_and(|c| !degage[c]));
         if !libre {
             continue;
         }
@@ -566,6 +614,9 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
             montee: false,
             echelle: false,
             atteints: Vec::new(),
+            creux: 0,
+            angle: 0.0,
+            portes: Vec::new(),
         });
     }
 
@@ -574,7 +625,11 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
         let porte = rng.chance(f.porteurs);
         let etages = 1 + rng.indice(f.niveaux as usize);
         let echelle = rng.chance(f.echelles);
-        if !porte {
+        // Icebreaker FO.8: a very big tree may be hollow; it then carries
+        // platforms, and one climbs inside it.
+        let creux = rng.chance(f.creux) && arbre.geant && arbre.rayon >= 6;
+        let angle = rng.entre(0.0, TAU);
+        if !porte && !creux {
             continue;
         }
         arbre.niveaux = (0..etages)
@@ -582,7 +637,20 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
             .collect();
         arbre.plateforme = arbre.rayon + f.plateforme_rayon as i32;
         arbre.hauteur = arbre.hauteur.max(arbre.niveaux[etages - 1] - arbre.pied[2] + 12);
-        arbre.echelle = echelle;
+        arbre.echelle = echelle && !creux;
+        if creux {
+            arbre.creux = arbre.rayon - if arbre.rayon >= 10 { 3 } else { 2 };
+            arbre.angle = angle;
+            // A door on the ground where the stair starts, and one where it
+            // reaches each platform.
+            let (milieu, mut a, mut z0) = (arbre.anneau().2, angle, arbre.pied[2] - 2);
+            arbre.portes.push((a, arbre.pied[2]));
+            for z in &arbre.niveaux {
+                a += (z - z0) as f32 * PAS / milieu;
+                arbre.portes.push((a, *z));
+                z0 = *z;
+            }
+        }
     }
     let porteurs: Vec<usize> = (0..arbres.len()).filter(|i| !arbres[*i].niveaux.is_empty()).collect();
 
@@ -606,7 +674,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
     }
     candidats.sort_by(|a, b| a.0.total_cmp(&b.0));
     let mut ponts: Vec<Pont> = Vec::new();
-    let mut charge: Vec<[u8; 3]> = vec![[0; 3]; arbres.len()];
+    let mut charge: Vec<[u8; 5]> = vec![[0; 5]; arbres.len()];
     let mut groupe: Vec<usize> = (0..arbres.len()).collect();
     fn racine(groupe: &mut [usize], mut i: usize) -> usize {
         while groupe[i] != i {
@@ -649,7 +717,8 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
     // The ways up from the ground: some by the draw, and one at least for each
     // group of platforms linked by bridges.
     for &i in &porteurs {
-        arbres[i].montee = rng.chance(f.montees);
+        let tirage = rng.chance(f.montees);
+        arbres[i].montee = tirage || arbres[i].creux > 0;
     }
     for &i in &porteurs {
         let g = racine(&mut groupe, i);
@@ -670,18 +739,36 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
                 tronc[i] = true;
             }
         });
-        for (large, hauteur) in [(2.0, 1), (1.0, 3)] {
-            disque(c, r + large, |x, y| {
-                for z in g.sol(x, y).min(t.pied[2])..t.pied[2] + hauteur {
-                    g.poser(x, y, z, RACINE);
+        // The roots: a slope around the foot, a block down for each block out.
+        let large = t.racines();
+        for pas in 1..=large {
+            disque(c, r + pas as f32, |x, y| {
+                let dehors = ((x - t.pied[0]).pow(2) + (y - t.pied[1]).pow(2)) as f32 > (r + 0.5).powi(2);
+                for z in g.sol(x, y).min(t.pied[2])..t.pied[2] + large - pas + 1 {
+                    if dehors && g.bloc(x, y, z) == grille::AIR {
+                        g.poser(x, y, z, RACINE);
+                    }
                 }
             });
         }
         disque(c, r, |x, y| {
             for z in g.sol(x, y).min(t.pied[2])..=t.pied[2] + t.hauteur {
-                g.poser(x, y, z, BOIS);
+                if !t.ouvert(x - t.pied[0], y - t.pied[1], z) {
+                    g.poser(x, y, z, BOIS);
+                }
             }
         });
+        // A way through the roots to the door of a hollow trunk.
+        if let Some((a, z)) = t.portes.first() {
+            for pas in 0..=2 * (large + 3) {
+                let d = r + pas as f32 / 2.0;
+                disque([c[0] + d * a.cos(), c[1] + d * a.sin()], 1.0, |x, y| {
+                    for dz in 0..4 {
+                        g.degager(x, y, z + dz, false);
+                    }
+                });
+            }
+        }
     }
     for t in &arbres {
         let cr = houppier(t);
@@ -776,11 +863,14 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
         let t = arbres[i].clone();
         let cote_echelle = COTES[rng.indice(4)];
         let mut angle = rng.entre(0.0, TAU);
+        if t.creux > 0 {
+            angle = t.angle;
+        }
         if t.montee {
             let (dx, dy) = if t.echelle { (cote_echelle.0 as f32, cote_echelle.1 as f32) } else { (angle.cos(), angle.sin()) };
-            let d = t.rayon as f32 + 4.0;
+            let d = (t.rayon + t.racines() + 2) as f32;
             pieds_de_montee.push([t.pied[0] + (dx * d).round() as i32, t.pied[1] + (dy * d).round() as i32]);
-            disque(xy(t.pied), t.rayon as f32 + 5.0, |x, y| {
+            disque(xy(t.pied), (t.rayon + t.racines() + 3) as f32, |x, y| {
                 if let Some(c) = col(x, y) {
                     degage[c] = true;
                 }
@@ -946,19 +1036,51 @@ mod tests {
     #[test]
     fn the_upper_floor_follows_its_settings() {
         // No carrying tree: a forest on the ground only.
-        let sol = generer(&Forme { porteurs: 0.0, ..petite() }, 3, &|_, _| 0);
+        let sol = generer(&Forme { porteurs: 0.0, creux: 0.0, ..petite() }, 3, &|_, _| 0);
         assert!(sol.praticable && sol.plateformes() == 0 && sol.ponts.is_empty());
         // No bridge: every tree with a platform has its own way up.
-        let seuls = generer(&Forme { ponts: 0.0, porteurs: 0.6, ..petite() }, 3, &|_, _| 0);
+        let seuls = generer(&Forme { ponts: 0.0, porteurs: 0.6, creux: 0.0, ..petite() }, 3, &|_, _| 0);
         assert!(seuls.praticable && seuls.ponts.is_empty() && seuls.plateformes() > 0);
         assert!(seuls.arbres.iter().all(|t| t.niveaux.is_empty() || t.montee));
         // Every bridge: more of them, and fewer ways up are needed.
-        let tous = generer(&Forme { ponts: 1.0, porteurs: 0.6, montees: 0.0, ..petite() }, 3, &|_, _| 0);
-        let peu = generer(&Forme { ponts: 0.3, porteurs: 0.6, montees: 0.0, ..petite() }, 3, &|_, _| 0);
+        let tous = generer(&Forme { ponts: 1.0, porteurs: 0.6, montees: 0.0, creux: 0.0, ..petite() }, 3, &|_, _| 0);
+        let peu = generer(&Forme { ponts: 0.3, porteurs: 0.6, montees: 0.0, creux: 0.0, ..petite() }, 3, &|_, _| 0);
         assert!(tous.praticable && peu.praticable);
         assert!(tous.ponts.len() > peu.ponts.len());
         let montees = |f: &Foret| f.arbres.iter().filter(|t| t.montee).count();
         assert!(montees(&tous) < montees(&peu));
+    }
+
+    /// Icebreaker FO.8: very big hollow trees, as high as the settings go.
+    #[test]
+    fn huge_hollow_trees_are_climbed_inside() {
+        let forme = Forme {
+            emprise: 80.0,
+            clairieres: 3.0,
+            geants: 0.5,
+            geant_rayon: 16.0,
+            geant_hauteur: 200.0,
+            creux: 1.0,
+            porteurs: 0.3,
+            plateforme_hauteur: 60.0,
+            niveaux: 4.0,
+            niveau_ecart: 30.0,
+            montees: 0.0,
+            ..Forme::default()
+        };
+        for graine in 0..3 {
+            let foret = generer(&forme, graine, &|_, _| 0);
+            assert!(foret.praticable, "graine {graine} : {}", foret.resume);
+            let creux: Vec<&Arbre> = foret.arbres.iter().filter(|t| t.creux > 0).collect();
+            assert!(!creux.is_empty(), "graine {graine}");
+            for t in creux {
+                assert!(t.rayon >= 10 && t.montee && !t.niveaux.is_empty());
+                // The middle of the trunk is air, from the ground to the last platform.
+                let haut = *t.niveaux.last().unwrap();
+                assert!((t.pied[2]..haut).all(|z| foret.grille.bloc(t.pied[0], t.pied[1], z) != grille::BOIS));
+                assert_eq!(foret.grille.bloc(t.pied[0], t.pied[1], haut + 10), grille::BOIS);
+            }
+        }
     }
 
     #[test]

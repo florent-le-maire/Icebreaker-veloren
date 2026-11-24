@@ -42,7 +42,7 @@ l'atelier est la forêt que le jeu posera pour la même graine et les mêmes ré
 
 Les réglages d'un profil sont tous des nombres bornés, déclarés une fois (`forme!` dans `icebreaker-foret/src/lib.rs`) :
 l'atelier en tire ses curseurs, le jeu son fichier (`assets/icebreaker/forets/formes.ron` : `clairsemee`,
-`passerelles`, `geante`).
+`passerelles`, `geante`, `immense`).
 
 **L'atelier** : `.\icebreaker.ps1 foret` compile le générateur (cible `wasm32-unknown-unknown`) et sert la page sur
 http://localhost:8099. Graine, preset, un curseur par réglage, vue 3D (perspective, dessus, côté), case « Feuillage »
@@ -72,6 +72,14 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
 - [ ] **FO.5 Habitants et butin** — `assets/icebreaker/forets/foret.ron` : nids au sol, archers sur les plateformes,
   chef dans la clairière du fond, coffres (certains en hauteur). Attend la réponse à `QUESTIONS.md`, Q66.
 - [ ] **FO.6 En campagne** — `FormeLieu::Foret`, emplacement dans `campagne.ron`, `/expedition <n> <preset>`.
+- [x] **FO.8 Très grands arbres creux, bois immenses** (demande de Flo, 2026-11-24, avec des images d'arbres-maisons) —
+  les très grands arbres ont leur rayon (jusqu'à 30) et leur hauteur (jusqu'à 250) à eux et sont posés en premier ;
+  une part (`creux`) est creuse : porte au sol, escalier en spirale à l'intérieur, une porte sur chaque plateforme,
+  plafond au-dessus de la dernière. Racines en pente qu'on gravit. Bornes relevées : troncs jusqu'à 10 de rayon et
+  160 de haut, premier niveau jusqu'à 120, 5 niveaux, 50 entre deux niveaux, ponts jusqu'à 100. Preset `immense`,
+  `geante` refait. Testé : 8 tests (dont arbres creux de 200 de haut, gravis par l'intérieur), 160 forêts sur 160
+  praticables, vu dans l'atelier. Pas vu en jeu ; l'intérieur d'un tronc y sera noir (pas de lumière posée) ; pas de
+  grosses branches ni de cabanes encore. — HASH8
 - [ ] **FO.7 Wiki et doc** — `docs/icebreaker/wiki/foret.md`, captures.
 
 ## À savoir pour la suite

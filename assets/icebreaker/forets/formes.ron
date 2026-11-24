@@ -21,13 +21,26 @@
                 pont_longueur: 34.0, ponts_par_plateforme: 4.0, montees: 0.12, buissons: 0.5,
             ),
         ),
-        // De très grands arbres, trois niveaux de plateformes larges, de longs ponts de corde.
+        // De très grands arbres creux parmi les autres : on monte dedans, trois niveaux de plateformes, longs ponts de corde.
         "geante": (
             poids: 1.0,
             forme: (
-                emprise: 110.0, densite: 0.35, arbre_rayon: 4.5, arbre_hauteur: 65.0, geants: 0.25, clairieres: 4.0,
-                clairiere_rayon: 18.0, porteurs: 0.5, plateforme_hauteur: 22.0, niveaux: 3.0, niveau_ecart: 13.0,
-                plateforme_rayon: 7.0, ponts: 0.7, pont_longueur: 50.0, pont_creux: 3.0, montees: 0.2, echelles: 0.15,
+                emprise: 110.0, densite: 0.35, arbre_rayon: 4.0, arbre_hauteur: 60.0, geants: 0.25, geant_rayon: 12.0,
+                geant_hauteur: 110.0, creux: 1.0, clairieres: 4.0, clairiere_rayon: 18.0, porteurs: 0.4,
+                plateforme_hauteur: 24.0, niveaux: 3.0, niveau_ecart: 16.0, plateforme_rayon: 7.0, ponts: 0.7,
+                pont_longueur: 55.0, pont_creux: 3.0, montees: 0.1, echelles: 0.15,
+            ),
+        ),
+        // Des bois immenses où l'on est tout petit : des troncs larges comme des tours, creux, et des plateformes
+        // jusqu'à plus de cent blocs du sol.
+        "immense": (
+            poids: 1.0,
+            forme: (
+                emprise: 150.0, densite: 0.3, arbre_rayon: 5.0, arbre_hauteur: 90.0, variation: 0.25, geants: 0.35,
+                geant_rayon: 20.0, geant_hauteur: 200.0, creux: 1.0, feuillage: 1.2, clairieres: 5.0,
+                clairiere_rayon: 22.0, clairiere_ecart: 30.0, sentier_largeur: 3.0, porteurs: 0.3,
+                plateforme_hauteur: 40.0, niveaux: 4.0, niveau_ecart: 28.0, plateforme_rayon: 9.0, ponts: 0.8,
+                pont_longueur: 90.0, pont_largeur: 1.0, pont_creux: 4.0, montees: 0.05, echelles: 0.0, buissons: 0.4,
             ),
         ),
     },
