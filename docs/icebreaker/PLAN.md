@@ -306,7 +306,7 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
   capture du menu ; connexion à deux au VPS pas encore vérifiée.
 - [x] **S.5 Release du client Windows + Mac** — `.github/workflows/release-client.yml` (bouton « Run workflow » ou
   étiquette `v*`) ; `paquet-client.sh` fait aussi le zip Mac (`Icebreaker.command`). Workflow pas encore lancé sur
-  GitHub ; zip Windows refait en local avec un faux binaire seulement.
+  GitHub ; zip Windows refait en local avec un faux binaire seulement. `6e81e32d`
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
   avec Sayanel (`0015`). Contenu à confirmer (`QUESTIONS.md`, Q1).
 
