@@ -62,7 +62,7 @@ apparaît) ; l'atelier des grottes montre des filons en cubes de couleur, posés
 mêmes places.
 
 Une partie des passages entre deux zones est **bouchée par la roche** : la galerie s'arrête, il faut creuser. Dans la
-grotte, la pioche casse tout, bloc après bloc, contre de l'énergie ; à sec, on attend. La salle sûre où l'on arrive
+grotte, la pioche casse tout, bloc après bloc, contre de l'énergie ; à sec, on attend. Le minerai, lui, se mine sans énergie. La salle sûre où l'on arrive
 s'ouvre toujours sur sa zone.
 
 Chaque grotte cache une **salle au minerai**, au bout d'une galerie murée : ses parois couvertes de filons : fer, cuivre,

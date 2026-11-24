@@ -251,6 +251,8 @@ nous ; les pépites de U.22 partent ; nettoyage de tout le travail sur les miner
   (`filons.niveaux` dit le nombre de niveaux), un seul tirage pondéré, design, plan et wiki à jour. L'atelier des
   grottes n'est pas aligné sur le jeu (sa grotte n'a ni le relief du monde ni les habitants) : c'est dit dans le
   code et le wiki. Testé : tests, grotte lancée, atelier compilé. — ae63154f3a
+- [x] **U.26 Miner du minerai ne coûte pas d'énergie** — demandé par Flo (2026-11-24) : `energie: 0.0` pour les onze
+  minerais (`minerais.ron`) ; la roche garde son coût. Testé : tests de `veloren-common`. Pas vérifié en jeu.
 
 - [x] **U.17 Un éclat en cône** — demandé par Flo (2026-11-23) : quand le bloc visé cède, un cône part avec lui, du corps
   de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : demi-largeur 1,9, demi-hauteur 1,4, pointe à 5 blocs ; boyau de 3 de large), un

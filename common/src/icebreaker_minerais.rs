@@ -187,7 +187,7 @@ mod tests {
         assert!(m.de_bloc(&Block::air(SpriteKind::Iron)).is_none());
     }
 
-    /// Plus on descend, plus c'est rare et cher : l'or n'est qu'au fond et coûte plus d'énergie que le cuivre
+    /// Plus on descend, plus c'est rare : l'or n'est qu'au fond. U.26 : miner du minerai ne coûte pas d'énergie
     /// (le tirage par ces poids : `icebreaker_caverne::filon`).
     #[test]
     fn les_filons_sont_plus_riches_au_fond() {
@@ -196,7 +196,7 @@ mod tests {
         let (cuivre, or) = (par_nom("cuivre"), par_nom("or"));
         assert!(cuivre.poids[0] > 0.0 && or.poids[0] == 0.0);
         assert!(*or.poids.last().unwrap() > 0.0);
-        assert!(or.energie > cuivre.energie);
+        assert!(m.liste().iter().all(|(_, minerai)| minerai.energie == 0.0));
     }
 
     #[test]

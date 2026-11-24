@@ -19,7 +19,8 @@ de minerai posés au pied d'une paroi, chacun ramassé d'un coup : un tas de pé
   gemmes. Trois variantes par minerai, tirées et tournées par le jeu selon la position. Le modèle tient la place
   d'un bloc de roche : on marche dessus, on ne passe pas à travers, une explosion ne l'emporte pas.
 - **Un minerai = un sprite** (`IcebreakerFilon…`), et c'est à lui que le jeu reconnaît le minerai.
-- **À la pioche** : chaque bloc de minerai a la dureté de son minerai (coups, énergie par coup) ; quand il cède, il
+- **À la pioche** : chaque bloc de minerai a la dureté de son minerai (coups, énergie par coup) ; miner du
+  minerai ne coûte pas d'énergie (U.26, Flo, 2026-11-24 : `energie: 0` partout, la roche garde son coût) ; quand il cède, il
   donne son objet (minerai ou gemme de Veloren) et, si le minerai a un `morceau`, les blocs du même minerai à cette
   distance du bloc visé partent avec lui et donnent aussi : les courants (cuivre, étain, fer, charbon) par 19 blocs au
   plus (1,5), les moyens (cobalt, argent) par 7 (1), les rares (or, gemmes) bloc par bloc (Flo, 2026-11-24). Le cône
