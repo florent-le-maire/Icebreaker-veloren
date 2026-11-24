@@ -88,7 +88,7 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   `Lantern` et `Liana`. Testé : 9 tests (chaque cabane est atteinte à pied), 160 forêts sur 160 praticables. Vu
   dans le vrai client (preset `geante`) : racines et porte d'un tronc creux, cabanes éclairées, intérieur d'une
   cabane avec sa lanterne, lianes, plateformes. Pas vérifié : monter par l'intérieur d'un tronc, la lumière qu'on y a.
-  Le journal du serveur donne aussi une porte de tronc creux et une cabane (pour `/goto`). — HASH9
+  Le journal du serveur donne aussi une porte de tronc creux et une cabane (pour `/goto`). — eb02ee0f66
 - [ ] **FO.7 Wiki et doc** — `docs/icebreaker/wiki/foret.md`, captures.
 
 ## À savoir pour la suite
