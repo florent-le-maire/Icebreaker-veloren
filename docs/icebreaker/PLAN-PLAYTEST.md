@@ -14,7 +14,7 @@ interface du village) et se cochent ici ; les âmes ouvrent le jalon **AM**.
 | # | Chantier | Tâches | Worktree | État |
 |---|---|---|---|---|
 | 1 | Donjon : des pièces travaillées | F.10 à F.18 | `Veloren-donjon` | catalogue et atelier des salles faits (F.10, F.14 à F.17) ; formes, labyrinthe et relief faits (F.45 à F.57) ; salles à meubler dans l'atelier (F.18), puis F.11 à F.13 |
-| 2 | Grotte : murs à casser, filons, salle au minerai | U.13 à U.25 | `Veloren-caverne` | fait (2026-11-24 : chaque bloc de filon a le modèle de son minerai, U.23 à U.25), à miner en jeu |
+| 2 | Grotte : murs à casser, filons, salle au minerai | U.13 à U.25 | `Veloren-caverne` | fait (2026-11-24 : chaque bloc de filon a le modèle de son minerai, U.23 à U.25), vu en jeu (Flo, 2026-11-24) |
 | 3 | Missions : sablier, zones, types de mission, boss | B.16 à B.20 | `Veloren-boucles` | tranché ; B.19 et B.20 peuvent suivre le premier playtest |
 | 4 | Âmes | AM.1 à AM.9 | `Veloren-ames` | attend le tableau de Sayanel (Q58) ; AM.6 peut suivre le premier playtest |
 | 5 | Améliorations : village sans dégâts, bouton Rentrer | L.6, X.18 | `Veloren-village` | prêt à coder |

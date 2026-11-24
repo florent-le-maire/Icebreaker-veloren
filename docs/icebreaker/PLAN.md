@@ -42,7 +42,7 @@ Le jeu doit rester lançable après chaque tâche.
   l'énergie (plus ou moins de coups selon la matière, `destruction.ron`) ; des murs de roche bouchent une part des
   passages de la grotte ; le minerai est en filons le long des parois, et une salle au minerai attend derrière un
   mur (U.13 à U.16, `PLAN-PLAYTEST.md`). Depuis le 2026-11-24, chaque bloc de filon est un sprite à nous, au modèle
-  de son minerai (U.23 à U.25, `design/filons.md`) : vu dans le vrai client, pas encore miné en jeu. Client et
+  de son minerai (U.23 à U.25, `design/filons.md`). Grotte vue en jeu (Flo, 2026-11-24 : « c'est top »). Client et
   serveur sont à recompiler ensemble (nouveaux sprites).
 - **Jalon A (2026-11-11)** : armes, classes et compétences (`PLAN-CLASSES.md`, `decisions/0020`) codé pour les trois
   classes : jeux d'armes, 2 compétences d'arme + ultime + passif, recharges, niveaux 1 à 5, lot tiré à la charrette,
@@ -329,10 +329,6 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 `PLAN-GROTTE.md`). À parcourir dans le vrai client, en campagne, à deux si possible ; barrer ce qui est vu, ouvrir une
 tâche pour ce qui casse.
 
-- [ ] Morceaux des filons selon la rareté (2026-11-24, `minerais.ron`) : cuivre, étain, fer, charbon par 19 blocs au
-  plus, cobalt et argent par 7, or et gemmes un par un.
-- [ ] U.24 : les filons en modèles voxel : les voir au sol, en paroi et au plafond (métal, charbon, gemme), de près
-  et de loin ; en miner un (morceau, objet donné, énergie) ; marcher dessus ; une explosion ne les emporte pas.
 - [ ] Thème du village (2026-11-24, `musique.ron`) : il démarre au village, à bas volume, tourne en boucle, ne repart
   pas du début au passage de fantôme à personnage et s'éteint en fondu au départ en expédition.
 
@@ -478,30 +474,8 @@ tâche pour ce qui casse.
 - B.5 (et grotte) : ouvrir un coffre près de l'entrée puis un du fond : or et prise utile, plus riche au fond
   (`butin.ron`) ; rien d'inutile. B.14 : ce que lâchent les créatures, le chef, le boss.
 
-**Grotte**
-- U.16 : pioche en main, creuser un passage dans la roche de la grotte (3 coups, depuis le 2026-11-23, l'énergie baisse, plus
-  rien à sec) ; dans un donjon généré, percer un mur de pierre et une porte en bois ; au village, la roche ne se
-  creuse pas.
-- U.13 : dans une grotte, suivre le sentier jusqu'à un mur (la galerie s'arrête sur de la roche), le percer à la
-  pioche et retrouver le sentier derrière ; se perd-on à le chercher ? Dans l'atelier, les billes violettes et les
-  curseurs « Murs à casser ».
-- U.14 : les filons se voient-ils de loin le long des parois, sont-ils assez longs, les miner.
-- U.15 : trouver la salle au minerai (au bout d'une galerie murée, bille dorée dans l'atelier pour la même graine),
-  percer son mur, la miner ; est-elle assez riche, trop ?
-- U.4 : descendre dans une grotte de chaque forme (`donjon -Site Grotte -Profil gouffre`, `plaine`, `chaos`, `mixte`) :
-  le sentier se suit-il à l'aller et au retour, les puits et leurs lacets, la caméra sous les plafonds bas, la
-  lumière, la densité des sprites et des créatures dans les très grandes zones ; atelier : glisser les curseurs,
-  « Copier les réglages ».
-- U.10 : dans l'atelier (`.\icebreaker.ps1 caverne`), régler, « Enregistrer le preset », le retrouver dans la
-  liste, le supprimer ; les curseurs « Étendue sur X / Y / Z » (U.9).
-- U.11 : au panneau Départ, choisir Grotte puis une forme (le bouton, la pastille « choisie », le bandeau
-  « Grotte — … ») ; à l'arrivée, la ligne « Grotte « … », graine … » et une grotte de cette forme.
-- U.7, U.8 : on arrive dans la salle sûre de la grotte, sous terre (lieu seul et expédition en campagne), sans
-  créature autour ; le chef est loin ; `/rentrer` ramène au village depuis le fond.
-- K.3 : les trois ambiances se reconnaissent-elles, la roche luisante suffit-elle sans lanterne (`QUESTIONS.md`, Q22) ;
-  caméra dans les boyaux.
-- K.4 : miner un filon à la pioche, changement d'arme ; K.5 : créatures des culs-de-sac posées un bloc trop haut ou
-  trop bas.
+- U.16 (la grotte est vue en jeu, Flo, 2026-11-24) : dans un donjon généré, percer un mur de pierre et une porte en
+  bois à la pioche ; au village, la roche ne se creuse pas.
 
 **Mort (jalon T)**
 - T.2 : barre « Mort dans N s » au-dessus du corps d'un allié (position, lisibilité), à deux joueurs.
