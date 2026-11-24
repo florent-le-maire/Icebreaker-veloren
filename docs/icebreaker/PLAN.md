@@ -312,7 +312,7 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
   en local ; pas encore vu sur GitHub. `7f8714bd`
 - [x] **S.7 Release même si un système échoue** — publiée avec les zips présents (1er run : pas de Mac libre chez
   GitHub, job annulé) ; « Re-run failed jobs » complète la même Release. Essayé en local avec un faux `gh` ; pas
-  encore vu sur GitHub. `302141a9`
+  encore vu sur GitHub. `dd991211`
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
   avec Sayanel (`0015`). Contenu à confirmer (`QUESTIONS.md`, Q1).
 
