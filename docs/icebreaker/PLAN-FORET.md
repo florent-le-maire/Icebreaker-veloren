@@ -68,7 +68,7 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   couleurs et emprise dans `forets/foret.ron`. Vu dans le vrai client (preset `passerelles`) : arrivée dans la
   clairière, troncs, buissons, une plateforme et ses garde-corps. Pas vérifié : monter un escalier et une échelle
   (l'endurance suffit-elle ?), traverser un pont, tomber puis remonter ; de jour. Pas encore dans `lieux.ron`
-  (FO.6). — HASH4
+  (FO.6). — 864f44132d
 - [ ] **FO.5 Habitants et butin** — `assets/icebreaker/forets/foret.ron` : nids au sol, archers sur les plateformes,
   chef dans la clairière du fond, coffres (certains en hauteur). Attend la réponse à `QUESTIONS.md`, Q66.
 - [ ] **FO.6 En campagne** — `FormeLieu::Foret`, emplacement dans `campagne.ron`, `/expedition <n> <preset>`.
