@@ -8,7 +8,8 @@
 //               destruction.ron) ;
 //   objet     : ce que donne un bloc qui cède (un objet de Veloren) ; quantite : combien (min, max) ;
 //   morceau   : distance en blocs autour du bloc visé où les blocs du même minerai cèdent avec lui (0 : un bloc à
-//               la fois) ;
+//               la fois). Les courants (cuivre, étain, fer, charbon) partent par 19 blocs au plus (1.5), les moyens
+//               (cobalt, argent) par 7 (1.0), les rares (or, gemmes) bloc par bloc ;
 //   filon     : sa forme. longueur : blocs parcourus le long de la paroi (min, max) ; epaisseur : largeur de la
 //               bande (min, max) ; profondeur : blocs pris dans la roche sous la surface ; sinuosite : de 0 (droit)
 //               à 1 (tourne sans cesse) ; relief : part des blocs de surface qui ressortent d'un bloc dans le vide ;
@@ -19,38 +20,38 @@
     minerais: {
         "cuivre": (
             couleur: (196, 110, 52), lueur: false, coups: 1, energie: 15.0,
-            objet: "common.items.mineral.ore.copper", quantite: (1, 1), morceau: 0.0,
+            objet: "common.items.mineral.ore.copper", quantite: (1, 1), morceau: 1.5,
             filon: (longueur: (10, 16), epaisseur: (1, 2), profondeur: 1, sinuosite: 0.4, relief: 0.3),
             poids: [3.0, 1.0, 0.0], salle: 3.0,
         ),
         "etain": (
             couleur: (168, 186, 160), lueur: false, coups: 1, energie: 15.0,
-            objet: "common.items.mineral.ore.tin", quantite: (1, 1), morceau: 0.0,
+            objet: "common.items.mineral.ore.tin", quantite: (1, 1), morceau: 1.5,
             filon: (longueur: (10, 16), epaisseur: (1, 2), profondeur: 1, sinuosite: 0.4, relief: 0.3),
             poids: [3.0, 1.0, 0.0], salle: 3.0,
         ),
         "fer": (
             couleur: (150, 70, 50), lueur: false, coups: 1, energie: 15.0,
-            objet: "common.items.mineral.ore.iron", quantite: (1, 1), morceau: 0.0,
+            objet: "common.items.mineral.ore.iron", quantite: (1, 1), morceau: 1.5,
             filon: (longueur: (12, 18), epaisseur: (1, 2), profondeur: 1, sinuosite: 0.3, relief: 0.3),
             poids: [2.0, 2.0, 1.0], salle: 4.0,
         ),
-        // Le charbon : une couche épaisse et tendre, qui part par gros morceaux.
+        // Le charbon : une couche épaisse et tendre.
         "charbon": (
             couleur: (30, 30, 34), lueur: false, coups: 1, energie: 12.0,
-            objet: "common.items.mineral.ore.coal", quantite: (1, 1), morceau: 1.0,
+            objet: "common.items.mineral.ore.coal", quantite: (1, 1), morceau: 1.5,
             filon: (longueur: (14, 22), epaisseur: (2, 3), profondeur: 2, sinuosite: 0.2, relief: 0.2),
             poids: [1.0, 3.0, 1.0], salle: 3.0,
         ),
         "cobalt": (
             couleur: (40, 80, 200), lueur: false, coups: 1, energie: 18.0,
-            objet: "common.items.mineral.ore.cobalt", quantite: (1, 1), morceau: 0.0,
+            objet: "common.items.mineral.ore.cobalt", quantite: (1, 1), morceau: 1.0,
             filon: (longueur: (8, 14), epaisseur: (1, 2), profondeur: 1, sinuosite: 0.5, relief: 0.4),
             poids: [0.0, 2.0, 2.0], salle: 1.0,
         ),
         "argent": (
             couleur: (225, 228, 238), lueur: false, coups: 1, energie: 18.0,
-            objet: "common.items.mineral.ore.silver", quantite: (1, 1), morceau: 0.0,
+            objet: "common.items.mineral.ore.silver", quantite: (1, 1), morceau: 1.0,
             filon: (longueur: (8, 14), epaisseur: (1, 2), profondeur: 1, sinuosite: 0.5, relief: 0.4),
             poids: [0.0, 1.0, 2.0], salle: 2.0,
         ),

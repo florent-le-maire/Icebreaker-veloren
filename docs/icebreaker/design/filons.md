@@ -18,7 +18,8 @@ de minerai posés au pied d'une paroi, chacun ramassé d'un coup : un tas de pé
   sa couleur exacte, qui ne doit être celle d'aucune roche d'ambiance.
 - **À la pioche** : chaque bloc de minerai a la dureté de son minerai (coups, énergie par coup) ; quand il cède, il
   donne son objet (minerai ou gemme de Veloren) et, si le minerai a un `morceau`, les blocs du même minerai à cette
-  distance du bloc visé partent avec lui et donnent aussi. Le cône de U.17 n'emporte jamais un bloc de minerai : quand
+  distance du bloc visé partent avec lui et donnent aussi : les courants (cuivre, étain, fer, charbon) par 19 blocs au
+  plus (1,5), les moyens (cobalt, argent) par 7 (1), les rares (or, gemmes) bloc par bloc (Flo, 2026-11-24). Le cône de U.17 n'emporte jamais un bloc de minerai : quand
   on creuse la roche autour, le filon reste et se dégage.
 - **Tout se règle par minerai** dans `assets/icebreaker/grottes/minerais.ron` : couleur, lueur, coups, énergie,
   objet et quantité par bloc, morceau, forme du filon (longueur, épaisseur, profondeur, sinuosité, relief), poids

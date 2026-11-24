@@ -319,6 +319,9 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 `PLAN-GROTTE.md`). À parcourir dans le vrai client, en campagne, à deux si possible ; barrer ce qui est vu, ouvrir une
 tâche pour ce qui casse.
 
+- [ ] Morceaux des filons selon la rareté (2026-11-24, `minerais.ron`) : cuivre, étain, fer, charbon par 19 blocs au
+  plus, cobalt et argent par 7, or et gemmes un par un.
+
 **Village fixe (VF.1 à VF.5)**
 - [ ] Faire le tour du village : chaque PNJ à sa porte (la caisse dans la Guilde), maisons d'aplomb sur le sol
   plat, bordure en pente douce ; une recrue engagée à la charrette.

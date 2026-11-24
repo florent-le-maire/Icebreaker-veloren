@@ -54,7 +54,8 @@ Le tuer, c'est la victoire.
 Dans les parois, des **filons** à miner à la pioche (chaque personnage en a une), comme dans Deep Rock Galactic :
 une bande de minerai prise dans la roche, de la couleur de son minerai, qui serpente le long de la paroi et ressort
 çà et là d'un bloc. Elle part **morceau par morceau, là où l'on tape** : chaque bloc a la dureté de son minerai et
-donne son minerai en cédant ; le charbon part par gros morceaux. En creusant la roche autour, le filon reste. Un à
+donne son minerai en cédant ; les minerais courants (cuivre, étain, fer, charbon) partent par gros morceaux, le
+cobalt et l'argent par petits, l'or et les gemmes bloc par bloc. En creusant la roche autour, le filon reste. Un à
 trois filons par zone ; cuivre et étain près de l'entrée, or et gemmes au fond. Chaque minerai se règle à part
 (`minerais.ron` : couleur, dureté, ce qu'il donne, longueur, épaisseur, profondeur, sinuosité, relief, où il
 apparaît) ; l'atelier des grottes montre les filons en couleur.
