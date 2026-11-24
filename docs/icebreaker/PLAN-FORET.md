@@ -79,7 +79,7 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   160 de haut, premier niveau jusqu'à 120, 5 niveaux, 50 entre deux niveaux, ponts jusqu'à 100. Preset `immense`,
   `geante` refait. Testé : 8 tests (dont arbres creux de 200 de haut, gravis par l'intérieur), 160 forêts sur 160
   praticables, vu dans l'atelier. Pas vu en jeu ; l'intérieur d'un tronc y sera noir (pas de lumière posée) ; pas de
-  grosses branches ni de cabanes encore. — HASH8
+  grosses branches ni de cabanes encore. — ecf7b6e257
 - [ ] **FO.7 Wiki et doc** — `docs/icebreaker/wiki/foret.md`, captures.
 
 ## À savoir pour la suite
