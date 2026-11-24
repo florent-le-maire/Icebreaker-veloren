@@ -76,7 +76,7 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   `FormeLieu::Foret` (le preset se choisit comme pour la grotte et le donjon). Vu dans le vrai client : le bouton,
   le départ, « Forêt « geante », graine … », l'arrivée dans la clairière. La forêt est vide et sans mission tant que
   FO.5 n'est pas faite : on s'y promène et on rentre par `/rentrer`. Pas vérifié : le retour, le bilan, le choix du
-  preset au panneau. Une campagne déjà créée doit refaire son monde pour avoir l'emplacement. — HASH6
+  preset au panneau. Une campagne déjà créée doit refaire son monde pour avoir l'emplacement. — 4a3931ff41
 - [x] **FO.8 Très grands arbres creux, bois immenses** (demande de Flo, 2026-11-24, avec des images d'arbres-maisons) —
   les très grands arbres ont leur rayon (jusqu'à 30) et leur hauteur (jusqu'à 250) à eux et sont posés en premier ;
   une part (`creux`) est creuse : porte au sol, escalier en spirale à l'intérieur, une porte sur chaque plateforme,
