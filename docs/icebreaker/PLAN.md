@@ -307,6 +307,9 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
 - [x] **S.5 Release du client Windows + Mac** — `.github/workflows/release-client.yml` (bouton « Run workflow » ou
   étiquette `v*`) ; `paquet-client.sh` fait aussi le zip Mac (`Icebreaker.command`). Workflow pas encore lancé sur
   GitHub ; zip Windows refait en local avec un faux binaire seulement. `6e81e32d`
+- [x] **S.6 Release à chaque nouvelle version** — numéro dans `assets/icebreaker/version.ron` (0.1.0) ; poussé sur
+  master avec un numéro nouveau, il donne la Release `v<version>`. Lecture du numéro et test de l'étiquette essayés
+  en local ; pas encore vu sur GitHub.
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
   avec Sayanel (`0015`). Contenu à confirmer (`QUESTIONS.md`, Q1).
 
@@ -516,7 +519,7 @@ tâche pour ce qui casse.
 - M.1 : téléchargement du plugin par le vrai client.
 - S.2 / S.3 : le zip du client chez un pote (autre réseau, PC sans outils de dev) ; un départ en expédition sur le VPS.
 - S.5 : lancer la Release du client sur GitHub (Actions → « Release du client ») ; le zip Mac sur un vrai Mac
-  (Apple Silicon), le zip Windows chez un pote.
+  (Apple Silicon), le zip Windows chez un pote. S.6 : le push de `version.ron` 0.1.0 donne la Release `v0.1.0`.
 - W.15 : prendre en jeu les captures des créatures du wiki (rubrique Créatures, nom du fichier sur chaque carte).
 - Balises : plafond 200 par joueur et 200 au total (la plus ancienne s'éteint) ; vu en test seulement.
 

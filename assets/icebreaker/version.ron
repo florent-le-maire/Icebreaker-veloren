@@ -1,0 +1,6 @@
+// Icebreaker S.6 : la version du client à télécharger (pas celle de Veloren, qui reste 0.18.0 dans Cargo.toml).
+// Changer ce numéro et le pousser sur master : GitHub Actions (.github/workflows/release-client.yml) compile le
+// client Windows et Mac et publie la Release « v<version> », si elle n'existe pas déjà.
+(
+    version: "0.1.0",
+)

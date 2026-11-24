@@ -26,9 +26,10 @@ Un serveur qui tourne verrouille son `.exe` : le renommer avant de recompiler.
 
 ## 3. Créer le client pour les autres joueurs
 
-**Par GitHub (Windows et Mac)** : onglet Actions → « Release du client » → « Run workflow » donne la pré-release
-`dernier-build` (remplacée à chaque lancement) ; une étiquette `git tag v0.1 && git push origin v0.1` donne la
-Release `v0.1`. Chacune porte `Icebreaker-windows.zip` et `Icebreaker-mac.zip` (Apple Silicon), à télécharger
+**Par GitHub (Windows et Mac)** : changer le numéro de `assets/icebreaker/version.ron` (ex. `"0.2.0"`), committer
+et pousser sur `master` : GitHub Actions compile et publie la Release `v0.2.0` (rien si elle existe déjà). Pour un
+essai sans nouvelle version : onglet Actions → « Release du client » → « Run workflow » donne la pré-release
+`dernier-build` (remplacée à chaque lancement). Chacune porte `Icebreaker-windows.zip` et `Icebreaker-mac.zip` (Apple Silicon), à télécharger
 depuis la page Releases du dépôt. Premier build long (sans doute plus d'une heure), plus court ensuite grâce au cache.
 Sur Mac, le jeu n'est pas signé : `xattr -dr com.apple.quarantine Icebreaker` dans le Terminal, une fois, puis
 double-clic sur `Icebreaker.command`.

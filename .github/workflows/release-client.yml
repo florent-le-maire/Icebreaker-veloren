@@ -1,6 +1,8 @@
-# Icebreaker : Release du client à télécharger, Windows et Mac (PLAN.md, S.5).
+# Icebreaker : Release du client à télécharger, Windows et Mac (PLAN.md, S.5, S.6).
 #
-# - Étiquette `v*` poussée (ex. `git tag v0.1 && git push origin v0.1`) : Release « v0.1 ».
+# - Numéro changé dans assets/icebreaker/version.ron et poussé sur master : Release « v<version> » (étiquette
+#   créée sur ce commit), sauf si elle existe déjà.
+# - Étiquette `v*` poussée à la main (ex. `git tag v0.1 && git push origin v0.1`) : Release « v0.1 ».
 # - Bouton « Run workflow » (onglet Actions) : pré-release « dernier-build », remplacée à chaque lancement.
 #
 # Chaque zip contient le jeu, ses assets et un lanceur (Icebreaker.bat / Icebreaker.command) ; au menu, seul le
@@ -10,7 +12,9 @@ name: Release du client
 
 on:
   push:
-    tags: ["v*"]
+    branches: [master]
+    paths: [assets/icebreaker/version.ron]
+    tags: ["v*"] # le filtre de chemins ne s'applique pas aux étiquettes
   workflow_dispatch:
 
 permissions:
@@ -25,7 +29,38 @@ defaults:
     shell: bash
 
 jobs:
+  # Quelle Release faire, et s'il faut en faire une (version.ron touché sans changer le numéro : rien).
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      etiquette: ${{ steps.v.outputs.etiquette }}
+      publier: ${{ steps.v.outputs.publier }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            etiquette=dernier-build
+          elif [ "$GITHUB_REF_TYPE" = tag ]; then
+            etiquette="$GITHUB_REF_NAME"
+          else
+            version=$(sed -n 's/^ *version: *"\([^"]*\)".*/\1/p' assets/icebreaker/version.ron | head -n 1)
+            [ -n "$version" ] || { echo "pas de version dans assets/icebreaker/version.ron" >&2; exit 1; }
+            etiquette="v$version"
+          fi
+          publier=true
+          if [ "$GITHUB_REF_TYPE" != tag ] && [ "$etiquette" != dernier-build ] &&
+              git ls-remote --exit-code --tags origin "refs/tags/$etiquette" > /dev/null; then
+            echo "La Release $etiquette existe déjà : changer le numéro de assets/icebreaker/version.ron."
+            publier=false
+          fi
+          echo "etiquette=$etiquette" >> "$GITHUB_OUTPUT"
+          echo "publier=$publier" >> "$GITHUB_OUTPUT"
+          echo "Release : $etiquette (publier : $publier)"
+
   client:
+    needs: version
+    if: needs.version.outputs.publier == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -83,11 +118,12 @@ jobs:
           retention-days: 7
 
   release:
-    needs: client
+    needs: [version, client]
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
+      ETIQUETTE: ${{ needs.version.outputs.etiquette }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -96,11 +132,12 @@ jobs:
 
       - name: Release
         run: |
-          if [ "$GITHUB_REF_TYPE" = tag ]; then
-            etiquette="$GITHUB_REF_NAME"; titre="Icebreaker $GITHUB_REF_NAME"; pre=""
-          else
-            etiquette=dernier-build; titre="Icebreaker, dernier build (${GITHUB_SHA::10})"; pre="--prerelease"
+          etiquette="$ETIQUETTE"
+          if [ "$etiquette" = dernier-build ]; then
+            titre="Icebreaker, dernier build (${GITHUB_SHA::10})"; pre="--prerelease"
             gh release delete "$etiquette" --cleanup-tag --yes || true
+          else
+            titre="Icebreaker $etiquette"; pre=""
           fi
           cat > notes.md <<EOF
           Client Icebreaker du commit ${GITHUB_SHA::10}. Au menu, le bouton **En ligne** rejoint le serveur de l'équipe.
