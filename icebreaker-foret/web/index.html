@@ -1,0 +1,394 @@
+<!doctype html>
+<!-- Icebreaker : l'atelier des forêts (docs/icebreaker/PLAN-FORET.md, jalon FO), sur le modèle de l'atelier des grottes
+     (icebreaker-caverne/web/index.html). Ouvert par `.\icebreaker.ps1 foret`, qui compile le générateur
+     (icebreaker-foret) en WebAssembly et l'écrit dans foret-wasm.js à côté de cette page.
+     La 3D vient de three.js, chargé depuis jsdelivr (il faut être en ligne). -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier des forêts</title>
+<style>
+  :root {
+    --fond: #14171c; --panneau: #1c2027; --bord: #2c323c; --texte: #e6e8ec; --discret: #9aa3b0;
+    --accent: #8fd16a; --alerte: #ff6b5e;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; background: var(--fond); color: var(--texte); font: 14px/1.4 system-ui, "Segoe UI", sans-serif; }
+  #reglages { width: 340px; flex: none; overflow-y: auto; background: var(--panneau); border-right: 1px solid var(--bord); padding: 14px 14px 30px; }
+  h1 { font-size: 17px; margin: 0 0 2px; }
+  .sous-titre { color: var(--discret); margin: 0 0 14px; font-size: 12.5px; }
+  .ligne { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .ligne label { flex: none; width: 58px; color: var(--discret); }
+  input[type=number], input[type=text], select, button {
+    background: var(--fond); color: var(--texte); border: 1px solid var(--bord); border-radius: 6px; padding: 6px 8px; font: inherit;
+  }
+  input[type=number], input[type=text], select { flex: 1; min-width: 0; }
+  button:disabled { opacity: .45; cursor: default; border-color: var(--bord); }
+  fieldset { border: 1px solid var(--bord); border-radius: 8px; margin: 4px 0 12px; padding: 8px 10px 2px; }
+  legend { color: var(--discret); font-size: 12.5px; padding: 0 4px; }
+  #preset-etat { margin: 0 0 8px; min-height: 1em; }
+  #etat button { padding: 1px 7px; margin-left: 4px; font-size: 12px; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.principal { background: var(--accent); color: #0f1a08; border-color: var(--accent); font-weight: 600; }
+  details { border-top: 1px solid var(--bord); padding: 8px 0 2px; }
+  summary { cursor: pointer; font-weight: 600; margin-bottom: 6px; }
+  .champ { margin-bottom: 9px; }
+  .champ .tete { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+  .champ .tete span:last-child { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .champ.change .tete span:first-child::after { content: " *"; color: var(--accent); }
+  input[type=range] { width: 100%; margin: 2px 0 0; accent-color: var(--accent); }
+  #scene { flex: 1; position: relative; min-width: 0; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .barre { position: absolute; display: flex; gap: 6px; align-items: center; background: #1c2027e6; border: 1px solid var(--bord); border-radius: 8px; padding: 6px 8px; }
+  #vues { top: 10px; left: 10px; }
+  #vues label { display: flex; gap: 4px; align-items: center; margin-left: 6px; }
+  #coupe { top: 10px; right: 10px; }
+  #coupe input { width: 180px; margin: 0; }
+  #etat { left: 10px; right: 10px; bottom: 10px; display: block; font-size: 12.5px; }
+  #etat .coupe { color: var(--alerte); font-weight: 600; }
+  #legende { bottom: 64px; left: 10px; flex-direction: column; align-items: flex-start; gap: 2px; font-size: 12px; }
+  #legende i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  #erreur { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; padding: 30px; text-align: center; color: var(--alerte); }
+  dialog { background: var(--panneau); color: var(--texte); border: 1px solid var(--bord); border-radius: 10px; width: min(640px, 90vw); }
+  dialog textarea { width: 100%; height: 50vh; background: var(--fond); color: var(--texte); border: 1px solid var(--bord); font: 12px/1.35 ui-monospace, Consolas, monospace; }
+  dialog::backdrop { background: #000a; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script src="foret-wasm.js"></script>
+</head>
+<body>
+<aside id="reglages">
+  <h1>Atelier des forêts</h1>
+  <p class="sous-titre">Même générateur que le jeu : ce que tu vois ici est la forêt de cette graine, sur terrain plat.</p>
+  <div class="ligne"><label for="graine">Graine</label><input id="graine" type="number" min="0" step="1" value="1"><button id="hasard" title="Une autre graine">Au hasard</button></div>
+  <div class="ligne"><label for="profil">Preset</label><select id="profil"></select></div>
+  <div class="ligne"><button id="copier" style="flex:1">Copier les réglages</button><button id="defaut" title="Revenir aux réglages du preset">Réinitialiser</button></div>
+  <fieldset>
+    <legend>Enregistrer ces réglages comme preset</legend>
+    <div class="ligne"><label for="nom">Nom</label><input id="nom" type="text" maxlength="24" placeholder="a-z, 0-9, - et _"></div>
+    <div class="ligne"><label for="poids" title="Chance d'être tiré par la graine (0 : jamais tiré, seulement choisi)">Poids</label><input id="poids" type="number" min="0" max="100" step="0.5" value="1"></div>
+    <div class="ligne"><button id="enregistrer" class="principal" style="flex:1" title="Écrit le preset dans assets/icebreaker/forets/formes.ron (commit)">Enregistrer le preset</button><button id="supprimer">Supprimer</button></div>
+    <p id="preset-etat" class="sous-titre"></p>
+  </fieldset>
+  <div id="groupes"></div>
+</aside>
+<main id="scene">
+  <canvas id="toile"></canvas>
+  <div id="vues" class="barre">
+    <button data-vue="perspective">Perspective</button><button data-vue="dessus">Dessus</button><button data-vue="cote">Côté</button>
+    <label title="Montrer ou cacher les feuilles, pour voir l'étage haut"><input id="feuilles" type="checkbox">Feuillage</label>
+  </div>
+  <div id="coupe" class="barre"><span>Coupe</span><input id="hauteur" type="range" min="0" max="1" step="1" value="1"><span id="hauteur-texte"></span></div>
+  <div id="legende" class="barre">
+    <span><i style="background:#5fd16a"></i>Clairière d'arrivée</span>
+    <span><i style="background:#5aa7ff"></i>Clairière : camp</span>
+    <span><i style="background:#ff9a4a"></i>Clairière : nid</span>
+    <span><i style="background:#ff4d4d"></i>Clairière du fond (chef)</span>
+    <span><i style="background:#ffd23c"></i>Montée depuis le sol (escalier ou échelle)</span>
+    <span><i style="background:#dc3cff"></i>Plateforme qu'on n'atteint pas</span>
+    <span><i style="background:#c8a062;border-radius:2px"></i>Plateformes, ponts, marches</span>
+    <span><i style="background:#cdaf73;border-radius:2px"></i>Sentiers</span>
+  </div>
+  <div id="etat" class="barre">Chargement…</div>
+  <div id="erreur"></div>
+</main>
+<dialog id="ron">
+  <p>Bloc <code>forme</code> à coller dans un profil de <code>assets/icebreaker/forets/formes.ron</code> :</p>
+  <textarea readonly></textarea>
+  <p style="text-align:right;margin-bottom:0"><span id="copie" style="color:var(--discret);margin-right:10px"></span><button id="fermer">Fermer</button></p>
+</dialog>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const erreur = (texte) => { $('erreur').style.display = 'flex'; $('erreur').textContent = texte; $('etat').textContent = ''; };
+
+let THREE, OrbitControls;
+try {
+  THREE = await import('three');
+  ({ OrbitControls } = await import('three/addons/controls/OrbitControls.js'));
+} catch (e) {
+  erreur("three.js n'a pas pu être chargé (il faut être en ligne) : " + e.message);
+  throw e;
+}
+if (!window.FORET_WASM) {
+  erreur("foret-wasm.js est absent : lancer .\\icebreaker.ps1 foret depuis la racine du dépôt, qui compile le générateur et ouvre cette page.");
+  throw new Error('foret-wasm.js absent');
+}
+const octets = Uint8Array.from(atob(window.FORET_WASM), (c) => c.charCodeAt(0));
+const wasm = (await WebAssembly.instantiate(octets, {})).instance.exports;
+
+// Sorties du générateur : copiées hors de sa mémoire (elle peut grandir d'un appel à l'autre).
+const sortie = (i) => new Uint8Array(wasm.memory.buffer, wasm.foret_sortie_ptr(i), wasm.foret_sortie_len(i)).slice();
+const texte = (quoi, graine = 0) => { wasm.foret_texte(quoi, graine); return new TextDecoder().decode(sortie(5)); };
+const ecrire = (valeurs) => new Float32Array(wasm.memory.buffer, wasm.foret_entree(valeurs.length), valeurs.length).set(valeurs);
+
+// Les réglages (clé, groupe, libellé, bornes) et les profils viennent du générateur : une seule liste.
+const champs = texte(0).split('\n').map((l) => {
+  const [cle, groupe, libelle, min, max, pas, defaut] = l.split('\t');
+  return { cle, groupe, libelle, min: +min, max: +max, pas: +pas, defaut: +defaut };
+});
+// Les presets sont les profils de formes.ron : ceux du fichier quand l'atelier est servi (.\icebreaker.ps1 foret),
+// sinon ceux embarqués à la compilation.
+const AUTO = '(tiré par la graine)';
+const profils = {};
+const poids = {};
+const lireProfils = () => {
+  for (const nom of Object.keys(profils)) delete profils[nom];
+  for (const l of texte(1).split('\n')) {
+    const [nom, p, ...valeurs] = l.split('\t');
+    profils[nom] = valeurs.map(Number);
+    poids[nom] = +p;
+  }
+  const choisi = $('profil').value;
+  $('profil').replaceChildren(...[AUTO, ...Object.keys(profils)].map((n) => new Option(n, n)));
+  if (choisi === AUTO || profils[choisi]) $('profil').value = choisi;
+};
+const donnerFormes = (ron) => {
+  const o = new TextEncoder().encode(ron);
+  new Uint8Array(wasm.memory.buffer, wasm.foret_formes(o.length), o.length).set(o);
+  lireProfils();
+};
+const servi = location.protocol.startsWith('http');
+let formesLues = false;
+if (servi) {
+  try {
+    const r = await fetch('/formes');
+    if (r.ok) { donnerFormes(await r.text()); formesLues = true; }
+  } catch { /* les profils embarqués */ }
+}
+if (!formesLues) lireProfils();
+
+// Un curseur par réglage, par groupe.
+const groupes = {};
+champs.forEach((c, i) => {
+  if (!groupes[c.groupe]) {
+    const d = document.createElement('details');
+    d.open = true;
+    d.innerHTML = `<summary>${c.groupe}</summary>`;
+    $('groupes').append(d);
+    groupes[c.groupe] = d;
+  }
+  const div = document.createElement('div');
+  div.className = 'champ';
+  div.innerHTML = `<div class="tete"><span>${c.libelle}</span><span></span></div><input type="range" min="${c.min}" max="${c.max}" step="${c.pas}">`;
+  c.curseur = div.querySelector('input');
+  c.sortie = div.querySelector('.tete span:last-child');
+  c.bloc = div;
+  c.curseur.addEventListener('input', () => { afficher(c, i); demander(); });
+  groupes[c.groupe].append(div);
+});
+let reference = [];
+const afficher = (c, i) => {
+  c.sortie.textContent = c.curseur.value;
+  c.bloc.classList.toggle('change', Math.abs(+c.curseur.value - reference[i]) > 1e-6);
+};
+const graine = () => Math.max(0, Math.floor(+$('graine').value || 0));
+const nomProfil = () => ($('profil').value === AUTO ? texte(3, graine()) : $('profil').value);
+const charger = () => {
+  reference = profils[nomProfil()];
+  champs.forEach((c, i) => { c.curseur.value = reference[i]; afficher(c, i); });
+  $('nom').value = nomProfil();
+  $('poids').value = poids[nomProfil()] ?? 1;
+};
+
+// La scène : z vers le haut, les blocs vus de dehors (les faces regardent l'air).
+THREE.ColorManagement.enabled = false;
+const rendu = new THREE.WebGLRenderer({ canvas: $('toile'), antialias: true, preserveDrawingBuffer: true });
+rendu.outputColorSpace = THREE.LinearSRGBColorSpace;
+rendu.localClippingEnabled = true;
+rendu.setPixelRatio(Math.min(devicePixelRatio, 2));
+const CIEL = 0x1a2530;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(CIEL);
+const camera = new THREE.PerspectiveCamera(50, 1, 1, 5000);
+camera.up.set(0, 0, 1);
+const orbite = new OrbitControls(camera, rendu.domElement);
+orbite.addEventListener('change', () => dessiner());
+const plan = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
+const matiere = new THREE.MeshBasicMaterial({ vertexColors: true, clippingPlanes: [plan] });
+let foret = null;
+let sansFeuilles = 0;
+const marques = new THREE.Group();
+scene.add(marques);
+const COULEURS = [0x5fd16a, 0x5aa7ff, 0xff9a4a, 0xff4d4d, 0xffd23c, 0xdc3cff];
+let boite = new THREE.Box3();
+// La brume donne la profondeur, quel que soit le recul.
+scene.fog = new THREE.Fog(CIEL, 1, 2);
+
+const dessiner = () => {
+  const centre = boite.getCenter(new THREE.Vector3());
+  const rayon = boite.getSize(new THREE.Vector3()).length() / 2 || 1;
+  const recul = camera.position.distanceTo(centre);
+  scene.fog.near = Math.max(1, recul - rayon);
+  scene.fog.far = recul + rayon * 2.5;
+  rendu.render(scene, camera);
+};
+const tailler = () => {
+  const { clientWidth: w, clientHeight: h } = $('scene');
+  rendu.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  dessiner();
+};
+addEventListener('resize', tailler);
+
+const cadrer = (vue) => {
+  const centre = boite.getCenter(new THREE.Vector3());
+  const taille = boite.getSize(new THREE.Vector3());
+  const recul = Math.max(taille.x, taille.y, taille.z) * 0.9 + 40;
+  orbite.target.copy(centre);
+  if (vue === 'dessus') camera.position.set(centre.x, centre.y - 0.01, centre.z + recul * 1.25);
+  else if (vue === 'cote') camera.position.set(centre.x, centre.y - recul * 1.3, centre.z);
+  else camera.position.set(centre.x - recul * 0.5, centre.y - recul * 0.75, centre.z + recul * 0.6);
+  orbite.update();
+  dessiner();
+};
+document.querySelectorAll('#vues button').forEach((b) => b.addEventListener('click', () => cadrer(b.dataset.vue)));
+
+const couper = () => {
+  const h = +$('hauteur').value;
+  const tout = h >= +$('hauteur').max;
+  plan.constant = tout ? 1e6 : h;
+  $('hauteur-texte').textContent = tout ? 'entière' : `sous ${h}`;
+  dessiner();
+};
+$('hauteur').addEventListener('input', couper);
+// Sans les feuilles (rangées en dernier par le générateur), on voit plateformes et ponts.
+const feuiller = () => {
+  if (foret) foret.geometry.setDrawRange(0, $('feuilles').checked ? Infinity : sansFeuilles);
+  dessiner();
+};
+$('feuilles').addEventListener('change', feuiller);
+
+// ?profil=passerelles&graine=3&vue=cote&coupe=20&feuilles=1 ouvre sur une forêt précise.
+const demande = new URLSearchParams(location.search);
+$('feuilles').checked = demande.get('feuilles') === '1';
+let premiere = true;
+const generer = () => {
+  const debut = performance.now();
+  ecrire(champs.map((c) => +c.curseur.value));
+  const entiere = wasm.foret_generer(graine());
+  sansFeuilles = wasm.foret_sans_feuilles();
+  const sommets = new Int16Array(sortie(0).buffer);
+  const indices = new Uint32Array(sortie(2).buffer);
+  const geometrie = new THREE.BufferGeometry();
+  geometrie.setAttribute('position', new THREE.BufferAttribute(sommets, 3));
+  geometrie.setAttribute('color', new THREE.BufferAttribute(sortie(1), 3, true));
+  geometrie.setIndex(new THREE.BufferAttribute(indices, 1));
+  geometrie.computeBoundingBox();
+  if (foret) { scene.remove(foret); foret.geometry.dispose(); }
+  foret = new THREE.Mesh(geometrie, matiere);
+  foret.frustumCulled = false;
+  scene.add(foret);
+  boite = geometrie.boundingBox.clone();
+
+  marques.clear();
+  const m = new Int16Array(sortie(3).buffer);
+  for (let i = 0; i < m.length; i += 4) {
+    const bille = new THREE.Mesh(
+      new THREE.SphereGeometry(m[i + 3] === 4 ? 1.4 : 2.6, 16, 12),
+      new THREE.MeshBasicMaterial({ color: COULEURS[m[i + 3]], depthTest: false }),
+    );
+    bille.renderOrder = 2;
+    bille.position.set(m[i] + 0.5, m[i + 1] + 0.5, m[i + 2] + 1.5);
+    marques.add(bille);
+  }
+
+  // La coupe garde sa hauteur si elle tient encore dans la nouvelle forêt.
+  const h = $('hauteur');
+  const etaitEntiere = +h.value >= +h.max;
+  h.min = Math.floor(boite.min.z) + 1;
+  h.max = Math.ceil(boite.max.z) + 1;
+  if (etaitEntiere || +h.value > +h.max) h.value = h.max;
+  if (premiere && demande.has('coupe')) h.value = demande.get('coupe');
+  couper();
+  feuiller();
+  if (premiere) { premiere = false; cadrer(demande.get('vue') || 'perspective'); }
+
+  const resume = new TextDecoder().decode(sortie(4));
+  const ms = Math.round(performance.now() - debut);
+  const change = champs.some((c, i) => Math.abs(+c.curseur.value - reference[i]) > 1e-6);
+  $('etat').innerHTML = `Forêt <b>« ${nomProfil()}${change ? ' (modifié)' : ''} », graine ${graine()}</b><button id="copier-graine" title="Copier le preset et la graine">Copier</button> · ${resume.replace(/;[^;]*COUPÉ.*$/, (c) => `<span class="coupe">${c}</span>`)} · ${(indices.length / 6).toLocaleString('fr')} faces, ${ms} ms`;
+  if (!entiere) console.warn('forêt coupée');
+  dessiner();
+};
+let attente = 0;
+const demander = () => { clearTimeout(attente); attente = setTimeout(generer, 40); };
+
+$('graine').addEventListener('input', () => { if ($('profil').value === AUTO) charger(); demander(); });
+$('profil').addEventListener('change', () => { charger(); demander(); });
+$('hasard').addEventListener('click', () => {
+  $('graine').value = Math.floor(Math.random() * 1e6);
+  if ($('profil').value === AUTO) charger();
+  demander();
+});
+$('defaut').addEventListener('click', () => { charger(); demander(); });
+$('copier').addEventListener('click', async () => {
+  ecrire(champs.map((c) => +c.curseur.value));
+  const ron = texte(2);
+  $('ron').querySelector('textarea').value = ron;
+  $('copie').textContent = '';
+  $('ron').showModal();
+  try { await navigator.clipboard.writeText(ron); $('copie').textContent = 'Copié dans le presse-papiers.'; }
+  catch { $('copie').textContent = 'Sélectionner le texte et le copier.'; }
+});
+$('etat').addEventListener('click', (e) => {
+  if (e.target.id === 'copier-graine') navigator.clipboard.writeText(`${nomProfil()} ${graine()}`).then(() => { e.target.textContent = 'Copié'; }, () => {});
+});
+
+// Les presets : enregistrés par le serveur de l'atelier dans formes.ron (avec un commit).
+const dire = (message, alerte = false) => {
+  $('preset-etat').textContent = message;
+  $('preset-etat').style.color = alerte ? 'var(--alerte)' : '';
+};
+const envoyer = async (chemin, corps, fait) => {
+  dire('Enregistrement…');
+  try {
+    const r = await fetch(chemin, { method: 'POST', body: corps });
+    const reponse = await r.text();
+    if (!r.ok) throw new Error(reponse);
+    donnerFormes(reponse);
+    dire(fait());
+    charger();
+    demander();
+  } catch (e) { dire(e.message, true); }
+};
+$('enregistrer').addEventListener('click', () => {
+  const nom = $('nom').value.trim();
+  const remplace = profils[nom] ? 'remplacé' : 'enregistré';
+  if (profils[nom] && !confirm(`Remplacer le preset « ${nom} » par les réglages affichés ?`)) return;
+  envoyer('/preset', `${nom}\n${$('poids').value}\n${champs.map((c) => c.curseur.value).join(' ')}`, () => {
+    $('profil').value = nom;
+    return `Preset « ${nom} » ${remplace} dans formes.ron (commit fait).`;
+  });
+});
+$('supprimer').addEventListener('click', () => {
+  const nom = $('nom').value.trim();
+  if (!confirm(`Supprimer le preset « ${nom} » de formes.ron ?`)) return;
+  envoyer('/preset/supprimer', nom, () => {
+    $('profil').value = AUTO;
+    return `Preset « ${nom} » supprimé (commit fait).`;
+  });
+});
+if (!formesLues) {
+  $('enregistrer').disabled = $('supprimer').disabled = true;
+  dire('Pour enregistrer un preset, ouvrir l’atelier par la commande icebreaker.ps1 foret (http://localhost:8099).');
+}
+
+$('fermer').addEventListener('click', () => $('ron').close());
+
+if (demande.has('graine')) $('graine').value = demande.get('graine');
+if (profils[demande.get('profil')]) $('profil').value = demande.get('profil');
+charger();
+tailler();
+generer();
+</script>
+</body>
+</html>

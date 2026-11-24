@@ -1,0 +1,34 @@
+// Icebreaker : la forme des forêts (docs/icebreaker/PLAN-FORET.md, jalon FO). Chaque profil est un jeu de réglages
+// du générateur (icebreaker-foret) ; la graine d'une forêt en tire un selon les poids. Les réglages absents gardent
+// leur valeur par défaut (icebreaker-foret/src/lib.rs, `forme!` : nom, défaut, bornes, libellé).
+// Pour régler : `.\icebreaker.ps1 foret` ouvre l'atelier ; « Enregistrer le preset » écrit ici le profil.
+// Poids 0 : jamais tiré, seulement choisi.
+(
+    profils: {
+        // Des arbres espacés, de la lumière, quelques plateformes de guet reliées deux à deux : on joue surtout au sol.
+        "clairsemee": (
+            poids: 1.0,
+            forme: (
+                densite: 0.25, feuillage: 0.8, clairieres: 6.0, clairiere_rayon: 16.0, porteurs: 0.3, niveaux: 1.0,
+                ponts: 0.5, pont_longueur: 40.0, montees: 0.5, buissons: 0.45,
+            ),
+        ),
+        // Une forêt serrée dont l'étage haut est un vrai réseau : on la traverse presque sans toucher le sol.
+        "passerelles": (
+            poids: 1.0,
+            forme: (
+                densite: 0.7, clairieres: 4.0, clairiere_rayon: 12.0, porteurs: 0.45, plateforme_rayon: 4.0, niveaux: 2.0, ponts: 0.9,
+                pont_longueur: 34.0, ponts_par_plateforme: 4.0, montees: 0.12, buissons: 0.5,
+            ),
+        ),
+        // De très grands arbres, trois niveaux de plateformes larges, de longs ponts de corde.
+        "geante": (
+            poids: 1.0,
+            forme: (
+                emprise: 110.0, densite: 0.35, arbre_rayon: 4.5, arbre_hauteur: 65.0, geants: 0.25, clairieres: 4.0,
+                clairiere_rayon: 18.0, porteurs: 0.5, plateforme_hauteur: 22.0, niveaux: 3.0, niveau_ecart: 13.0,
+                plateforme_rayon: 7.0, ponts: 0.7, pont_longueur: 50.0, pont_creux: 3.0, montees: 0.2, echelles: 0.15,
+            ),
+        ),
+    },
+)

@@ -1,0 +1,28 @@
+# Icebreaker : la forme des forêts (docs/icebreaker/PLAN-FORET.md, jalon FO). Un générateur sans dépendance à
+# Veloren, sur le modèle de icebreaker-caverne (dont il reprend le bruit et l'écriture des presets) : le jeu s'en
+# servira pour poser la Forêt, et il est compilé en WebAssembly pour l'atelier (`.\icebreaker.ps1 foret`, page
+# web/index.html).
+[package]
+name = "icebreaker-foret"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "atelier-foret"
+path = "src/bin/atelier.rs"
+
+[dependencies]
+icebreaker-caverne = { path = "../icebreaker-caverne" }
+serde = { workspace = true }
+ron = { workspace = true }
+
+[dev-dependencies]
+image = { workspace = true }

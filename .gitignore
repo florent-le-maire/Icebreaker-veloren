@@ -20,6 +20,8 @@ userdata-icebreaker
 /site
 # Icebreaker : le générateur de grottes compilé pour l'atelier (.\icebreaker.ps1 caverne)
 /icebreaker-caverne/web/caverne-wasm.js
+# Icebreaker : le générateur de forêts compilé pour l'atelier (.icebreaker.ps1 foret)
+/icebreaker-foret/web/foret-wasm.js
 Makefile
 
 ## Allow asset hud settings

@@ -27,7 +27,7 @@
 # Dans le jeu : Multijoueur, serveur « localhost:<port> », n'importe quel pseudo.
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("campagne", "village", "donjon", "route", "entrainement", "mod", "caverne", "salles", "donjon-atelier")]
+    [ValidateSet("campagne", "village", "donjon", "route", "entrainement", "mod", "caverne", "salles", "donjon-atelier", "foret")]
     [string]$Lieu,
     # Site autour duquel le lieu est généré (par défaut : Gnarling au donjon, Town au village).
     [string]$Site,
@@ -97,6 +97,26 @@ if ($Lieu -eq "caverne") {
     $atelier = Start-Process "$repo\target\release\atelier.exe" -WorkingDirectory $repo -NoNewWindow -PassThru
     Start-Sleep -Seconds 1
     Start-Process "http://localhost:8096"
+    $atelier | Wait-Process
+    exit 0
+}
+
+# Icebreaker FO.3 : l'atelier des forêts (docs/icebreaker/PLAN-FORET.md), fait comme celui des grottes : le générateur
+# (icebreaker-foret) en WebAssembly à côté de la page, et un serveur qui écrit les presets dans forets\formes.ron (commit).
+if ($Lieu -eq "foret") {
+    cargo build -p icebreaker-foret --release --lib --target wasm32-unknown-unknown
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Icebreaker : si la cible manque, lancer : rustup target add wasm32-unknown-unknown"
+        exit $LASTEXITCODE
+    }
+    $wasm = [IO.File]::ReadAllBytes("$repo\target\wasm32-unknown-unknown\release\icebreaker_foret.wasm")
+    $page = "$repo\icebreaker-foret\web"
+    [IO.File]::WriteAllText("$page\foret-wasm.js", "window.FORET_WASM = '" + [Convert]::ToBase64String($wasm) + "';")
+    cargo build -p icebreaker-foret --release --bin atelier-foret
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    $atelier = Start-Process "$repo\target\release\atelier-foret.exe" -WorkingDirectory $repo -NoNewWindow -PassThru
+    Start-Sleep -Seconds 1
+    Start-Process "http://localhost:8099"
     $atelier | Wait-Process
     exit 0
 }
