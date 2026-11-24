@@ -15,6 +15,10 @@ pub const RAMBARDE: u8 = 5;
 /// A ladder: one climbs in it.
 pub const ECHELLE: u8 = 6;
 pub const BUISSON: u8 = 7;
+/// Icebreaker FO.9: a lantern, hung where no one walks.
+pub const LANTERNE: u8 = 8;
+/// Icebreaker FO.9: a liana hanging under the leaves: one walks through it.
+pub const LIANE: u8 = 9;
 
 /// What the ground of a column is.
 pub const HERBE: u8 = 0;
@@ -122,7 +126,7 @@ impl Grille {
     /// Whether a body can be in this block (air or a ladder, over the ground).
     #[inline]
     pub fn passable(&self, x: i32, y: i32, z: i32) -> bool {
-        z >= self.sol(x, y) && matches!(self.bloc(x, y, z), AIR | ECHELLE)
+        z >= self.sol(x, y) && matches!(self.bloc(x, y, z), AIR | ECHELLE | LIANE)
     }
 
     /// Every block that is not air, with its place.

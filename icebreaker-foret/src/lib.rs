@@ -16,7 +16,9 @@ pub mod presets;
 #[cfg(target_arch = "wasm32")] mod wasm;
 
 pub use grille::Grille;
-use grille::{BOIS, BUISSON, CLAIRIERE, ECHELLE, FEUILLES, HERBE, PLANCHE, RACINE, RAMBARDE, SENTE, SENTIER};
+use grille::{
+    BOIS, BUISSON, CLAIRIERE, ECHELLE, FEUILLES, HERBE, LANTERNE, LIANE, PLANCHE, RACINE, RAMBARDE, SENTE, SENTIER,
+};
 pub use icebreaker_caverne::Champ;
 use icebreaker_caverne::bruit::{Alea, bruit2, bruit3};
 use serde::Deserialize;
@@ -71,6 +73,9 @@ forme! {
         geant_hauteur: 80.0, 40.0, 250.0, 5.0, "Hauteur des très grands arbres";
         creux: 0.8, 0.0, 1.0, 0.01, "Part de très grands arbres creux (escalier dedans, portes sur les plateformes)";
         feuillage: 1.0, 0.4, 1.6, 0.05, "Ampleur du feuillage (moins : plus de lumière au sol)";
+        branches: 4.0, 0.0, 8.0, 1.0, "Grosses branches par arbre (au-dessus des plateformes)";
+        branche_longueur: 2.5, 1.0, 5.0, 0.1, "Longueur des branches (en rayons du tronc)";
+        lianes: 0.3, 0.0, 1.0, 0.01, "Lianes sous les feuillages";
     }
     "Clairières" {
         clairieres: 5.0, 2.0, 12.0, 1.0, "Nombre de clairières";
@@ -88,6 +93,8 @@ forme! {
         niveaux: 2.0, 1.0, 5.0, 1.0, "Nombre de niveaux";
         niveau_ecart: 10.0, 7.0, 50.0, 1.0, "Écart entre deux niveaux";
         plateforme_rayon: 5.0, 4.0, 16.0, 1.0, "Largeur des plateformes autour du tronc";
+        cabanes: 0.3, 0.0, 1.0, 0.01, "Part de plateformes avec une cabane";
+        lanternes: 0.8, 0.0, 1.0, 0.01, "Lanternes (troncs creux, cabanes)";
     }
     "Ponts" {
         ponts: 0.6, 0.0, 1.0, 0.01, "Part de ponts (0 : aucun, 1 : tous les ponts possibles)";
@@ -250,11 +257,29 @@ impl Arbre {
         if ((dx * dx + dy * dy) as f32) <= (self.creux as f32 + 0.5).powi(2) {
             return z < plafond;
         }
-        self.portes.iter().any(|(a, zp)| {
+        // Toward the angle a, within a half-width.
+        let vers = |a: f32, large: f32| {
             let (along, across) = (dx as f32 * a.cos() + dy as f32 * a.sin(), dy as f32 * a.cos() - dx as f32 * a.sin());
-            (*zp..*zp + 3).contains(&z) && along > 0.0 && across.abs() <= 1.3
+            along > 0.0 && across.abs() <= large
+        };
+        self.portes.iter().enumerate().any(|(n, (a, zp))| {
+            ((*zp..*zp + 3).contains(&z) && vers(*a, 1.3))
+                // Icebreaker FO.9: windows at each platform, every quarter turn from the door.
+                || (n > 0 && (*zp + 1..*zp + 3).contains(&z) && (1..4).any(|q| vers(*a + q as f32 * TAU / 4.0, 0.6)))
         })
     }
+}
+
+/// Icebreaker FO.9: a hut on a deck of its own, past the rim of a platform.
+#[derive(Clone, Debug)]
+pub struct Cabane {
+    /// The middle of its floor, a block one stands in.
+    pub centre: [i32; 3],
+    pub arbre: usize,
+    /// The side of the trunk it is on; its door looks back at the trunk.
+    pub cote: (i32, i32),
+    /// Whether one walks into it from the arrival.
+    pub atteinte: bool,
 }
 
 /// A bridge between the platforms `niveau` of two trees: where its deck starts
@@ -278,6 +303,7 @@ pub struct Foret {
     /// The trails between clearings, a point per block.
     pub sentiers: Vec<Vec<[f32; 2]>>,
     pub ponts: Vec<Pont>,
+    pub cabanes: Vec<Cabane>,
     /// Where one arrives: the middle of the first clearing.
     pub depart: [i32; 3],
     /// Whether every clearing and every platform is reached on foot from the
@@ -400,6 +426,40 @@ pub fn marcher(g: &Grille, depart: [i32; 3]) -> Pieds {
         }
     }
     Pieds(vus)
+}
+
+/// A ball of leaves, wider than high, its edge ragged by the noise.
+fn feuillage(g: &mut Grille, c: [f32; 3], r: f32, s: u32) {
+    let lim = r.ceil() as i32 + 1;
+    for dz in -lim..=lim {
+        for dy in -lim..=lim {
+            for dx in -lim..=lim {
+                let (x, y, z) = (c[0] as i32 + dx, c[1] as i32 + dy, c[2] as i32 + dz);
+                let q = ((dx * dx + dy * dy) as f32 + (dz as f32 / 0.7).powi(2)).sqrt() / r;
+                if q < 1.15
+                    && g.bloc(x, y, z) == grille::AIR
+                    && (q < 0.75 || q < 1.0 + 0.15 * bruit3([x as f32 / 5.0, y as f32 / 5.0, z as f32 / 5.0], s))
+                {
+                    g.poser(x, y, z, FEUILLES);
+                }
+            }
+        }
+    }
+}
+
+/// A ball of wood (a piece of a branch), where there is air.
+fn noeud(g: &mut Grille, c: [f32; 3], r: f32) {
+    let lim = r.ceil() as i32;
+    for dz in -lim..=lim {
+        for dy in -lim..=lim {
+            for dx in -lim..=lim {
+                let (x, y, z) = (c[0].round() as i32 + dx, c[1].round() as i32 + dy, c[2].round() as i32 + dz);
+                if ((dx * dx + dy * dy + dz * dz) as f32) <= r * r && g.bloc(x, y, z) == grille::AIR {
+                    g.poser(x, y, z, BOIS);
+                }
+            }
+        }
+    }
 }
 
 /// A stair winding around the trunk from `z0` to `z1` (where one stands),
@@ -727,9 +787,41 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
         }
     }
 
+    // Icebreaker FO.9: a hut on some platforms, on a deck of its own past the
+    // rim, on a side where no trunk, platform nor bridge is in the way.
+    let mut cabanes: Vec<Cabane> = Vec::new();
+    for &i in &porteurs {
+        for k in 0..arbres[i].niveaux.len() {
+            let (veut, premier) = (rng.chance(f.cabanes), rng.indice(4));
+            if !veut {
+                continue;
+            }
+            let t = &arbres[i];
+            for q in 0..4 {
+                let cote = COTES[(premier + q) % 4];
+                let d = t.plateforme + 3;
+                let c = [(t.pied[0] + cote.0 * d) as f32, (t.pied[1] + cote.1 * d) as f32];
+                let libre = dist(c, [0.0, 0.0]) < e
+                    && arbres.iter().enumerate().all(|(j, a)| j == i || dist(c, xy(a.pied)) > a.rayon.max(a.plateforme) as f32 + 6.0)
+                    && ponts.iter().all(|p| dist_segment(c, [p.a[0], p.a[1]], [p.b[0], p.b[1]]) > 6.0 + demi)
+                    && cabanes.iter().all(|h| (h.arbre == i && h.cote == cote) || dist(c, [h.centre[0] as f32, h.centre[1] as f32]) > 9.0);
+                if libre {
+                    cabanes.push(Cabane { centre: [c[0] as i32, c[1] as i32, t.niveaux[k]], arbre: i, cote, atteinte: false });
+                    break;
+                }
+            }
+        }
+    }
+
     // The blocks. First the trunks, their roots and their leaves.
     let houppier = |t: &Arbre| (t.rayon as f32 * 1.6 + 4.0) * f.feuillage;
-    let haut = arbres.iter().map(|t| t.pied[2] + t.hauteur + houppier(t) as i32 + 2).max().unwrap_or(0);
+    let haut = arbres
+        .iter()
+        .map(|t| t.pied[2] + t.hauteur + houppier(t) as i32 + (t.rayon as f32 * f.branche_longueur * 0.7) as i32 + 2)
+        .max()
+        .unwrap_or(0);
+    // Icebreaker FO.9: the branches start over the highest platform of the forest.
+    let plus_haut = if porteurs.is_empty() { 0 } else { (f.plateforme_hauteur + (f.niveaux - 1.0) * f.niveau_ecart) as i32 + 8 };
     let mut g = Grille::new(bord, surface, nature, haut);
     let mut tronc = vec![false; cote * cote];
     for t in &arbres {
@@ -773,25 +865,47 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
     for t in &arbres {
         let cr = houppier(t);
         let sommet = [t.pied[0] as f32, t.pied[1] as f32, (t.pied[2] + t.hauteur) as f32];
+        // Icebreaker FO.9: big branches going out and up, a ball of leaves at
+        // the end of each.
+        let bas = plus_haut.max(t.hauteur / 2);
+        let combien = if t.rayon >= 3 && t.hauteur - bas >= 6 { f.branches as usize } else { 0 };
+        let tour = rng.entre(0.0, TAU);
+        for b in 0..combien {
+            let a = tour + (b as f32 + rng.entre(-0.3, 0.3)) * TAU / combien as f32;
+            let z0 = (t.pied[2] + bas) as f32 + rng.unite() * (t.hauteur - bas - 3) as f32;
+            let longueur = t.rayon as f32 * f.branche_longueur * rng.entre(0.7, 1.1);
+            let montee = longueur * rng.entre(0.2, 0.6);
+            let gros = (t.rayon as f32 * 0.3).max(1.0);
+            let pas = (longueur * 2.0).ceil().max(1.0);
+            let point = |k: f32| {
+                let d = t.rayon as f32 + longueur * k;
+                [sommet[0] + d * a.cos(), sommet[1] + d * a.sin(), z0 + montee * k]
+            };
+            for q in 0..=pas as i32 {
+                let k = q as f32 / pas;
+                noeud(&mut g, point(k), gros + (0.8 - gros) * k);
+            }
+            feuillage(&mut g, point(1.0), cr * rng.entre(0.45, 0.7), s);
+        }
         for boule in 0..3 + rng.indice(3) {
             let (a, d) = (rng.entre(0.0, TAU), if boule == 0 { 0.0 } else { cr * rng.entre(0.3, 0.8) });
             let r = cr * if boule == 0 { 1.0 } else { rng.entre(0.6, 0.9) };
             let c = [sommet[0] + d * a.cos(), sommet[1] + d * a.sin(), sommet[2] - cr * rng.entre(0.0, 0.5)];
-            let lim = r.ceil() as i32 + 1;
-            for dz in -lim..=lim {
-                for dy in -lim..=lim {
-                    for dx in -lim..=lim {
-                        let (x, y, z) = (c[0] as i32 + dx, c[1] as i32 + dy, c[2] as i32 + dz);
-                        // Flattened: wider than high.
-                        let q = ((dx * dx + dy * dy) as f32 + (dz as f32 / 0.7).powi(2)).sqrt() / r;
-                        if q < 1.15
-                            && g.bloc(x, y, z) == grille::AIR
-                            && (q < 0.75 || q < 1.0 + 0.15 * bruit3([x as f32 / 5.0, y as f32 / 5.0, z as f32 / 5.0], s))
-                        {
-                            g.poser(x, y, z, FEUILLES);
-                        }
-                    }
-                }
+            feuillage(&mut g, c, r, s);
+        }
+    }
+    // Icebreaker FO.9: no leaves inside a hollow trunk, and lanterns hung in
+    // its middle, over the ground and over each floor.
+    for t in arbres.iter().filter(|t| t.creux > 0) {
+        let plafond = t.niveaux.last().copied().unwrap_or(t.pied[2]) + 7;
+        disque(xy(t.pied), t.creux as f32, |x, y| {
+            for z in t.pied[2]..plafond {
+                g.degager(x, y, z, false);
+            }
+        });
+        for z in std::iter::once(t.pied[2] + 5).chain(t.niveaux.iter().map(|n| n + 3)) {
+            if rng.chance(f.lanternes) && t.niveaux.iter().all(|n| !(n - 1..=n + 2).contains(&z)) {
+                g.poser(t.pied[0], t.pied[1], z, LANTERNE);
             }
         }
     }
@@ -838,6 +952,40 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
                     tablier[i] = true;
                 }
             }
+        }
+    }
+    // Icebreaker FO.9: the huts. A deck of 7 by 7, walls of 5 by 5 with a door
+    // toward the trunk and three windows, a roof in steps, a lantern.
+    for h in &cabanes {
+        let [cx, cy, z] = h.centre;
+        for dy in -3i32..=3 {
+            for dx in -3i32..=3 {
+                let (x, y, tour) = (cx + dx, cy + dy, dx.abs().max(dy.abs()));
+                g.poser(x, y, z - 1, PLANCHE);
+                for dz in 0..6 {
+                    g.degager(x, y, z + dz, false);
+                }
+                if let Some(c) = col(x, y) {
+                    tablier[c] = true;
+                }
+                let porte = (dx, dy) == (-h.cote.0 * 2, -h.cote.1 * 2);
+                let fenetre = (dx == 0 || dy == 0) && !porte;
+                if tour == 2 {
+                    for dz in 0..3 {
+                        if !(porte && dz < 2) && !(fenetre && dz == 1) {
+                            g.poser(x, y, z + dz, PLANCHE);
+                        }
+                    }
+                }
+                for (dz, large) in [(3, 3), (4, 2), (5, 1)] {
+                    if tour <= large {
+                        g.poser(x, y, z + dz, PLANCHE);
+                    }
+                }
+            }
+        }
+        if rng.chance(f.lanternes) {
+            g.poser(cx, cy, z + 2, LANTERNE);
         }
     }
     if f.garde_corps > 0.0 {
@@ -953,10 +1101,34 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
         }
     }
 
-    // On foot from the arrival: every clearing, every platform.
+    // Icebreaker FO.9: lianas hanging under the leaves, down to over the heads.
+    if f.lianes > 0.0 {
+        let dessous: Vec<[i32; 3]> = g
+            .pleins()
+            .filter(|(p, b)| *b == FEUILLES && g.bloc(p[0], p[1], p[2] - 1) == grille::AIR)
+            .map(|(p, _)| p)
+            .collect();
+        for [x, y, z] in dessous {
+            let h = (x.wrapping_mul(73_856_093) ^ y.wrapping_mul(19_349_663)).rem_euclid(1000);
+            if (h as f32) < f.lianes * 60.0 {
+                for dz in 1..=3 + h % 9 {
+                    if g.bloc(x, y, z - dz) != grille::AIR || z - dz < g.sol(x, y) + 3 {
+                        break;
+                    }
+                    g.poser(x, y, z - dz, LIANE);
+                }
+            }
+        }
+    }
+
+    // On foot from the arrival: every clearing, every platform, every hut.
     let depart = clairieres[0].centre;
     let pieds = marcher(&g, depart);
     let mut manques = clairieres.iter().filter(|c| !pieds.contient(&g, c.centre)).count();
+    for h in &mut cabanes {
+        h.atteinte = pieds.contient(&g, h.centre);
+        manques += !h.atteinte as usize;
+    }
     for arbre in &mut arbres {
         let (c, r, p) = (arbre.pied, arbre.rayon + 3, arbre.plateforme);
         arbre.atteints = arbre
@@ -974,13 +1146,15 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
         manques += arbre.atteints.iter().filter(|a| !**a).count();
     }
     let resume = format!(
-        "{} arbres (dont {} très grands), {} clairières, {} plateformes, {} ponts, {} montées{}",
+        "{} arbres (dont {} très grands, {} creux), {} clairières, {} plateformes, {} ponts, {} montées, {} cabanes{}",
         arbres.len(),
         arbres.iter().filter(|t| t.geant).count(),
+        arbres.iter().filter(|t| t.creux > 0).count(),
         clairieres.len(),
         arbres.iter().map(|t| t.niveaux.len()).sum::<usize>(),
         ponts.len(),
         arbres.iter().filter(|t| t.montee).count(),
+        cabanes.len(),
         if manques == 0 { String::new() } else { format!(" ; {manques} lieu(x) COUPÉ(S) du reste") },
     );
     Foret {
@@ -989,6 +1163,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
         clairieres,
         sentiers,
         ponts,
+        cabanes,
         depart,
         praticable: manques == 0,
         essais: 1,
@@ -1081,6 +1256,25 @@ mod tests {
                 assert_eq!(foret.grille.bloc(t.pied[0], t.pied[1], haut + 10), grille::BOIS);
             }
         }
+    }
+
+    /// Icebreaker FO.9: huts one walks into, lanterns, lianas, branches over
+    /// the platforms.
+    #[test]
+    fn huts_lanterns_lianas_and_branches() {
+        let forme = Forme { cabanes: 1.0, lanternes: 1.0, lianes: 1.0, porteurs: 0.5, geants: 0.3, creux: 1.0, ..Forme::default() };
+        let foret = generer(&forme, 4, &|_, _| 0);
+        assert!(foret.praticable, "{}", foret.resume);
+        assert!(!foret.cabanes.is_empty() && foret.cabanes.iter().all(|h| h.atteinte));
+        let compte = |bloc: u8| foret.grille.pleins().filter(|(_, b)| *b == bloc).count();
+        assert!(compte(LANTERNE) >= foret.cabanes.len() && compte(LIANE) > 0);
+        // A lantern hangs over the heads: one walks under it.
+        for h in &foret.cabanes {
+            assert_eq!(foret.grille.bloc(h.centre[0], h.centre[1], h.centre[2] + 2), LANTERNE);
+        }
+        // Without branches, less wood.
+        let nue = generer(&Forme { branches: 0.0, ..forme.clone() }, 4, &|_, _| 0);
+        assert!(nue.praticable && nue.grille.pleins().filter(|(_, b)| *b == BOIS).count() < compte(BOIS));
     }
 
     #[test]

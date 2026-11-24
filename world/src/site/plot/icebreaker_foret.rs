@@ -21,15 +21,19 @@ pub struct IcebreakerForet {
     couleurs: foret::Couleurs,
     /// The ladders: each block, and the side of its trunk.
     echelles: Vec<(Vec3<i32>, Vec2<i32>)>,
+    /// Icebreaker FO.9: the lanterns and the lianas.
+    decors: Vec<(Vec3<i32>, u8)>,
 }
 
 impl IcebreakerForet {
     fn new(lieu: Lieu, couleurs: foret::Couleurs) -> Self {
         let echelles = lieu.echelles();
+        let decors = lieu.decors();
         Self {
             lieu: Arc::new(lieu),
             couleurs,
             echelles,
+            decors,
         }
     }
 
@@ -56,7 +60,13 @@ impl IcebreakerForet {
         let pont = lieu.foret.ponts.first().map(|p| {
             lieu.origine + Vec3::new((p.a[0] + p.b[0]) / 2.0, (p.a[1] + p.b[1]) / 2.0, p.a[2].max(p.b[2]) + 1.0).as_::<i32>()
         });
-        info!(centre = ?lieu.origine, arrivee = ?lieu.arrival(), ?pont, "Icebreaker forêt: {}", lieu.summary);
+        // In front of the door of a hollow trunk, and in a hut.
+        let porte = lieu.foret.arbres.iter().find(|t| t.creux > 0).map(|t| {
+            let (a, d) = (t.portes[0].0, (t.rayon + t.racines() + 2) as f32);
+            lieu.origine + Vec3::new(t.pied[0] + (d * a.cos()) as i32, t.pied[1] + (d * a.sin()) as i32, t.pied[2] + 1)
+        });
+        let cabane = lieu.foret.cabanes.first().map(|h| lieu.origine + Vec3::from(h.centre));
+        info!(centre = ?lieu.origine, arrivee = ?lieu.arrival(), ?pont, ?porte, ?cabane, "Icebreaker forêt: {}", lieu.summary);
         Ok(Self::new(lieu, settings.couleurs.clone()))
     }
 }
@@ -91,7 +101,7 @@ impl Structure for IcebreakerForet {
         let lieu = Arc::clone(&self.lieu);
         frame
             .sample(move |pos| {
-                lieu.sol(pos.xy()).is_some_and(|sol| pos.z >= sol) && matches!(lieu.bloc(pos), grille::AIR | grille::ECHELLE)
+                lieu.sol(pos.xy()).is_some_and(|sol| pos.z >= sol) && matches!(lieu.bloc(pos), grille::AIR | grille::ECHELLE | grille::LANTERNE | grille::LIANE)
             })
             .clear();
 
@@ -124,7 +134,7 @@ impl Structure for IcebreakerForet {
             bloc(BlockKind::Leaves, c.buisson),
         );
         frame
-            .sample(move |pos| !matches!(lieu.bloc(pos), grille::AIR | grille::ECHELLE))
+            .sample(move |pos| !matches!(lieu.bloc(pos), grille::AIR | grille::ECHELLE | grille::LANTERNE | grille::LIANE))
             .fill(Fill::Sampling(Arc::new(move |pos| {
                 Some(match blocs.bloc(pos) {
                     grille::BOIS => tronc,
@@ -144,6 +154,12 @@ impl Structure for IcebreakerForet {
             if area.contains_point(pos.xy()) {
                 let facing = common::util::Dir2::from_vec2(-*vers).sprite_ori();
                 painter.rotated_sprite(*pos, SpriteKind::Ladder, facing);
+            }
+        }
+        // Icebreaker FO.9: the lanterns and the lianas.
+        for (pos, bloc) in &self.decors {
+            if area.contains_point(pos.xy()) {
+                painter.sprite(*pos, if *bloc == grille::LANTERNE { SpriteKind::Lantern } else { SpriteKind::Liana });
             }
         }
     }

@@ -79,7 +79,16 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   160 de haut, premier niveau jusqu'à 120, 5 niveaux, 50 entre deux niveaux, ponts jusqu'à 100. Preset `immense`,
   `geante` refait. Testé : 8 tests (dont arbres creux de 200 de haut, gravis par l'intérieur), 160 forêts sur 160
   praticables, vu dans l'atelier. Pas vu en jeu ; l'intérieur d'un tronc y sera noir (pas de lumière posée) ; pas de
-  grosses branches ni de cabanes encore. — ecf7b6e257
+  grosses branches ni de cabanes encore (FO.9). — ecf7b6e257
+- [x] **FO.9 Branches, cabanes, lanternes, lianes** (suite de FO.8, accord de Flo le 2026-11-24) — de grosses branches
+  partent des troncs au-dessus de la plus haute plateforme de la forêt, une boule de feuilles au bout ; des cabanes
+  (`cabanes`) sur un plancher à elles au bord des plateformes, porte vers le tronc, trois fenêtres, toit en gradins ;
+  des fenêtres dans les troncs creux à chaque étage ; des lanternes (`lanternes`) dans les cabanes et au milieu des
+  troncs creux, au-dessus des têtes ; des lianes (`lianes`) sous les feuillages, qu'on traverse. En jeu : sprites
+  `Lantern` et `Liana`. Testé : 9 tests (chaque cabane est atteinte à pied), 160 forêts sur 160 praticables. Vu
+  dans le vrai client (preset `geante`) : racines et porte d'un tronc creux, cabanes éclairées, intérieur d'une
+  cabane avec sa lanterne, lianes, plateformes. Pas vérifié : monter par l'intérieur d'un tronc, la lumière qu'on y a.
+  Le journal du serveur donne aussi une porte de tronc creux et une cabane (pour `/goto`). — HASH9
 - [ ] **FO.7 Wiki et doc** — `docs/icebreaker/wiki/foret.md`, captures.
 
 ## À savoir pour la suite

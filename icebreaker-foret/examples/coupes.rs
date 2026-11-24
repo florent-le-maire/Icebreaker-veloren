@@ -57,6 +57,8 @@ fn main() {
         RAMBARDE => [170, 125, 80],
         ECHELLE => [255, 225, 60],
         BUISSON => [95, 160, 70],
+        icebreaker_foret::grille::LANTERNE => [255, 230, 120],
+        icebreaker_foret::grille::LIANE => [70, 150, 60],
         _ => [255, 0, 255],
     };
     for y in min[1]..max[1] {

@@ -95,6 +95,16 @@ impl Lieu {
     /// Where one arrives: the clearing at the edge, a block one stands in.
     pub fn arrival(&self) -> Vec3<i32> { self.origine + Vec3::from(self.foret.depart) }
 
+    /// Icebreaker FO.9: the lanterns and the lianas: each block and what it is.
+    pub fn decors(&self) -> Vec<(Vec3<i32>, u8)> {
+        self.foret
+            .grille
+            .pleins()
+            .filter(|(_, bloc)| matches!(*bloc, grille::LANTERNE | grille::LIANE))
+            .map(|(p, bloc)| (self.origine + Vec3::from(p), bloc))
+            .collect()
+    }
+
     /// The ladders: each block, and the side its trunk is on.
     pub fn echelles(&self) -> Vec<(Vec3<i32>, Vec2<i32>)> {
         let g = &self.foret.grille;

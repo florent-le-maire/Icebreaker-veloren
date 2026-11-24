@@ -93,6 +93,8 @@ pub fn mailler(f: &Foret) -> Maillage {
                 RAMBARDE => [150.0, 112.0, 70.0],
                 ECHELLE => [240.0, 205.0, 110.0],
                 BUISSON => [84.0, 142.0, 62.0],
+                crate::grille::LANTERNE => [255.0, 225.0, 120.0],
+                crate::grille::LIANE => [78.0, 150.0, 60.0],
                 _ => [255.0, 0.0, 255.0],
             };
             for axe in 0..3 {
