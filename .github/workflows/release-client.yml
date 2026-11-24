@@ -117,8 +117,11 @@ jobs:
           compression-level: 0
           retention-days: 7
 
+  # Publie les zips présents, même si un système a échoué (ex. pas de Mac libre chez GitHub) : « Re-run failed
+  # jobs » sur le run ajoute ensuite le zip manquant à la même Release.
   release:
     needs: [version, client]
+    if: always() && needs.version.result == 'success' && needs.version.outputs.publier == 'true'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -126,25 +129,42 @@ jobs:
       ETIQUETTE: ${{ needs.version.outputs.etiquette }}
     steps:
       - uses: actions/download-artifact@v4
+        continue-on-error: true # aucun zip : l'étape suivante échoue avec un message clair
         with:
           path: zips
           merge-multiple: true
 
       - name: Release
         run: |
+          ls zips/*.zip > /dev/null 2>&1 || { echo "Aucun zip : Windows et Mac ont échoué." >&2; exit 1; }
           etiquette="$ETIQUETTE"
           if [ "$etiquette" = dernier-build ]; then
             titre="Icebreaker, dernier build (${GITHUB_SHA::10})"; pre="--prerelease"
-            gh release delete "$etiquette" --cleanup-tag --yes || true
           else
             titre="Icebreaker $etiquette"; pre=""
           fi
-          cat > notes.md <<EOF
-          Client Icebreaker du commit ${GITHUB_SHA::10}. Au menu, le bouton **En ligne** rejoint le serveur de l'équipe.
-
-          - **Windows** : dézipper \`Icebreaker-windows.zip\`, lancer \`Icebreaker.bat\`.
-          - **Mac (Apple Silicon, M1 et suivants)** : dézipper \`Icebreaker-mac.zip\`. Le jeu n'est pas signé : la
-            première fois, dans le Terminal, \`xattr -dr com.apple.quarantine <dossier Icebreaker>\`, puis double-cliquer
-            \`Icebreaker.command\`.
-          EOF
-          gh release create "$etiquette" zips/*.zip --target "$GITHUB_SHA" --title "$titre" --notes-file notes.md $pre
+          {
+            echo "Client Icebreaker du commit ${GITHUB_SHA::10}. Au menu, le bouton **En ligne** rejoint le serveur de l'équipe."
+            echo
+            if [ -f zips/Icebreaker-windows.zip ]; then
+              echo '- **Windows** : dézipper `Icebreaker-windows.zip`, lancer `Icebreaker.bat`.'
+            else
+              echo '- **Windows** : zip pas encore là (build échoué, à relancer).'
+            fi
+            if [ -f zips/Icebreaker-mac.zip ]; then
+              echo '- **Mac (Apple Silicon, M1 et suivants)** : dézipper `Icebreaker-mac.zip`. Le jeu n'"'"'est pas signé : la'
+              echo '  première fois, dans le Terminal, `xattr -dr com.apple.quarantine <dossier Icebreaker>`, puis double-cliquer'
+              echo '  `Icebreaker.command`.'
+            else
+              echo '- **Mac** : zip pas encore là (pas de Mac libre chez GitHub ou build échoué, à relancer).'
+            fi
+          } > notes.md
+          cat notes.md
+          if [ "$etiquette" != dernier-build ] && gh release view "$etiquette" > /dev/null 2>&1; then
+            # Relance d'un système manquant : on complète la Release existante.
+            gh release upload "$etiquette" zips/*.zip --clobber
+            gh release edit "$etiquette" --notes-file notes.md
+          else
+            [ "$etiquette" = dernier-build ] && { gh release delete "$etiquette" --cleanup-tag --yes || true; }
+            gh release create "$etiquette" zips/*.zip --target "$GITHUB_SHA" --title "$titre" --notes-file notes.md $pre
+          fi

@@ -310,6 +310,9 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
 - [x] **S.6 Release à chaque nouvelle version** — numéro dans `assets/icebreaker/version.ron` (0.1.0) ; poussé sur
   master avec un numéro nouveau, il donne la Release `v<version>`. Lecture du numéro et test de l'étiquette essayés
   en local ; pas encore vu sur GitHub. `7f8714bd`
+- [x] **S.7 Release même si un système échoue** — publiée avec les zips présents (1er run : pas de Mac libre chez
+  GitHub, job annulé) ; « Re-run failed jobs » complète la même Release. Essayé en local avec un faux `gh` ; pas
+  encore vu sur GitHub.
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
   avec Sayanel (`0015`). Contenu à confirmer (`QUESTIONS.md`, Q1).
 
