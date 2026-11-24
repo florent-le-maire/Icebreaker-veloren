@@ -239,16 +239,18 @@ pris dans la roche, cassés morceau par morceau, réglables minerai par minerai.
 **Les filons en modèles voxel** (Flo, 2026-11-24) : plus de cubes de couleur, chaque bloc de filon est un sprite à
 nous ; les pépites de U.22 partent ; nettoyage de tout le travail sur les minerais.
 
-- [ ] **U.23 Les modèles des minerais** — 33 modèles (`icebreaker-modeles/src/filons.rs`, trois variantes par
+- [x] **U.23 Les modèles des minerais** — 33 modèles (`icebreaker-modeles/src/filons.rs`, trois variantes par
   minerai) : gangue bosselée à pépites brillantes (métaux), blocs à facettes (charbon), cristaux qui luisent
-  (gemmes). — *en cours : Veloren-caverne, 2026-11-24*
-- [ ] **U.24 Les filons en sprites** — onze sprites minables `IcebreakerFilon…`, un par minerai (`sprite` dans
+  (gemmes). Testé : 7 tests, planche des images de contrôle relue. — 5bb8a77f20
+- [x] **U.24 Les filons en sprites** — onze sprites minables `IcebreakerFilon…`, un par minerai (`sprite` dans
   `minerais.ron`) : le générateur les pose à la place des blocs de couleur, le jeu reconnaît le minerai à son sprite,
-  le minage (morceau, énergie, objet) reste le même ; `pepite`, `pepites` et `lueur` partent. — *en cours :
-  Veloren-caverne, 2026-11-24*
-- [ ] **U.25 Nettoyage des minerais** — l'ancien système de pépites isolées (K.4) et ses réglages, les tirages en
-  double, l'atelier des grottes aligné sur le jeu, design, plan et wiki à jour. — *en cours : Veloren-caverne,
-  2026-11-24*
+  le minage (morceau, énergie, objet) reste le même ; `pepite`, `pepites` et `lueur` partent. Testé : tests de
+  common, world, caverne et du manifeste ; vu dans le vrai client (modèles affichés, debout sur un filon). Pas
+  vérifié en jeu : miner un filon, filon en paroi et au plafond, rendu de loin. — ab6303ae1b
+- [x] **U.25 Nettoyage des minerais** — l'ancien système de pépites isolées (K.4) et ses réglages partent
+  (`filons.niveaux` dit le nombre de niveaux), un seul tirage pondéré, design, plan et wiki à jour. L'atelier des
+  grottes n'est pas aligné sur le jeu (sa grotte n'a ni le relief du monde ni les habitants) : c'est dit dans le
+  code et le wiki. Testé : tests, grotte lancée, atelier compilé. — ae63154f3a
 
 - [x] **U.17 Un éclat en cône** — demandé par Flo (2026-11-23) : quand le bloc visé cède, un cône part avec lui, du corps
   de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : demi-largeur 1,9, demi-hauteur 1,4, pointe à 5 blocs ; boyau de 3 de large), un
