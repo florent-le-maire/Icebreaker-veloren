@@ -29,6 +29,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | `PLAN-INTERFACE.md` | Refonte de l'interface ajoutée par Icebreaker : maquettes, charte, règles (jalon N) |
 | `PLAN-CLASSES.md` | Armes, classes et compétences : jeux d'armes, ultime, passif, maîtrise, salle d'armes (jalon A) |
 | `PLAN-PLAYTEST.md` | Feuille de route d'avant playtest (liste de Flo, 2026-11-16) : neuf chantiers, leurs tâches (F.10+, U.13+, B.16+, AM, L.6, X.18, E.17+) |
+| `PLAN-FORET.md` | La région Forêt : générateur à deux étages (sentiers, plateformes, ponts) et atelier de réglage (jalon FO) |
 | `PLAN-FANTOME.md` | Le fantôme du village : un corps bleu translucide qui plane, à la place du spectateur (jalon FT) |
 | `A-FAIRE.md` | Todos de l'équipe (wiki local) : « Ouvert » à traiter en début de session, puis « Pris en compte » |
 | `MAINTENANCE.md` | Lancer le jeu et le serveur, faire le zip du client, déployer sur le VPS |
@@ -67,6 +68,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | U | Grottes organiques et atelier de réglage | `PLAN-CAVERNE.md` | U.1 à U.5 codés le 2026-11-15 ; profils à régler dans l'atelier, pas vu en jeu | `Veloren-caverne` |
 | AM | Âmes | `PLAN-PLAYTEST.md` (règles : `design/ames.md`) | règles tranchées le 2026-11-16 ; attend le tableau de Sayanel (Q58) | `Veloren-ames` (à créer) |
 | FT | Le fantôme du village a un corps | `PLAN-FANTOME.md` | FT.1 à FT.5 codés le 2026-11-16 ; FT.6 et l'essai à la main restent | `Veloren-fantome` |
+| FO | La région Forêt et son atelier | `PLAN-FORET.md` | FO.0 à FO.3 codés le 2026-11-24 (générateur, atelier) ; lieu jouable, habitants et campagne restent | `Veloren-foret` |
 | VF | Village fixe d'après le croquis | `PLAN.md` (décision `0022`) | VF.0 à VF.2 faits (2026-11-21) ; VF.3 à VF.5 restent | — (supprimé) |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.

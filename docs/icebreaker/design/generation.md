@@ -151,6 +151,10 @@ poids des rôles des salles, nombre de créatures (par sorte ou en tout), nombre
 les facteurs se multiplient ; le chef reste toujours unique ; les règles de voisinage (2.5) s'appliquent toujours.
 Régions et saisons sont **provisoires** (la carte du monde arrive en phase 4) ; valeurs de départ :
 
+La **Forêt** est aussi un lieu à part entière (jalon FO, `PLAN-FORET.md`, décidé le 2026-11-24) : deux étages, des
+clairières reliées par des sentiers au sol et des plateformes reliées par des ponts dans les arbres ; tomber d'un
+pont fait les dégâts de chute normaux, on atterrit sur un sol jouable et on peut toujours remonter.
+
 | Paramètre | Effet |
 |---|---|
 | Forêt | nids ×2, cuisines ×1,5 ; archers ×1,5 |

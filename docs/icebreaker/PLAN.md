@@ -177,7 +177,8 @@ que Veloren fait déjà (vue, ouïe, combat, fuite). G.11 à G.14 d'abord ; G.15
 envisagés (le projet Icebreaker en décrit déjà quelques-uns : `design/generation.md`, « Derrière les murs et lieux ») :
 - **La tour** : on monte au lieu de descendre, étages étroits, maçonnerie et ciel autour, chef au sommet.
 - **Le marécage** : salles à ciel ouvert reliées par l'eau et la boue, nids nombreux (effets de la région Marais).
-- **La forêt** : clairières reliées par des sentiers, sous les arbres ; nids et archers (région Forêt).
+- **La forêt** : clairières reliées par des sentiers, sous les arbres ; nids et archers (région Forêt). Lancée le
+  2026-11-24 : jalon FO, `PLAN-FORET.md` (deux étages, plateformes et ponts entre les arbres).
 - **Le château** : salles collées par leurs murs, cour et remparts (assemblage « salles collées » du projet).
 - **Le gouffre** (façon *Made in Abyss*) : un grand puits vertical, des salles accrochées à ses parois ; plus on
   descend, plus c'est dangereux et riche, et remonter coûte (fatigue, temps de carte, blessures ?). `QUESTIONS.md`, Q15.
