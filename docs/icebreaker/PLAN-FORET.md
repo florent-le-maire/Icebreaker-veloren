@@ -96,7 +96,7 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   leur bois ne coupe ni plateforme, ni pont, ni cabane ; un arbre à escalier ou échelle autour du tronc garde les
   siennes au-dessus de sa dernière plateforme. Testé : 10 tests (on se tient au bout de chaque branche sans issue),
   160 forêts sur 160 praticables, vu dans l'atelier. Pas vu en jeu (les branches sont du même bois que les troncs).
-  — HASH10
+  — 8c1a125db5
 - [ ] **FO.7 Wiki et doc** — `docs/icebreaker/wiki/foret.md`, captures.
 
 ## À savoir pour la suite
