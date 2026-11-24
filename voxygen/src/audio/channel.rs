@@ -49,6 +49,9 @@ pub enum MusicChannelTag {
     TitleMusic,
     Exploration,
     Combat,
+    /// Icebreaker : le thème du village, en boucle sur son propre canal (son
+    /// volume ne touche pas celui des autres musiques).
+    Icebreaker,
 }
 
 /// A MusicChannel is designed to play music which

@@ -173,6 +173,44 @@ pub struct MusicMgr {
     loop_points: Option<(f32, f32)>,
     /// The last known site the player was in, used to detect site transition
     last_site: SiteKindMeta,
+    /// Icebreaker : le thème du village est en train de jouer.
+    icebreaker_theme: bool,
+    /// Icebreaker : depuis quand le joueur n'est plus au village, thème encore
+    /// joué.
+    icebreaker_hors_village: Option<std::time::Instant>,
+}
+
+/// Icebreaker : les musiques de nos lieux (`assets/icebreaker/musique.ron`).
+#[derive(Clone, Debug, Default, Deserialize)]
+struct IcebreakerMusique {
+    /// Le thème du village, ou aucun (les musiques de ville de Veloren).
+    #[serde(default)]
+    village: Option<IcebreakerTheme>,
+}
+
+/// Icebreaker : un morceau qui tourne en boucle tant qu'on est dans le lieu.
+#[derive(Clone, Debug, Deserialize)]
+struct IcebreakerTheme {
+    /// Le fichier (`.ogg` ou `.mp3`), en chemin d'asset.
+    piste: String,
+    /// Le titre montré dans le menu de débogage.
+    titre: String,
+    /// De 0 à 1, sous le réglage « Musique » du joueur.
+    volume: f32,
+    /// Durée en secondes du fondu à l'entrée et à la sortie.
+    fondu: f32,
+    /// Secondes hors du lieu avant que le morceau s'arrête (le passage de
+    /// fantôme à personnage perd le lieu un instant).
+    #[serde(default)]
+    delai_sortie: f32,
+}
+
+impl IcebreakerMusique {
+    fn charger() -> Self {
+        <Ron<Self> as AssetExt>::load("icebreaker.musique")
+            .map(|r| r.read().0.clone())
+            .unwrap_or_default()
+    }
 }
 
 #[derive(Deserialize)]
@@ -225,6 +263,55 @@ impl MusicMgr {
             track_length: 0.0,
             loop_points: None,
             last_site: SiteKindMeta::Void,
+            icebreaker_theme: false,
+            icebreaker_hors_village: None,
+        }
+    }
+
+    /// Icebreaker : au village (une ville de Veloren, la seule du monde de la
+    /// campagne), le thème du village tourne en boucle à la place des musiques
+    /// de Veloren ; en sortant, il s'éteint en fondu et Veloren reprend la
+    /// main. Vrai tant que le thème joue (le reste de `maintain` est alors
+    /// sauté).
+    fn icebreaker_maintain(&mut self, audio: &mut AudioFrontend, client: &Client) -> bool {
+        let musique = IcebreakerMusique::charger();
+        match (
+            musique.village,
+            icebreaker_au_village(client.current_site()),
+        ) {
+            (Some(theme), true) => {
+                self.icebreaker_hors_village = None;
+                if !self.icebreaker_theme {
+                    tracing::info!(piste = %theme.piste, "Icebreaker : thème du village");
+                    audio.icebreaker_jouer_theme(&theme.piste, theme.volume, theme.fondu);
+                    self.icebreaker_theme = true;
+                    self.current_track = theme.titre;
+                    self.current_artist = String::from("Icebreaker");
+                }
+                true
+            },
+            (theme, _) => {
+                if self.icebreaker_theme {
+                    // Encore un peu de thème : le lieu se perd un instant au passage de
+                    // fantôme à personnage.
+                    let delai = theme.as_ref().map_or(0.0, |t| t.delai_sortie);
+                    let depuis = *self
+                        .icebreaker_hors_village
+                        .get_or_insert_with(std::time::Instant::now);
+                    if theme.is_some() && depuis.elapsed().as_secs_f32() < delai {
+                        return true;
+                    }
+                    self.icebreaker_hors_village = None;
+                    tracing::info!("Icebreaker : fin du thème du village");
+                    audio.icebreaker_arreter_theme(theme.map_or(2.0, |t| t.fondu));
+                    self.icebreaker_theme = false;
+                    self.current_track = String::from("None");
+                    self.current_artist = String::from("None");
+                    // Un changement de lieu : Veloren choisit tout de suite une musique du lieu.
+                    self.last_site = SiteKindMeta::Void;
+                }
+                false
+            },
         }
     }
 
@@ -236,6 +323,12 @@ impl MusicMgr {
 
         if !audio.music_enabled() || audio.get_clock().is_none() || audio.get_clock_time().is_none()
         {
+            return;
+        }
+
+        // Icebreaker : au village, son thème en boucle
+        // (`assets/icebreaker/musique.ron`).
+        if self.icebreaker_maintain(audio, client) {
             return;
         }
 
@@ -813,6 +906,9 @@ impl Asset for SoundtrackCollection<SoundtrackItem> {
     }
 }
 
+/// Icebreaker : le joueur est-il au village (une ville, pas sous terre) ?
+fn icebreaker_au_village(site: SiteKindMeta) -> bool { matches!(site, SiteKindMeta::Settlement(_)) }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -839,5 +935,33 @@ mod tests {
                 _ => {},
             }
         }
+    }
+
+    // Icebreaker : le thème du village se règle et se charge (le fichier de la
+    // piste existe).
+    #[test]
+    fn icebreaker_musique_village() {
+        let musique = IcebreakerMusique::charger();
+        let theme = musique
+            .village
+            .expect("thème du village dans icebreaker/musique.ron");
+        assert!((0.0..=1.0).contains(&theme.volume));
+        assert!(theme.fondu >= 0.0);
+        assert!(theme.delai_sortie >= 0.0);
+        assert!(crate::audio::soundcache::icebreaker_piste_existe(
+            &theme.piste
+        ));
+        // kira sait la décoder (sinon le son vide de secours, statique).
+        assert!(matches!(
+            crate::audio::soundcache::load_ogg(&theme.piste, true),
+            crate::audio::soundcache::AnySoundData::Streaming(_)
+        ));
+        assert!(icebreaker_au_village(SiteKindMeta::Settlement(
+            SettlementKindMeta::Default
+        )));
+        assert!(!icebreaker_au_village(SiteKindMeta::Dungeon(
+            DungeonKindMeta::Gnarling
+        )));
+        assert!(!icebreaker_au_village(SiteKindMeta::Cave));
     }
 }

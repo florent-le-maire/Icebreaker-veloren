@@ -878,6 +878,56 @@ impl AudioFrontend {
         }
     }
 
+    /// Icebreaker : joue `piste` en boucle sur le canal `Icebreaker`, à
+    /// `volume` (de 0 à 1, sous le réglage « Musique »), avec un fondu de
+    /// `fondu` secondes ; les autres musiques s'éteignent en fondu. S'il joue
+    /// déjà (la scène refaite au passage de fantôme à personnage), il continue.
+    pub fn icebreaker_jouer_theme(&mut self, piste: &str, volume: f32, fondu: f32) {
+        let Some(inner) = &mut self.inner else {
+            return;
+        };
+        if let Some(channel) = inner
+            .channels
+            .get_music_channel(MusicChannelTag::Icebreaker)
+            && channel
+                .get_source()
+                .is_some_and(|s| s.state() == kira::sound::PlaybackState::Playing)
+        {
+            channel.set_volume(volume);
+            return;
+        }
+        for channel in &mut inner.channels.music {
+            channel.fade_out(fondu, None);
+        }
+        let now = inner.clock().time();
+        if inner
+            .channels
+            .get_music_channel(MusicChannelTag::Icebreaker)
+            .is_none()
+        {
+            inner.create_music_channel(MusicChannelTag::Icebreaker);
+        }
+        if let Some(channel) = inner
+            .channels
+            .get_music_channel(MusicChannelTag::Icebreaker)
+        {
+            channel.set_volume(volume);
+            channel.play(load_ogg(piste, true), now, Some(fondu), None);
+            channel.set_loop_data(true, LoopPoint::Start, LoopPoint::End);
+        }
+    }
+
+    /// Icebreaker : éteint le thème du village en `fondu` secondes.
+    pub fn icebreaker_arreter_theme(&mut self, fondu: f32) {
+        if let Some(channel) = self.inner.as_mut().and_then(|inner| {
+            inner
+                .channels
+                .get_music_channel(MusicChannelTag::Icebreaker)
+        }) {
+            channel.fade_out(fondu, None);
+        }
+    }
+
     /// Retrieves the current setting for master volume
     pub fn get_master_volume(&self) -> f32 { self.volumes.master }
 

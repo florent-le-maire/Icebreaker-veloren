@@ -1,0 +1,18 @@
+// Icebreaker : les musiques de nos lieux (voxygen/src/audio/music.rs, `icebreaker_maintain`).
+// Les fichiers (.ogg ou .mp3) vont dans assets/voxygen/audio/soundtrack/icebreaker/ ; `piste` est leur chemin d'asset
+// (points à la place des barres, sans extension).
+(
+    // Au village (la ville du monde de la campagne), ce morceau tourne en boucle à la place des musiques de Veloren ;
+    // en sortant (expédition, cave), il s'éteint en fondu. `None` : les musiques de ville de Veloren.
+    village: Some((
+        piste: "voxygen.audio.soundtrack.icebreaker.village",
+        titre: "Merry Go Round of Life (Violin & Piano Cover)",
+        // De 0 à 1, sous le réglage « Musique » du joueur : 0.3 = bas volume.
+        volume: 0.3,
+        // Secondes de fondu à l'entrée et à la sortie du village.
+        fondu: 3.0,
+        // Secondes hors du village avant que le morceau s'arrête (le passage de fantôme à personnage perd le lieu
+        // un instant : sans ce délai, le morceau repartirait du début).
+        delai_sortie: 2.0,
+    )),
+)

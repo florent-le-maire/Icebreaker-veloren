@@ -141,6 +141,9 @@ impl FileAsset for OggSound {
 
 impl FileAsset for StreamedOggSound {
     const EXTENSION: &'static str = "ogg";
+    // Icebreaker : une musique peut aussi être un MP3 (thème du village) ; kira
+    // reconnaît le format au contenu.
+    const EXTENSIONS: &'static [&'static str] = &["ogg", "mp3"];
 
     fn from_bytes(bytes: Cow<[u8]>) -> Result<Self, BoxedError> {
         // Store the raw file contents to be streamed later
@@ -185,4 +188,9 @@ pub fn load_ogg(specifier: &str, streamed: bool) -> AnySoundData {
             .0,
         )
     }
+}
+
+/// Icebreaker : la musique `specifier` (`.ogg` ou `.mp3`) se trouve-t-elle ?
+pub fn icebreaker_piste_existe(specifier: &str) -> bool {
+    StreamedOggSound::load(specifier).is_ok()
 }

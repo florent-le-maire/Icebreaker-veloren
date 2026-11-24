@@ -331,6 +331,8 @@ tâche pour ce qui casse.
 - [ ] Morceaux des filons selon la rareté (2026-11-24, `minerais.ron`) : cuivre, étain, fer, charbon par 19 blocs au
   plus, cobalt et argent par 7, or et gemmes un par un.
 - [ ] U.22 : pépites sur le dessus des filons (vues de loin, minées, tombées quand leur bloc cède).
+- [ ] Thème du village (2026-11-24, `musique.ron`) : il démarre au village, à bas volume, tourne en boucle, ne repart
+  pas du début au passage de fantôme à personnage et s'éteint en fondu au départ en expédition.
 
 **Village fixe (VF.1 à VF.5)**
 - [ ] Faire le tour du village : chaque PNJ à sa porte (la caisse dans la Guilde), maisons d'aplomb sur le sol
