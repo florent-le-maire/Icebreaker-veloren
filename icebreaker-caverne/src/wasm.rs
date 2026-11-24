@@ -48,8 +48,9 @@ pub extern "C" fn formes(n: usize) -> *mut u8 {
 pub extern "C" fn generer(graine: f64) -> u32 {
     let mut etat = ETAT.lock().unwrap();
     let caverne = generer_caverne(&Forme::depuis_valeurs(&etat.entree), graine as u64, &|_, _| 0, i32::MIN);
-    // Icebreaker U.21: the veins, placed as the game does (minerais.ron,
-    // grotte.ron), in the colour of their ore.
+    // Icebreaker U.21: the veins, placed by the function and the settings of
+    // the game (minerais.ron, grotte.ron), as cubes in the colour of their ore;
+    // not at the places of the game (no ground of the world, no inhabitants).
     let mut ores = std::collections::HashMap::new();
     let mut veines = 0;
     if let Ok(r) = filon::lire_reglages(MINERAIS, GROTTE) {

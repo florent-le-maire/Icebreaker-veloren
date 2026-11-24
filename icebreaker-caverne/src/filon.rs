@@ -338,9 +338,10 @@ pub fn poser(c: &Caverne, gisements: &[Gisement], niveaux: &[i32], par_zone: &[i
     poses
 }
 
-/// Icebreaker U.21: what the workshop page needs to place the veins as the
-/// game does, read from `minerais.ron` and `grotte.ron` (the rest of those
-/// files is left to the game).
+/// Icebreaker U.21: what the workshop page needs to place veins with the
+/// settings of the game, read from `minerais.ron` and `grotte.ron` (the rest of
+/// those files is left to the game). Its cave has neither the ground of the
+/// world nor the inhabitants of the game: same look and count, other places.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Reglages {
     pub gisements: Vec<Gisement>,
@@ -382,7 +383,7 @@ struct GrotteRon {
 struct FilonsRon {
     veines: VeinesRon,
     salle: SalleRon,
-    paliers: Vec<serde::de::IgnoredAny>,
+    niveaux: i32,
 }
 
 #[derive(serde::Deserialize)]
@@ -420,7 +421,7 @@ pub fn lire_reglages(minerais: &str, grotte: &str) -> Result<Reglages, String> {
         couleurs,
         par_zone: g.filons.veines.par_zone,
         salle: g.filons.salle.filons,
-        niveaux: g.filons.paliers.len().max(1) as i32,
+        niveaux: g.filons.niveaux.max(1),
     })
 }
 
@@ -487,9 +488,10 @@ mod tests {
         assert!(a.roche.iter().all(|p| surface(&g, *p)));
     }
 
-    /// Les réglages du jeu se lisent, et une grotte de l'atelier porte ses filons.
+    /// Les réglages du jeu se lisent, et une grotte de l'atelier porte des filons (posés par la même fonction que
+    /// le jeu, pas aux mêmes places : l'atelier n'a ni le relief du monde ni les habitants).
     #[test]
-    fn l_atelier_pose_les_filons_du_jeu() {
+    fn l_atelier_pose_des_filons_avec_les_reglages_du_jeu() {
         let r = lire_reglages(
             include_str!("../../assets/icebreaker/grottes/minerais.ron"),
             include_str!("../../assets/icebreaker/grottes/grotte.ron"),

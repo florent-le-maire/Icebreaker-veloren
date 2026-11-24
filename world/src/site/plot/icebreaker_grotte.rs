@@ -134,21 +134,6 @@ impl Structure for IcebreakerGrotte {
         frame.sample(move |pos| a(pos) && !a(pos - up)).fill(scatter(&look.sol, 920));
         let a = air.clone();
         frame.sample(move |pos| a(pos) && !a(pos + up)).fill(scatter(&look.plafond, 940));
-        // The ores (Icebreaker K.4): on the floor at the foot of a wall, off
-        // the trail, by the level of the zone.
-        let (a, cave) = (air.clone(), Arc::clone(&grotte));
-        let ores = Arc::clone(&grotte);
-        frame
-            .sample(move |pos| {
-                let p = pos - cave.mouth;
-                a(pos)
-                    && !a(pos - up)
-                    && cave.filons.strikes(pos)
-                    && !cave.in_safe_room(pos)
-                    && !cave.caverne.grille.sentier(p.x, p.y, p.z - 1)
-                    && !(a(pos + Vec3::unit_x()) && a(pos - Vec3::unit_x()) && a(pos + Vec3::unit_y()) && a(pos - Vec3::unit_y()))
-            })
-            .fill(Fill::Sampling(Arc::new(move |pos| ores.filons.ore(ores.level_at(pos), pos).map(Block::air))));
         // The crystals: tapered spikes of glowing rock.
         for (base, height) in &grotte.crystals {
             painter.line_two_radius(*base, *base + up * *height, 2.0, 0.5).fill(Fill::Block(glow));

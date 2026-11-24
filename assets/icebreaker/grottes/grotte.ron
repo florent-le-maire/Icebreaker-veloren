@@ -7,10 +7,6 @@
     emprise: 9,
     // Hauteur des cristaux luisants (K.3), en blocs (min, max).
     hauteur_cristaux: (3, 7),
-    // Pépites (K.4) : minerais en sprites minables (à la pioche) sur le sol au pied des parois, hors du sentier : chance
-    // par bloc (0 depuis U.19 : le minerai est en filons) ; minerais par niveau (nom de sprite, poids), de l'entrée au
-    // fond de la grotte. Le nombre de paliers donne le nombre de niveaux de la grotte (le niveau d'une zone vient de
-    // sa distance à l'entrée le long du sentier).
     // Habitants (K.5) : dans chaque zone, par_poche créatures (min, max) plus par_niveau par niveau ; dans chaque
     // niche, une créature avec la chance trous et un coffre (sprite coffre, butin de butin.ron selon le niveau, B.5)
     // avec la chance coffres ; le chef de la race (H.4) dans la zone la plus loin de l'entrée. part_solitaires (H.4) :
@@ -20,18 +16,15 @@
     population: (par_poche: (2, 3), par_niveau: 1, trous: 0.5, coffres: 0.3, coffre: "DungeonChest2", part_solitaires: 0.3, calme: 30),
     // U.19 : le minerai est en filons, des bandes de blocs prises dans la roche des parois (docs/icebreaker/design/
     // filons.md) ; leur minerai, leur forme et leur dureté : minerais.ron, à côté. Ici, combien : dans chaque zone,
-    // veines.par_zone filons (une valeur par niveau, la dernière pour les niveaux plus profonds).
+    // veines.par_zone filons (une valeur par niveau, la dernière pour les niveaux plus profonds). niveaux : le
+    // nombre de niveaux de la grotte, de l'entrée au fond (le niveau d'une zone vient de sa distance à l'entrée le
+    // long du sentier ; il choisit ses minerais, poids de minerais.ron, et son butin).
     filons: (
-        chance: 0.0,
+        niveaux: 3,
         veines: (par_zone: [1, 2, 3]),
         // U.15 : la salle au minerai, une par grotte, derrière un mur à casser (sa taille : minerai_rayon de
         // formes.ron) : ses parois et sa voûte portent ce nombre de filons (leurs minerais : salle, dans minerais.ron).
         salle: (filons: 14),
-        paliers: [
-            [("Copper", 3.0), ("Tin", 3.0), ("Iron", 2.0)],
-            [("Coal", 3.0), ("Cobalt", 2.0), ("Silver", 1.0)],
-            [("Gold", 3.0), ("Amethyst", 1.0), ("Ruby", 1.0), ("Sapphire", 1.0), ("Emerald", 1.0)],
-        ],
     ),
     // Ambiances (K.3) : une par grotte, tirée par la graine ou demandée (-Ambiance du lanceur, variable
     // ICEBREAKER_GROTTE_AMBIANCE). roche : couleur des parois ; lueur : couleur de la roche luisante et sa part dans

@@ -41,8 +41,9 @@ Le jeu doit rester lançable après chaque tâche.
 - **Destruction dans la grotte (2026-11-22)** : la pioche casse tout, dans la grotte et le donjon généré, contre de
   l'énergie (plus ou moins de coups selon la matière, `destruction.ron`) ; des murs de roche bouchent une part des
   passages de la grotte ; le minerai est en filons le long des parois, et une salle au minerai attend derrière un
-  mur (U.13 à U.16, `PLAN-PLAYTEST.md`). Vérifié en test et par le contrôle ; rien n'est vu en jeu. Le protocole ne
-  change pas, mais client et serveur sont à recompiler ensemble (la visée de la pioche).
+  mur (U.13 à U.16, `PLAN-PLAYTEST.md`). Depuis le 2026-11-24, chaque bloc de filon est un sprite à nous, au modèle
+  de son minerai (U.23 à U.25, `design/filons.md`) : vu dans le vrai client, pas encore miné en jeu. Client et
+  serveur sont à recompiler ensemble (nouveaux sprites).
 - **Jalon A (2026-11-11)** : armes, classes et compétences (`PLAN-CLASSES.md`, `decisions/0020`) codé pour les trois
   classes : jeux d'armes, 2 compétences d'arme + ultime + passif, recharges, niveaux 1 à 5, lot tiré à la charrette,
   maîtrise en expédition, salle d'armes (7e bâtiment). Vérifié en test, au client texte (de bout en bout en
@@ -330,7 +331,8 @@ tâche pour ce qui casse.
 
 - [ ] Morceaux des filons selon la rareté (2026-11-24, `minerais.ron`) : cuivre, étain, fer, charbon par 19 blocs au
   plus, cobalt et argent par 7, or et gemmes un par un.
-- [ ] U.22 : pépites sur le dessus des filons (vues de loin, minées, tombées quand leur bloc cède).
+- [ ] U.24 : les filons en modèles voxel : les voir au sol, en paroi et au plafond (métal, charbon, gemme), de près
+  et de loin ; en miner un (morceau, objet donné, énergie) ; marcher dessus ; une explosion ne les emporte pas.
 - [ ] Thème du village (2026-11-24, `musique.ron`) : il démarre au village, à bas volume, tourne en boucle, ne repart
   pas du début au passage de fantôme à personnage et s'éteint en fondu au départ en expédition.
 
@@ -483,8 +485,7 @@ tâche pour ce qui casse.
 - U.13 : dans une grotte, suivre le sentier jusqu'à un mur (la galerie s'arrête sur de la roche), le percer à la
   pioche et retrouver le sentier derrière ; se perd-on à le chercher ? Dans l'atelier, les billes violettes et les
   curseurs « Murs à casser ».
-- U.14 : les filons se voient-ils de loin le long des parois, sont-ils assez longs, les miner ; reste-t-il trop ou
-  trop peu de pépites isolées.
+- U.14 : les filons se voient-ils de loin le long des parois, sont-ils assez longs, les miner.
 - U.15 : trouver la salle au minerai (au bout d'une galerie murée, bille dorée dans l'atelier pour la même graine),
   percer son mur, la miner ; est-elle assez riche, trop ?
 - U.4 : descendre dans une grotte de chaque forme (`donjon -Site Grotte -Profil gouffre`, `plaine`, `chaos`, `mixte`) :

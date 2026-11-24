@@ -6,8 +6,7 @@
 //! the ores, the inhabitants, the chests.
 
 use super::dungeon::settings::sprite_kind;
-use crate::util::RandomField;
-use common::{comp::item::tool::ToolKind, terrain::SpriteKind, vol::RectVolSize};
+use common::vol::RectVolSize;
 use hashbrown::HashSet;
 use icebreaker_caverne::{
     Caverne, Forme, Formes, Genre,
@@ -46,16 +45,14 @@ pub struct Settings {
     pub formes: Option<Formes>,
 }
 
-/// The ores (Icebreaker K.4): mineable sprites at the foot of the walls,
-/// richer as one goes further in the cave.
+/// The veins of ore (Icebreaker U.19, `design/filons.md`): how many; their ore,
+/// shape and hardness are in `minerais.ron`.
 #[derive(Clone, Debug, Deserialize)]
 pub struct VeinSettings {
-    /// Chance of an ore on each floor block at the foot of a wall.
-    pub chance: f32,
-    /// The ores of each level (sprite name, weight), from the entrance to
-    /// the end of the cave.
-    pub paliers: Vec<Vec<(String, f32)>>,
-    /// Icebreaker U.14: the veins, tight trails of one ore along the foot of a wall.
+    /// The levels of the cave, from the entrance to its end: the level of a
+    /// zone picks its ores (`poids` in `minerais.ron`) and its loot.
+    pub niveaux: i32,
+    /// How many veins a zone holds.
     pub veines: VeineSettings,
     /// Icebreaker U.15: the ore room.
     pub salle: SalleSettings,
@@ -96,40 +93,6 @@ impl Vein {
     pub fn blocks(&self) -> impl Iterator<Item = &Vec3<i32>> { self.rock.iter().chain(&self.relief) }
 
     pub fn len(&self) -> usize { self.rock.len() + self.relief.len() }
-}
-
-impl VeinSettings {
-    /// The ores of a zone at `level`.
-    pub fn tier(&self, level: i32) -> &[(String, f32)] {
-        let i = (level.max(0) as usize).min(self.paliers.len().saturating_sub(1));
-        self.paliers.get(i).map(|t| t.as_slice()).unwrap_or(&[])
-    }
-
-    /// Whether the draw (by position: the same every time) puts an ore at `pos`.
-    pub fn strikes(&self, pos: Vec3<i32>) -> bool { RandomField::new(950).chance(pos, self.chance) }
-
-    /// The ore at `pos`, a floor block at the foot of a wall of a zone at
-    /// `level`, if the draw puts one there.
-    pub fn ore(&self, level: i32, pos: Vec3<i32>) -> Option<SpriteKind> {
-        if !self.strikes(pos) {
-            return None;
-        }
-        self.draw(level, RandomField::new(951).get_f32(pos))
-    }
-
-    /// An ore of `level`, by its weight; `draw` is from 0 to 1.
-    pub fn draw(&self, level: i32, draw: f32) -> Option<SpriteKind> {
-        let tier = self.tier(level);
-        let total: f32 = tier.iter().map(|(_, w)| w).sum();
-        let mut draw = draw * total;
-        for (name, weight) in tier {
-            if draw < *weight {
-                return sprite_kind(name);
-            }
-            draw -= weight;
-        }
-        None
-    }
 }
 
 /// The inhabitants (Icebreaker K.5): how many, and where the chests lie.
@@ -188,8 +151,8 @@ impl Settings {
             }
         }
         let veins = &settings.filons;
-        if !(0.0..=1.0).contains(&veins.chance) || veins.paliers.is_empty() {
-            errors.push("filons : chance entre 0 et 1, au moins un palier".into());
+        if veins.niveaux < 1 {
+            errors.push("filons : niveaux ≥ 1".into());
         }
         let v = &veins.veines;
         if v.par_zone.is_empty() || v.par_zone.iter().any(|n| *n < 0) {
@@ -197,18 +160,6 @@ impl Settings {
         }
         if veins.salle.filons < 0 {
             errors.push("filons.salle : filons ≥ 0".into());
-        }
-        for (sprite, weight) in veins.paliers.iter().flatten() {
-            match sprite_kind(sprite) {
-                None => errors.push(format!("filons : sprite inconnu « {sprite} »")),
-                Some(kind) if kind.mine_tool() != Some(ToolKind::Pick) => {
-                    errors.push(format!("filons : « {sprite} » ne se mine pas à la pioche"))
-                },
-                _ => {},
-            }
-            if *weight <= 0.0 {
-                errors.push(format!("filons : poids de « {sprite} » > 0"));
-            }
         }
         if settings.ambiances.is_empty() {
             errors.push("ambiances : au moins une".into());
@@ -420,7 +371,7 @@ pub fn generate(
 
     // Levels: by how far the zone is along the trail; a niche has the level
     // of the zone it opens on.
-    let niveaux = settings.filons.paliers.len().max(1) as i32;
+    let niveaux = settings.filons.niveaux.max(1);
     let levels: Vec<i32> = filon::niveaux_des_zones(&caverne, niveaux);
 
     // Inhabitants (K.5): the chief at the end of the cave; creatures in every
@@ -680,27 +631,13 @@ mod tests {
         assert!(settings.ambiances.contains_key(&generate(&settings, 11, MOUTH, Some("lune"), None, &|_| MOUTH.z).ambiance));
     }
 
-    #[test]
-    fn ores_get_richer_with_depth() {
-        let settings = Settings::load().unwrap();
-        let veins = &settings.filons;
-        let found = |level: i32| -> std::collections::HashSet<SpriteKind> {
-            (0..100).filter_map(|k| veins.draw(level, k as f32 / 100.0)).collect()
-        };
-        let (top, bottom) = (found(0), found(veins.paliers.len() as i32 - 1));
-        assert!(!top.is_empty() && !bottom.is_empty(), "pas de filon");
-        assert!(top.is_disjoint(&bottom), "les mêmes minerais en haut et au fond : {top:?} / {bottom:?}");
-        assert!(bottom.contains(&SpriteKind::Gold) && !top.contains(&SpriteKind::Gold), "l'or n'est pas au fond");
-    }
-
     /// Icebreaker U.19: from the second level on, every zone has a vein: a
     /// band of ore blocks in the rock of a wall, bumps in the air, never on
-    /// the trail nor in the safe room; no lone nuggets any more.
+    /// the trail nor in the safe room.
     #[test]
     fn veins_lie_in_the_walls() {
         let settings = Settings::load().unwrap();
         let minerais = common::icebreaker_minerais::minerais();
-        assert_eq!(settings.filons.chance, 0.0, "pépites : {}", settings.filons.chance);
         let mut ores = std::collections::HashSet::new();
         for seed in 0..6 {
             let grotte = cave(&settings, seed);

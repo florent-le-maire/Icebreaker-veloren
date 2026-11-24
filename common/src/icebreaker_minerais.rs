@@ -52,12 +52,6 @@ impl Minerai {
     /// Un bloc de ce minerai.
     pub fn bloc(&self) -> Block { Block::air(self.sprite) }
 
-    /// Son poids au niveau `niveau`.
-    pub fn poids_au(&self, niveau: i32) -> f32 {
-        let i = (niveau.max(0) as usize).min(self.poids.len().saturating_sub(1));
-        self.poids.get(i).copied().unwrap_or(0.0)
-    }
-
     /// La destruction (`icebreaker_destruction`) d'un bloc de ce minerai.
     pub fn matiere(&self) -> crate::icebreaker_destruction::Matiere {
         crate::icebreaker_destruction::Matiere { coups: self.coups, energie: self.energie }
@@ -142,34 +136,6 @@ impl Minerais {
         let sprite = block.get_sprite().filter(|s| *s != SpriteKind::Empty)?;
         self.liste.iter().enumerate().find(|(_, (_, m))| m.sprite == sprite).map(|(i, (_, m))| (i, m))
     }
-
-    /// Tire un minerai selon les poids `poids` (un par minerai) ; `tirage` va de 0 à 1.
-    fn tirer_par(&self, tirage: f32, poids: impl Fn(&Minerai) -> f32) -> Option<usize> {
-        let total: f32 = self.liste.iter().map(|(_, m)| poids(m)).sum();
-        if total <= 0.0 {
-            return None;
-        }
-        let mut reste = tirage.clamp(0.0, 1.0) * total;
-        let mut dernier = None;
-        for (i, (_, m)) in self.liste.iter().enumerate() {
-            let p = poids(m);
-            if p <= 0.0 {
-                continue;
-            }
-            if reste < p {
-                return Some(i);
-            }
-            reste -= p;
-            dernier = Some(i);
-        }
-        dernier
-    }
-
-    /// Le minerai d'un filon des zones au niveau `niveau`.
-    pub fn tirer(&self, niveau: i32, tirage: f32) -> Option<usize> { self.tirer_par(tirage, |m| m.poids_au(niveau)) }
-
-    /// Le minerai d'un filon de la salle au minerai.
-    pub fn tirer_salle(&self, tirage: f32) -> Option<usize> { self.tirer_par(tirage, |m| m.salle) }
 }
 
 /// Les minerais du fichier ; s'il est illisible, aucun (pas de filon, rien à reconnaître).
@@ -221,21 +187,16 @@ mod tests {
         assert!(m.de_bloc(&Block::air(SpriteKind::Iron)).is_none());
     }
 
-    /// Plus on descend, plus c'est rare et cher : l'or n'est qu'au fond et coûte plus d'énergie que le cuivre.
+    /// Plus on descend, plus c'est rare et cher : l'or n'est qu'au fond et coûte plus d'énergie que le cuivre
+    /// (le tirage par ces poids : `icebreaker_caverne::filon`).
     #[test]
     fn les_filons_sont_plus_riches_au_fond() {
         let m = fichier();
-        let trouves = |niveau: i32| -> std::collections::BTreeSet<&str> {
-            (0..100).filter_map(|k| m.tirer(niveau, k as f32 / 100.0)).map(|i| m.liste()[i].0.as_str()).collect()
-        };
-        let (haut, fond) = (trouves(0), trouves(2));
-        assert!(haut.contains("cuivre") && !haut.contains("or"), "{haut:?}");
-        assert!(fond.contains("or"), "{fond:?}");
-        // Au-delà du dernier niveau, le dernier poids.
-        assert_eq!(trouves(9), fond);
         let par_nom = |n: &str| &m.liste().iter().find(|(nom, _)| nom == n).unwrap().1;
-        assert!(par_nom("or").energie > par_nom("cuivre").energie);
-        assert!(m.tirer_salle(0.0).is_some() && m.tirer_salle(0.999).is_some());
+        let (cuivre, or) = (par_nom("cuivre"), par_nom("or"));
+        assert!(cuivre.poids[0] > 0.0 && or.poids[0] == 0.0);
+        assert!(*or.poids.last().unwrap() > 0.0);
+        assert!(or.energie > cuivre.energie);
     }
 
     #[test]

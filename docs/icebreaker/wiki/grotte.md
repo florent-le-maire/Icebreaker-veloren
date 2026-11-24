@@ -27,9 +27,8 @@ cle = "par_niveau"
 nom = "Créatures en plus par niveau"
 
 [[chiffre]]
-cle = "chance"
-nom = "Chance d'une pépite isolée par bloc (0 : tout le minerai est en filons)"
-pourcent = true
+cle = "niveaux"
+nom = "Niveaux de la grotte, de l'entrée au fond (minerais et butin plus riches)"
 +++
 
 ## La règle
@@ -55,18 +54,19 @@ Dans les parois, des **filons** à miner à la pioche (chaque personnage en a un
 une bande de minerai prise dans la roche, de la couleur de son minerai, qui serpente le long de la paroi et ressort
 çà et là d'un bloc. Elle part **morceau par morceau, là où l'on tape** : chaque bloc a la dureté de son minerai et
 donne son minerai en cédant ; les minerais courants (cuivre, étain, fer, charbon) partent par gros morceaux, le
-cobalt et l'argent par petits, l'or et les gemmes bloc par bloc. Sur le dessus du filon, des pépites de son minerai le signalent de loin ; elles
-se minent aussi. En creusant la roche autour, le filon reste. Un à
+cobalt et l'argent par petits, l'or et les gemmes bloc par bloc. Chaque bloc de filon a le modèle de son minerai : une gangue bosselée à pépites brillantes pour les métaux,
+des blocs noirs à facettes pour le charbon, des cristaux qui luisent pour les gemmes. En creusant la roche autour, le filon reste. Un à
 trois filons par zone ; cuivre et étain près de l'entrée, or et gemmes au fond. Chaque minerai se règle à part
-(`minerais.ron` : couleur, dureté, ce qu'il donne, longueur, épaisseur, profondeur, sinuosité, relief, où il
-apparaît) ; l'atelier des grottes montre les filons en couleur.
+(`minerais.ron` : dureté, ce qu'il donne, longueur, épaisseur, profondeur, sinuosité, relief, où il
+apparaît) ; l'atelier des grottes montre des filons en cubes de couleur, posés comme dans le jeu mais pas aux
+mêmes places.
 
 Une partie des passages entre deux zones est **bouchée par la roche** : la galerie s'arrête, il faut creuser. Dans la
 grotte, la pioche casse tout, bloc après bloc, contre de l'énergie ; à sec, on attend. La salle sûre où l'on arrive
 s'ouvre toujours sur sa zone.
 
-Chaque grotte cache une **salle au minerai**, au bout d'une galerie murée : ses parois couvertes de filons, du fer et du
-cuivre surtout, un peu d'or, de cobalt et de gemmes. Personne ne la garde : son mur suffit. Coffres et créatures donnent le butin de leur niveau (`butin.ron`), le chef bien plus.
+Chaque grotte cache une **salle au minerai**, au bout d'une galerie murée : ses parois couvertes de filons : fer, cuivre,
+étain et charbon surtout, de l'argent, un peu d'or, de cobalt et de gemmes. Personne ne la garde : son mur suffit. Coffres et créatures donnent le butin de leur niveau (`butin.ron`), le chef bien plus.
 
 ## Régler la forme
 
@@ -92,3 +92,5 @@ Les captures ci-dessous datent de la première forme (jalon K) ; elles sont à r
 ![La bouche de la grotte en surface et le boyau d’entrée](images/grotte-bouche.png)
 
 ![Une poche d’ambiance « cristaux », avec un filon au pied de la paroi (avant U.19 : des sprites)](images/grotte-poche.png)
+
+![Debout sur un filon de cuivre : chaque bloc du filon a le modèle de son minerai (U.24)](images/grotte-filon.png)
