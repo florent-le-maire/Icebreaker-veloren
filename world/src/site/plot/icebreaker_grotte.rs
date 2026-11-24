@@ -161,6 +161,26 @@ impl Structure for IcebreakerGrotte {
         frame
             .sample(move |pos| veins.contains_key(&pos))
             .fill(Fill::Sampling(Arc::new(move |pos| Some(minerais.get(*ores.get(&pos)?)?.bloc()))));
+        // Icebreaker U.22: nuggets of Veloren on top of the veins (`pepite`,
+        // `pepites` of `minerais.ron`), in the air just above a block of ore,
+        // off the trail and out of the safe room.
+        let (a, cave, ores) = (air.clone(), Arc::clone(&grotte), Arc::clone(&grotte.vein_blocks));
+        frame
+            .sample(move |pos| {
+                let p = pos - cave.mouth;
+                a(pos)
+                    && !cave.vein_blocks.contains_key(&pos)
+                    && cave.vein_blocks.contains_key(&(pos - up))
+                    && !cave.in_safe_room(pos)
+                    && !cave.caverne.grille.sentier(p.x, p.y, p.z - 1)
+            })
+            .fill(Fill::Sampling(Arc::new(move |pos| {
+                let minerai = minerais.get(*ores.get(&(pos - up))?)?;
+                RandomField::new(960)
+                    .chance(pos, minerai.pepites)
+                    .then(|| minerai.sprite_pepite().map(Block::air))
+                    .flatten()
+            })));
         // The inhabitants and the chests (Icebreaker K.5). The painter's area
         // includes its far edge, shared with the next chunk: spawn there only
         // once.

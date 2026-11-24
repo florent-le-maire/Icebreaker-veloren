@@ -21,6 +21,11 @@ de minerai posés au pied d'une paroi, chacun ramassé d'un coup : un tas de pé
   distance du bloc visé partent avec lui et donnent aussi : les courants (cuivre, étain, fer, charbon) par 19 blocs au
   plus (1,5), les moyens (cobalt, argent) par 7 (1), les rares (or, gemmes) bloc par bloc (Flo, 2026-11-24). Le cône de U.17 n'emporte jamais un bloc de minerai : quand
   on creuse la roche autour, le filon reste et se dégage.
+- **Des pépites sur le filon** (U.22, Flo, 2026-11-24) : pour qu'il ne soit pas qu'une bande de cubes, une part
+  (`pepites`) des blocs du filon tournés vers le haut porte la pépite de Veloren de son minerai (`pepite`), hors du
+  sentier et de la salle sûre. Elle se mine comme les pépites de Veloren (minerai en plus) et tombe, en donnant ce
+  qu'elle donne, quand le bloc qui la porte cède. Pas sur les parois verticales ni au plafond : ces sprites n'ont pas
+  d'orientation.
 - **Tout se règle par minerai** dans `assets/icebreaker/grottes/minerais.ron` : couleur, lueur, coups, énergie,
   objet et quantité par bloc, morceau, forme du filon (longueur, épaisseur, profondeur, sinuosité, relief), poids
   par niveau de la grotte (où et combien il apparaît), poids dans la salle au minerai.

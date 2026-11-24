@@ -231,6 +231,10 @@ pris dans la roche, cassés morceau par morceau, réglables minerai par minerai.
 - [x] **U.20 Miner un filon** — dureté du minerai, l'objet qui tombe quand un bloc cède, le morceau ; le cône de U.17
   laisse le minerai. Testé : tests de `veloren-common`, serveur de grotte lancé. Miner à 1 coup (0e392e9026). Vu en jeu (Flo, 2026-11-23). — 2d6cb776d2
 - [x] **U.21 L'atelier et le wiki** — les filons sur la page de l'atelier des grottes, la fiche `grotte.md` ; la pose des filons vit dans `icebreaker-caverne`, la même au jeu et à l'atelier. Testé : capture d'ensemble de l'atelier, wiki régénéré. Vu en jeu (Flo, 2026-11-23). — b09c1b0cd2
+- [x] **U.22 Des pépites sur les filons** — demandé par Flo (2026-11-24) : la pépite de Veloren de son minerai
+  (`pepite`, `pepites` de `minerais.ron`) sur une part des blocs du filon tournés vers le haut, hors du sentier ; elle
+  se mine comme les pépites de Veloren et tombe avec son bloc. Testé : tests de `veloren-common`, serveur de grotte
+  lancé. Pas vérifié en jeu : les pépites vues sur un filon, minées, tombées avec leur bloc. — HASH_U22
 
 - [x] **U.17 Un éclat en cône** — demandé par Flo (2026-11-23) : quand le bloc visé cède, un cône part avec lui, du corps
   de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : demi-largeur 1,9, demi-hauteur 1,4, pointe à 5 blocs ; boyau de 3 de large), un

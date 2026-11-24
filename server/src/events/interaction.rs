@@ -540,34 +540,59 @@ impl ServerEvent for MineBlockEvent {
                                     else {
                                         continue;
                                     };
+                                    let mut lacher: Vec<(Vec3<i32>, comp::Item)> = Vec::new();
                                     let (min, max) = minerai.quantite;
                                     let n = rng.random_range(min..=max.max(min));
-                                    let Ok(mut item) = comp::Item::new_from_asset(&minerai.objet) else {
-                                        tracing::error!("Icebreaker : objet inconnu {}", minerai.objet);
-                                        continue;
-                                    };
-                                    if n == 0 || item.set_amount(n).is_err() {
-                                        continue;
+                                    match comp::Item::new_from_asset(&minerai.objet) {
+                                        Ok(mut item) => {
+                                            if n > 0 && item.set_amount(n).is_ok() {
+                                                lacher.push((pos, item));
+                                            }
+                                        },
+                                        Err(_) => {
+                                            tracing::error!("Icebreaker : objet inconnu {}", minerai.objet)
+                                        },
                                     }
-                                    let loot_owner = uids.get(ev.entity).copied().map(|uid| {
-                                        comp::LootOwner::new(
-                                            LootOwnerKind::Player(uid),
-                                            false,
-                                            ONWERSHIP_TIMEOUT_FAST,
-                                        )
-                                    });
-                                    create_item_drop_emitter.emit(CreateItemDropEvent {
-                                        pos: comp::Pos(pos.map(|e| e as f32) + Vec3::broadcast(0.5)),
-                                        vel: comp::Vel(
-                                            Vec2::unit_x()
-                                                .rotated_z(rng.random::<f32>() * PI * 2.0)
-                                                .mul(2.0)
-                                                .with_z(rng.random_range(3.0..6.0)),
-                                        ),
-                                        ori: comp::Ori::from(Dir::random_2d(&mut rng)),
-                                        item: comp::PickupItem::new(item, *program_time, false),
-                                        loot_owner,
-                                    });
+                                    // Icebreaker U.22 : la pépite posée sur le bloc tombe avec lui et
+                                    // donne ce qu'elle donne à la pioche.
+                                    let dessus = pos + Vec3::unit_z();
+                                    if let Some(pepite) = terrain.get(dessus).ok().copied().filter(|b| {
+                                        b.get_sprite().and_then(|s| s.mine_tool())
+                                            == Some(comp::tool::ToolKind::Pick)
+                                    }) && block_change.can_set_block(dessus)
+                                    {
+                                        block_change.set(dessus, pepite.into_vacant());
+                                        if let Some(items) = comp::Item::try_reclaim_from_block(
+                                            pepite,
+                                            terrain.sprite_cfg_at(dessus),
+                                        ) {
+                                            lacher.extend(
+                                                flatten_counted_items(&items, &ability_map, &msm)
+                                                    .map(|item| (dessus, item)),
+                                            );
+                                        }
+                                    }
+                                    for (pos, item) in lacher {
+                                        let loot_owner = uids.get(ev.entity).copied().map(|uid| {
+                                            comp::LootOwner::new(
+                                                LootOwnerKind::Player(uid),
+                                                false,
+                                                ONWERSHIP_TIMEOUT_FAST,
+                                            )
+                                        });
+                                        create_item_drop_emitter.emit(CreateItemDropEvent {
+                                            pos: comp::Pos(pos.map(|e| e as f32) + Vec3::broadcast(0.5)),
+                                            vel: comp::Vel(
+                                                Vec2::unit_x()
+                                                    .rotated_z(rng.random::<f32>() * PI * 2.0)
+                                                    .mul(2.0)
+                                                    .with_z(rng.random_range(3.0..6.0)),
+                                            ),
+                                            ori: comp::Ori::from(Dir::random_2d(&mut rng)),
+                                            item: comp::PickupItem::new(item, *program_time, false),
+                                            loot_owner,
+                                        });
+                                    }
                                 }
                                 // Un seul bruit et une seule gerbe d'éclats, au bloc visé.
                                 outcome_emitter.emit(Outcome::BreakBlock {

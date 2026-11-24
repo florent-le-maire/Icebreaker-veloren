@@ -5,7 +5,7 @@
 
 use crate::{
     assets::{AssetExt, Ron},
-    terrain::{Block, BlockKind},
+    terrain::{Block, BlockKind, SpriteKind},
 };
 use serde::Deserialize;
 use std::{collections::BTreeMap, sync::LazyLock};
@@ -45,6 +45,12 @@ pub struct Minerai {
     pub poids: Vec<f32>,
     /// Poids au tirage des filons de la salle au minerai.
     pub salle: f32,
+    /// Icebreaker U.22 : la pépite de Veloren (nom de sprite minable à la pioche) posée sur le dessus
+    /// des blocs du filon, et la part de ces blocs qui en portent une (0 : aucune).
+    #[serde(default)]
+    pub pepite: Option<String>,
+    #[serde(default)]
+    pub pepites: f32,
 }
 
 impl Minerai {
@@ -60,6 +66,9 @@ impl Minerai {
         let i = (niveau.max(0) as usize).min(self.poids.len().saturating_sub(1));
         self.poids.get(i).copied().unwrap_or(0.0)
     }
+
+    /// U.22 : le sprite de sa pépite, s'il en a une.
+    pub fn sprite_pepite(&self) -> Option<SpriteKind> { ron::from_str(self.pepite.as_deref()?).ok() }
 
     /// La destruction (`icebreaker_destruction`) d'un bloc de ce minerai.
     pub fn matiere(&self) -> crate::icebreaker_destruction::Matiere {
@@ -93,6 +102,14 @@ impl Minerais {
             }
             if m.morceau < 0.0 {
                 faux("morceau positif ou nul");
+            }
+            if let Some(nom) = &m.pepite
+                && m.sprite_pepite().and_then(|s| s.mine_tool()) != Some(crate::comp::tool::ToolKind::Pick)
+            {
+                faux(&format!("pépite « {nom} » : pas un sprite qui se mine à la pioche"));
+            }
+            if !(0.0..=1.0).contains(&m.pepites) {
+                faux("pepites entre 0 et 1");
             }
             if f.longueur.0 < 1 || f.longueur.1 < f.longueur.0 || f.epaisseur.0 < 1 || f.epaisseur.1 < f.epaisseur.0 {
                 faux("filon : longueur et epaisseur (min, max) avec 1 ≤ min ≤ max");
@@ -205,6 +222,16 @@ mod tests {
         // Chaque minerai donne un objet qui existe.
         for (nom, minerai) in m.liste() {
             crate::comp::Item::new_from_asset(&minerai.objet).unwrap_or_else(|e| panic!("{nom} : {e:?}"));
+            // U.22 : chacun a sa pépite, qui donne le même minerai que son filon.
+            let pepite = minerai.sprite_pepite().unwrap_or_else(|| panic!("{nom} : pas de pépite"));
+            assert!(minerai.pepites > 0.0, "{nom}");
+            let donne = crate::comp::Item::try_reclaim_from_block(Block::air(pepite), None)
+                .unwrap_or_else(|| panic!("{nom} : la pépite ne donne rien"));
+            assert!(
+                donne.iter().any(|(_, item)| item.item_definition_id().itemdef_id() == Some(minerai.objet.as_str())),
+                "{nom} : la pépite ne donne pas {}",
+                minerai.objet
+            );
         }
     }
 
@@ -251,6 +278,8 @@ mod tests {
             ("sinuosite: 0.5", "sinuosite: 1.5"),
             ("epaisseur: (1, 2)", "epaisseur: (0, 2)"),
             ("poids: [1.0]", "poids: []"),
+            ("salle: 1.0) }", "salle: 1.0, pepite: Some(\"Bones\"), pepites: 0.5) }"),
+            ("salle: 1.0) }", "salle: 1.0, pepite: Some(\"Copper\"), pepites: 1.5) }"),
         ] {
             assert!(Minerais::lire(&bon.replace(de, vers)).is_err(), "{vers}");
         }
