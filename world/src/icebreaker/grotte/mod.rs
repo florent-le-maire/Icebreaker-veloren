@@ -198,14 +198,6 @@ impl Settings {
         if veins.salle.filons < 0 {
             errors.push("filons.salle : filons ≥ 0".into());
         }
-        // Icebreaker U.19: an ore is known by its colour, which no rock of a mood has.
-        for (name, ambiance) in &settings.ambiances {
-            for (ore, m) in common::icebreaker_minerais::minerais().liste() {
-                if m.couleur == ambiance.roche || m.couleur == ambiance.lueur {
-                    errors.push(format!("ambiances.{name} : la couleur de sa roche est celle du minerai « {ore} »"));
-                }
-            }
-        }
         for (sprite, weight) in veins.paliers.iter().flatten() {
             match sprite_kind(sprite) {
                 None => errors.push(format!("filons : sprite inconnu « {sprite} »")),
@@ -590,7 +582,7 @@ pub fn generate(
         seed,
         summary: format!(
             "grotte {ambiance}, forme {profil}, race {}, graine {seed} : {} ; {} habitant(s), {} filon(s) dont {} dans la salle au minerai ({} blocs de minerai), {} cristal(aux), {} coffre(s) \
-             ({} par palier), fond en {:?}",
+             ({} par palier), fond en {:?}, un filon en {:?}",
             species.as_deref().unwrap_or("des fichiers"),
             caverne.resume,
             inhabitants.len(),
@@ -601,6 +593,8 @@ pub fn generate(
             chests.len(),
             chests_by_tier.join(" / "),
             monde(zones[fond].ancre),
+            // Icebreaker U.24 : où aller voir un filon (une bosse dans le vide, sinon un bloc dans la roche).
+            veins.iter().find_map(|v| v.relief.first()).or_else(|| veins.iter().find_map(|v| v.rock.first())),
         ),
         levels,
         niveaux,

@@ -353,7 +353,7 @@ lazy_static! {
 /// Icebreaker U.16 : ce qu'un coup de pioche fait à un bloc.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum IcebreakerCreuse {
-    /// Pas notre affaire (sprite de minerai, roche tendre hors de nos lieux) : règles de Veloren.
+    /// Pas notre affaire (pépite de Veloren, roche tendre hors de nos lieux) : règles de Veloren.
     Veloren,
     /// Le coup ne fait rien (hors d'une Grotte ou d'un donjon généré, ou à sec).
     Rien,
@@ -378,12 +378,16 @@ fn icebreaker_creuser(
         icebreaker_destruction::{Coup, coup, destruction, se_creuse},
         terrain::BlockKind,
     };
-    if !se_creuse(&block) {
+    // Icebreaker U.24 : un bloc de filon est un sprite à nous, qui suit nos règles comme la roche.
+    let filon = common::icebreaker_minerais::minerais().de_bloc(&block).is_some();
+    if !filon && !se_creuse(&block) {
         return IcebreakerCreuse::Veloren;
     }
     if !world::icebreaker::se_creuse_ici(world, index, ev.pos.xy()) {
         // Ailleurs, seules les matières que Veloren casse déjà.
-        return if matches!(
+        return if filon {
+            IcebreakerCreuse::Rien
+        } else if matches!(
             block.kind(),
             BlockKind::WeakRock | BlockKind::Ice | BlockKind::GlowingWeakRock
         ) {
@@ -553,25 +557,6 @@ impl ServerEvent for MineBlockEvent {
                                             tracing::error!("Icebreaker : objet inconnu {}", minerai.objet)
                                         },
                                     }
-                                    // Icebreaker U.22 : la pépite posée sur le bloc tombe avec lui et
-                                    // donne ce qu'elle donne à la pioche.
-                                    let dessus = pos + Vec3::unit_z();
-                                    if let Some(pepite) = terrain.get(dessus).ok().copied().filter(|b| {
-                                        b.get_sprite().and_then(|s| s.mine_tool())
-                                            == Some(comp::tool::ToolKind::Pick)
-                                    }) && block_change.can_set_block(dessus)
-                                    {
-                                        block_change.set(dessus, pepite.into_vacant());
-                                        if let Some(items) = comp::Item::try_reclaim_from_block(
-                                            pepite,
-                                            terrain.sprite_cfg_at(dessus),
-                                        ) {
-                                            lacher.extend(
-                                                flatten_counted_items(&items, &ability_map, &msm)
-                                                    .map(|item| (dessus, item)),
-                                            );
-                                        }
-                                    }
                                     for (pos, item) in lacher {
                                         let loot_owner = uids.get(ev.entity).copied().map(|uid| {
                                             comp::LootOwner::new(
@@ -594,11 +579,15 @@ impl ServerEvent for MineBlockEvent {
                                         });
                                     }
                                 }
-                                // Un seul bruit et une seule gerbe d'éclats, au bloc visé.
+                                // Un seul bruit et une seule gerbe d'éclats, au bloc visé ; un filon
+                                // (U.24, un sprite sans couleur) éclate de la couleur de son minerai.
+                                let couleur = common::icebreaker_minerais::minerais()
+                                    .de_bloc(&block)
+                                    .map(|(_, m)| Rgb::new(m.couleur.0, m.couleur.1, m.couleur.2));
                                 outcome_emitter.emit(Outcome::BreakBlock {
                                     pos: ev.pos,
                                     tool: ev.tool,
-                                    color: block.get_color(),
+                                    color: couleur.or(block.get_color()),
                                 });
                             } else {
                                 outcome_emitter.emit(Outcome::DamagedBlock {

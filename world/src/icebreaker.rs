@@ -790,14 +790,6 @@ pub fn check_generated_grotte(
             problems.push(format!("coffre en {pos:?} : butin {table:?} au lieu de {expected:?}"));
         }
     }
-    // The lone nuggets (K.4): one stands on them (a mineable sprite is solid).
-    let mut lone = 0;
-    for p in &seen {
-        let mined = block_at(*p - vek::Vec3::unit_z())
-            .and_then(|b| b.get_sprite())
-            .is_some_and(|s| s.mine_tool() == Some(common::comp::item::tool::ToolKind::Pick));
-        lone += usize::from(mined);
-    }
     // Icebreaker U.19: the veins, counted by the level of the zone they lie in.
     let mut ores = vec![0usize; grotte.niveaux.max(1) as usize];
     for vein in grotte.veins.iter().filter(|v| !v.in_ore_room) {
@@ -826,7 +818,7 @@ pub fn check_generated_grotte(
         problems.push(format!("{missing} bloc(s) de filon sans leur minerai sur {}", grotte.vein_blocks.len()));
     }
     let summary = format!(
-        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, filons par niveau {:?}, {room} dans la salle au minerai, {} blocs de minerai, {lone} pépite(s), {} habitant(s) ({appeared} \
+        "{}\nbouche en {:?}, arrivée en {:?}, {} blocs atteints à pied, filons par niveau {:?}, {room} dans la salle au minerai, {} blocs de minerai, {} habitant(s) ({appeared} \
          apparus), {} coffre(s)\nzones :\n  {}",
         grotte.summary,
         grotte.mouth,

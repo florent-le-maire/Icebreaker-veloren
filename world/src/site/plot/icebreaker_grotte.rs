@@ -153,7 +153,7 @@ impl Structure for IcebreakerGrotte {
         for (base, height) in &grotte.crystals {
             painter.line_two_radius(*base, *base + up * *height, 2.0, 0.5).fill(Fill::Block(glow));
         }
-        // The veins (Icebreaker U.19): blocks of the colour of their ore
+        // The veins (Icebreaker U.19, U.24): each block is the sprite of its ore
         // (`minerais.ron`), in the rock and in bumps out of it; over a crystal
         // that would reach them.
         let minerais = common::icebreaker_minerais::minerais();
@@ -161,26 +161,6 @@ impl Structure for IcebreakerGrotte {
         frame
             .sample(move |pos| veins.contains_key(&pos))
             .fill(Fill::Sampling(Arc::new(move |pos| Some(minerais.get(*ores.get(&pos)?)?.bloc()))));
-        // Icebreaker U.22: nuggets of Veloren on top of the veins (`pepite`,
-        // `pepites` of `minerais.ron`), in the air just above a block of ore,
-        // off the trail and out of the safe room.
-        let (a, cave, ores) = (air.clone(), Arc::clone(&grotte), Arc::clone(&grotte.vein_blocks));
-        frame
-            .sample(move |pos| {
-                let p = pos - cave.mouth;
-                a(pos)
-                    && !cave.vein_blocks.contains_key(&pos)
-                    && cave.vein_blocks.contains_key(&(pos - up))
-                    && !cave.in_safe_room(pos)
-                    && !cave.caverne.grille.sentier(p.x, p.y, p.z - 1)
-            })
-            .fill(Fill::Sampling(Arc::new(move |pos| {
-                let minerai = minerais.get(*ores.get(&(pos - up))?)?;
-                RandomField::new(960)
-                    .chance(pos, minerai.pepites)
-                    .then(|| minerai.sprite_pepite().map(Block::air))
-                    .flatten()
-            })));
         // The inhabitants and the chests (Icebreaker K.5). The painter's area
         // includes its far edge, shared with the next chunk: spawn there only
         // once.

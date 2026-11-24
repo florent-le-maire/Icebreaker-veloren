@@ -460,6 +460,11 @@ impl Block {
                 | SpriteKind::CrystalLow => 10,
                 SpriteKind::SewerMushroom => 16,
                 SpriteKind::Lodestone => 3,
+                // Icebreaker U.24 : les filons de gemmes luisent un peu.
+                SpriteKind::IcebreakerFilonAmethyste
+                | SpriteKind::IcebreakerFilonRubis
+                | SpriteKind::IcebreakerFilonSaphir
+                | SpriteKind::IcebreakerFilonEmeraude => 5,
                 SpriteKind::Lantern
                 | SpriteKind::LanternpostWoodLantern
                 | SpriteKind::LanternAirshipWallBlackS
@@ -551,7 +556,19 @@ impl Block {
                 | SpriteKind::BoneKeyDoor
                 | SpriteKind::OneWayWall
                 | SpriteKind::KeyholeBars
-                | SpriteKind::DoorBars => None,
+                | SpriteKind::DoorBars
+                // Icebreaker U.24 : un filon tient aux explosions comme la roche ; il se mine.
+                | SpriteKind::IcebreakerFilonCuivre
+                | SpriteKind::IcebreakerFilonEtain
+                | SpriteKind::IcebreakerFilonFer
+                | SpriteKind::IcebreakerFilonCharbon
+                | SpriteKind::IcebreakerFilonCobalt
+                | SpriteKind::IcebreakerFilonArgent
+                | SpriteKind::IcebreakerFilonOr
+                | SpriteKind::IcebreakerFilonAmethyste
+                | SpriteKind::IcebreakerFilonRubis
+                | SpriteKind::IcebreakerFilonSaphir
+                | SpriteKind::IcebreakerFilonEmeraude => None,
                 SpriteKind::Anvil
                 | SpriteKind::Cauldron
                 | SpriteKind::CookingPot

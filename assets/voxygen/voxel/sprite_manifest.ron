@@ -7975,4 +7975,225 @@ IcebreakerPilierHaut: [(
     ],
     wind_sway: 0.0,
 )],
+// Icebreaker U.24 : les blocs des filons de la grotte, trois variantes par minerai (icebreaker-modeles).
+IcebreakerFilonCuivre: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_cuivre_1",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_cuivre_2",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_cuivre_3",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerFilonEtain: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_etain_1",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_etain_2",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_etain_3",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerFilonFer: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_fer_1",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_fer_2",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_fer_3",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerFilonCharbon: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_charbon_1",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_charbon_2",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_charbon_3",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerFilonCobalt: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_cobalt_1",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_cobalt_2",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_cobalt_3",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerFilonArgent: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_argent_1",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_argent_2",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_argent_3",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerFilonOr: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_or_1",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_or_2",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_or_3",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerFilonAmethyste: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_amethyste_1",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_amethyste_2",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_amethyste_3",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerFilonRubis: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_rubis_1",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_rubis_2",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_rubis_3",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerFilonSaphir: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_saphir_1",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_saphir_2",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_saphir_3",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
+IcebreakerFilonEmeraude: [(
+    variations: [
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_emeraude_1",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_emeraude_2",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+        (
+            model: "voxygen.voxel.sprite.icebreaker.filon_emeraude_3",
+            offset: (-8.5, -8.5, -3.0),
+            lod_axes: (0.0, 0.0, 0.0),
+        ),
+    ],
+    wind_sway: 0.0,
+)],
 }

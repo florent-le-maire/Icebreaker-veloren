@@ -1,15 +1,15 @@
 //! Icebreaker : les minerais des filons de la grotte (U.18, `assets/icebreaker/grottes/minerais.ron`,
-//! `docs/icebreaker/design/filons.md`). Un filon est une bande de blocs de couleur prise dans la
-//! roche ; le jeu reconnaît le minerai d'un bloc à sa couleur exacte. Le générateur de la grotte
+//! `docs/icebreaker/design/filons.md`). Un filon est une bande de blocs prise dans la roche ; chaque
+//! bloc est un sprite à nous (U.24, modèles de `icebreaker-modeles`), un par minerai, et c'est à lui
+//! que le jeu reconnaît le minerai. Le générateur de la grotte
 //! (`world::icebreaker::grotte`) les pose, le serveur les casse à la pioche (dureté, objet donné).
 
 use crate::{
     assets::{AssetExt, Ron},
-    terrain::{Block, BlockKind, SpriteKind},
+    terrain::{Block, SpriteKind},
 };
 use serde::Deserialize;
 use std::{collections::BTreeMap, sync::LazyLock};
-use vek::Rgb;
 
 /// La forme d'un filon.
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
@@ -29,9 +29,10 @@ pub struct FormeFilon {
 /// Un minerai.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Minerai {
+    /// U.24 : le sprite d'un bloc de ce minerai (minable à la pioche) ; deux minerais n'ont pas le même.
+    pub sprite: SpriteKind,
+    /// Sa couleur : les éclats quand un bloc cède, l'atelier des grottes.
     pub couleur: (u8, u8, u8),
-    /// Ses blocs luisent (roche luisante).
-    pub lueur: bool,
     /// Coups de pioche pour qu'un bloc cède, énergie payée à chaque coup.
     pub coups: u8,
     pub energie: f32,
@@ -45,30 +46,17 @@ pub struct Minerai {
     pub poids: Vec<f32>,
     /// Poids au tirage des filons de la salle au minerai.
     pub salle: f32,
-    /// Icebreaker U.22 : la pépite de Veloren (nom de sprite minable à la pioche) posée sur le dessus
-    /// des blocs du filon, et la part de ces blocs qui en portent une (0 : aucune).
-    #[serde(default)]
-    pub pepite: Option<String>,
-    #[serde(default)]
-    pub pepites: f32,
 }
 
 impl Minerai {
     /// Un bloc de ce minerai.
-    pub fn bloc(&self) -> Block {
-        let (r, g, b) = self.couleur;
-        let kind = if self.lueur { BlockKind::GlowingRock } else { BlockKind::Rock };
-        Block::new(kind, Rgb::new(r, g, b))
-    }
+    pub fn bloc(&self) -> Block { Block::air(self.sprite) }
 
     /// Son poids au niveau `niveau`.
     pub fn poids_au(&self, niveau: i32) -> f32 {
         let i = (niveau.max(0) as usize).min(self.poids.len().saturating_sub(1));
         self.poids.get(i).copied().unwrap_or(0.0)
     }
-
-    /// U.22 : le sprite de sa pépite, s'il en a une.
-    pub fn sprite_pepite(&self) -> Option<SpriteKind> { ron::from_str(self.pepite.as_deref()?).ok() }
 
     /// La destruction (`icebreaker_destruction`) d'un bloc de ce minerai.
     pub fn matiere(&self) -> crate::icebreaker_destruction::Matiere {
@@ -90,7 +78,7 @@ pub struct Minerais {
 impl Minerais {
     fn depuis(fichier: Fichier) -> Result<Self, String> {
         let mut erreurs = Vec::new();
-        let mut couleurs = BTreeMap::new();
+        let mut sprites: Vec<(SpriteKind, &String)> = Vec::new();
         for (nom, m) in &fichier.minerais {
             let f = &m.filon;
             let mut faux = |quoi: &str| erreurs.push(format!("{nom} : {quoi}"));
@@ -103,13 +91,11 @@ impl Minerais {
             if m.morceau < 0.0 {
                 faux("morceau positif ou nul");
             }
-            if let Some(nom) = &m.pepite
-                && m.sprite_pepite().and_then(|s| s.mine_tool()) != Some(crate::comp::tool::ToolKind::Pick)
-            {
-                faux(&format!("pépite « {nom} » : pas un sprite qui se mine à la pioche"));
+            if m.sprite.mine_tool() != Some(crate::comp::tool::ToolKind::Pick) {
+                faux("sprite : pas un sprite qui se mine à la pioche");
             }
-            if !(0.0..=1.0).contains(&m.pepites) {
-                faux("pepites entre 0 et 1");
+            if m.sprite.collectible_info().is_some() {
+                faux("sprite : une pépite de Veloren, qui a ses propres règles");
             }
             if f.longueur.0 < 1 || f.longueur.1 < f.longueur.0 || f.epaisseur.0 < 1 || f.epaisseur.1 < f.epaisseur.0 {
                 faux("filon : longueur et epaisseur (min, max) avec 1 ≤ min ≤ max");
@@ -120,8 +106,9 @@ impl Minerais {
             if m.poids.is_empty() || m.poids.iter().chain([&m.salle]).any(|p| *p < 0.0) {
                 faux("poids : au moins une valeur ; poids et salle positifs ou nuls");
             }
-            if let Some(autre) = couleurs.insert(m.couleur, nom) {
-                erreurs.push(format!("{nom} et {autre} ont la même couleur"));
+            match sprites.iter().find(|(s, _)| *s == m.sprite) {
+                Some((_, autre)) => erreurs.push(format!("{nom} et {autre} ont le même sprite")),
+                None => sprites.push((m.sprite, nom)),
             }
         }
         if fichier.minerais.is_empty() {
@@ -152,15 +139,8 @@ impl Minerais {
 
     /// Le minerai d'un bloc, s'il en est un (sa place et lui).
     pub fn de_bloc(&self, block: &Block) -> Option<(usize, &Minerai)> {
-        if !matches!(block.kind(), BlockKind::Rock | BlockKind::GlowingRock) {
-            return None;
-        }
-        let c = block.get_color()?;
-        self.liste
-            .iter()
-            .enumerate()
-            .find(|(_, (_, m))| m.couleur == (c.r, c.g, c.b) && m.bloc().kind() == block.kind())
-            .map(|(i, (_, m))| (i, m))
+        let sprite = block.get_sprite().filter(|s| *s != SpriteKind::Empty)?;
+        self.liste.iter().enumerate().find(|(_, (_, m))| m.sprite == sprite).map(|(i, (_, m))| (i, m))
     }
 
     /// Tire un minerai selon les poids `poids` (un par minerai) ; `tirage` va de 0 à 1.
@@ -222,31 +202,23 @@ mod tests {
         // Chaque minerai donne un objet qui existe.
         for (nom, minerai) in m.liste() {
             crate::comp::Item::new_from_asset(&minerai.objet).unwrap_or_else(|e| panic!("{nom} : {e:?}"));
-            // U.22 : chacun a sa pépite, qui donne le même minerai que son filon.
-            let pepite = minerai.sprite_pepite().unwrap_or_else(|| panic!("{nom} : pas de pépite"));
-            assert!(minerai.pepites > 0.0, "{nom}");
-            let donne = crate::comp::Item::try_reclaim_from_block(Block::air(pepite), None)
-                .unwrap_or_else(|| panic!("{nom} : la pépite ne donne rien"));
-            assert!(
-                donne.iter().any(|(_, item)| item.item_definition_id().itemdef_id() == Some(minerai.objet.as_str())),
-                "{nom} : la pépite ne donne pas {}",
-                minerai.objet
-            );
+            // U.24 : son bloc est un sprite plein comme un bloc de roche, que Veloren ne ramasse pas tout seul.
+            assert!(minerai.bloc().is_solid() && minerai.bloc().solid_height() >= 1.0, "{nom}");
+            assert!(minerai.sprite.collectible_info().is_none(), "{nom}");
         }
     }
 
     #[test]
-    fn un_bloc_de_minerai_se_reconnait_a_sa_couleur() {
+    fn un_bloc_de_minerai_se_reconnait_a_son_sprite() {
         let m = fichier();
         for (i, (nom, minerai)) in m.liste().iter().enumerate() {
             assert_eq!(m.de_bloc(&minerai.bloc()).map(|(j, _)| j), Some(i), "{nom}");
         }
-        // La roche ordinaire, et un sprite, ne sont pas du minerai.
-        assert!(m.de_bloc(&Block::new(BlockKind::Rock, Rgb::new(80, 80, 95))).is_none());
-        assert!(m.de_bloc(&Block::air(crate::terrain::SpriteKind::Iron)).is_none());
-        // La bonne couleur sur la mauvaise matière non plus.
+        // La roche, même de la couleur d'un minerai, l'air et une pépite de Veloren ne sont pas du minerai.
         let (r, g, b) = m.liste()[0].1.couleur;
-        assert!(m.de_bloc(&Block::new(BlockKind::Wood, Rgb::new(r, g, b))).is_none());
+        assert!(m.de_bloc(&Block::new(crate::terrain::BlockKind::Rock, vek::Rgb::new(r, g, b))).is_none());
+        assert!(m.de_bloc(&Block::air(SpriteKind::Empty)).is_none());
+        assert!(m.de_bloc(&Block::air(SpriteKind::Iron)).is_none());
     }
 
     /// Plus on descend, plus c'est rare et cher : l'or n'est qu'au fond et coûte plus d'énergie que le cuivre.
@@ -268,7 +240,7 @@ mod tests {
 
     #[test]
     fn un_fichier_faux_est_refuse() {
-        let bon = r#"(minerais: { "a": (couleur: (1, 2, 3), lueur: false, coups: 2, energie: 5.0, objet: "x",
+        let bon = r#"(minerais: { "a": (sprite: IcebreakerFilonFer, couleur: (1, 2, 3), coups: 2, energie: 5.0, objet: "x",
             quantite: (1, 1), morceau: 0.0, filon: (longueur: (4, 6), epaisseur: (1, 2), profondeur: 1,
             sinuosite: 0.5, relief: 0.2), poids: [1.0], salle: 1.0) })"#;
         assert!(Minerais::lire(bon).is_ok());
@@ -278,14 +250,16 @@ mod tests {
             ("sinuosite: 0.5", "sinuosite: 1.5"),
             ("epaisseur: (1, 2)", "epaisseur: (0, 2)"),
             ("poids: [1.0]", "poids: []"),
-            ("salle: 1.0) }", "salle: 1.0, pepite: Some(\"Bones\"), pepites: 0.5) }"),
-            ("salle: 1.0) }", "salle: 1.0, pepite: Some(\"Copper\"), pepites: 1.5) }"),
+            // Une pépite de Veloren a ses propres règles ; des os ne se minent pas.
+            ("sprite: IcebreakerFilonFer", "sprite: Copper"),
+            ("sprite: IcebreakerFilonFer", "sprite: Bones"),
+            ("sprite: IcebreakerFilonFer", "sprite: Inconnu"),
         ] {
             assert!(Minerais::lire(&bon.replace(de, vers)).is_err(), "{vers}");
         }
-        let deux = bon.replace(r#"{ "a": "#, r#"{ "b": (couleur: (1, 2, 3), lueur: false, coups: 2, energie: 5.0,
+        let deux = bon.replace(r#"{ "a": "#, r#"{ "b": (sprite: IcebreakerFilonFer, couleur: (1, 2, 3), coups: 2, energie: 5.0,
             objet: "x", quantite: (1, 1), morceau: 0.0, filon: (longueur: (4, 6), epaisseur: (1, 2), profondeur: 1,
             sinuosite: 0.5, relief: 0.2), poids: [1.0], salle: 1.0), "a": "#);
-        assert!(Minerais::lire(&deux).unwrap_err().contains("même couleur"));
+        assert!(Minerais::lire(&deux).unwrap_err().contains("même sprite"));
     }
 }

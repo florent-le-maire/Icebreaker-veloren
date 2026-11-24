@@ -436,6 +436,18 @@ sprites! {
         Mud           = 0x10,
         Grave         = 0x11,
         Lodestone     = 0x12,
+        // Icebreaker U.24 : les blocs des filons de la grotte, un sprite par minerai (`minerais.ron`).
+        IcebreakerFilonCuivre = 0x13,
+        IcebreakerFilonEtain = 0x14,
+        IcebreakerFilonFer = 0x15,
+        IcebreakerFilonCharbon = 0x16,
+        IcebreakerFilonCobalt = 0x17,
+        IcebreakerFilonArgent = 0x18,
+        IcebreakerFilonOr = 0x19,
+        IcebreakerFilonAmethyste = 0x1A,
+        IcebreakerFilonRubis = 0x1B,
+        IcebreakerFilonSaphir = 0x1C,
+        IcebreakerFilonEmeraude = 0x1D,
     },
     // Structural elements including doors and building parts
     Structural = 6 has Ori {
@@ -808,6 +820,18 @@ impl SpriteKind {
             | SpriteKind::Silver
             | SpriteKind::Gold
             | SpriteKind::Lodestone => 0.6,
+            // Icebreaker U.24 : un bloc de filon tient la place d'un bloc de roche.
+            SpriteKind::IcebreakerFilonCuivre
+            | SpriteKind::IcebreakerFilonEtain
+            | SpriteKind::IcebreakerFilonFer
+            | SpriteKind::IcebreakerFilonCharbon
+            | SpriteKind::IcebreakerFilonCobalt
+            | SpriteKind::IcebreakerFilonArgent
+            | SpriteKind::IcebreakerFilonOr
+            | SpriteKind::IcebreakerFilonAmethyste
+            | SpriteKind::IcebreakerFilonRubis
+            | SpriteKind::IcebreakerFilonSaphir
+            | SpriteKind::IcebreakerFilonEmeraude => 1.0,
             SpriteKind::EnsnaringVines
             | SpriteKind::CavernLillypadBlue
             | SpriteKind::EnsnaringWeb => 0.15,
@@ -1284,7 +1308,19 @@ impl SpriteKind {
             | SpriteKind::Tin
             | SpriteKind::Silver
             | SpriteKind::Gold
-            | SpriteKind::Lodestone => Some(ToolKind::Pick),
+            | SpriteKind::Lodestone
+            // Icebreaker U.24 : les filons se minent à la pioche (règles : `icebreaker_minerais`).
+            | SpriteKind::IcebreakerFilonCuivre
+            | SpriteKind::IcebreakerFilonEtain
+            | SpriteKind::IcebreakerFilonFer
+            | SpriteKind::IcebreakerFilonCharbon
+            | SpriteKind::IcebreakerFilonCobalt
+            | SpriteKind::IcebreakerFilonArgent
+            | SpriteKind::IcebreakerFilonOr
+            | SpriteKind::IcebreakerFilonAmethyste
+            | SpriteKind::IcebreakerFilonRubis
+            | SpriteKind::IcebreakerFilonSaphir
+            | SpriteKind::IcebreakerFilonEmeraude => Some(ToolKind::Pick),
             SpriteKind::Grave | SpriteKind::Mud => Some(ToolKind::Shovel),
             _ => None,
         }
