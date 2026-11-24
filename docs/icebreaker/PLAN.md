@@ -309,7 +309,7 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
   GitHub ; zip Windows refait en local avec un faux binaire seulement. `6e81e32d`
 - [x] **S.6 Release à chaque nouvelle version** — numéro dans `assets/icebreaker/version.ron` (0.1.0) ; poussé sur
   master avec un numéro nouveau, il donne la Release `v<version>`. Lecture du numéro et test de l'étiquette essayés
-  en local ; pas encore vu sur GitHub.
+  en local ; pas encore vu sur GitHub. `7f8714bd`
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
   avec Sayanel (`0015`). Contenu à confirmer (`QUESTIONS.md`, Q1).
 
