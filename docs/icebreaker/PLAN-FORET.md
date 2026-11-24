@@ -89,6 +89,14 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   dans le vrai client (preset `geante`) : racines et porte d'un tronc creux, cabanes éclairées, intérieur d'une
   cabane avec sa lanterne, lianes, plateformes. Pas vérifié : monter par l'intérieur d'un tronc, la lumière qu'on y a.
   Le journal du serveur donne aussi une porte de tronc creux et une cabane (pour `/goto`). — eb02ee0f66
+- [x] **FO.10 Des branches à toute hauteur, qui servent de pont ou presque** (demande de Flo, 2026-11-24) — une part
+  des ponts (`ponts_branches`) est une branche : en bois, plus large, bombée, ronde dessous, sans garde-corps. Des
+  branches sans issue (`perchoirs`) partent d'une plateforme et s'arrêtent dans un bouquet de feuilles : des
+  presque-ponts où poser un coffre ou un guetteur. Les grosses branches poussent à partir du tiers bas du tronc, là où
+  leur bois ne coupe ni plateforme, ni pont, ni cabane ; un arbre à escalier ou échelle autour du tronc garde les
+  siennes au-dessus de sa dernière plateforme. Testé : 10 tests (on se tient au bout de chaque branche sans issue),
+  160 forêts sur 160 praticables, vu dans l'atelier. Pas vu en jeu (les branches sont du même bois que les troncs).
+  — HASH10
 - [ ] **FO.7 Wiki et doc** — `docs/icebreaker/wiki/foret.md`, captures.
 
 ## À savoir pour la suite

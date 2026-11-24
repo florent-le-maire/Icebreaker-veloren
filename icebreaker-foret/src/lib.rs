@@ -73,7 +73,7 @@ forme! {
         geant_hauteur: 80.0, 40.0, 250.0, 5.0, "Hauteur des très grands arbres";
         creux: 0.8, 0.0, 1.0, 0.01, "Part de très grands arbres creux (escalier dedans, portes sur les plateformes)";
         feuillage: 1.0, 0.4, 1.6, 0.05, "Ampleur du feuillage (moins : plus de lumière au sol)";
-        branches: 4.0, 0.0, 8.0, 1.0, "Grosses branches par arbre (au-dessus des plateformes)";
+        branches: 4.0, 0.0, 8.0, 1.0, "Grosses branches par arbre (à toute hauteur, là où rien ne gêne)";
         branche_longueur: 2.5, 1.0, 5.0, 0.1, "Longueur des branches (en rayons du tronc)";
         lianes: 0.3, 0.0, 1.0, 0.01, "Lianes sous les feuillages";
     }
@@ -101,7 +101,9 @@ forme! {
         pont_longueur: 30.0, 8.0, 100.0, 1.0, "Longueur maximale";
         pont_largeur: 1.0, 0.0, 2.0, 1.0, "Demi-largeur (0 : une planche)";
         pont_pente: 0.25, 0.0, 0.5, 0.01, "Pente maximale";
-        pont_creux: 1.5, 0.0, 4.0, 0.5, "Creux au milieu (pont de corde)";
+        pont_creux: 1.5, 0.0, 4.0, 0.5, "Creux au milieu (pont de corde ; une branche se bombe d'autant)";
+        ponts_branches: 0.5, 0.0, 1.0, 0.01, "Part des ponts faits d'une branche (large, sans garde-corps)";
+        perchoirs: 0.3, 0.0, 1.0, 0.01, "Part de plateformes avec une branche où marcher, sans issue";
         ponts_par_plateforme: 3.0, 1.0, 5.0, 1.0, "Ponts par plateforme, au plus";
         garde_corps: 1.0, 0.0, 1.0, 0.05, "Garde-corps (0 : aucun, 1 : continu)";
     }
@@ -291,6 +293,9 @@ pub struct Pont {
     pub niveau: usize,
     pub a: [f32; 3],
     pub b: [f32; 3],
+    /// Icebreaker FO.10: the bridge is a branch one walks on: wood, wide, no
+    /// rail, arched.
+    pub branche: bool,
 }
 
 /// A generated forest, in blocks around its middle (0, 0), z up; the height 0
@@ -304,6 +309,9 @@ pub struct Foret {
     pub sentiers: Vec<Vec<[f32; 2]>>,
     pub ponts: Vec<Pont>,
     pub cabanes: Vec<Cabane>,
+    /// Icebreaker FO.10: the branches one walks on from a platform (`de` and
+    /// `vers` are its tree) to their end `b`, where they stop in the leaves.
+    pub perchoirs: Vec<Pont>,
     /// Where one arrives: the middle of the first clearing.
     pub depart: [i32; 3],
     /// Whether every clearing and every platform is reached on foot from the
@@ -746,6 +754,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
     for (trou, i, j, k) in candidats {
         // Drawn for every candidate: moving a slider does not reshuffle the rest.
         let tirage = rng.unite();
+        let branche = rng.chance(f.ponts_branches);
         let (ti, tj) = (&arbres[i], &arbres[j]);
         let (pi, pj) = (xy(ti.pied), xy(tj.pied));
         if tirage >= f.ponts
@@ -766,6 +775,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
             niveau: k,
             a: [pi[0] + ux * da, pi[1] + uy * da, ti.niveaux[k] as f32],
             b: [pj[0] - ux * db, pj[1] - uy * db, tj.niveaux[k] as f32],
+            branche,
         });
         let _ = trou;
         charge[i][k] += 1;
@@ -807,6 +817,49 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
                     && cabanes.iter().all(|h| (h.arbre == i && h.cote == cote) || dist(c, [h.centre[0] as f32, h.centre[1] as f32]) > 9.0);
                 if libre {
                     cabanes.push(Cabane { centre: [c[0] as i32, c[1] as i32, t.niveaux[k]], arbre: i, cote, atteinte: false });
+                    break;
+                }
+            }
+        }
+    }
+
+    // Icebreaker FO.10: branches one walks on from a platform, that stop short
+    // of anything: almost bridges. Where no trunk, platform, bridge nor hut is
+    // in the way.
+    let plat = |p: [f32; 3]| [p[0], p[1]];
+    let mut perchoirs: Vec<Pont> = Vec::new();
+    for &i in &porteurs {
+        for k in 0..arbres[i].niveaux.len() {
+            let (veut, tour) = (rng.chance(f.perchoirs), rng.entre(0.0, TAU));
+            let longueur = rng.entre(0.3, 0.6) * f.pont_longueur.max(20.0);
+            if !veut {
+                continue;
+            }
+            let t = &arbres[i];
+            // Six ways around, at its length then at half of it.
+            for q in 0..12 {
+                let a = tour + q as f32 * TAU / 6.0;
+                let longueur = if q < 6 { longueur } else { (longueur / 2.0).max(8.0) };
+                let (da, db) = (t.plateforme as f32 - 0.5, t.plateforme as f32 + longueur);
+                let pa = [t.pied[0] as f32 + da * a.cos(), t.pied[1] as f32 + da * a.sin()];
+                let pb = [t.pied[0] as f32 + db * a.cos(), t.pied[1] as f32 + db * a.sin()];
+                let large = 2.0 * demi + 5.0;
+                let libre = dist(pb, [0.0, 0.0]) < e
+                    && arbres
+                        .iter()
+                        .enumerate()
+                        .all(|(j, o)| j == i || dist_segment(xy(o.pied), pa, pb) > o.rayon.max(o.plateforme) as f32 + demi + 3.0)
+                    && ponts.iter().chain(&perchoirs).all(|p| {
+                        let (qa, qb) = (plat(p.a), plat(p.b));
+                        !croisent(pa, pb, qa, qb)
+                            && dist_segment(pb, qa, qb) > large
+                            && dist_segment(qa, pa, pb) > large
+                            && dist_segment(qb, pa, pb) > large
+                    })
+                    && cabanes.iter().all(|h| dist_segment([h.centre[0] as f32, h.centre[1] as f32], pa, pb) > demi + 7.0);
+                if libre {
+                    let z = t.niveaux[k] as f32;
+                    perchoirs.push(Pont { de: i, vers: i, niveau: k, a: [pa[0], pa[1], z], b: [pb[0], pb[1], z], branche: true });
                     break;
                 }
             }
@@ -867,7 +920,14 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
         let sommet = [t.pied[0] as f32, t.pied[1] as f32, (t.pied[2] + t.hauteur) as f32];
         // Icebreaker FO.9: big branches going out and up, a ball of leaves at
         // the end of each.
-        let bas = plus_haut.max(t.hauteur / 2);
+        // Icebreaker FO.10: at any height, from the low third of the trunk up.
+        // A tree with a stair or a ladder around its trunk keeps them clear:
+        // its branches start over its last platform.
+        let bas = if !t.niveaux.is_empty() && t.creux == 0 {
+            t.niveaux[t.niveaux.len() - 1] - t.pied[2] + 6
+        } else {
+            (t.hauteur * 3 / 10).max(8)
+        };
         let combien = if t.rayon >= 3 && t.hauteur - bas >= 6 { f.branches as usize } else { 0 };
         let tour = rng.entre(0.0, TAU);
         for b in 0..combien {
@@ -875,17 +935,39 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
             let z0 = (t.pied[2] + bas) as f32 + rng.unite() * (t.hauteur - bas - 3) as f32;
             let longueur = t.rayon as f32 * f.branche_longueur * rng.entre(0.7, 1.1);
             let montee = longueur * rng.entre(0.2, 0.6);
+            let boule = cr * rng.entre(0.45, 0.7);
             let gros = (t.rayon as f32 * 0.3).max(1.0);
             let pas = (longueur * 2.0).ceil().max(1.0);
             let point = |k: f32| {
                 let d = t.rayon as f32 + longueur * k;
                 [sommet[0] + d * a.cos(), sommet[1] + d * a.sin(), z0 + montee * k]
             };
+            // Under the highest platforms of the forest, its wood must not
+            // cut a platform, a bridge nor a hut (the leaves are cleared).
+            let (pa, pb) = (plat(point(0.0)), plat(point(1.0)));
+            let gene = z0 < (t.pied[2] + plus_haut) as f32
+                && (t.niveaux.iter().any(|n| z0 - gros < (n + 5) as f32 && z0 + montee + gros > (n - 3) as f32)
+                    || arbres.iter().any(|o| {
+                        o.pied != t.pied && dist_segment(xy(o.pied), pa, pb) < o.rayon.max(o.plateforme) as f32 + gros + 2.0
+                    })
+                    || ponts.iter().chain(&perchoirs).any(|p| {
+                        let (qa, qb, large) = (plat(p.a), plat(p.b), gros + demi + 4.0);
+                        croisent(pa, pb, qa, qb)
+                            || dist_segment(pb, qa, qb) < large
+                            || dist_segment(qa, pa, pb) < large
+                            || dist_segment(qb, pa, pb) < large
+                    })
+                    || cabanes.iter().any(|h| dist_segment([h.centre[0] as f32, h.centre[1] as f32], pa, pb) < gros + 6.0));
+            if gene {
+                continue;
+            }
             for q in 0..=pas as i32 {
                 let k = q as f32 / pas;
                 noeud(&mut g, point(k), gros + (0.8 - gros) * k);
             }
-            feuillage(&mut g, point(1.0), cr * rng.entre(0.45, 0.7), s);
+            // Its leaves stay over the heads of who walks on the ground.
+            let bout = point(1.0);
+            feuillage(&mut g, bout, boule.min((bout[2] - t.pied[2] as f32 - 6.0) / 0.7).max(2.0), s);
         }
         for boule in 0..3 + rng.indice(3) {
             let (a, d) = (rng.entre(0.0, TAU), if boule == 0 { 0.0 } else { cr * rng.entre(0.3, 0.8) });
@@ -930,7 +1012,8 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
     // Where the feet are along a bridge: a point every third of a block.
     let le_long = |p: &Pont| {
         let l = dist([p.a[0], p.a[1]], [p.b[0], p.b[1]]).max(1.0);
-        let creux = f.pont_creux.min(l / 8.0);
+        // A bridge of planks sags; a branch arches.
+        let creux = f.pont_creux.min(l / 8.0) * if p.branche { -1.0 } else { 1.0 };
         let pas = (l * 3.0).ceil() as usize;
         let (a, b) = (p.a, p.b);
         (0..=pas).map(move |q| {
@@ -939,12 +1022,24 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
             ([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], z.round() as i32, [(b[1] - a[1]) / l, (a[0] - b[0]) / l])
         })
     };
-    for p in &ponts {
+    // Icebreaker FO.10: leaves around the end of a branch that stops short.
+    for p in &perchoirs {
+        feuillage(&mut g, [p.b[0], p.b[1], p.b[2] + 2.0], 5.0, s);
+    }
+    for p in ponts.iter().chain(&perchoirs) {
+        // A branch is wider, and round under the feet.
+        let large = if p.branche { demi + 1.0 } else { demi };
         for (c, z, travers) in le_long(p) {
-            for o in (-2 * demi as i32)..=(2 * demi as i32) {
+            for o in (-2.0 * large) as i32..=(2.0 * large) as i32 {
                 let o = o as f32 / 2.0;
                 let (x, y) = ((c[0] + travers[0] * o).round() as i32, (c[1] + travers[1] * o).round() as i32);
-                g.poser(x, y, z - 1, PLANCHE);
+                if p.branche {
+                    for dz in 1..=(1.0 + large - o.abs()).round() as i32 {
+                        g.poser(x, y, z - dz, BOIS);
+                    }
+                } else {
+                    g.poser(x, y, z - 1, PLANCHE);
+                }
                 for dz in 0..4 {
                     g.degager(x, y, z + dz, false);
                 }
@@ -989,7 +1084,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
         }
     }
     if f.garde_corps > 0.0 {
-        for p in &ponts {
+        for p in ponts.iter().filter(|p| !p.branche) {
             for (c, z, travers) in le_long(p) {
                 for o in [-demi - 1.0, demi + 1.0] {
                     let (x, y) = ((c[0] + travers[0] * o).round() as i32, (c[1] + travers[1] * o).round() as i32);
@@ -1129,6 +1224,10 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
         h.atteinte = pieds.contient(&g, h.centre);
         manques += !h.atteinte as usize;
     }
+    manques += perchoirs
+        .iter()
+        .filter(|p| !pieds.contient(&g, [p.b[0].round() as i32, p.b[1].round() as i32, p.b[2] as i32]))
+        .count();
     for arbre in &mut arbres {
         let (c, r, p) = (arbre.pied, arbre.rayon + 3, arbre.plateforme);
         arbre.atteints = arbre
@@ -1146,13 +1245,15 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
         manques += arbre.atteints.iter().filter(|a| !**a).count();
     }
     let resume = format!(
-        "{} arbres (dont {} très grands, {} creux), {} clairières, {} plateformes, {} ponts, {} montées, {} cabanes{}",
+        "{} arbres (dont {} très grands, {} creux), {} clairières, {} plateformes, {} ponts (dont {} branches), {} branches sans issue, {} montées, {} cabanes{}",
         arbres.len(),
         arbres.iter().filter(|t| t.geant).count(),
         arbres.iter().filter(|t| t.creux > 0).count(),
         clairieres.len(),
         arbres.iter().map(|t| t.niveaux.len()).sum::<usize>(),
         ponts.len(),
+        ponts.iter().filter(|p| p.branche).count(),
+        perchoirs.len(),
         arbres.iter().filter(|t| t.montee).count(),
         cabanes.len(),
         if manques == 0 { String::new() } else { format!(" ; {manques} lieu(x) COUPÉ(S) du reste") },
@@ -1164,6 +1265,7 @@ fn essayer(f: &Forme, graine: u64, surface: &dyn Fn(i32, i32) -> i32) -> Foret {
         sentiers,
         ponts,
         cabanes,
+        perchoirs,
         depart,
         praticable: manques == 0,
         essais: 1,
@@ -1275,6 +1377,40 @@ mod tests {
         // Without branches, less wood.
         let nue = generer(&Forme { branches: 0.0, ..forme.clone() }, 4, &|_, _| 0);
         assert!(nue.praticable && nue.grille.pleins().filter(|(_, b)| *b == BOIS).count() < compte(BOIS));
+    }
+
+    /// Icebreaker FO.10: bridges that are branches, branches that stop short,
+    /// and branches at any height that cut nothing.
+    #[test]
+    fn branches_are_walked_and_cut_nothing() {
+        let forme = Forme {
+            porteurs: 0.6,
+            ponts: 1.0,
+            ponts_branches: 1.0,
+            perchoirs: 1.0,
+            branches: 8.0,
+            branche_longueur: 4.0,
+            geants: 0.3,
+            ..Forme::default()
+        };
+        for graine in 0..4 {
+            let foret = generer(&forme, graine, &|_, _| 0);
+            assert!(foret.praticable, "graine {graine} : {}", foret.resume);
+            assert!(!foret.ponts.is_empty() && foret.ponts.iter().all(|p| p.branche), "graine {graine}");
+            assert!(!foret.perchoirs.is_empty(), "graine {graine}");
+            // No rail on a branch.
+            assert_eq!(foret.grille.pleins().filter(|(_, b)| *b == RAMBARDE).count(), 0);
+            // One stands at the end of each branch that stops short, on wood.
+            for p in &foret.perchoirs {
+                let (x, y, z) = (p.b[0].round() as i32, p.b[1].round() as i32, p.b[2] as i32);
+                assert_eq!(foret.grille.bloc(x, y, z - 1), BOIS, "graine {graine}");
+            }
+        }
+        // Some branches grow under the highest platforms.
+        let foret = generer(&forme, 1, &|_, _| 0);
+        let sans = generer(&Forme { branches: 0.0, ..forme.clone() }, 1, &|_, _| 0);
+        let bois_bas = |f: &Foret| f.grille.pleins().filter(|(p, b)| *b == BOIS && p[2] < 20).count();
+        assert!(bois_bas(&foret) > bois_bas(&sans));
     }
 
     #[test]
