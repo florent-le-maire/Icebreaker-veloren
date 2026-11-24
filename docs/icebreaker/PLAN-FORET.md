@@ -53,16 +53,16 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
 ## Tâches
 
 - [x] **FO.0 Ouvrir la piste** — ce plan, la ligne du jalon dans `README.md`, la forêt à deux étages dans
-  `design/generation.md`. — 979f3f6600
+  `design/generation.md`. — 1d3827eef1
 - [x] **FO.1 Le sol** — crate `icebreaker-foret` : réglages, clairières, sentiers, arbres, buissons, exemple `coupes`.
-  Testé : même graine = même forêt, réglages aller-retour, toutes les clairières atteintes. — 39a6767779
+  Testé : même graine = même forêt, réglages aller-retour, toutes les clairières atteintes. — 0f571283a5
 - [x] **FO.2 L'étage haut** — plateformes, ponts, garde-corps, escaliers, échelles, sentes, contrôle à pied. Testé :
   7 tests (dont sol en pente, sans arbre porteur, sans pont, tous les ponts), `stats` : 120 forêts sur 120
-  praticables au premier essai, 8 à 27 ms par forêt. Codé avec FO.1, même commit. — 39a6767779
+  praticables au premier essai, 8 à 27 ms par forêt. Codé avec FO.1, même commit. — 0f571283a5
 - [x] **FO.3 L'atelier** — page à curseurs en 3D, serveur `atelier-foret` (port 8099), `.\icebreaker.ps1 foret`, trois
   presets de départ. Essayé : page servie et capturée (Edge sans fenêtre), case « Feuillage », enregistrement et
   suppression d'un preset par la page (commits faits puis retirés). Pas essayé : la commande `foret` elle-même
-  (compilation et serveur lancés à la main), les curseurs à la souris. — 39a6767779
+  (compilation et serveur lancés à la main), les curseurs à la souris. — 0f571283a5
 - [ ] **FO.4 Le lieu jouable** — `SiteKind::IcebreakerForet`, plot qui pose les blocs (échelles et garde-corps en
   sprites de Veloren), arrivée dans la clairière d'entrée, `donjon -Site Foret -Profil <preset>`, ligne dans
   `lieux.ron`. Essai dans le vrai client avec captures, au sol et sur un pont ; chute puis remontée.
