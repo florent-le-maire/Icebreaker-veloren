@@ -234,7 +234,7 @@ pris dans la roche, cassés morceau par morceau, réglables minerai par minerai.
 - [x] **U.22 Des pépites sur les filons** — demandé par Flo (2026-11-24) : la pépite de Veloren de son minerai
   (`pepite`, `pepites` de `minerais.ron`) sur une part des blocs du filon tournés vers le haut, hors du sentier ; elle
   se mine comme les pépites de Veloren et tombe avec son bloc. Testé : tests de `veloren-common`, serveur de grotte
-  lancé. Pas vérifié en jeu : les pépites vues sur un filon, minées, tombées avec leur bloc. — HASH_U22
+  lancé. Pas vérifié en jeu : les pépites vues sur un filon, minées, tombées avec leur bloc. — 7f3de5e664
 
 - [x] **U.17 Un éclat en cône** — demandé par Flo (2026-11-23) : quand le bloc visé cède, un cône part avec lui, du corps
   de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : demi-largeur 1,9, demi-hauteur 1,4, pointe à 5 blocs ; boyau de 3 de large), un
