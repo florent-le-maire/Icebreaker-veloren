@@ -13,6 +13,7 @@
 //! des salles comme une étagère.
 
 pub mod cuisine;
+pub mod filons;
 pub mod trone;
 
 use std::collections::BTreeMap;
@@ -63,6 +64,12 @@ pub enum Matiere {
     VerreVert,
     Cire,
     Vigne,
+    // Icebreaker U.23 : les filons. Minerai, Eclat et les deux Gemme prennent la teinte du modèle (`teinter`).
+    Minerai,
+    Eclat,
+    Gemme,
+    GemmeCoeur,
+    Gangue,
 }
 
 impl Matiere {
@@ -109,6 +116,11 @@ impl Matiere {
             VerreVert => &[82],
             Cire => &[83, 84],
             Vigne => &[85, 86],
+            Minerai => &[8, 9, 10],
+            Eclat => &[11],
+            Gemme => &[13, 14],
+            GemmeCoeur => &[15],
+            Gangue => &[87, 88, 89],
         }
     }
 }
@@ -190,6 +202,10 @@ pub fn couleur(indice: u8) -> [u8; 3] {
         84 => [218, 208, 182],
         85 => [72, 82, 60], // vigne peinte
         86 => [60, 70, 50],
+        // Icebreaker U.23 : la gangue des filons.
+        87 => [78, 74, 72],
+        88 => [66, 63, 62],
+        89 => [55, 53, 55],
         _ => [0, 0, 0],
     }
 }
@@ -216,11 +232,21 @@ pub struct Modele {
     /// manifeste est son opposé.
     pub ancre: (f32, f32, f32),
     voxels: BTreeMap<P, u8>,
+    /// Icebreaker U.23 : les indices de palette dont ce modèle change la couleur (un minerai, sa teinte).
+    teintes: BTreeMap<u8, [u8; 3]>,
 }
 
 impl Modele {
     pub fn new(id: &'static str, taille: P, ancre: (f32, f32, f32)) -> Self {
-        Self { id, taille, ancre, voxels: BTreeMap::new() }
+        Self { id, taille, ancre, voxels: BTreeMap::new(), teintes: BTreeMap::new() }
+    }
+
+    /// Icebreaker U.23 : donne à l'indice de palette `indice` la couleur `rvb` dans ce modèle seulement.
+    pub fn teinter(&mut self, indice: u8, rvb: [u8; 3]) { self.teintes.insert(indice, rvb); }
+
+    /// La couleur d'un indice de palette dans ce modèle.
+    pub fn couleur(&self, indice: u8) -> [u8; 3] {
+        self.teintes.get(&indice).copied().unwrap_or_else(|| couleur(indice))
     }
 
     /// L'offset à écrire dans `sprite_manifest.ron`.
@@ -353,7 +379,7 @@ impl Modele {
         use dot_vox::{Color, DotVoxData, Model, Size, Voxel};
         let palette = (0..=255u8)
             .map(|i| {
-                let [r, g, b] = couleur(i);
+                let [r, g, b] = self.couleur(i);
                 Color { r, g, b, a: 255 }
             })
             .collect();
@@ -411,7 +437,7 @@ impl Modele {
         let mut tries: Vec<_> = self.voxels.iter().collect();
         tries.sort_by_key(|((x, y, z), _)| (x - y, *z, *x));
         for (&(x, y, z), &i) in tries {
-            let c = couleur(i);
+            let c = self.couleur(i);
             let plein = |p: P| self.voxels.contains_key(&p);
             if !plein((x, y - 1, z)) {
                 quad(&mut img, [ecran(x, y, z), ecran(x + 1, y, z), ecran(x + 1, y, z + 1), ecran(x, y, z + 1)], ombre(c, 0.8));
@@ -429,7 +455,7 @@ impl Modele {
         for x in 0..sx {
             for z in 0..sz {
                 if let Some(y) = (0..sy).find(|y| self.voxels.contains_key(&(x, *y, z))) {
-                    let c = ombre(couleur(self.voxels[&(x, y, z)]), 1.0 - 0.5 * y as f32 / sy as f32);
+                    let c = ombre(self.couleur(self.voxels[&(x, y, z)]), 1.0 - 0.5 * y as f32 / sy as f32);
                     for d in 0..p {
                         for e in 0..p {
                             put(&mut img, fx0 + x * p + d, fy0 + (sz - 1 - z) * p + e, c);
@@ -488,7 +514,7 @@ impl Axe {
 }
 
 /// Tous nos modèles.
-pub fn tous() -> Vec<Modele> { cuisine::modeles().into_iter().chain(trone::modeles()).collect() }
+pub fn tous() -> Vec<Modele> { cuisine::modeles().into_iter().chain(trone::modeles()).chain(filons::modeles()).collect() }
 
 #[cfg(test)]
 mod tests {

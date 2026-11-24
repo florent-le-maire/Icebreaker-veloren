@@ -234,7 +234,21 @@ pris dans la roche, cassés morceau par morceau, réglables minerai par minerai.
 - [x] **U.22 Des pépites sur les filons** — demandé par Flo (2026-11-24) : la pépite de Veloren de son minerai
   (`pepite`, `pepites` de `minerais.ron`) sur une part des blocs du filon tournés vers le haut, hors du sentier ; elle
   se mine comme les pépites de Veloren et tombe avec son bloc. Testé : tests de `veloren-common`, serveur de grotte
-  lancé. Pas vérifié en jeu : les pépites vues sur un filon, minées, tombées avec leur bloc. — 7f3de5e664
+  lancé. Retirées en U.24 : les filons ont leurs propres modèles. — 7f3de5e664
+
+**Les filons en modèles voxel** (Flo, 2026-11-24) : plus de cubes de couleur, chaque bloc de filon est un sprite à
+nous ; les pépites de U.22 partent ; nettoyage de tout le travail sur les minerais.
+
+- [ ] **U.23 Les modèles des minerais** — 33 modèles (`icebreaker-modeles/src/filons.rs`, trois variantes par
+  minerai) : gangue bosselée à pépites brillantes (métaux), blocs à facettes (charbon), cristaux qui luisent
+  (gemmes). — *en cours : Veloren-caverne, 2026-11-24*
+- [ ] **U.24 Les filons en sprites** — onze sprites minables `IcebreakerFilon…`, un par minerai (`sprite` dans
+  `minerais.ron`) : le générateur les pose à la place des blocs de couleur, le jeu reconnaît le minerai à son sprite,
+  le minage (morceau, énergie, objet) reste le même ; `pepite`, `pepites` et `lueur` partent. — *en cours :
+  Veloren-caverne, 2026-11-24*
+- [ ] **U.25 Nettoyage des minerais** — l'ancien système de pépites isolées (K.4) et ses réglages, les tirages en
+  double, l'atelier des grottes aligné sur le jeu, design, plan et wiki à jour. — *en cours : Veloren-caverne,
+  2026-11-24*
 
 - [x] **U.17 Un éclat en cône** — demandé par Flo (2026-11-23) : quand le bloc visé cède, un cône part avec lui, du corps
   de qui creuse (large comme lui) vers le bloc visé (`destruction.ron` → `cone` : demi-largeur 1,9, demi-hauteur 1,4, pointe à 5 blocs ; boyau de 3 de large), un
