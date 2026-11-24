@@ -83,7 +83,7 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   http://localhost:8098 le donjon généré en 3D (ou à plat, étage par étage), avec des curseurs ; « Enregistrer le preset » écrit
   le profil dans `assets/icebreaker/donjons/formes.ron` et committe. En jeu : `donjon -Site Genere -Profil <preset>`,
   en campagne `/expedition 2 <preset>`. Le donjon généré est tout sous le sol : on arrive dans l'abri (F.31).
-- Atelier des forêts (jalon FO, `docs/icebreaker/PLAN-FORET.md`) : `.icebreaker.ps1 foret` compile le générateur
+- Atelier des forêts (jalon FO, `docs/icebreaker/PLAN-FORET.md`) : `.\icebreaker.ps1 foret` compile le générateur
   `icebreaker-foret` pour le navigateur et sert la page à curseurs sur http://localhost:8099 ; « Enregistrer le preset »
   écrit le profil dans `assets/icebreaker/forets/formes.ron` et committe. Sans la page :
   `cargo run --release -p icebreaker-foret --example coupes -- <profil> <graine> <dossier>`.
