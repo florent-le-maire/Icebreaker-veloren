@@ -1,0 +1,113 @@
+# Icebreaker : Release du client à télécharger, Windows et Mac (PLAN.md, S.5).
+#
+# - Étiquette `v*` poussée (ex. `git tag v0.1 && git push origin v0.1`) : Release « v0.1 ».
+# - Bouton « Run workflow » (onglet Actions) : pré-release « dernier-build », remplacée à chaque lancement.
+#
+# Chaque zip contient le jeu, ses assets et un lanceur (Icebreaker.bat / Icebreaker.command) ; au menu, seul le
+# bouton « En ligne » (serveur du VPS) est proposé. Le paquet est fait par icebreaker-serveur/paquet-client.sh.
+# Le serveur du VPS doit venir du même commit que le client (docs/icebreaker/MAINTENANCE.md, § 3).
+name: Release du client
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-client
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  client:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            systeme: windows
+          - os: macos-latest # Apple Silicon
+            systeme: mac
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 240
+    env:
+      CARGO_TERM_COLOR: always
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@v4
+
+      # Les assets sont dans Git LFS (~440 Mo) : gardés en cache pour ménager le quota de bande passante LFS.
+      - name: Liste des fichiers LFS
+        run: git lfs ls-files --long | cut -d' ' -f1 | sort > .lfs-assets-id
+      - uses: actions/cache@v4
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.lfs-assets-id') }}
+          restore-keys: lfs-
+          enableCrossOsArchive: true
+      - name: Assets LFS
+        run: git lfs pull
+
+      # shaderc-sys se compile depuis ses sources : CMake (déjà là) et Ninja.
+      - name: Ninja (Mac)
+        if: matrix.systeme == 'mac'
+        run: brew install ninja
+      - name: Ninja (Windows)
+        if: matrix.systeme == 'windows'
+        run: choco install ninja --no-progress -y
+
+      # La chaîne Rust est celle du fichier rust-toolchain (rustup est déjà sur les runners).
+      - name: Chaîne Rust
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: client-release
+
+      - name: Compilation du client
+        run: cargo build --release -p veloren-voxygen
+
+      - name: Paquet
+        run: sh icebreaker-serveur/paquet-client.sh "target/Icebreaker-${{ matrix.systeme }}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Icebreaker-${{ matrix.systeme }}
+          path: target/Icebreaker-${{ matrix.systeme }}.zip
+          compression-level: 0
+          retention-days: 7
+
+  release:
+    needs: client
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: zips
+          merge-multiple: true
+
+      - name: Release
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            etiquette="$GITHUB_REF_NAME"; titre="Icebreaker $GITHUB_REF_NAME"; pre=""
+          else
+            etiquette=dernier-build; titre="Icebreaker, dernier build (${GITHUB_SHA::10})"; pre="--prerelease"
+            gh release delete "$etiquette" --cleanup-tag --yes || true
+          fi
+          cat > notes.md <<EOF
+          Client Icebreaker du commit ${GITHUB_SHA::10}. Au menu, le bouton **En ligne** rejoint le serveur de l'équipe.
+
+          - **Windows** : dézipper \`Icebreaker-windows.zip\`, lancer \`Icebreaker.bat\`.
+          - **Mac (Apple Silicon, M1 et suivants)** : dézipper \`Icebreaker-mac.zip\`. Le jeu n'est pas signé : la
+            première fois, dans le Terminal, \`xattr -dr com.apple.quarantine <dossier Icebreaker>\`, puis double-cliquer
+            \`Icebreaker.command\`.
+          EOF
+          gh release create "$etiquette" zips/*.zip --target "$GITHUB_SHA" --title "$titre" --notes-file notes.md $pre

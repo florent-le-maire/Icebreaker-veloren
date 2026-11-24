@@ -26,11 +26,20 @@ Un serveur qui tourne verrouille son `.exe` : le renommer avant de recompiler.
 
 ## 3. Créer le client pour les autres joueurs
 
+**Par GitHub (Windows et Mac)** : onglet Actions → « Release du client » → « Run workflow » donne la pré-release
+`dernier-build` (remplacée à chaque lancement) ; une étiquette `git tag v0.1 && git push origin v0.1` donne la
+Release `v0.1`. Chacune porte `Icebreaker-windows.zip` et `Icebreaker-mac.zip` (Apple Silicon), à télécharger
+depuis la page Releases du dépôt. Premier build long (sans doute plus d'une heure), plus court ensuite grâce au cache.
+Sur Mac, le jeu n'est pas signé : `xattr -dr com.apple.quarantine Icebreaker` dans le Terminal, une fois, puis
+double-clic sur `Icebreaker.command`.
+
+**À la main (Windows)** :
+
 ```powershell
 cargo build --release -p veloren-voxygen
 ```
 ```sh
-icebreaker-serveur/paquet-client.sh        # Git Bash → target/Icebreaker-client.zip (~400 Mo)
+icebreaker-serveur/paquet-client.sh        # Git Bash → target/Icebreaker-windows.zip (~400 Mo)
 ```
 
 Le lancer dans un terminal Git Bash ouvert à la racine du dépôt, pas par double-clic. La compression dure

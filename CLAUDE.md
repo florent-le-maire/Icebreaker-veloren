@@ -110,5 +110,8 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   `MOT_DE_PASSE=… icebreaker-serveur/deployer-wiki.sh root@<ip>` (Caddy, mot de passe). En local avec saisie :
   `cargo run -p icebreaker-wiki -- serve` depuis `Veloren-test` (http://localhost:8095, `--nom Sayanel`) : répondre aux
   questions et noter des todos, chaque saisie fait un commit sur master.
+- Client à télécharger (S.5) : GitHub Actions « Release du client » (bouton « Run workflow » → pré-release
+  `dernier-build`, ou étiquette `v*`) produit `Icebreaker-windows.zip` et `Icebreaker-mac.zip` ; à la main :
+  `icebreaker-serveur/paquet-client.sh` (`docs/icebreaker/MAINTENANCE.md`, § 3).
 - Lancer depuis la racine du dépôt (le jeu y cherche `assets/`). Un serveur qui tourne verrouille son `.exe` :
   le renommer avant de recompiler plutôt que d'arrêter un serveur qu'on n'a pas lancé.
