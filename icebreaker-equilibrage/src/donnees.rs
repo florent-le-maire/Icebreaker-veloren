@@ -338,10 +338,12 @@ pub struct Ennemi {
 }
 
 impl Ennemi {
-    pub fn lire(role: &str) -> Result<Self> {
-        let id = format!("icebreaker.ennemis.{role}");
+    pub fn lire(role: &str) -> Result<Self> { Self::fiche(&format!("icebreaker.ennemis.{role}"), role) }
+
+    /// Une fiche d'entité quelconque (`assets/.../<fiche>.ron`), sous le nom `role`.
+    pub fn fiche(id: &str, role: &str) -> Result<Self> {
         let mut alea = rand::rng();
-        let info = EntityInfo::at(Vec3::zero()).with_asset_expect(&id, &mut alea, None);
+        let info = EntityInfo::at(Vec3::zero()).with_asset_expect(id, &mut alea, None);
         let pv = net(info.icebreaker_pv.unwrap_or_else(|| f32::from(info.body.base_health())));
         let inventaire = Inventory::with_loadout(info.loadout.build(), info.body);
         let mut sante = Health::new(info.body);
@@ -500,6 +502,7 @@ pub struct Donnees {
     pub jeux: Vec<Jeu>,
     pub lignes: Vec<Ligne>,
     pub ennemis: Vec<Ennemi>,
+    pub donjon: crate::donjon::Donjon,
     pub tables: Vec<crate::butin::Table>,
     pub village: crate::butin::Village,
     pub prix_soin: Option<f64>,
@@ -547,6 +550,8 @@ fn lignes_de(
 }
 
 pub const ROLES: [&str; 4] = ["guerrier", "archer", "mage", "chef"];
+/// Donjons générés par cas de l'onglet Expéditions.
+const GRAINES: u64 = 20;
 
 impl Donnees {
     pub fn lire() -> Result<Self> {
@@ -613,6 +618,7 @@ impl Donnees {
             jeux,
             lignes,
             ennemis,
+            donjon: crate::donjon::lire(GRAINES)?,
             tables: crate::butin::tables()?,
             village: Ron::<crate::butin::Village>::load("icebreaker.village")
                 .map_err(|e| anyhow!("village.ron illisible : {e}"))?

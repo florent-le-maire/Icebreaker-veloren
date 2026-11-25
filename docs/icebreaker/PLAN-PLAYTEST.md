@@ -441,9 +441,11 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
 - [x] **EQ.2 Progression et économie** — onglets Progression (maîtrise par point d'arme, coût d'une compétence et d'un
   jeu d'armes, gain par niveau, passifs) et Économie (or et objets moyens des 9 tables de butin, butins qu'il faut par
   achat). Recalcul à part : 0 erreur, 0 écart. — f623729659
-- [ ] **EQ.3 Expéditions** — créatures, coffres, PV à abattre et or par taille, menace et densité ; minerais de la grotte.
-  — *en cours : Veloren-equilibrage, 2026-11-25*
+- [x] **EQ.3 Expéditions** — onglet Expéditions : 21 cas (taille, menace, densité), 20 vrais donjons générés par cas ;
+  créatures par sorte, coffres par palier, PV à abattre, or, expérience, points d'arme, minutes de frappe ; minerais de la
+  grotte par niveau. « Expéditions type » par achat dans Économie. Grotte et forêt : pas de comptage des habitants. — HASH3
 - [ ] **EQ.4 Synthèse** — tableau de bord (matrices, graphiques, écarts aux cibles), onglets Réglages et Lisez-moi.
+  — *en cours : Veloren-equilibrage, 2026-11-25*
 - [ ] **EQ.5 Branchement** — sous-commande `equilibrage`, `CLAUDE.md`, tableau des jalons.
 
 ## 9. Le jour J : liste technique

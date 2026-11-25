@@ -35,17 +35,20 @@ pub fn hypotheses(hyp: &mut Hyp, d: &Donnees) {
     }
 }
 
-/// Où sont les lignes des achats, pour y ajouter des colonnes (expéditions).
+/// Où sont les lignes des achats.
 pub struct Ecrit {
     /// Ligne de chaque achat, dans l'ordre de `ACHATS`.
     pub achats: Vec<u32>,
-    /// Première colonne libre à droite du tableau des achats.
-    pub colonne_libre: u16,
-    /// Ligne de l'en-tête du tableau des achats.
-    pub entete_achats: u32,
+    /// Colonne « Expéditions type » du tableau des achats.
+    pub c_expeditions: u16,
 }
 
-pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Ecrit> {
+pub fn ecrire(
+    feuille: &mut Worksheet,
+    d: &Donnees,
+    hyp: &Hyp,
+    expeditions: &crate::expeditions::Ecrit,
+) -> Result<Ecrit> {
     feuille.set_name(ONGLET)?;
     let largeur = 13.0;
     let mut ligne = style::bandeau(
@@ -68,7 +71,6 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Ecrit> 
     ];
     colonnes.extend(SORTES.iter().map(|s| col(s, largeur, Nb::Dec2)));
     colonnes.push(col("Objets en tout", largeur, Nb::Dec2));
-    colonnes.push(col("Table (fichier)", 52.0, Nb::Texte));
     let groupes = [(1, 3, "Or".to_string()), (4, 4 + SORTES.len() as u16, "Objets par butin".to_string())];
     let lignes: Vec<Vec<Val>> = d
         .tables
@@ -83,7 +85,6 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Ecrit> 
             ];
             valeurs.extend(t.par_sorte.iter().map(|n| if *n > 0.0 { Val::N(*n) } else { Val::Vide }));
             valeurs.push(Val::N((t.par_sorte.iter().sum::<f64>() * 100.0).round() / 100.0));
-            valeurs.push(Val::t(format!("assets/{}.ron", t.id.replace('.', "/"))));
             valeurs
         })
         .collect();
@@ -96,15 +97,24 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Ecrit> 
     ligne = fin + 3;
     feuille.merge_range(ligne, 0, ligne, 10, "Combien de butins pour s'offrir…", &titre)?;
     ligne += 1;
-    let mut colonnes = vec![col("Achat", 26.0, Nb::Texte), col("Prix (or)", largeur, Nb::Entier)];
+    let mut colonnes = vec![
+        col("Achat", 26.0, Nb::Texte),
+        col("Prix (or)", largeur, Nb::Entier),
+        col("Expéditions type", largeur, Nb::Dec1),
+    ];
     colonnes.extend(d.tables.iter().map(|t| col(&t.role, largeur, Nb::Dec1)));
-    let entete_achats = ligne;
     let lignes: Vec<Vec<Val>> = ACHATS
         .iter()
         .enumerate()
         .map(|(i, (cle, nom))| {
-            let l = ligne + 1 + i as u32;
-            let mut valeurs = vec![Val::t(*nom), Val::F(format!("={}", hyp.r(cle)), hyp.v(cle))];
+            // Deux lignes au-dessus des données : titres de groupes, puis en-tête.
+            let l = ligne + 2 + i as u32;
+            let or_type = format!("'{}'!{}", crate::expeditions::ONGLET, a1(expeditions.reference, expeditions.c_or));
+            let mut valeurs = vec![
+                Val::t(*nom),
+                Val::F(format!("={}", hyp.r(cle)), hyp.v(cle)),
+                Val::F(format!("={}/{or_type}", a1(l, 1)), hyp.v(cle) / expeditions.valeurs.2),
+            ];
             for t in &d.tables {
                 let or = format!("butin.{}.or", t.cle);
                 valeurs.push(Val::F(format!("={}/{}", a1(l, 1), hyp.r(&or)), hyp.v(cle) / hyp.v(&or)));
@@ -112,11 +122,17 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Ecrit> 
             valeurs
         })
         .collect();
-    let (_, debut, _) = style::tableau(feuille, ligne, 0, accent::ECONOMIE, &[], &colonnes, &lignes, |i| i.to_string())?;
+    let groupes = [
+        (2, 2, "Donjon moyen".to_string()),
+        (3, 2 + d.tables.len() as u16, "Ou bien, avec une seule sorte de butin".to_string()),
+    ];
+    let (_, debut, fin) =
+        style::tableau(feuille, ligne, 0, accent::ECONOMIE, &groupes, &colonnes, &lignes, |i| i.to_string())?;
+    let barres = ConditionalFormatDataBar::new().set_fill_color(Color::RGB(0xEBCB6B)).set_solid_fill(true);
+    feuille.add_conditional_format(debut, 2, fin, 2, &barres)?;
     feuille.set_freeze_panes(3, 1)?;
     Ok(Ecrit {
         achats: (0..ACHATS.len() as u32).map(|i| debut + i).collect(),
-        colonne_libre: colonnes.len() as u16,
-        entete_achats,
+        c_expeditions: 2,
     })
 }
