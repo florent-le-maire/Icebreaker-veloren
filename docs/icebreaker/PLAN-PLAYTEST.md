@@ -446,7 +446,7 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
   grotte par niveau. « Expéditions type » par achat dans Économie. Grotte et forêt : pas de comptage des habitants. — d55cfda455
 - [x] **EQ.4 Synthèse** — onglet Synthèse (6 cartes, matrices « tuer » et « mourir » colorées selon les cibles, deux
   graphiques), Réglages (1 316 nombres des `.ron` avec leur commentaire) et Lisez-moi. Essai « et si » vérifié par recalcul
-  (PV du guerrier ennemi 50 → 80 : la Synthèse suit). Graphiques et couleurs conditionnelles pas vus dans Excel. — HASH4
+  (PV du guerrier ennemi 50 → 80 : la Synthèse suit). Graphiques et couleurs conditionnelles pas vus dans Excel. — 496ab20ebe
 - [ ] **EQ.5 Branchement** — sous-commande `equilibrage`, `CLAUDE.md`, tableau des jalons.
 
 ## 9. Le jour J : liste technique
