@@ -5,6 +5,7 @@
 
 mod butin;
 mod calcul;
+mod capacite;
 mod combat;
 mod donjon;
 mod donnees;

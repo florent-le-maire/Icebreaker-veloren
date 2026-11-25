@@ -449,6 +449,10 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
   (PV du guerrier ennemi 50 → 80 : la Synthèse suit). Graphiques et couleurs conditionnelles pas vus dans Excel. — 4b8342a545
 - [x] **EQ.5 Branchement** — `.\icebreaker.ps1 equilibrage` (lancé : le classeur est réécrit), ligne dans `CLAUDE.md`,
   jalon EQ au tableau du `README.md`. Pas ajouté à `icebreaker.sh`. — dd912e198c
+- [x] **EQ.6 Touches et temps relus sur le code du jeu** (remarque de Flo, 2026-11-25 : la Fournaise à 227 s) — chaque
+  capacité est lancée comme le jeu (`adjusted_by_stats`, arme × niveau) puis lue d'après son état de combat : rayons
+  tenus ou à durée fixe, enchaînements, frappes du Séisme, projectiles qui n'explosent qu'au sol. « Secondes pour
+  tuer » : la compétence une fois, puis l'attaque principale. Pas comparé à des mesures en jeu. — HASH6
 
 ## 9. Le jour J : liste technique
 

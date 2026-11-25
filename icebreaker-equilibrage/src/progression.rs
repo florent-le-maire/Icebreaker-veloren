@@ -4,7 +4,8 @@
 use crate::{
     calcul,
     combat::{C_DEG, C_DPS_SOUTENU, Ecrite, ONGLET_COMBAT},
-    donnees::{Donnees, Sorte, effet_en_clair, net},
+    capacite::net,
+    donnees::{Donnees, Sorte, effet_en_clair},
     hyp::Hyp,
     style::{self, Nb, Val, a1, accent, col, col_longue},
 };

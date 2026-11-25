@@ -3,14 +3,14 @@
 
 use crate::{
     calcul,
-    donnees::{Capacite, Donnees, Ligne, Sorte, Source},
+    capacite::{Capacite, net},
+    donnees::{Donnees, Ligne, Sorte},
     hyp::Hyp,
     style::{self, Nb, Val, a1, accent, col, col_longue},
 };
 use anyhow::Result;
-use rust_xlsxwriter::{
-    Color, ConditionalFormat3ColorScale, ConditionalFormatDataBar, Worksheet,
-};
+use rust_xlsxwriter::{Color, ConditionalFormat3ColorScale, ConditionalFormatDataBar, Worksheet};
+use std::collections::HashMap;
 
 pub const ONGLET_COMBAT: &str = "Combat";
 pub const ONGLET_ENNEMIS: &str = "Ennemis";
@@ -46,10 +46,6 @@ pub struct Ecrite {
     pub contre: Vec<(f64, f64)>,
 }
 
-fn ou_vide(formule: String, valeur: f64) -> Val {
-    if valeur.is_finite() { Val::F(formule, valeur) } else { Val::FVide(formule) }
-}
-
 fn echelle(feuille: &mut Worksheet, debut: u32, fin: u32, colonne: u16) -> Result<()> {
     let regle = ConditionalFormat3ColorScale::new()
         .set_minimum_color(Color::RGB(0x8FD19E))
@@ -63,6 +59,36 @@ fn barres(feuille: &mut Worksheet, debut: u32, fin: u32, colonne: u16, couleur: 
     let regle = ConditionalFormatDataBar::new().set_fill_color(Color::RGB(couleur)).set_solid_fill(true);
     feuille.add_conditional_format(debut, colonne, fin, colonne, &regle)?;
     Ok(())
+}
+
+/// Le multiplicateur contre une créature d'une capacité : celui de son type d'attaque, ou la moyenne pesée par
+/// les dégâts quand elle en a plusieurs (une explosion et une onde de choc). (formule, valeur)
+fn multiplicateur(c: &Capacite, hyp: &Hyp) -> (String, f64) {
+    let valeur = c.pondere(|s| hyp.v(s.cle())) / c.degats();
+    let formule = match c.composantes.as_slice() {
+        [seule] => format!("={}", hyp.r(seule.source.cle())),
+        plusieurs => {
+            let somme: Vec<String> =
+                plusieurs.iter().map(|p| format!("{}*{}", p.degats, hyp.r(p.source.cle()))).collect();
+            format!("=({})/{}", somme.join("+"), c.degats())
+        },
+    };
+    (formule, valeur)
+}
+
+/// Le geste d'une capacité, pour les calculs de temps.
+fn geste_de(c: &Capacite) -> calcul::Geste {
+    calcul::Geste { duree: c.geste, avant: c.avant, apres: c.apres, tenu: c.tenu }
+}
+
+/// La formule du temps qu'il faut pour placer `t` touches (cases `t`, `n` touches par usage, `g` geste) : dans
+/// une seule utilisation si elle suffit, sinon `suite`. Une capacité tenue dure le temps qu'il faut.
+fn formule_secondes(c: &Capacite, t: &str, n: &str, g: &str, suite: &str) -> String {
+    if c.tenu {
+        format!("={}+{g}*{t}/{n}", c.avant)
+    } else {
+        format!("=IF({t}<={n},{}+({g}-{})*{t}/{n},{suite})", c.avant, ((c.avant + c.apres) * 1e4).round() / 1e4)
+    }
 }
 
 pub fn ecrire_combat(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Vec<Ecrite>> {
@@ -83,8 +109,8 @@ pub fn ecrire_combat(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<
         col("Énergie", 9.0, Nb::Dec1),
         col("Geste", 9.0, Nb::Secondes),
         col("Recharge", 9.0, Nb::Secondes),
-        col("Dégâts par seconde (rafale)", 12.0, Nb::Dec1),
-        col("Dégâts par seconde (soutenu)", 12.0, Nb::Dec1),
+        col("Dégâts par seconde (pendant le geste)", 12.0, Nb::Dec1),
+        col("Dégâts par seconde (avec la recharge)", 12.0, Nb::Dec1),
         col("Dégâts par point d'énergie", 11.0, Nb::Dec1),
     ];
     let mut groupes = vec![
@@ -99,26 +125,31 @@ pub fn ecrire_combat(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<
         groupes.push((c, c + 1, format!("Contre : {}", ennemi.role)));
     }
     let c_notes = C_ENNEMIS + 2 * d.ennemis.len() as u16;
-    colonnes.push(col_longue("Ce que le niveau apporte, et ce que le calcul ne compte pas", 70.0));
+    colonnes.push(col_longue("Ce que le niveau apporte, et ce que le calcul suppose", 70.0));
     colonnes.push(col("Capacité (fichier)", 44.0, Nb::Texte));
     groupes.push((c_notes, c_notes + 1, "Notes".to_string()));
 
     let depart = style::bandeau(
         feuille,
         "Combat : ce que valent les compétences",
-        "Une ligne par compétence et par niveau, avec l'arme de départ du jeu d'armes. Les dégâts sont ceux d'une \
-         utilisation complète sur une seule cible, tous les coups portés ; les colonnes « Contre » tiennent compte de \
-         l'armure de l'ennemi.",
+        "Une ligne par compétence et par niveau, lancée avec l'arme de départ du jeu d'armes, comme le fait le jeu. \
+         Un « usage » est un geste entier sur une seule cible (une seconde pour un rayon tenu). « Secondes pour \
+         tuer » : la compétence une fois, puis l'attaque principale jusqu'au bout ; armure de l'ennemi comprise.",
         accent::COMBAT,
         colonnes.len() as u16,
     )?;
     // Les données commencent deux lignes plus bas : titres de groupes, puis en-tête.
     let premiere = depart + 2;
     let mut lignes = Vec::new();
-    let mut ecrites = Vec::new();
+    let mut ecrites: Vec<Ecrite> = Vec::new();
+    // L'attaque principale de chaque jeu d'armes : sa ligne et ses dégâts par seconde.
+    let mut principales: HashMap<String, (u32, f64)> = HashMap::new();
     for (i, l) in d.lignes.iter().enumerate() {
         let ligne = premiere + i as u32;
-        let (valeurs, ecrite) = ligne_combat(l, ligne, d, hyp);
+        let (valeurs, ecrite) = ligne_combat(l, ligne, d, hyp, principales.get(&l.jeu).copied());
+        if l.sorte == Sorte::Base && l.nom == "Attaque principale" {
+            principales.insert(l.jeu.clone(), (ligne, ecrite.dps));
+        }
         lignes.push(valeurs);
         ecrites.push(ecrite);
     }
@@ -138,17 +169,17 @@ pub fn ecrire_combat(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<
     Ok(ecrites)
 }
 
-fn ligne_combat(l: &Ligne, ligne: u32, d: &Donnees, hyp: &Hyp) -> (Vec<Val>, Ecrite) {
+fn ligne_combat(l: &Ligne, ligne: u32, d: &Donnees, hyp: &Hyp, principale: Option<(u32, f64)>) -> (Vec<Val>, Ecrite) {
     let c = &l.capacite;
-    let blesse = c.source != Source::Aucun;
-    let cle_arme = format!("jeu.{}", l.jeu);
-    let (puissance_arme, vitesse) = (hyp.v(&format!("{cle_arme}.puissance")), hyp.v(&format!("{cle_arme}.vitesse")));
-    let multiplicateur = if blesse { hyp.v(c.source.cle()) } else { f64::NAN };
-    let degats = calcul::degats(c.degats, l.puissance, puissance_arme, multiplicateur);
-    let geste = calcul::geste(c.duree, vitesse, c.duree_fixe);
-    let dps = degats / geste;
-    let dps_soutenu = degats / geste.max(l.recharge);
-    let par_energie = if c.energie > 0.0 { degats / c.energie } else { f64::NAN };
+    let blesse = c.blesse();
+    let cle_arme = format!("jeu.{}.puissance", l.jeu);
+    let puissance_arme = hyp.v(&cle_arme);
+    let (f_multiplicateur, v_multiplicateur) =
+        if blesse { multiplicateur(c, hyp) } else { (String::new(), f64::NAN) };
+    let (touches_usage, base) = (c.touches(), c.degats());
+    let degats = calcul::degats(base, l.puissance, puissance_arme, v_multiplicateur);
+    let dps = degats / c.geste;
+    let dps_soutenu = degats / c.geste.max(l.recharge);
     let r = |colonne: u16| a1(ligne, colonne);
     let mut valeurs = vec![
         Val::t(&l.classe),
@@ -156,68 +187,80 @@ fn ligne_combat(l: &Ligne, ligne: u32, d: &Donnees, hyp: &Hyp) -> (Vec<Val>, Ecr
         Val::t(&l.nom),
         Val::t(l.sorte.nom()),
         if l.niveau == 0 { Val::t("base") } else { Val::N(f64::from(l.niveau)) },
-        Val::t(c.source.nom()),
-        if blesse { Val::N(c.touches) } else { Val::Vide },
-        if blesse { Val::N(c.degats) } else { Val::Vide },
+        Val::T(c.types()),
+        if blesse { Val::N(touches_usage) } else { Val::Vide },
+        if blesse { Val::N(base) } else { Val::Vide },
         Val::N(l.puissance),
-        Val::F(format!("={}", hyp.r(&format!("{cle_arme}.puissance"))), puissance_arme),
+        Val::F(format!("={}", hyp.r(&cle_arme)), puissance_arme),
     ];
     if blesse {
-        valeurs.push(Val::F(format!("={}", hyp.r(c.source.cle())), multiplicateur));
+        valeurs.push(Val::F(f_multiplicateur, v_multiplicateur));
         valeurs.push(Val::F(format!("={}*{}*{}*{}", r(C_BASE), r(C_PN), r(C_PA), r(C_MULT)), degats));
     } else {
         valeurs.extend([Val::Vide, Val::Vide]);
     }
     valeurs.push(Val::N(c.energie));
-    valeurs.push(Val::F(
-        format!("={}/{}+{}", c.duree, hyp.r(&format!("{cle_arme}.vitesse")), c.duree_fixe),
-        geste,
-    ));
+    valeurs.push(Val::N(c.geste));
     valeurs.push(if l.sorte == Sorte::Base { Val::Vide } else { Val::N(l.recharge) });
     if blesse {
         valeurs.push(Val::F(format!("={}/{}", r(C_DEG), r(C_GESTE)), dps));
         valeurs.push(Val::F(format!("={}/MAX({},{})", r(C_DEG), r(C_GESTE), r(C_RECHARGE)), dps_soutenu));
-        valeurs.push(ou_vide(
-            format!("=IF({e}>0,{d}/{e},\"—\")", e = r(C_ENERGIE), d = r(C_DEG)),
-            par_energie,
-        ));
+        valeurs.push(if c.energie > 0.0 {
+            Val::F(format!("=IF({e}>0,{d}/{e},\"—\")", e = r(C_ENERGIE), d = r(C_DEG)), degats / c.energie)
+        } else {
+            Val::FVide(format!("=IF({e}>0,{d}/{e},\"—\")", e = r(C_ENERGIE), d = r(C_DEG)))
+        });
     } else {
         valeurs.extend([Val::Vide, Val::Vide, Val::Vide]);
     }
     let mut contre = Vec::new();
-    for ennemi in &d.ennemis {
+    for (i, ennemi) in d.ennemis.iter().enumerate() {
         let (pv, armure) = (format!("ennemi.{}.pv", ennemi.role), format!("ennemi.{}.armure", ennemi.role));
         if !blesse {
             valeurs.extend([Val::Vide, Val::Vide]);
             contre.push((f64::NAN, f64::NAN));
             continue;
         }
-        let touches = calcul::touches_pour_tuer(hyp.v(&pv), degats / c.touches, hyp.v(&armure));
-        let secondes = calcul::secondes_pour_tuer(hyp.v(&pv), degats, hyp.v(&armure), geste, l.recharge);
+        let (r_pv, r_armure) = (hyp.r(&pv), hyp.r(&armure));
+        let c_touches = C_ENNEMIS + 2 * i as u16;
+        let touches = calcul::touches_pour_tuer(hyp.v(&pv), degats / touches_usage, hyp.v(&armure));
         valeurs.push(Val::F(
-            format!(
-                "=ROUNDUP(ROUND({pv}/(({d}/{t})*(1-{a})),6),0)",
-                pv = hyp.r(&pv),
-                d = r(C_DEG),
-                t = r(C_TOUCHES),
-                a = hyp.r(&armure)
-            ),
+            format!("=ROUNDUP(ROUND({r_pv}/(({d}/{t})*(1-{r_armure})),6),0)", d = r(C_DEG), t = r(C_TOUCHES)),
             touches,
         ));
-        valeurs.push(Val::F(
-            format!(
-                "=(ROUNDUP(ROUND({pv}/({d}*(1-{a})),6),0)-1)*MAX({g},{rc})+{g}",
-                pv = hyp.r(&pv),
-                d = r(C_DEG),
-                a = hyp.r(&armure),
-                g = r(C_GESTE),
-                rc = r(C_RECHARGE)
+        // Une attaque de base se répète ; une compétence se lance une fois, puis on finit à l'attaque principale.
+        let (t, n, g) = (r(c_touches), r(C_TOUCHES), r(C_GESTE));
+        let (formule, secondes) = match principale.filter(|_| l.sorte != Sorte::Base) {
+            Some((ligne_principale, dps_principale)) => (
+                formule_secondes(c, &t, &n, &g, &format!(
+                    "{g}+({r_pv}/(1-{r_armure})-{deg})/{p}",
+                    deg = r(C_DEG),
+                    p = a1(ligne_principale, C_DPS),
+                )),
+                calcul::secondes_avec_competence(
+                    touches,
+                    touches_usage,
+                    geste_de(c),
+                    hyp.v(&pv),
+                    hyp.v(&armure),
+                    degats,
+                    dps_principale,
+                ),
             ),
-            secondes,
-        ));
+            None => (
+                formule_secondes(c, &t, &n, &g, &format!("{g}*{t}/{n}")),
+                calcul::secondes_en_repetant(touches, touches_usage, geste_de(c)),
+            ),
+        };
+        valeurs.push(Val::F(formule, secondes));
         contre.push((touches, secondes));
     }
-    let notes = [l.texte.as_str(), c.remarque.as_str()].iter().filter(|t| !t.is_empty()).copied().collect::<Vec<_>>().join(" — ");
+    let notes = [l.texte.as_str(), c.remarque.as_str()]
+        .iter()
+        .filter(|t| !t.is_empty())
+        .copied()
+        .collect::<Vec<_>>()
+        .join(" — ");
     valeurs.push(Val::T(notes));
     valeurs.push(Val::t(format!("{} ({})", c.court(), c.variante)));
     let ecrite = Ecrite {
@@ -280,13 +323,13 @@ pub fn ecrire_ennemis(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result
         groupes.push((c, c + 1, format!("Contre : {}", classe.nom)));
     }
     let c_notes = E_CLASSES + 2 * d.classes.len() as u16;
-    colonnes.push(col_longue("Ce que le calcul ne compte pas", 60.0));
+    colonnes.push(col_longue("Ce que le calcul suppose", 60.0));
     groupes.push((c_notes, c_notes, "Notes".to_string()));
     let depart = style::bandeau(
         feuille,
         "Ennemis : ce qu'ils valent face à chaque classe",
-        "Les ennemis frappent avec les attaques de base de leur arme. Dégâts sur un joueur en armure de départ ; \
-         l'intelligence de l'ennemi (pauses, esquives, choix de l'attaque) n'est pas comptée.",
+        "Les ennemis frappent avec les attaques de base de leur arme, répétées sans pause. Dégâts sur un joueur en \
+         armure de départ ; l'intelligence de l'ennemi (pauses, esquives, choix de l'attaque) n'est pas comptée.",
         accent::ENNEMIS,
         colonnes.len() as u16,
     )?;
@@ -299,35 +342,34 @@ pub fn ecrire_ennemis(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result
             ("Attaque principale", &ennemi.arme.primaire, true),
             ("Attaque secondaire", &ennemi.arme.secondaire, false),
         ] {
-            let Some(capacite) = id.as_deref().and_then(|id| Capacite::lire(id).ok()) else { continue };
+            let Some(capacite) = id.as_deref().and_then(|id| Capacite::lire(id, ennemi.arme.stats).ok()) else {
+                continue;
+            };
             let ligne = premiere + lignes.len() as u32;
             let r = |colonne: u16| a1(ligne, colonne);
             let cle = format!("ennemi.{}", ennemi.role);
-            let blesse = capacite.source != Source::Aucun;
+            let blesse = capacite.blesse();
             let puissance = hyp.v(&format!("{cle}.puissance"));
             let multiplicateur = hyp.v("combat.joueur");
-            let degats = calcul::degats(capacite.degats, 1.0, puissance, multiplicateur);
-            let geste = calcul::geste(capacite.duree, hyp.v(&format!("{cle}.vitesse")), capacite.duree_fixe);
+            let (touches_usage, base) = (capacite.touches(), capacite.degats());
+            let degats = calcul::degats(base, 1.0, puissance, multiplicateur);
             let mut valeurs = vec![
                 Val::t(&ennemi.role),
                 Val::F(format!("={}", hyp.r(&format!("{cle}.pv"))), hyp.v(&format!("{cle}.pv"))),
                 Val::F(format!("={}", hyp.r(&format!("{cle}.armure"))), hyp.v(&format!("{cle}.armure"))),
                 Val::t(nom),
                 Val::t(format!("{} ({})", capacite.court(), capacite.variante)),
-                Val::t(capacite.source.nom()),
-                Val::N(capacite.touches),
-                Val::N(capacite.degats),
+                Val::T(capacite.types()),
+                Val::N(touches_usage),
+                Val::N(base),
                 Val::F(format!("={}", hyp.r(&format!("{cle}.puissance"))), puissance),
                 Val::F(format!("={}", hyp.r("combat.joueur")), multiplicateur),
                 Val::F(format!("={}*{}*{}", r(E_BASE), r(E_PA), r(E_MULT)), degats),
-                Val::F(
-                    format!("={}/{}+{}", capacite.duree, hyp.r(&format!("{cle}.vitesse")), capacite.duree_fixe),
-                    geste,
-                ),
-                Val::F(format!("={}/{}", r(E_DEG), r(E_GESTE)), degats / geste),
+                Val::N(capacite.geste),
+                Val::F(format!("={}/{}", r(E_DEG), r(E_GESTE)), degats / capacite.geste),
             ];
             let mut contre = Vec::new();
-            for classe in &d.classes {
+            for (i, classe) in d.classes.iter().enumerate() {
                 let k = format!("classe.{}", classe.id);
                 if !blesse {
                     valeurs.extend([Val::Vide, Val::Vide]);
@@ -338,8 +380,8 @@ pub fn ecrire_ennemis(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result
                 let armure = hyp.v(&format!("{k}.armure"));
                 let pv_ref = format!("({}*{})", hyp.r(&format!("{k}.pv_base")), hyp.r(&format!("{k}.inne_pv")));
                 let armure_ref = hyp.r(&format!("{k}.armure"));
-                let touches = calcul::touches_pour_tuer(pv, degats / capacite.touches, armure);
-                let secondes = calcul::secondes_pour_tuer(pv, degats, armure, geste, 0.0);
+                let c_touches = E_CLASSES + 2 * i as u16;
+                let touches = calcul::touches_pour_tuer(pv, degats / touches_usage, armure);
                 valeurs.push(Val::F(
                     format!(
                         "=ROUNDUP(ROUND({pv_ref}/(({d}/{t})*(1-{armure_ref})),6),0)",
@@ -348,10 +390,9 @@ pub fn ecrire_ennemis(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result
                     ),
                     touches,
                 ));
-                valeurs.push(Val::F(
-                    format!("=ROUNDUP(ROUND({pv_ref}/({d}*(1-{armure_ref})),6),0)*{g}", d = r(E_DEG), g = r(E_GESTE)),
-                    secondes,
-                ));
+                let (t, n, g) = (r(c_touches), r(E_TOUCHES), r(E_GESTE));
+                let secondes = calcul::secondes_en_repetant(touches, touches_usage, geste_de(&capacite));
+                valeurs.push(Val::F(formule_secondes(&capacite, &t, &n, &g, &format!("{g}*{t}/{n}")), secondes));
                 contre.push((touches, secondes));
             }
             valeurs.push(Val::t(&capacite.remarque));
@@ -421,9 +462,9 @@ pub fn hypotheses(hyp: &mut Hyp, d: &Donnees) {
     let g = "Dégâts des attaques (multiplicateurs)";
     let source = "assets/icebreaker/combat.ron";
     let c = &d.combat;
-    let ou = |v: Option<f32>| crate::donnees::net(v.unwrap_or(c.degats_contre_creatures));
-    hyp.ajoute(g, "combat.joueur", "Contre un joueur (toute attaque)", crate::donnees::net(c.degats_contre_joueurs), Nb::Fois, &format!("{source} : degats_contre_joueurs"));
-    hyp.ajoute(g, "combat.melee", "Contre une créature : corps à corps", crate::donnees::net(c.degats_contre_creatures), Nb::Fois, &format!("{source} : degats_contre_creatures"));
+    let ou = |v: Option<f32>| net(v.unwrap_or(c.degats_contre_creatures));
+    hyp.ajoute(g, "combat.joueur", "Contre un joueur (toute attaque)", net(c.degats_contre_joueurs), Nb::Fois, &format!("{source} : degats_contre_joueurs"));
+    hyp.ajoute(g, "combat.melee", "Contre une créature : corps à corps", net(c.degats_contre_creatures), Nb::Fois, &format!("{source} : degats_contre_creatures"));
     hyp.ajoute(g, "combat.projectile", "Contre une créature : projectile (flèche, sort lancé)", ou(c.creatures_projectile), Nb::Fois, &format!("{source} : creatures_projectile"));
     hyp.ajoute(g, "combat.rayon", "Contre une créature : rayon, à chaque touche", ou(c.creatures_rayon), Nb::Fois, &format!("{source} : creatures_rayon"));
     hyp.ajoute(g, "combat.explosion", "Contre une créature : explosion", ou(c.creatures_explosion), Nb::Fois, &format!("{source} : creatures_explosion"));
@@ -438,12 +479,12 @@ pub fn hypotheses(hyp: &mut Hyp, d: &Donnees) {
         hyp.ajoute(g, &format!("{k}.armure"), &format!("{} : part des dégâts retirée par l'armure de départ", classe.nom), classe.armure, Nb::Pct, &format!("assets/icebreaker/classes/{}.ron (pièces d'armure) ; calcul du jeu : protection / (60 + protection)", classe.id));
     }
 
+    // La vitesse de l'arme n'est pas une case : elle change les gestes et le rythme des rayons sorte par sorte,
+    // c'est le jeu qui l'applique (colonne Geste).
     let g = "Armes de départ des jeux d'armes";
     for jeu in &d.jeux {
-        let k = format!("jeu.{}", jeu.id);
         let fichier = format!("assets/{}.ron", jeu.arme.id.replace('.', "/"));
-        hyp.ajoute(g, &format!("{k}.puissance"), &format!("{} : puissance de l'arme", jeu.nom), jeu.arme.puissance, Nb::Fois, &format!("{fichier} : power (arme choisie dans assets/icebreaker/jeux_armes/{}.ron)", jeu.id));
-        hyp.ajoute(g, &format!("{k}.vitesse"), &format!("{} : vitesse de l'arme", jeu.nom), jeu.arme.vitesse, Nb::Fois, &format!("{fichier} : speed"));
+        hyp.ajoute(g, &format!("jeu.{}.puissance", jeu.id), &format!("{} : puissance de l'arme", jeu.nom), jeu.arme.puissance, Nb::Fois, &format!("{fichier} : power (arme choisie dans assets/icebreaker/jeux_armes/{}.ron)", jeu.id));
     }
 
     let g = "Ennemis";
@@ -454,7 +495,6 @@ pub fn hypotheses(hyp: &mut Hyp, d: &Donnees) {
         hyp.ajoute(g, &format!("{k}.pv"), &format!("{} : PV", ennemi.role), ennemi.pv, Nb::Entier, &format!("{fichier} : icebreaker_pv"));
         hyp.ajoute(g, &format!("{k}.armure"), &format!("{} : part des dégâts retirée par son armure", ennemi.role), ennemi.armure, Nb::Pct, &format!("{fichier} : pièces d'armure du loadout"));
         hyp.ajoute(g, &format!("{k}.puissance"), &format!("{} : puissance de son arme", ennemi.role), ennemi.arme.puissance, Nb::Fois, &format!("{arme} : power"));
-        hyp.ajoute(g, &format!("{k}.vitesse"), &format!("{} : vitesse de son arme", ennemi.role), ennemi.arme.vitesse, Nb::Fois, &format!("{arme} : speed"));
         hyp.ajoute(g, &format!("{k}.experience"), &format!("{} : expérience donnée à sa mort", ennemi.role), ennemi.experience, Nb::Entier, "calcul de Veloren : note de combat × 20 (common/src/combat.rs, combat_rating), d'après ses PV, son armure et son arme");
     }
 

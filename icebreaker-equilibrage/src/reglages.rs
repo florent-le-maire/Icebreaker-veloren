@@ -226,10 +226,12 @@ pub fn ecrire_lisez_moi(feuille: &mut Worksheet, alertes: &[String]) -> Result<(
     ])?;
     section(feuille, "Ce que le calcul ne compte pas", &[
         ("Tous les coups portent", "Une cible à la fois, immobile, qui ne pare pas et n'esquive pas. Les attaques de zone ne comptent qu'une cible."),
-        ("Pas d'altérations", "Ni brûlure, ni saignement, ni vol de vie, ni ralentissement, ni déséquilibre ; pas de coups précis ni de combos."),
+        ("Pas d'altérations", "Ni brûlure, ni saignement (la colonne Notes dit ce que la compétence en porte), ni vol de vie, ni ralentissement, ni déséquilibre ; pas de coups précis ni de combos."),
         ("Le joueur", "Arme et armure de départ de sa classe, sans passif ; son énergie n'est pas limitée (voir « Dégâts par point d'énergie »)."),
         ("Les ennemis", "Ils n'utilisent que les deux attaques de base de leur arme, sans pause : leur intelligence n'est pas comptée. Les PV plus hauts à plusieurs joueurs non plus."),
-        ("Cas particuliers", "Charge comptée à fond, plongeon au plus bas, pluies de flèches et projectiles multiples comptés pour une touche : la colonne Notes de Combat le dit ligne par ligne."),
+        ("Un usage", "Un geste entier, lancé avec l'arme de départ comme le fait le jeu (sa vitesse allonge les gestes et espace les touches d'un rayon). Un rayon ou un tir qu'on tient est compté par seconde ou par tir ; la colonne Notes le dit."),
+        ("Secondes pour tuer", "Le temps de placer les touches qu'il faut : la préparation, puis la part du geste nécessaire. Si une utilisation d'une compétence ne suffit pas, on finit à l'attaque principale, sans attendre la recharge."),
+        ("Cas particuliers", "Charge et élan comptés à fond, plongeon frappé depuis le sol, riposte comptée comme réussie, projectiles en éventail comptés pour un seul, pluie de flèches estimée : la colonne Notes de Combat le dit ligne par ligne."),
         ("Expéditions", "Moyennes de donjons générés, objectif « tuer le chef », faction par défaut. L'or ne compte ni les caisses du décor ni la revente des objets. Les minutes de frappe ne comptent ni la marche, ni la fouille, ni les morts. Pas de comptage pour la grotte et la forêt."),
         ("Expérience", "Celle que Veloren donne pour un ennemi, entière : à plusieurs, elle se partage selon les dégâts infligés."),
     ])?;

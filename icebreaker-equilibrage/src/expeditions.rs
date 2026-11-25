@@ -3,7 +3,8 @@
 
 use crate::{
     donjon::{SORTES, densite_en_clair, taille_en_clair},
-    donnees::{Donnees, Ennemi, net},
+    capacite::net,
+    donnees::{Donnees, Ennemi},
     hyp::Hyp,
     style::{self, Nb, Val, a1, accent, col},
 };
@@ -25,11 +26,7 @@ pub fn hypotheses(hyp: &mut Hyp, d: &Donnees) {
         .filter_map(|l| {
             let arme = &d.jeux.iter().find(|j| j.id == l.jeu)?.arme;
             let c = &l.capacite;
-            let multiplicateur = hyp.v(c.source.cle());
-            (c.degats > 0.0).then(|| {
-                crate::calcul::degats(c.degats, 1.0, arme.puissance, multiplicateur)
-                    / crate::calcul::geste(c.duree, arme.vitesse, c.duree_fixe)
-            })
+            c.blesse().then(|| c.pondere(|s| hyp.v(s.cle())) * arme.puissance / c.geste)
         })
         .collect();
     let moyenne = principales.iter().sum::<f64>() / principales.len().max(1) as f64;
