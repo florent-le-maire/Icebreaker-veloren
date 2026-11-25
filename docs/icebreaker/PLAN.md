@@ -109,6 +109,9 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
 - [x] **X.17 Supprimer une partie** — bouton « Supprimer » sur chaque ligne du choix de la partie, confirmé par
   « Oui / Non » ; efface le dossier de la partie (et `derniere.txt` s'il la désignait), refusé si son serveur tourne.
   Testé (test ciblé, lignes et confirmation vues au vrai client) ; clic réel sur « Oui » pas fait. — 964b6d6a59
+- [x] **X.19 Le rayon part vers le réticule** — la visée (réticule ou cercle) part du vrai départ de l'attaque : un
+  rayon (sceptre, Fournaise) de la mi-hauteur du corps comme au serveur, plus des yeux ; il passait sous le réticule.
+  Testé (test ciblé, client entré au lieu d'entraînement) ; rayon sur le réticule pas vu en jeu. — HASH
 
 ## Jalon L — Combat, suite (Flo, 2026-11-07)
 
@@ -465,6 +468,7 @@ tâche pour ce qui casse.
 - L.5 : gnarling en 5 à 6 flèches ou boules de feu, ~10 touches de lance-flammes ; tir chargé et onde de feu ne tuent
   pas d'un coup (plafond 40 %). *Plafond retiré le 2026-11-15 (A.19) : ils peuvent tuer d'un coup.*
 - L.2 à L.4, X.6 : verrouillage W, molette, anneau centré (sinon régler `ancrage` dans `verrouillage.ron`).
+- X.19 : au sceptre et au bâton, le rayon arrive sur le réticule (et sur le cercle en verrouillé) ; l'arc ne change pas.
 
 **Donjon généré**
 - F.1 : la caméra reste-t-elle dans le donjon à l'échelle 7 ? Sinon 8/8, puis F.7.

@@ -1,4 +1,6 @@
 pub mod icebreaker_lock;
+// Icebreaker : d'où part le tir du joueur, pour viser (X.19).
+pub mod icebreaker_visee;
 // Icebreaker : essai du plan du village sans les mains (jalon N).
 mod icebreaker_auto;
 pub mod icebreaker_vue;
@@ -1640,7 +1642,8 @@ impl PlayState for SessionState {
                                 });
 
                         let dir = if let Some(aim_point) = lock_aim_point
-                            && let Some(start) = icebreaker_lock_shot_start(&client, player_entity)
+                            && let Some(start) =
+                                icebreaker_depart_du_tir(&client, player_entity, self.inputs.look_dir)
                         {
                             // Icebreaker: from the hand to the locked enemy (X.12).
                             aim_point - start
@@ -1673,39 +1676,15 @@ impl PlayState for SessionState {
                                 ray_start + cam_dir * entity_dist.min(terrain_ray_distance)
                             };
 
-                            // Get player orientation
-                            let ori = client
-                                .state()
-                                .read_storage::<comp::Ori>()
-                                .get(player_entity)
-                                .copied()
-                                .unwrap();
-                            // Get player scale
-                            let scale = client
-                                .state()
-                                .read_storage::<comp::Scale>()
-                                .get(player_entity)
-                                .copied()
-                                .unwrap_or(comp::Scale(1.0));
-                            // Get player body offsets
-                            let body = client
-                                .state()
-                                .read_storage::<comp::Body>()
-                                .get(player_entity)
-                                .copied()
-                                .unwrap();
-                            let body_offsets = body.projectile_offsets(ori.look_vec(), scale.0);
-
-                            // Get direction from player character to aim point
-                            let player_pos = client
-                                .state()
-                                .read_storage::<Pos>()
-                                .get(player_entity)
-                                .copied()
-                                .unwrap();
-
+                            // Icebreaker : depuis le vrai départ du tir, rayon ou projectile ; un
+                            // rayon part plus bas que les yeux et passait sous le réticule (X.19).
+                            let start =
+                                icebreaker_depart_du_tir(&client, player_entity, self.inputs.look_dir);
                             drop(client);
-                            aim_point - (player_pos.0 + body_offsets)
+                            match start {
+                                Some(start) => aim_point - start,
+                                None => cam_dir + aim_dir_offset,
+                            }
                         } else {
                             cam_dir + aim_dir_offset
                         };
@@ -2775,14 +2754,27 @@ impl SessionState {
     }
 }
 
-/// Icebreaker: where the player's shots leave from (hand), as Veloren's own aiming does (X.12).
-fn icebreaker_lock_shot_start(client: &Client, player: specs::Entity) -> Option<Vec3<f32>> {
+/// Icebreaker: where the player's shot leaves from, as the server does it: a beam from the middle
+/// of the body, anything else from the eyes (X.12, X.19, `icebreaker_visee`).
+fn icebreaker_depart_du_tir(client: &Client, player: specs::Entity, look_dir: Dir) -> Option<Vec3<f32>> {
     let ecs = client.state().ecs();
     let ori = *ecs.read_storage::<comp::Ori>().get(player)?;
     let body = *ecs.read_storage::<comp::Body>().get(player)?;
     let pos = ecs.read_storage::<Pos>().get(player)?.0;
     let scale = ecs.read_storage::<comp::Scale>().get(player).map_or(1.0, |s| s.0);
-    Some(pos + body.projectile_offsets(ori.look_vec(), scale))
+    let physics = ecs.read_storage::<comp::PhysicsState>();
+    let physics = physics.get(player);
+    let vel = ecs.read_storage::<Vel>().get(player).map_or(Vec3::zero(), |v| v.0);
+    let states = ecs.read_storage::<CharacterState>();
+    Some(pos + icebreaker_visee::depart_du_tir(
+        states.get(player),
+        &body,
+        ori.look_vec(),
+        look_dir,
+        scale,
+        vel - physics.map_or(Vec3::zero(), |p| p.ground_vel),
+        physics.and_then(|p| p.on_ground),
+    ))
 }
 
 /// Icebreaker: lock on an enemy (Dark Souls, `icebreaker_lock`).
