@@ -444,8 +444,9 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
 - [x] **EQ.3 Expéditions** — onglet Expéditions : 21 cas (taille, menace, densité), 20 vrais donjons générés par cas ;
   créatures par sorte, coffres par palier, PV à abattre, or, expérience, points d'arme, minutes de frappe ; minerais de la
   grotte par niveau. « Expéditions type » par achat dans Économie. Grotte et forêt : pas de comptage des habitants. — d55cfda455
-- [ ] **EQ.4 Synthèse** — tableau de bord (matrices, graphiques, écarts aux cibles), onglets Réglages et Lisez-moi.
-  — *en cours : Veloren-equilibrage, 2026-11-25*
+- [x] **EQ.4 Synthèse** — onglet Synthèse (6 cartes, matrices « tuer » et « mourir » colorées selon les cibles, deux
+  graphiques), Réglages (1 316 nombres des `.ron` avec leur commentaire) et Lisez-moi. Essai « et si » vérifié par recalcul
+  (PV du guerrier ennemi 50 → 80 : la Synthèse suit). Graphiques et couleurs conditionnelles pas vus dans Excel. — HASH4
 - [ ] **EQ.5 Branchement** — sous-commande `equilibrage`, `CLAUDE.md`, tableau des jalons.
 
 ## 9. Le jour J : liste technique

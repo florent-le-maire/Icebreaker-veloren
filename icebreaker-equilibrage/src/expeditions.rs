@@ -42,9 +42,7 @@ pub struct Ecrit {
     pub reference: u32,
     pub c_or: u16,
     pub c_creatures: u16,
-    pub c_pv: u16,
     pub c_minutes: u16,
-    pub c_points: u16,
     /// Valeurs de l'expédition type : (créatures, PV, or, minutes, points d'arme).
     pub valeurs: (f64, f64, f64, f64, f64),
 }
@@ -329,9 +327,7 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Ecrit> 
         reference,
         c_or,
         c_creatures: c_total,
-        c_pv,
         c_minutes,
-        c_points,
         valeurs: valeurs_reference,
     })
 }

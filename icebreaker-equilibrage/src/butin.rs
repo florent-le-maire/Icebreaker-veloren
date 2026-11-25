@@ -140,10 +140,7 @@ pub fn tables() -> Result<Vec<Table>> {
 /// Ce qu'on lit de `village.ron`.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Village {
-    pub maisons_au_depart: u32,
-    pub habitants_par_maison: u32,
     pub prix_maison: u32,
-    pub heures_chantier: f32,
 }
 
 /// Le prix du soin : il n'est pas dans `assets/`, mais dans les réglages par défaut du serveur.

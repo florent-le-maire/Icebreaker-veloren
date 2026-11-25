@@ -38,9 +38,6 @@ pub enum Source {
 }
 
 impl Source {
-    pub const BLESSANTES: [Source; 6] =
-        [Source::Melee, Source::Projectile, Source::Rayon, Source::Explosion, Source::Onde, Source::Autre];
-
     pub fn nom(self) -> &'static str {
         match self {
             Source::Melee => "Corps à corps",
@@ -83,7 +80,6 @@ pub struct Capacite {
     pub duree: f64,
     /// Secondes que l'arme ne change pas (charge, élan, durée d'un rayon).
     pub duree_fixe: f64,
-    pub portee: Option<f64>,
     /// Ce que le calcul ne compte pas.
     pub remarque: String,
 }
@@ -237,9 +233,6 @@ impl Capacite {
                 nombre(pluie.get("rayon")),
             ));
         }
-        let mut portees = Vec::new();
-        partout(&corps, "range", &mut portees);
-        let portee = portees.iter().copied().reduce(f64::max).filter(|p| *p > 0.0);
         // Les nombres du jeu sont des f32 : on les arrondit pour l'affichage.
         let net = |x: f64| (x * 1e4).round() / 1e4 + 0.0;
         Ok(Self {
@@ -251,7 +244,6 @@ impl Capacite {
             energie: net(energie),
             duree: net(duree),
             duree_fixe: net(duree_fixe),
-            portee,
             remarque: remarques.join(" "),
         })
     }
@@ -395,7 +387,6 @@ pub struct Classe {
     pub inne_pv: f64,
     /// Réduction de dégâts de l'armure de départ.
     pub armure: f64,
-    pub inne: Vec<BuffEffect>,
 }
 
 impl Classe {
@@ -414,7 +405,6 @@ impl Classe {
             pv_base: 100.0,
             inne_pv,
             armure: (reduction(&inventaire) * 1e3).round() / 1e3,
-            inne,
         })
     }
 }
@@ -460,9 +450,8 @@ pub struct Ligne {
     pub niveau: u8,
     pub sorte: Sorte,
     pub capacite: Capacite,
-    /// Multiplicateurs du niveau.
+    /// Multiplicateur de dégâts du niveau.
     pub puissance: f64,
-    pub portee: f64,
     /// Secondes de recharge à ce niveau.
     pub recharge: f64,
     pub texte: String,
@@ -490,7 +479,6 @@ impl Sorte {
 pub struct Jeu {
     pub id: String,
     pub nom: String,
-    pub classe: String,
     pub arme: Arme,
 }
 
@@ -541,7 +529,6 @@ fn lignes_de(
                 sorte,
                 capacite,
                 puissance: net(effectif.stats.power),
-                portee: net(effectif.stats.range),
                 recharge: net(effectif.recharge),
                 texte,
             })
@@ -587,7 +574,6 @@ impl Donnees {
                             sorte: Sorte::Base,
                             capacite,
                             puissance: 1.0,
-                            portee: 1.0,
                             recharge: 0.0,
                             texte: String::new(),
                         }),
@@ -600,7 +586,6 @@ impl Donnees {
                 jeux.push(Jeu {
                     id: id.to_string(),
                     nom: jeu.nom.clone(),
-                    classe: lue.id.clone(),
                     arme,
                 });
             }

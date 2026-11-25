@@ -16,7 +16,6 @@ pub const ONGLET_COMBAT: &str = "Combat";
 pub const ONGLET_ENNEMIS: &str = "Ennemis";
 
 // Colonnes de l'onglet Combat.
-const C_JEU: u16 = 1;
 const C_NOM: u16 = 2;
 const C_TOUCHES: u16 = 6;
 const C_BASE: u16 = 7;

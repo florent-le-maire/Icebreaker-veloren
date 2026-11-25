@@ -8,7 +8,6 @@ pub const ENCRE: u32 = 0x1F2937;
 pub const GRIS: u32 = 0x6B7280;
 pub const TRAIT: u32 = 0xD9DEE5;
 pub const BANDE: u32 = 0xF4F6F9;
-pub const BLANC: u32 = 0xFFFFFF;
 /// Une case à modifier : bleu sur jaune pâle.
 pub const SAISIE_FOND: u32 = 0xFFF7D6;
 pub const SAISIE_ENCRE: u32 = 0x0B3FC4;

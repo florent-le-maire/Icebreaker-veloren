@@ -31,7 +31,8 @@ pub fn hypotheses(hyp: &mut Hyp, d: &Donnees) {
     }
 }
 
-pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp, combat: &[Ecrite]) -> Result<()> {
+/// Renvoie la ligne du premier point d'arme (pour la Synthèse).
+pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp, combat: &[Ecrite]) -> Result<u32> {
     feuille.set_name(ONGLET)?;
     let mut ligne = style::bandeau(
         feuille,
@@ -46,6 +47,7 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp, combat: &[Ecrite]
     // 1. Gagner des points d'arme.
     feuille.merge_range(ligne, 0, ligne, 7, "Gagner des points d'arme", &titre)?;
     ligne += 1;
+    let premier_point = ligne + 1;
     let mut colonnes = vec![
         col("Point d'arme n°", L[0], Nb::Entier),
         col("Maîtrise pour ce point", L[1], Nb::Entier),
@@ -216,5 +218,5 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp, combat: &[Ecrite]
     }
     style::tableau(feuille, ligne, 0, accent::PROGRESSION, &[], &colonnes, &lignes, |i| paquets[i].clone())?;
     feuille.set_freeze_panes(3, 0)?;
-    Ok(())
+    Ok(premier_point)
 }
