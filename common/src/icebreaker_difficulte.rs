@@ -96,6 +96,17 @@ impl Niveau {
     /// Les compétences que son cran donne à l'ennemi de la fiche `asset` (rien : celles de sa fiche).
     pub fn competences(&self, asset: &str) -> Option<&str> { self.competences.get(role(asset)).map(String::as_str) }
 
+    /// Un groupe de `n` ennemis à cette difficulté : `n` × `nombre` ; ce qui reste après la virgule est tiré
+    /// (`hasard`, entre 0 et 1, n'est demandé que si le nombre change : la difficulté par défaut ne
+    /// dérange pas les tirages du lieu).
+    pub fn effectif(&self, n: i32, hasard: impl FnOnce() -> f32) -> i32 {
+        if self.nombre == 1.0 {
+            return n;
+        }
+        let voulu = n.max(0) as f32 * self.nombre.max(0.0);
+        voulu.floor() as i32 + (hasard() < voulu.fract()) as i32
+    }
+
     /// Le poids du rôle de la fiche `asset` dans un tirage (1 si la difficulté ne pèse pas les
     /// rôles, ou si elle ne connaît pas celui-ci : un monstre, un chef).
     pub fn poids(&self, asset: &str) -> f32 { self.classes.get(role(asset)).copied().unwrap_or(1.0).max(0.0) }
@@ -183,6 +194,21 @@ mod tests {
         assert_eq!(d.niveau(Some(6)).competences("icebreaker.ennemis.chef"), None);
         assert_eq!(d.niveau(Some(6)).competences("icebreaker.ennemis.mage"), Some("common.skillset.preset.rank5.staff"));
         assert_eq!(d.niveau(Some(6)).numero, 6);
+    }
+
+    #[test]
+    fn les_groupes_grossissent() {
+        let d = fichier();
+        // Par défaut : le nombre du lieu, sans tirage.
+        assert_eq!(d.niveau(None).effectif(4, || panic!("pas de tirage")), 4);
+        // 4 ennemis x 1,45 = 5,8 : 5 ou 6 ; x 0,7 = 2,8 : 2 ou 3.
+        let (un, six) = (d.niveau(Some(1)), d.niveau(Some(6)));
+        assert_eq!((six.effectif(4, || 0.9), six.effectif(4, || 0.1)), (5, 6));
+        assert_eq!((un.effectif(4, || 0.9), un.effectif(4, || 0.1)), (2, 3));
+        assert_eq!(un.effectif(0, || 0.0), 0);
+        // En moyenne, le facteur.
+        let total: i32 = (0..1000).map(|i| six.effectif(3, || i as f32 / 1000.0)).sum();
+        assert!((4300..=4400).contains(&total), "{total}");
     }
 
     #[test]

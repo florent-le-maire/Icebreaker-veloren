@@ -14,7 +14,7 @@ use super::{
     plan::{self, Cell, DIRECTIONS},
     settings::Resolved,
 };
-use rand::SeedableRng;
+use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -105,7 +105,12 @@ pub fn populate(dungeon: &mut Assembled, graph: &MissionGraph, settings: &Resolv
                 continue;
             };
             let symbol = if population.awake { marker } else { marker.to_ascii_uppercase() };
-            for _ in 0..range.roll(&mut rng).max(0) {
+            // Icebreaker DF: more or fewer of them, as the difficulty says; the chief and the boss stay alone.
+            let mut count = range.roll(&mut rng).max(0);
+            if kind != "chief" && kind != "boss" {
+                count = settings.difficulte.effectif(count, || rng.random());
+            }
+            for _ in 0..count {
                 if !take(plan, marker, symbol) {
                     break;
                 }
@@ -148,7 +153,8 @@ pub fn populate(dungeon: &mut Assembled, graph: &MissionGraph, settings: &Resolv
             let Some(range) = corridors.creatures.get(kind) else {
                 continue;
             };
-            for _ in 0..range.roll(&mut rng).max(0) {
+            let count = settings.difficulte.effectif(range.roll(&mut rng).max(0), || rng.random());
+            for _ in 0..count {
                 let Some(cell) = cells.pop() else {
                     break;
                 };

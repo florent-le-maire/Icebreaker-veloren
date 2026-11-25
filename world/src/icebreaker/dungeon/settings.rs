@@ -364,7 +364,6 @@ impl Settings {
         let tables = [
             ("regions", &p.regions),
             ("seasons", &p.seasons),
-            ("threats", &p.threats),
             ("densities", &p.densities),
             ("objectives", &p.objectives),
         ];
@@ -382,9 +381,6 @@ impl Settings {
                     errors.push(format!("parameters.{table}.{key} : les facteurs doivent être ≥ 0"));
                 }
             }
-        }
-        if !p.threats.contains_key(&p.default_threat.to_string()) {
-            errors.push(format!("parameters.default_threat ({}) absente de threats", p.default_threat));
         }
         if !p.densities.contains_key(&p.default_density) {
             errors.push(format!("parameters.default_density ({}) absente de densities", p.default_density));
@@ -419,7 +415,7 @@ impl Settings {
             .with_vertical(&self.vertical, seed)
     }
 
-    /// The modifiers of a mission: its region, season, threat, number of
+    /// The modifiers of a mission: its region, season, number of
     /// enemies and objective. Unknown names are errors.
     fn modifiers(&self, mission: &Mission) -> Result<Vec<(String, &Modifier)>, String> {
         fn find<'a>(
@@ -442,8 +438,6 @@ impl Settings {
         if let Some(season) = &mission.season {
             modifiers.push(find(&p.seasons, season, "saison")?);
         }
-        let threat = mission.threat.unwrap_or(p.default_threat).to_string();
-        modifiers.push(find(&p.threats, &threat, "menace")?);
         let density = mission.density.as_deref().unwrap_or(&p.default_density);
         modifiers.push(find(&p.densities, density, "quantité d'ennemis")?);
         if let Some(objective) = p.objectives.get(&mission.objective) {
@@ -452,7 +446,7 @@ impl Settings {
         Ok(modifiers)
     }
 
-    /// The settings of a mission: the effects of its region, season, threat,
+    /// The settings of a mission: the effects of its region, season, difficulty,
     /// number of enemies and objective applied to the shape of the graph, the
     /// weights of the roles of the branches and the people. Shifts add up,
     /// factors multiply; the chief and the boss stay unique.
@@ -494,6 +488,9 @@ impl Settings {
                 *weight *= m.rooms.get(role.name()).copied().unwrap_or(1.0);
             }
         }
+        // Icebreaker DF: the difficulty of the expedition (`difficulte.ron`) in place of the threat: more or fewer
+        // creatures (group by group, in `populate`), the shape of the dungeon stays.
+        let difficulte = common::icebreaker_difficulte::niveau(mission.difficulte);
         let creature_factor: f64 = modifiers.iter().map(|(_, m)| m.creature_factor).product();
         let chest_factor: f64 = modifiers.iter().map(|(_, m)| m.chests).product();
         let scale = |range: Range, factor: f64| {
@@ -543,6 +540,7 @@ impl Settings {
             .iter()
             .map(|(key, m)| if m.name.is_empty() { key.clone() } else { m.name.clone() })
             .filter(|n| !n.is_empty())
+            .chain((difficulte.numero > 0).then(|| format!("Difficulté {}", difficulte.numero)))
             .collect();
         let faction_name = mission.faction.clone().unwrap_or_else(|| self.default_faction.clone());
         let faction = self.factions.get(&faction_name).cloned().ok_or_else(|| {
@@ -576,7 +574,7 @@ impl Settings {
             tour_etages: self.vertical.tour_etages,
             faction,
             species,
-            difficulte: common::icebreaker_difficulte::niveau(mission.difficulte),
+            difficulte,
             modifiers: names,
         })
     }
@@ -622,8 +620,6 @@ pub struct Parameters {
     pub regions: BTreeMap<String, Modifier>,
     pub seasons: BTreeMap<String, Modifier>,
     /// From 1 (low) to 5 (extreme), as text keys.
-    pub threats: BTreeMap<String, Modifier>,
-    pub default_threat: i32,
     pub densities: BTreeMap<String, Modifier>,
     pub default_density: String,
     pub objectives: BTreeMap<String, Modifier>,
@@ -646,8 +642,6 @@ pub struct Mission {
     pub region: Option<String>,
     /// `spring`, `summer`, `autumn`, `winter` (none: no effect).
     pub season: Option<String>,
-    /// 1 to 5 (none: the default threat).
-    pub threat: Option<i32>,
     /// Icebreaker DF: the difficulty of the expedition, 1 to 6 (`difficulte.ron`; none: the one of the launcher,
     /// or the default one).
     pub difficulte: Option<u8>,
@@ -667,7 +661,6 @@ impl Default for Mission {
             race: None,
             region: None,
             season: None,
-            threat: None,
             difficulte: None,
             profil: None,
             density: None,
@@ -677,7 +670,7 @@ impl Default for Mission {
 
 impl Mission {
     /// The mission given by the `ICEBREAKER_DONJON_*` variables (set by the
-    /// launcher: `-Taille`, `-Objectif`, `-Region`, `-Saison`, `-Menace`,
+    /// launcher: `-Taille`, `-Objectif`, `-Region`, `-Saison`, `-Difficulte`,
     /// `-Ennemis`, `-Faction`); unset or empty: the default.
     pub fn from_env(seed: u64) -> Result<Self, String> {
         let var = |name: &str| {
@@ -686,10 +679,6 @@ impl Mission {
                 .filter(|v| !v.is_empty())
         };
         let default = Self::default();
-        let threat = match var("MENACE") {
-            Some(t) => Some(t.parse().map_err(|_| format!("menace illisible : {t}"))?),
-            None => None,
-        };
         Ok(Self {
             seed,
             size: var("TAILLE").unwrap_or(default.size),
@@ -698,7 +687,6 @@ impl Mission {
             race: var("RACE"),
             region: var("REGION"),
             season: var("SAISON"),
-            threat,
             difficulte: common::icebreaker_difficulte::du_lanceur(),
             density: var("ENNEMIS"),
             profil: var("PROFIL"),

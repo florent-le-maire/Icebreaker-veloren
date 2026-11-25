@@ -171,7 +171,7 @@
         "bossLair": (creatures: {"boss": (1, 1), "brute": (0, 2)}, chests: (1, 2)),
     },
     // Les couloirs aussi (F.4) : pour chaque tranche de per_cells cases de couloir, ces créatures (jamais sur un
-    // escalier, un palier ni devant une porte) ; mêmes facteurs de menace et de nombre d'ennemis que les salles.
+    // escalier, un palier ni devant une porte) ; mêmes facteurs de difficulté et de nombre d'ennemis que les salles.
     // F.52 : le labyrinthe de remplissage est bien plus vide : une tranche pour labyrinthe_per_cells de ses cases.
 
     corridors: (creatures: {"lookout": (1, 1)}, per_cells: 10, labyrinthe_per_cells: 150),
@@ -233,7 +233,7 @@
             chest: "DungeonChest5",
         ),
     },
-    // Paramètres de la mission (tâche G.6) : région, saison, menace, nombre d'ennemis et objectif changent le donjon.
+    // Paramètres de la mission (tâche G.6) : région, saison, nombre d'ennemis et objectif changent le donjon (et la difficulté, difficulte.ron).
     // Valeurs du projet Icebreaker, à régler en jouant. Les écarts s'ajoutent, les facteurs se multiplient :
     //   main_path, levels, branches : salles du chemin principal, étages, branches en plus (ou en moins) ;
     //   rooms : facteur du poids d'un rôle des branches (0 : jamais) ;
@@ -251,15 +251,8 @@
             "autumn": (name: "Automne", rooms: {"storage": 2, "kitchen": 1.5}, chests: 1.3),
             "winter": (name: "Hiver", rooms: {"barracks": 2, "storage": 0.5}, creature_factor: 1.1, chests: 0.8),
         },
-        // Menace de 1 (faible) à 5 (extrême) ; default_threat quand la mission n'en dit rien.
-        default_threat: 3,
-        threats: {
-            "1": (name: "Menace faible", creature_factor: 0.5, branches: -1),
-            "2": (name: "Menace modérée", creature_factor: 0.75),
-            "3": (name: "Menace normale"),
-            "4": (name: "Menace forte", creature_factor: 1.25, branches: 1),
-            "5": (name: "Menace extrême", creature_factor: 1.5, branches: 1, main_path: 1, levels: 1),
-        },
+        // DF : la menace 1 à 5 est remplacée par la difficulté 1 à 6 de l'expédition (assets/icebreaker/
+        // difficulte.ron, facteur `nombre`), qui vaut aussi pour la grotte et la forêt.
         // Nombre d'ennemis (faible / moyen / beaucoup) ; default_density quand la mission n'en dit rien.
         default_density: "low",
         densities: {

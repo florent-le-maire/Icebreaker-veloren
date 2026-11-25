@@ -4,7 +4,7 @@
 #                                             village et des emplacements de donjon, assets\icebreaker\campagne.ron)
 #   .\icebreaker.ps1 donjon -Site Gnarling   (port 14110)
 #   .\icebreaker.ps1 donjon -Site Genere     (port 14110 ; donjon de notre générateur, jalon G ; mission :
-#                                             -Taille -Objectif -Region -Saison -Menace -Ennemis -Faction -Race)
+#                                             -Taille -Objectif -Region -Saison -Difficulte -Ennemis -Faction -Race)
 #   .\icebreaker.ps1 donjon -Site Grotte     (port 14140 ; grotte façon Deep Rock Galactic, jalon K)
 #   .\icebreaker.ps1 route                   (port 14120, pas encore fait : P.1)
 #   .\icebreaker.ps1 village                 (port 14100 ; -Site Town, CliffTown, DesertCity,
@@ -49,7 +49,6 @@ param(
     [ValidateSet("", "killChief", "rescue", "loot", "clear", "explore", "bossLair")] [string]$Objectif = "",
     [ValidateSet("", "forest", "mountain", "swamp")] [string]$Region = "",
     [ValidateSet("", "spring", "summer", "autumn", "winter")] [string]$Saison = "",
-    [ValidateSet("", "1", "2", "3", "4", "5")] [string]$Menace = "",
     [ValidateSet("", "low", "medium", "high")] [string]$Ennemis = "",
     # Difficulté d'un lieu lancé seul (DF, donjon généré, grotte, forêt) : 1 à 6, assets/icebreaker/difficulte.ron ;
     # vide : celle par défaut. En campagne, chaque expédition choisit la sienne au départ.
@@ -244,7 +243,6 @@ $env:ICEBREAKER_DONJON_TAILLE = $Taille
 $env:ICEBREAKER_DONJON_OBJECTIF = $Objectif
 $env:ICEBREAKER_DONJON_REGION = $Region
 $env:ICEBREAKER_DONJON_SAISON = $Saison
-$env:ICEBREAKER_DONJON_MENACE = $Menace
 $env:ICEBREAKER_DONJON_ENNEMIS = $Ennemis
 $env:ICEBREAKER_DIFFICULTE = $Difficulte
 $env:ICEBREAKER_DONJON_FACTION = $Faction

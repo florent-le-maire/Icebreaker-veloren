@@ -41,6 +41,7 @@ pub struct Donjon {
 }
 
 fn un_cas(settings: &Settings, taille: &str, menace: i32, densite: &str, graines: u64, paliers: usize) -> Cas {
+    // DF : la colonne « menace » porte la difficulté 1 à 6 de l'expédition.
     let mut cas = Cas {
         taille: taille.to_string(),
         menace,
@@ -56,7 +57,7 @@ fn un_cas(settings: &Settings, taille: &str, menace: i32, densite: &str, graines
         let mission = Mission {
             seed: graine,
             size: taille.to_string(),
-            threat: Some(menace),
+            difficulte: Some(menace as u8),
             density: Some(densite.to_string()),
             ..Mission::default()
         };
@@ -94,8 +95,9 @@ pub fn lire(graines: u64) -> Result<Donjon> {
     let parametres = &settings.parameters;
     let mut tailles: Vec<&String> = settings.sizes.keys().collect();
     tailles.sort_by_key(|t| settings.sizes[*t].main_path.0);
-    let mut menaces: Vec<i32> = parametres.threats.keys().filter_map(|m| m.parse().ok()).collect();
-    menaces.sort_unstable();
+    let difficultes = common::icebreaker_difficulte::IcebreakerDifficulte::actuel();
+    let menaces: Vec<i32> = (1..=i32::from(difficultes.max())).collect();
+    let defaut = i32::from(difficultes.borne(None));
     let mut densites: Vec<&String> = parametres.densities.keys().collect();
     densites.sort_by(|a, b| {
         parametres.densities[*a].creature_factor.total_cmp(&parametres.densities[*b].creature_factor)
@@ -106,12 +108,12 @@ pub fn lire(graines: u64) -> Result<Donjon> {
             cas.push(un_cas(&settings, taille, *menace, &parametres.default_density, graines, paliers));
         }
         for densite in densites.iter().filter(|d| ***d != parametres.default_density) {
-            cas.push(un_cas(&settings, taille, parametres.default_threat, densite, graines, paliers));
+            cas.push(un_cas(&settings, taille, defaut, densite, graines, paliers));
         }
     }
     for c in &mut cas {
         c.reference =
-            c.taille == "medium" && c.menace == parametres.default_threat && c.densite == parametres.default_density;
+            c.taille == "medium" && c.menace == defaut && c.densite == parametres.default_density;
     }
     let faction = settings
         .factions

@@ -698,14 +698,14 @@ mod tests {
     }
 
     #[test]
-    fn threat_changes_the_dungeon() {
+    fn difficulty_changes_the_people_not_the_dungeon() {
         let settings = Settings::load().unwrap();
         // (cells, creatures) over a few seeds.
-        let measure = |threat: i32| {
+        let measure = |difficulte: u8| {
             (0..20).fold((0, 0), |(cells, creatures), seed| {
                 let mission = Mission {
                     seed,
-                    threat: Some(threat),
+                    difficulte: Some(difficulte),
                     ..Mission::default()
                 };
                 let dungeon = generate(&settings, &mission).unwrap();
@@ -714,9 +714,13 @@ mod tests {
                 (cells + plan.cells.len(), creatures + people)
             })
         };
-        let (low, high) = (measure(1), measure(5));
-        assert!(high.0 > low.0, "menace 5 pas plus grande : {low:?} / {high:?}");
-        assert!(high.1 > 2 * low.1, "menace 5 pas plus peuplée : {low:?} / {high:?}");
+        // Icebreaker DF: more and more people from 1 to 6, in the same dungeons.
+        let mesures: Vec<(usize, usize)> = (1..=6).map(measure).collect();
+        assert!(mesures.windows(2).all(|w| w[0].1 < w[1].1), "{mesures:?}");
+        let (low, high) = (mesures[0], mesures[5]);
+        assert!(2 * high.1 > 3 * low.1, "difficulté 6 pas plus peuplée : {mesures:?}");
+        // The creatures aside, the same plans.
+        assert_eq!(low.0, high.0, "{mesures:?}");
     }
 
     #[test]

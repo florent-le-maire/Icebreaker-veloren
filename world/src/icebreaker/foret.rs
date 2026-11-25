@@ -284,7 +284,10 @@ fn peupler(settings: &Settings, foret: &Foret, seed: u64) -> (Vec<(Vec3<i32>, St
         if i == foret.fond() && pris.insert(centre) {
             habitants.push((centre, settings.chef.clone(), true));
         }
-        for _ in 0..rng.random_range(groupe.0..=groupe.1.max(groupe.0)) {
+        // Icebreaker DF: more or fewer of them, as the difficulty says.
+        let groupe = rng.random_range(groupe.0..=groupe.1.max(groupe.0));
+        let groupe = settings.difficulte.effectif(groupe, || rng.random());
+        for _ in 0..groupe {
             if let Some(p) = autour(centre, 0.0, rayon.max(3.0), true, None, &mut rng, &pris) {
                 pris.insert(p);
                 habitants.push((p, tirer(parmi, &mut rng), false));
@@ -300,7 +303,7 @@ fn peupler(settings: &Settings, foret: &Foret, seed: u64) -> (Vec<(Vec3<i32>, St
     // hollow one has a floor inside too).
     for arbre in &foret.arbres {
         for (z, atteint) in arbre.niveaux.iter().zip(&arbre.atteints) {
-            if !*atteint || !rng.random_bool(f64::from(pop.guetteurs.clamp(0.0, 1.0))) {
+            if !*atteint || !rng.random_bool(f64::from((pop.guetteurs * settings.difficulte.nombre).clamp(0.0, 1.0))) {
                 continue;
             }
             let centre = Vec3::new(arbre.pied[0], arbre.pied[1], *z);
@@ -420,5 +423,21 @@ mod tests {
         for asset in people {
             common::assets::Ron::<common::generation::EntityConfig>::load(asset).unwrap_or_else(|e| panic!("{asset} : {e}"));
         }
+    }
+    // Icebreaker DF: more and more people from difficulty 1 to 6, in the same forests.
+    #[test]
+    fn the_difficulty_changes_how_many_live_there() {
+        let mut settings = Settings::load().unwrap();
+        let difficultes = common::icebreaker_difficulte::IcebreakerDifficulte::actuel();
+        let origine = Vec3::new(2048, 2048, 200);
+        let mut totaux = Vec::new();
+        for n in 1..=6 {
+            settings.difficulte = difficultes.niveau(Some(n));
+            let lieux: Vec<Lieu> = (1..=6).map(|seed| generate(&settings, seed, origine, Some("immense")).unwrap()).collect();
+            assert!(lieux.iter().all(|l| l.difficulte.numero == n && l.inhabitants.iter().filter(|i| i.chief).count() == 1));
+            totaux.push(lieux.iter().map(|l| l.inhabitants.len()).sum::<usize>());
+        }
+        assert!(totaux.windows(2).all(|w| w[0] < w[1]), "{totaux:?}");
+        assert!(2 * totaux[5] > 3 * totaux[0], "{totaux:?}");
     }
 }

@@ -437,6 +437,8 @@ pub fn generate(
             continue;
         }
         let count = roll(&mut rng, pop.par_poche).max(0) + levels[i] * pop.par_niveau;
+        // Icebreaker DF: more or fewer of them, as the difficulty says.
+        let count = settings.difficulte.effectif(count, || rng.random());
         for _ in 0..count {
             for _ in 0..10 {
                 let p = zone.sols[rng.random_range(0..zone.sols.len())];
@@ -805,5 +807,20 @@ mod tests {
         for (name, ambiance) in &settings.ambiances {
             assert!(ambiance.solitaires.iter().any(|s| s.ends_with("cave_spider")), "{name} : pas d'araignée");
         }
+    }
+    // Icebreaker DF: more and more people from difficulty 1 to 6, in the same caves.
+    #[test]
+    fn the_difficulty_changes_how_many_live_there() {
+        let mut settings = Settings::load().unwrap();
+        let difficultes = common::icebreaker_difficulte::IcebreakerDifficulte::actuel();
+        let mut totaux = Vec::new();
+        for n in 1..=6 {
+            settings.difficulte = difficultes.niveau(Some(n));
+            let grottes: Vec<Grotte> = (1..=6).map(|seed| cave(&settings, seed)).collect();
+            assert!(grottes.iter().all(|g| g.difficulte.numero == n && g.inhabitants.iter().filter(|i| i.chief).count() == 1));
+            totaux.push(grottes.iter().map(|g| g.inhabitants.len()).sum::<usize>());
+        }
+        assert!(totaux.windows(2).all(|w| w[0] < w[1]), "{totaux:?}");
+        assert!(2 * totaux[5] > 3 * totaux[0], "{totaux:?}");
     }
 }
