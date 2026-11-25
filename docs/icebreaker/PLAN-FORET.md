@@ -106,7 +106,9 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   siennes au-dessus de sa dernière plateforme. Testé : 10 tests (on se tient au bout de chaque branche sans issue),
   160 forêts sur 160 praticables, vu dans l'atelier. Pas vu en jeu (les branches sont du même bois que les troncs).
   — 8c1a125db5
-- [ ] **FO.7 Wiki et doc** — `docs/icebreaker/wiki/foret.md`, captures.
+- [x] **FO.7 Wiki** — fiche « La forêt » (`docs/icebreaker/wiki/foret.md`) : la règle, qui y vit, l'atelier, les presets, six chiffres lus
+  dans `foret.ron`, quatre images (une vue de dessus du générateur, trois captures du jeu). Rendu contrôlé par une
+  capture du site. Pas de capture de la page de l'atelier. — HASH
 
 ## À savoir pour la suite
 
