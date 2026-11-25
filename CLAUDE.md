@@ -88,6 +88,11 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   écrit le profil dans `assets/icebreaker/forets/formes.ron` et committe ; en jeu : `donjon -Site Foret -Profil immense`,
   en campagne `/expedition 6 <preset>`. Sans la page :
   `cargo run --release -p icebreaker-foret --example coupes -- <profil> <graine> <dossier>`.
+- Classeur d'équilibrage (jalon EQ, `docs/icebreaker/PLAN-PLAYTEST.md`, § 8) : `.\icebreaker.ps1 equilibrage` (ou
+  `cargo run -p icebreaker-equilibrage`) relit les chiffres du jeu avec les structures du jeu et réécrit
+  `docs/icebreaker/equilibrage.xlsx` (Synthèse, Combat, Ennemis, Progression, Économie, Expéditions, Réglages) ; on essaie
+  une valeur dans l'onglet Hypothèses, on la règle pour de bon dans le fichier qu'il indique. À relancer et committer
+  quand un chiffre de `assets/icebreaker/` change.
 - Lieu d'entraînement (jalon O, `docs/icebreaker/PLAN-ENTRAINEMENT.md`) : `.icebreaker.ps1 entrainement` (port
   14150) ; tout s'y règle par `/entrainement` (classe, arme, niveau, ennemi, allie, nettoyer, soin…) ou par les deux
   cases du plan (touche U). Sans registre : `ICEBREAKER_AUTO_PERSONNAGE=1` fait entrer le vrai client dans le monde

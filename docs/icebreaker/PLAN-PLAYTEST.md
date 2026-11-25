@@ -20,7 +20,7 @@ interface du village) et se cochent ici ; les âmes ouvrent le jalon **AM**.
 | 5 | Améliorations : village sans dégâts, bouton Rentrer | L.6, X.18 | `Veloren-village` | prêt à coder |
 | 6 | Refonte des classes | — | `Veloren-classes` | à détailler par Flo ; pas obligatoire avant le premier playtest |
 | 7 | Craft et objets à trouver | E.17, E.18 | `Veloren-donjon` | attend (Q61 : « on verra au moment ») |
-| 8 | Équilibrage | — | — | en dernier |
+| 8 | Équilibrage | EQ.1 à EQ.5 (le classeur) | `Veloren-equilibrage` | classeur fait ; l'équilibrage lui-même en dernier |
 | 9 | Le jour J : technique | — | `Veloren-serveur` | liste de contrôle |
 
 **Ordre proposé** (Flo, 2026-11-16 : le développement démarre quand on veut ; zones et boss, pouvoirs des ennemis
@@ -431,7 +431,7 @@ campagne à deux :
 
 ### Le classeur d'équilibrage (jalon EQ, worktree `Veloren-equilibrage`)
 
-La vue d'ensemble des chiffres : `.icebreaker.ps1 equilibrage` relit `assets/` avec les structures du jeu et réécrit
+La vue d'ensemble des chiffres : `.\icebreaker.ps1 equilibrage` relit `assets/` avec les structures du jeu et réécrit
 `docs/icebreaker/equilibrage.xlsx`. Les calculs sont des formules branchées sur l'onglet « Hypothèses » : on y essaie une
 valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à vérifier en jeu.
 
@@ -447,7 +447,8 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
 - [x] **EQ.4 Synthèse** — onglet Synthèse (6 cartes, matrices « tuer » et « mourir » colorées selon les cibles, deux
   graphiques), Réglages (1 316 nombres des `.ron` avec leur commentaire) et Lisez-moi. Essai « et si » vérifié par recalcul
   (PV du guerrier ennemi 50 → 80 : la Synthèse suit). Graphiques et couleurs conditionnelles pas vus dans Excel. — 496ab20ebe
-- [ ] **EQ.5 Branchement** — sous-commande `equilibrage`, `CLAUDE.md`, tableau des jalons.
+- [x] **EQ.5 Branchement** — `.\icebreaker.ps1 equilibrage` (lancé : le classeur est réécrit), ligne dans `CLAUDE.md`,
+  jalon EQ au tableau du `README.md`. Pas ajouté à `icebreaker.sh`. — HASH5
 
 ## 9. Le jour J : liste technique
 

@@ -20,6 +20,8 @@
 #                                             les salles du donjon au bloc près avec les objets de Veloren)
 #   .\icebreaker.ps1 donjon-atelier          (atelier du donjon, F.34 : http://localhost:8098, le plan du donjon
 #                                             généré étage par étage, des curseurs, les presets de formes.ron)
+#   .\icebreaker.ps1 equilibrage             (réécrit docs\icebreaker\equilibrage.xlsx, la vue d'ensemble de
+#                                             l'équilibrage, jalon EQ ; fermer le classeur avant)
 #
 # Chaque lieu génère son propre petit monde à chaque lancement (graine au hasard, ou -Seed).
 # Les personnages sont communs à tous les lieux : ils vivent dans la partie, userdata-icebreaker\parties\<nom>
@@ -27,7 +29,7 @@
 # Dans le jeu : Multijoueur, serveur « localhost:<port> », n'importe quel pseudo.
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("campagne", "village", "donjon", "route", "entrainement", "mod", "caverne", "salles", "donjon-atelier", "foret")]
+    [ValidateSet("campagne", "village", "donjon", "route", "entrainement", "mod", "caverne", "salles", "donjon-atelier", "foret", "equilibrage")]
     [string]$Lieu,
     # Site autour duquel le lieu est généré (par défaut : Gnarling au donjon, Town au village).
     [string]$Site,
@@ -63,6 +65,16 @@ param(
 )
 
 $repo = $PSScriptRoot
+
+# Le classeur d'équilibrage (docs/icebreaker/PLAN-PLAYTEST.md, § 8) : relit les chiffres du jeu dans assets\
+# et réécrit docs\icebreaker\equilibrage.xlsx.
+if ($Lieu -eq "equilibrage") {
+    Push-Location $repo
+    cargo run -p icebreaker-equilibrage
+    $code = $LASTEXITCODE
+    Pop-Location
+    exit $code
+}
 
 # Le mod (docs/icebreaker/PLAN-MOD.md) : plugin WASM empaqueté comme Veloren l'attend, plugin.toml
 # et module à la racine de l'archive.
