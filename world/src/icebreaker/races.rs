@@ -39,6 +39,10 @@ pub fn entity(asset: &str, species: Option<&str>, pos: Vec3<f32>, rng: &mut ChaC
     // Only the health of our files (`icebreaker_pv`): a creature of Veloren keeps the one of its body.
     info.icebreaker_pv = info.icebreaker_pv.map(|pv| pv * difficulte.pv);
     info.icebreaker_degats = Some(difficulte.degats);
+    // Icebreaker DF: the skills of the rank of its difficulty, in place of those of its file.
+    if let Some(competences) = difficulte.competences(asset) {
+        info.skillset_asset = Some(competences.to_string());
+    }
     info
 }
 
@@ -128,6 +132,16 @@ mod tests {
             stats.attack_damage_modifier *= 2.0;
             stats.reset_temp_modifiers();
             assert_eq!(stats.attack_damage_modifier, degats);
+        }
+        // The skills of the rank: those of the file up to 3, rank 3 at 4 and 5, rank 5 at 6; the chief keeps his.
+        for (n, rang) in [(1, "rank1"), (3, "rank1"), (4, "rank3"), (5, "rank3"), (6, "rank5")] {
+            let niveau = difficultes.niveau(Some(n));
+            for (role, arme) in [("guerrier", "sword"), ("archer", "bow"), ("mage", "staff")] {
+                let info = entity(&format!("icebreaker.ennemis.{role}"), Some("elf"), Vec3::zero(), &mut rng, &niveau);
+                assert_eq!(info.skillset_asset, Some(format!("common.skillset.preset.{rang}.{arme}")), "{role} en {n}");
+            }
+            let chef = entity("icebreaker.ennemis.chef", Some("elf"), Vec3::zero(), &mut rng, &niveau);
+            assert_eq!(chef.skillset_asset.as_deref(), Some("common.skillset.preset.rank5.fullskill"));
         }
         // A creature of Veloren keeps the health of its body.
         let spider = entity("common.entity.wild.aggressive.cave_spider", None, Vec3::zero(), &mut rng, &difficultes.niveau(Some(6)));
