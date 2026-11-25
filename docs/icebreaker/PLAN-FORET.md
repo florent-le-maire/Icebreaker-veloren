@@ -74,7 +74,7 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   un coffre par clairière, d'autres dans les cabanes et au bout des branches ; réglages dans `forets/foret.ron`
   (`population`). Tuer le chef accomplit la mission. Testé : 3 tests ; vu dans le vrai client (preset `geante`) : un
   camp et son coffre, un tireur sur sa plateforme, le chef, « Mission accomplie » à sa mort. Pas vérifié : un vrai
-  combat (un camp tue un personnage neuf en quelques secondes), un coffre ouvert, la campagne (retour, bilan). — HASH
+  combat (un camp tue un personnage neuf en quelques secondes), un coffre ouvert, la campagne (retour, bilan). — b028beef9e
 - [x] **FO.6 En campagne** (demande de Flo, 2026-11-24, avant FO.5) — la Forêt est une destination : dernière ligne
   de `lieux.ron` (`/expedition 6 <preset>`, bouton « Forêt » du panneau Départ), un emplacement dans `campagne.ron`,
   `FormeLieu::Foret` (le preset se choisit comme pour la grotte et le donjon). Vu dans le vrai client : le bouton,
