@@ -134,7 +134,7 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Ecrit> 
     ligne += 1;
     let mut colonnes = vec![
         col("Taille", 13.0, Nb::Texte),
-        col("Menace", 9.0, Nb::Entier),
+        col("Difficulté", 9.0, Nb::Entier),
         col("Densité d'ennemis", 11.0, Nb::Texte),
         col("Repère", 11.0, Nb::Texte),
         col("Salles", 8.0, Nb::Dec1),
@@ -192,9 +192,13 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Ecrit> 
                 .unzip();
             (format!("={}", formule.join("+")), valeur.iter().sum::<f64>())
         };
-        let (f_pv, pv) = somme(0);
+        // DF : les PV des ennemis suivent la difficulté du cas (difficulte.ron, onglet Difficulté).
+        let a_la_difficulte = |(formule, valeur): (String, f64)| {
+            if cas.pv == 1.0 { (formule, valeur) } else { (format!("=({})*{}", &formule[1..], cas.pv), valeur * cas.pv) }
+        };
+        let (f_pv, pv) = a_la_difficulte(somme(0));
         let (f_xp, xp) = somme(1);
-        let (f_dur, dur) = somme(2);
+        let (f_dur, dur) = a_la_difficulte(somme(2));
         // Or : coffres et créatures par palier, chef, boss.
         let mut f_or = Vec::new();
         let mut or = 0.0;

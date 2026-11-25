@@ -252,7 +252,7 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp, s: &Sources) -> R
             "Créatures d'une expédition type".into(),
             Val::F(autre(expeditions::ONGLET, exp.reference, exp.c_creatures), exp.valeurs.0),
             Nb::Entier,
-            "donjon moyen, menace et densité par défaut".into(),
+            "donjon moyen, difficulté et densité par défaut".into(),
         ),
         (
             "Minutes de frappe d'une expédition type".into(),

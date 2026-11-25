@@ -29,7 +29,7 @@ Cible pour un ennemi ordinaire : 3 à 4 touches. Dans la cible : 3 cases sur 9 ;
 
 ## L'expédition type
 
-Donjon moyen, menace et densité par défaut : 44 créatures, 2370 PV à abattre, 789 or, 1.1 minutes de frappe du groupe, 3 points d'arme gagnés seul. Premier point d'arme : 6.7 ennemis « guerrier » à tuer seul.
+Donjon moyen, difficulté et densité par défaut : 44 créatures, 2370 PV à abattre, 789 or, 1.1 minutes de frappe du groupe, 3 points d'arme gagnés seul. Premier point d'arme : 6.7 ennemis « guerrier » à tuer seul.
 
 ## Les achats
 
@@ -41,13 +41,27 @@ Donjon moyen, menace et densité par défaut : 44 créatures, 2370 PV à abattre
 | Un passif | 120 | 0.15 |
 | Un soin | 60 | 0.08 |
 
+## Les six difficultés
+
+Réglages de `assets/icebreaker/difficulte.ron` ; ennemis comptés dans de vrais lieux générés ; les deux dernières colonnes multiplient les effets, par rapport à la difficulté par défaut (l'habileté n'y est pas comptée).
+
+| Difficulté | Nombre | PV | Dégâts | Habileté | Guerrier / archer / mage | Ennemis (donjon moyen, grotte, forêt) | PV à abattre | Dégâts reçus par seconde |
+|---|---|---|---|---|---|---|---|---|
+| 1 | × 0.70 | × 0.60 | × 0.70 | base (celle des fiches) | 3 / 1 / 0 | 31, 22, 26 | × 0.43 | × 0.50 |
+| 2 | × 0.85 | × 0.80 | × 0.85 | base (celle des fiches) | 3 / 2 / 1 | 38, 26, 31 | × 0.69 | × 0.73 |
+| 3 (par défaut) | × 1.00 | × 1.00 | × 1.00 | base (celle des fiches) | tirage du lieu | 44, 29, 37 | × 1.00 | × 1.00 |
+| 4 | × 1.15 | × 1.20 | × 1.15 | aguerri (rang 3) | tirage du lieu | 50, 32, 43 | × 1.37 | × 1.31 |
+| 5 | × 1.30 | × 1.40 | × 1.30 | aguerri (rang 3) | 2 / 2 / 2 | 57, 35, 49 | × 1.80 | × 1.67 |
+| 6 | × 1.45 | × 1.60 | × 1.45 | veteran (rang 5) | 2 / 2 / 3 | 63, 42, 56 | × 2.34 | × 2.12 |
+
 ## Le détail, un fichier par onglet
 
 - [`combat.md`](combat.md) (163 lignes) — Une ligne par compétence et par niveau, lancée avec l'arme de départ du jeu d'armes, comme le fait le jeu. Un « usage » est un geste entier sur une seule cible (une seconde pour un rayon tenu). « Secondes pour tuer » : la compétence une fois, puis l'attaque principale jusqu'au bout ; armure de l'ennemi comprise.
 - [`ennemis.md`](ennemis.md) (11 lignes) — Les ennemis frappent avec les attaques de base de leur arme, répétées sans pause. Dégâts sur un joueur en armure de départ ; l'intelligence de l'ennemi (pauses, esquives, choix de l'attaque) n'est pas comptée.
 - [`progression.md`](progression.md) (61 lignes) — Jouer un jeu d'armes en expédition donne de la maîtrise (l'expérience des ennemis tués, partagée entre ceux qui les ont blessés) ; la maîtrise donne des points d'arme, dépensés à la salle d'armes.
-- [`expeditions.md`](expeditions.md) (38 lignes) — Moyennes sur 20 donjons générés par cas avec le générateur du jeu (objectif « tuer le chef », faction « races »). L'or compte les coffres et ce que lâchent les créatures, pas les caisses du décor ni les objets à revendre.
+- [`expeditions.md`](expeditions.md) (41 lignes) — Moyennes sur 20 donjons générés par cas avec le générateur du jeu (objectif « tuer le chef », faction « races »). L'or compte les coffres et ce que lâchent les créatures, pas les caisses du décor ni les objets à revendre.
 - [`economie.md`](economie.md) (14 lignes) — Ce qu'un coffre, une créature ou un boss donne en moyenne (toutes les branches de la table, pondérées), et combien il en faut pour chaque achat. L'or moyen se change dans Hypothèses.
+- [`difficulte.md`](difficulte.md) (6 lignes) — Réglages lus dans assets/icebreaker/difficulte.ron. Ennemis comptés dans de vrais lieux générés (donjon moyen : les cas de l'onglet Expéditions ; grotte et forêt : 6 graines). Les colonnes de droite multiplient les effets, par rapport à la difficulté par défaut ; l'habileté n'y est pas comptée.
 - [`hypotheses.md`](hypotheses.md) (67 lignes) — Changer une valeur de la colonne jaune recalcule tout le classeur. La vraie valeur se règle dans le fichier indiqué ; régénérer le classeur (icebreaker.ps1 equilibrage) remet les valeurs du jeu.
 
 Ce que ces chiffres supposent, et comment s'en servir pour régler le jeu : skill `equilibrage` (`.claude/skills/equilibrage/SKILL.md`).

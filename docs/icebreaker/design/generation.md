@@ -146,7 +146,8 @@ n'a pas encore d'effet en jeu (pas d'état sommeil chez les créatures, voir que
 ## Paramètres de mission (tâche 2.6)
 
 Une mission donne, en plus de la graine, de la taille et de l'objectif : une **région**, une **saison** et une
-**menace** (1 à 5). Chacun change le donjon (`generation.json` → `parameters`) : salles et étages en plus ou en moins,
+**menace** (1 à 5 ; remplacée le 2026-11-25 par la **difficulté 1 à 6** de l'expédition, `design/difficulte.md`,
+qui change les ennemis sans changer le plan). Chacun change le donjon (`generation.json` → `parameters`) : salles et étages en plus ou en moins,
 poids des rôles des salles, nombre de créatures (par sorte ou en tout), nombre de coffres. Les écarts s'additionnent et
 les facteurs se multiplient ; le chef reste toujours unique ; les règles de voisinage (2.5) s'appliquent toujours.
 Régions et saisons sont **provisoires** (la carte du monde arrive en phase 4) ; valeurs de départ :
@@ -169,7 +170,7 @@ coffre près de l'arrivée (`assets/icebreaker/forets/foret.ron`).
 | Été | guetteurs ×1,5 |
 | Automne | réserves ×2, cuisines ×1,5 ; coffres ×1,3 |
 | Hiver | casernes ×2, réserves ×0,5 ; créatures ×1,1 ; coffres ×0,8 |
-| Menace 1 / 2 / 3 / 4 / 5 | créatures ×0,5 / ×0,75 / ×1 / ×1,25 / ×1,5 ; menace 1 : une branche de moins ; 4 et 5 : une de plus ; 5 : +1 étage et +1 salle |
+| Difficulté 1 à 6 (ex-menace) | créatures ×0,70 à ×1,45, et PV, dégâts, classes, habileté : `design/difficulte.md` |
 | Objectif « piller » | trésors ×3, réserves ×1,5 ; coffres ×1,3 |
 | Objectif « nettoyer » | nids ×2 ; créatures ×1,2 |
 | Objectif « sauver » | salles de garde et casernes ×1,5 |
@@ -177,7 +178,7 @@ coffre près de l'arrivée (`assets/icebreaker/forets/foret.ron`).
 | Objectif « antre de boss » | créatures ×0,8 (le boss et ses renforts suffisent) |
 | Ennemis faible / moyen / beaucoup | créatures ×1 / ×2 / ×3,5 (le chef et le boss restent uniques ; salles et coffres inchangés) |
 
-Sans région ni saison : aucun effet ; sans menace : menace 3 ; sans nombre d'ennemis : faible. Le nombre d'ennemis
+Sans région ni saison : aucun effet ; sans difficulté : difficulté 3 ; sans nombre d'ennemis : faible. Le nombre d'ennemis
 se choisit dans l'écran « Jouer » et l'atelier (liste « Ennemis ») ; en donjon moyen, ~14 / ~27 / ~50 créatures en
 moyenne avant la difficulté selon le nombre de joueurs (40 graines). Les cases de sol libres plafonnent ce nombre.
 

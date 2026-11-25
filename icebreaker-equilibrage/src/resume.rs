@@ -20,6 +20,7 @@ pub fn synthese(
     competences: &[Ecrite],
     ennemis: &[EnnemiEcrit],
     expedition: &expeditions::Ecrit,
+    difficultes: &[crate::difficulte::Ligne],
 ) -> String {
     let mut s = String::new();
     let principales: Vec<&Ecrite> =
@@ -78,7 +79,7 @@ pub fn synthese(
     let premier = d.ennemis.first().map_or(String::new(), |e| e.role.clone());
     let _ = writeln!(
         s,
-        "\n## L'expédition type\n\nDonjon moyen, menace et densité par défaut : {creatures:.0} créatures, {pv:.0} PV à \
+        "\n## L'expédition type\n\nDonjon moyen, difficulté et densité par défaut : {creatures:.0} créatures, {pv:.0} PV à \
          abattre, {or:.0} or, {minutes:.1} minutes de frappe du groupe, {points:.0} points d'arme gagnés seul. \
          Premier point d'arme : {:.1} ennemis « {premier} » à tuer seul.\n\n## Les achats\n",
         hyp.v("salle.premier_point")
@@ -89,6 +90,7 @@ pub fn synthese(
         .map(|(cle, nom)| vec![nom.to_string(), format!("{:.0}", hyp.v(cle)), format!("{:.2}", hyp.v(cle) / or)])
         .collect();
     s.push_str(&tableau(&["Achat".into(), "Prix (or)".into(), "Expéditions type".into()], &lignes));
+    s.push_str(&crate::difficulte::resume(difficultes));
     s
 }
 

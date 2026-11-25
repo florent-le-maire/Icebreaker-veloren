@@ -214,7 +214,8 @@ pub fn ecrire_lisez_moi(feuille: &mut Worksheet, alertes: &[String]) -> Result<(
         ("Ennemis", "Les attaques de base des ennemis face à chaque classe, et les PV et l'armure des classes."),
         ("Progression", "La maîtrise qu'il faut par point d'arme, le coût d'une compétence, ce qu'un niveau apporte, les passifs."),
         ("Économie", "L'or et les objets moyens de chaque table de butin, et ce qu'il faut pour chaque achat."),
-        ("Expéditions", "Le contenu de vrais donjons générés (par taille, menace et densité), ce qu'ils rapportent et demandent ; les minerais de la grotte."),
+        ("Expéditions", "Le contenu de vrais donjons générés (par taille, difficulté et densité), ce qu'ils rapportent et demandent ; les minerais de la grotte."),
+        ("Difficulté", "Les six difficultés d'une expédition : leurs réglages, les ennemis comptés dans les trois lieux, et ce que donnent leurs effets multipliés."),
         ("Réglages", "Tous les nombres de assets/icebreaker/, avec leur commentaire, à filtrer."),
     ])?;
     section(feuille, "Les couleurs", &[
@@ -232,7 +233,8 @@ pub fn ecrire_lisez_moi(feuille: &mut Worksheet, alertes: &[String]) -> Result<(
         ("Un usage", "Un geste entier, lancé avec l'arme de départ comme le fait le jeu (sa vitesse allonge les gestes et espace les touches d'un rayon). Un rayon ou un tir qu'on tient est compté par seconde ou par tir ; la colonne Notes le dit."),
         ("Secondes pour tuer", "Le temps de placer les touches qu'il faut : la préparation, puis la part du geste nécessaire. Si une utilisation d'une compétence ne suffit pas, on finit à l'attaque principale, sans attendre la recharge."),
         ("Cas particuliers", "Charge et élan comptés à fond, plongeon frappé depuis le sol, riposte comptée comme réussie, projectiles en éventail comptés pour un seul, pluie de flèches estimée : la colonne Notes de Combat le dit ligne par ligne."),
-        ("Expéditions", "Moyennes de donjons générés, objectif « tuer le chef », faction par défaut. L'or ne compte ni les caisses du décor ni la revente des objets. Les minutes de frappe ne comptent ni la marche, ni la fouille, ni les morts. Pas de comptage pour la grotte et la forêt."),
+        ("Expéditions", "Moyennes de donjons générés, objectif « tuer le chef », faction par défaut. L'or ne compte ni les caisses du décor ni la revente des objets. Les minutes de frappe ne comptent ni la marche, ni la fouille, ni les morts. Grotte et forêt : seuls leurs ennemis sont comptés, par difficulté (onglet Difficulté)."),
+        ("Difficulté", "Les facteurs sont ceux du fichier ; l'habileté (le rang des compétences des ennemis) n'entre dans aucun calcul. PV à abattre et dégâts reçus supposent que tous les ennemis du lieu sont affrontés."),
         ("Expérience", "Celle que Veloren donne pour un ennemi, entière : à plusieurs, elle se partage selon les dégâts infligés."),
     ])?;
     if !alertes.is_empty() {

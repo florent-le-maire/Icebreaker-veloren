@@ -14,11 +14,13 @@ pub const SORTES: [(&str, &str); 6] = [
     ("boss", "Boss"),
 ];
 
-/// Un cas : une taille, une menace, une densité ; les nombres sont des moyennes sur les graines.
+/// Un cas : une taille, une difficulté (`menace`, de 1 à 6 depuis DF), une densité ; les nombres sont des moyennes sur les graines.
 #[derive(Clone, Debug)]
 pub struct Cas {
     pub taille: String,
     pub menace: i32,
+    /// Le facteur de PV des ennemis à cette difficulté (`difficulte.ron`).
+    pub pv: f64,
     pub densite: String,
     /// L'expédition type : taille moyenne, menace et densité par défaut.
     pub reference: bool,
@@ -38,13 +40,17 @@ pub struct Donjon {
     pub habitants: Vec<Vec<String>>,
     pub faction: String,
     pub paliers: usize,
+    /// La densité d'ennemis d'une mission qui n'en dit rien.
+    pub densite_defaut: String,
 }
 
 fn un_cas(settings: &Settings, taille: &str, menace: i32, densite: &str, graines: u64, paliers: usize) -> Cas {
-    // DF : la colonne « menace » porte la difficulté 1 à 6 de l'expédition.
+    // DF : `menace` porte la difficulté 1 à 6 de l'expédition.
+    let pv = common::icebreaker_difficulte::IcebreakerDifficulte::actuel().niveau(Some(menace as u8)).pv;
     let mut cas = Cas {
         taille: taille.to_string(),
         menace,
+        pv: f64::from(pv),
         densite: densite.to_string(),
         reference: false,
         graines: 0,
@@ -87,8 +93,8 @@ fn un_cas(settings: &Settings, taille: &str, menace: i32, densite: &str, graines
     cas
 }
 
-/// Génère `graines` donjons par cas : chaque taille à chaque menace (densité par défaut), puis chaque taille à
-/// chaque autre densité (menace par défaut).
+/// Génère `graines` donjons par cas : chaque taille à chaque difficulté (densité par défaut), puis chaque taille à
+/// chaque autre densité (difficulté par défaut).
 pub fn lire(graines: u64) -> Result<Donjon> {
     let settings = Settings::load().map_err(|e| anyhow!("generation.ron : {e}"))?;
     let paliers = world::icebreaker::butin::Butin::load().map_err(anyhow::Error::msg)?.paliers();
@@ -133,6 +139,7 @@ pub fn lire(graines: u64) -> Result<Donjon> {
         habitants,
         faction: settings.default_faction.clone(),
         paliers,
+        densite_defaut: parametres.default_density.clone(),
     })
 }
 

@@ -10,6 +10,7 @@ mod butin;
 mod calcul;
 mod capacite;
 mod combat;
+mod difficulte;
 mod donjon;
 mod donnees;
 mod economie;
@@ -51,9 +52,19 @@ fn main() -> Result<()> {
     economie::hypotheses(&mut hyp, &d);
     expeditions::hypotheses(&mut hyp, &d);
 
-    let mut feuilles: Vec<Worksheet> = (0..9).map(|_| Worksheet::new()).collect();
-    let [f_synthese, f_hyp, f_combat, f_ennemis, f_progression, f_economie, f_expeditions, f_reglages, f_lisez_moi] =
-        &mut feuilles[..]
+    let mut feuilles: Vec<Worksheet> = (0..10).map(|_| Worksheet::new()).collect();
+    let [
+        f_synthese,
+        f_hyp,
+        f_combat,
+        f_ennemis,
+        f_progression,
+        f_economie,
+        f_expeditions,
+        f_difficulte,
+        f_reglages,
+        f_lisez_moi,
+    ] = &mut feuilles[..]
     else {
         unreachable!()
     };
@@ -62,6 +73,9 @@ fn main() -> Result<()> {
     let premier_point = progression::ecrire(f_progression, &d, &hyp, &competences)?;
     let expedition = expeditions::ecrire(f_expeditions, &d, &hyp)?;
     let achats = economie::ecrire(f_economie, &d, &hyp, &expedition)?;
+    // DF : les six difficultés (après l'économie : le fichier texte suit l'ordre d'écriture).
+    let difficultes = difficulte::lire(&d)?;
+    difficulte::ecrire(f_difficulte, &difficultes)?;
     hyp.ecrire(f_hyp)?;
     let reglages = reglages::ecrire(f_reglages)?;
     reglages::ecrire_lisez_moi(f_lisez_moi, &d.alertes)?;
@@ -87,7 +101,7 @@ fn main() -> Result<()> {
     }
     classeur.save(&sortie).with_context(|| format!("écriture de {sortie} (fermer le classeur dans Excel ?)"))?;
     // Les mêmes tableaux en texte, dans le dossier du même nom que le classeur.
-    let vue = resume::synthese(&d, &hyp, &competences, &ennemis, &expedition);
+    let vue = resume::synthese(&d, &hyp, &competences, &ennemis, &expedition, &difficultes);
     let dossier = std::path::Path::new(&sortie).with_extension("");
     let fichiers = texte::ecrire(&dossier, &vue)?;
     println!("{} : {fichiers} fichiers Markdown", dossier.display());

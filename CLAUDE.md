@@ -65,7 +65,8 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
 - Tests ciblés : `cargo test -p <crate> <filtre>`.
 - Campagne (décision 0016) : `powershell -ExecutionPolicy Bypass -File .\icebreaker.ps1 campagne` (port 14100 : le
   village et les emplacements de donjon dans un seul serveur), ou le bouton « Campagne » du menu principal. Un lieu
-  seul, pour tester : `village`, `donjon -Site Gnarling` (port 14110), `donjon -Site Genere` ; client en multijoueur
+  seul, pour tester : `village`, `donjon -Site Gnarling` (port 14110), `donjon -Site Genere` (`-Difficulte 1..6`,
+  jalon DF ; en campagne `/expedition difficulte <1-6>`, au lieu d'entraînement `/entrainement difficulte <1-6>`) ; client en multijoueur
   sur `localhost:<port>`. Une partie (personnages, caisse, village…) = `userdata-icebreaker\parties\<nom>`, choisie
   par `-Partie <nom>` (défaut : la dernière jouée) ; au menu, `ICEBREAKER_AUTO_PARTIE=<nom>` avec l'auto-clic.
 - Atelier des grottes (jalon U, `docs/icebreaker/PLAN-CAVERNE.md`) : `.\icebreaker.ps1 caverne` compile le générateur
