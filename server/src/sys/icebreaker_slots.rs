@@ -138,6 +138,8 @@ impl<'a> System<'a> for Sys {
                     // Icebreaker U.11: a seed short enough to be read and typed in the workshop.
                     let seed = u64::from(rand::random::<u32>());
                     let profil = expedition.partance.as_ref().filter(|_| wanted).and_then(|p| p.profil.clone());
+                    // Icebreaker DF: and of the difficulty it chose.
+                    let difficulte = expedition.partance.as_ref().filter(|_| wanted).and_then(|p| p.difficulte);
                     new_layout(
                         slot,
                         &new_plan.0,
@@ -146,6 +148,7 @@ impl<'a> System<'a> for Sys {
                         &mut new_plan.4,
                         seed,
                         profil.as_deref(),
+                        difficulte,
                     );
                 }
             }
@@ -173,9 +176,10 @@ pub fn new_layout(
     sleep: &mut super::icebreaker_sleep::IcebreakerSleep,
     seed: u64,
     profil: Option<&str>,
+    difficulte: Option<u8>,
 ) {
     let site = &index.sites[slot.site];
-    match world::icebreaker::regenerate_slot(world, site, seed, profil) {
+    match world::icebreaker::regenerate_slot(world, site, seed, profil, difficulte) {
         Ok(true) => {
             slot.arrival = crate::icebreaker_slots::arrival_pos(world, index, site, site.origin);
             crate::icebreaker_mission::set_dungeon(mission, sleep, slot.site, site);

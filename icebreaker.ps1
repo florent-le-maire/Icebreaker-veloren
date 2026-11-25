@@ -51,6 +51,9 @@ param(
     [ValidateSet("", "spring", "summer", "autumn", "winter")] [string]$Saison = "",
     [ValidateSet("", "1", "2", "3", "4", "5")] [string]$Menace = "",
     [ValidateSet("", "low", "medium", "high")] [string]$Ennemis = "",
+    # Difficulté d'un lieu lancé seul (DF, donjon généré, grotte, forêt) : 1 à 6, assets/icebreaker/difficulte.ron ;
+    # vide : celle par défaut. En campagne, chaque expédition choisit la sienne au départ.
+    [ValidateSet("", "1", "2", "3", "4", "5", "6")] [string]$Difficulte = "",
     [ValidateSet("", "races", "gnarling", "adlet", "cultist")] [string]$Faction = "",
     # Race des ennemis (H.2, donjon généré et grotte) : au hasard par la graine sinon.
     [ValidateSet("", "human", "orc", "dwarf", "elf", "draugr", "danari")] [string]$Race = "",
@@ -243,6 +246,7 @@ $env:ICEBREAKER_DONJON_REGION = $Region
 $env:ICEBREAKER_DONJON_SAISON = $Saison
 $env:ICEBREAKER_DONJON_MENACE = $Menace
 $env:ICEBREAKER_DONJON_ENNEMIS = $Ennemis
+$env:ICEBREAKER_DIFFICULTE = $Difficulte
 $env:ICEBREAKER_DONJON_FACTION = $Faction
 $env:ICEBREAKER_DONJON_RACE = $Race
 $env:ICEBREAKER_GROTTE_AMBIANCE = $Ambiance

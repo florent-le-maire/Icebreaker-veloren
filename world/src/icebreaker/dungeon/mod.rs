@@ -63,6 +63,8 @@ pub struct Dungeon {
     pub faction: settings::Faction,
     /// Icebreaker H.2: the species of its humanoids (none: their own bodies).
     pub species: Option<String>,
+    /// Icebreaker DF: the line of its difficulty (`difficulte.ron`).
+    pub difficulte: common::icebreaker_difficulte::Niveau,
     /// Locked doors (door cells), and the cells where their keys lie, with
     /// the key of each.
     pub locks: Vec<(Cell, settings::KeySettings)>,
@@ -439,6 +441,7 @@ pub fn single_room(settings: &Settings, room: &rooms::RoomTemplate) -> Result<Du
                 .ok_or("faction par défaut inconnue")?,
         ),
         species: None,
+        difficulte: Default::default(),
         locks: Vec::new(),
         keys: Vec::new(),
         sleep: settings.sleep.clone(),
@@ -615,6 +618,7 @@ fn generate_mission(settings: &Settings, mission: &Mission) -> Result<Dungeon, S
                 ),
                 faction: resolved.faction.clone(),
                 species: resolved.species.clone(),
+                difficulte: resolved.difficulte.clone(),
                 locks: with_keys(&assembled.locks)?,
                 keys,
                 sleep: settings.sleep.clone(),

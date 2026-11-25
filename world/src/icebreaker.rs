@@ -166,21 +166,22 @@ pub fn dungeon_arrival_under(site: &Site) -> Option<vek::Vec3<i32>> {
 /// Icebreaker U.11: the shape (a preset of `formes.ron`) and the seed of the
 /// cave of `site`; F.33: or of its generated dungeon. First what it is
 /// (`Grotte`, `Donjon`).
-pub fn forme_info(site: &Site) -> Option<(&'static str, String, u64)> {
+/// Icebreaker DF: and its difficulty, 1 to 6.
+pub fn forme_info(site: &Site) -> Option<(&'static str, String, u64, u8)> {
     site.plots().find_map(|plot| match plot.kind() {
         PlotKind::IcebreakerGrotte(grotte) => {
             let plot = grotte.get();
-            Some(("Grotte", plot.grotte().profil.clone(), plot.grotte().seed))
+            Some(("Grotte", plot.grotte().profil.clone(), plot.grotte().seed, plot.grotte().difficulte.numero))
         },
         PlotKind::IcebreakerDungeon(dungeon) => {
             let plot = dungeon.get();
             let (profil, seed) = plot.forme();
-            Some(("Donjon", profil.to_string(), seed))
+            Some(("Donjon", profil.to_string(), seed, plot.difficulte()))
         },
         // Icebreaker FO.4.
         PlotKind::IcebreakerForet(foret) => {
             let plot = foret.get();
-            Some(("Forêt", plot.lieu().profil.clone(), plot.lieu().seed))
+            Some(("Forêt", plot.lieu().profil.clone(), plot.lieu().seed, plot.lieu().difficulte.numero))
         },
         _ => None,
     })
@@ -483,15 +484,21 @@ pub fn dungeon_mission(site: &Site) -> Option<crate::site::plot::MissionTargets>
 /// in place of the one of `site`, within the area kept for it; the chunks
 /// generated from now on draw it. `Ok(false)`: the site has none, or none fit
 /// (the current one stays). `profil` (Icebreaker U.11, F.33): the shape asked
-/// for a cave or a generated dungeon.
-pub fn regenerate_slot(world: &crate::World, site: &Site, seed: u64, profil: Option<&str>) -> Result<bool, String> {
+/// for a cave or a generated dungeon. `difficulte` (Icebreaker DF): the one of the expedition, 1 to 6.
+pub fn regenerate_slot(
+    world: &crate::World,
+    site: &Site,
+    seed: u64,
+    profil: Option<&str>,
+    difficulte: Option<u8>,
+) -> Result<bool, String> {
     let land = crate::Land::from_sim(world.sim());
     for plot in site.plots() {
         let replaced = match plot.kind() {
-            PlotKind::IcebreakerDungeon(dungeon) => dungeon.regenerate(&land, site.origin, seed, profil)?,
-            PlotKind::IcebreakerGrotte(grotte) => grotte.regenerate(&land, site.origin, seed, profil)?,
+            PlotKind::IcebreakerDungeon(dungeon) => dungeon.regenerate(&land, site.origin, seed, profil, difficulte)?,
+            PlotKind::IcebreakerGrotte(grotte) => grotte.regenerate(&land, site.origin, seed, profil, difficulte)?,
             // Icebreaker FO.4.
-            PlotKind::IcebreakerForet(foret) => foret.regenerate(&land, site.origin, seed, profil)?,
+            PlotKind::IcebreakerForet(foret) => foret.regenerate(&land, site.origin, seed, profil, difficulte)?,
             _ => continue,
         };
         if !replaced {

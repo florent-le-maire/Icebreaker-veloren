@@ -266,8 +266,19 @@ impl Site {
 impl Remplacable<IcebreakerForet> {
     /// Draws in its place a new forest of `seed`, around the same `origin`.
     /// `profil`: the shape asked for.
-    pub fn regenerate(&self, land: &Land, origin: Vec2<i32>, seed: u64, profil: Option<&str>) -> Result<bool, String> {
-        let settings = foret::Settings::load()?;
+    /// Icebreaker DF: `difficulte`, the one of the expedition (none: as the launcher says, or the default one).
+    pub fn regenerate(
+        &self,
+        land: &Land,
+        origin: Vec2<i32>,
+        seed: u64,
+        profil: Option<&str>,
+        difficulte: Option<u8>,
+    ) -> Result<bool, String> {
+        let mut settings = foret::Settings::load()?;
+        if difficulte.is_some() {
+            settings.difficulte = common::icebreaker_difficulte::niveau(difficulte);
+        }
         self.replace(IcebreakerForet::generate(&settings, land, origin, seed, profil)?);
         Ok(true)
     }

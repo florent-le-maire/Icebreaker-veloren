@@ -32,6 +32,10 @@ pub struct Settings {
     /// The shapes (`formes.ron`), read by `load`.
     #[serde(skip)]
     pub formes: Option<Formes>,
+    /// Icebreaker DF: the line of the difficulty of the expedition (`difficulte.ron`), set by `load` (the one
+    /// of the launcher, or the default one) and by the party that leaves.
+    #[serde(skip)]
+    pub difficulte: common::icebreaker_difficulte::Niveau,
 }
 
 /// Icebreaker FO.5: how many live in the forest, and where the chests lie.
@@ -85,6 +89,7 @@ impl Settings {
         }
         settings.butin = Some(Butin::load()?);
         settings.formes = Some(Formes::lire(&read("formes.ron")?)?);
+        settings.difficulte = common::icebreaker_difficulte::niveau(None);
         Ok(settings)
     }
 }
@@ -104,6 +109,8 @@ pub struct Lieu {
     /// their species, the chests and the tier of the loot of each.
     pub inhabitants: Vec<Inhabitant>,
     pub species: Option<String>,
+    /// Icebreaker DF: the line of its difficulty (`difficulte.ron`).
+    pub difficulte: common::icebreaker_difficulte::Niveau,
     pub chests: Vec<Vec3<i32>>,
     pub chest_tiers: Vec<usize>,
     pub chest: String,
@@ -218,6 +225,7 @@ pub fn generate(settings: &Settings, seed: u64, origine: Vec3<i32>, voulu: Optio
         summary,
         inhabitants,
         species,
+        difficulte: settings.difficulte.clone(),
         chests: coffres.into_iter().map(|p| origine + p).collect(),
         chest_tiers,
         chest: settings.population.coffre.clone(),

@@ -43,6 +43,10 @@ pub struct Settings {
     /// Icebreaker U.4: the shapes (`formes.ron`), read by `load`.
     #[serde(skip)]
     pub formes: Option<Formes>,
+    /// Icebreaker DF: the line of the difficulty of the expedition (`difficulte.ron`), set by `load` (the one
+    /// of the launcher, or the default one) and by the party that leaves.
+    #[serde(skip)]
+    pub difficulte: common::icebreaker_difficulte::Niveau,
 }
 
 /// The veins of ore (Icebreaker U.19, `design/filons.md`): how many; their ore,
@@ -212,6 +216,7 @@ impl Settings {
         let mut settings = Self::parse(&read("grotte.ron")?)?;
         settings.butin = Some(super::butin::Butin::load()?);
         settings.formes = Some(Formes::lire(&read("formes.ron")?)?);
+        settings.difficulte = common::icebreaker_difficulte::niveau(None);
         Ok(settings)
     }
 }
@@ -266,6 +271,8 @@ pub struct Grotte {
     pub inhabitants: Vec<Inhabitant>,
     /// Icebreaker H.4: the species of its people (none: their own bodies).
     pub species: Option<String>,
+    /// Icebreaker DF: the line of its difficulty (`difficulte.ron`).
+    pub difficulte: common::icebreaker_difficulte::Niveau,
     /// Where the chests lie, and their sprite.
     pub chests: Vec<Vec3<i32>>,
     /// Icebreaker B.5: the tier of each chest (same order), by the level of
@@ -559,6 +566,7 @@ pub fn generate(
         vein_blocks: Arc::new(vein_blocks),
         inhabitants,
         species,
+        difficulte: settings.difficulte.clone(),
         chests,
         chest_tiers,
         butin,

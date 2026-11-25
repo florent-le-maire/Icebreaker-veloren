@@ -268,7 +268,7 @@ impl IcebreakerGrotte {
             let tried = Self::new(grotte);
             let b = tried.bounds();
             if kept.contains_point(b.min) && kept.contains_point(b.max) {
-                info!("Icebreaker grotte: {}", tried.grotte.summary);
+                info!(difficulte = tried.grotte.difficulte.numero, "Icebreaker grotte: {}", tried.grotte.summary);
                 return (tried, true);
             }
             plot = Some(tried);
@@ -282,8 +282,19 @@ impl Remplacable<IcebreakerGrotte> {
     /// Icebreaker I.11: draws in its place a new cave of `seed`, its mouth at
     /// the same `origin`, within the area kept for it. The current one stays
     /// if none fits; says whether it was replaced. `profil`: the shape asked for.
-    pub fn regenerate(&self, land: &Land, origin: Vec2<i32>, seed: u64, profil: Option<&str>) -> Result<bool, String> {
-        let settings = grotte::Settings::load()?;
+    /// Icebreaker DF: `difficulte`, the one of the expedition (none: as the launcher says, or the default one).
+    pub fn regenerate(
+        &self,
+        land: &Land,
+        origin: Vec2<i32>,
+        seed: u64,
+        profil: Option<&str>,
+        difficulte: Option<u8>,
+    ) -> Result<bool, String> {
+        let mut settings = grotte::Settings::load()?;
+        if difficulte.is_some() {
+            settings.difficulte = common::icebreaker_difficulte::niveau(difficulte);
+        }
         let (plot, fits) = IcebreakerGrotte::generate_inside(&settings, land, origin, seed, profil);
         if fits {
             self.replace(plot);

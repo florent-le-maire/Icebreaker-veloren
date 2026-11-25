@@ -118,7 +118,7 @@ impl<'a> System<'a> for Sys {
         // Where a party arrives, side by side; what they carry now is what
         // `/rentrer` will count from. Icebreaker U.11: told the shape and
         // the seed of their cave.
-        let mut arriver = |arrival: Vec3<f32>, members: Vec<specs::Entity>, grotte: Option<(&'static str, String, u64)>| {
+        let mut arriver = |arrival: Vec3<f32>, members: Vec<specs::Entity>, grotte: Option<(&'static str, String, u64, u8)>| {
             for (i, entity) in members.into_iter().enumerate() {
                 let offset = Vec3::new((i % 4) as f32 * 2.0, (i / 4) as f32 * 2.0, 0.0);
                 teleports.emit_now(TeleportToPositionEvent {
@@ -130,10 +130,10 @@ impl<'a> System<'a> for Sys {
                     crate::icebreaker_balise::donner_si_absente(&mut inventory);
                     let _ = arrivals.insert(entity, Arrival::of(&inventory));
                 }
-                if let (Some((lieu, profil, seed)), Some(client)) = (&grotte, clients.get(entity)) {
+                if let (Some((lieu, profil, seed, difficulte)), Some(client)) = (&grotte, clients.get(entity)) {
                     client.send_fallible(ServerGeneral::server_msg(
                         ChatType::Meta,
-                        Content::Plain(icebreaker_expedition::annonce_forme(lieu, profil, *seed)),
+                        Content::Plain(icebreaker_expedition::annonce_forme(lieu, profil, *seed, *difficulte)),
                     ));
                 }
             }
@@ -144,14 +144,14 @@ impl<'a> System<'a> for Sys {
             && let Some(partance) = expedition.partance.take()
             && let Some(slot) = slots.0.iter().find(|slot| slot.site == partance.site)
         {
-            if let Some((lieu, profil, seed)) = &partance.grotte {
-                tracing::info!(lieu, profil, seed, "Icebreaker: the party arrives in its cave or dungeon");
+            if let Some((lieu, profil, seed, difficulte)) = &partance.grotte {
+                tracing::info!(lieu, profil, seed, difficulte, "Icebreaker: the party arrives in its cave or dungeon");
             }
             let members = partance.members.into_iter().filter(|entity| positions.contains(*entity)).collect();
             arriver(slot.arrival, members, partance.grotte);
         }
 
-        let Some((lieu, members, profil)) = departure else {
+        let Some((lieu, members, profil, difficulte)) = departure else {
             return;
         };
         let members = members
@@ -172,6 +172,7 @@ impl<'a> System<'a> for Sys {
                     site: slot.site,
                     members,
                     profil,
+                    difficulte: Some(difficulte),
                     refait: false,
                     grotte: None,
                 });

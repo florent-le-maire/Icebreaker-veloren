@@ -576,6 +576,7 @@ impl Settings {
             tour_etages: self.vertical.tour_etages,
             faction,
             species,
+            difficulte: common::icebreaker_difficulte::niveau(mission.difficulte),
             modifiers: names,
         })
     }
@@ -647,6 +648,9 @@ pub struct Mission {
     pub season: Option<String>,
     /// 1 to 5 (none: the default threat).
     pub threat: Option<i32>,
+    /// Icebreaker DF: the difficulty of the expedition, 1 to 6 (`difficulte.ron`; none: the one of the launcher,
+    /// or the default one).
+    pub difficulte: Option<u8>,
     /// Number of enemies: `low`, `medium`, `high` (none: the default one).
     pub density: Option<String>,
     /// Icebreaker F.33: the profile of `formes.ron` asked for (none: drawn by the seed).
@@ -664,6 +668,7 @@ impl Default for Mission {
             region: None,
             season: None,
             threat: None,
+            difficulte: None,
             profil: None,
             density: None,
         }
@@ -694,6 +699,7 @@ impl Mission {
             region: var("REGION"),
             season: var("SAISON"),
             threat,
+            difficulte: common::icebreaker_difficulte::du_lanceur(),
             density: var("ENNEMIS"),
             profil: var("PROFIL"),
         })
@@ -726,6 +732,8 @@ pub struct Resolved {
     pub faction: Faction,
     /// Icebreaker H.2: the species of its humanoids (none: their own bodies).
     pub species: Option<String>,
+    /// Icebreaker DF: the line of its difficulty (`difficulte.ron`).
+    pub difficulte: common::icebreaker_difficulte::Niveau,
     /// Names of the parameters applied, for the summary.
     pub modifiers: Vec<String>,
     /// Icebreaker F.53 : rooms out of the mission (`assembly.salles_en_plus`).

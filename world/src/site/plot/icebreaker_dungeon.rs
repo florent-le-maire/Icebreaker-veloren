@@ -150,6 +150,9 @@ impl IcebreakerDungeon {
     /// Icebreaker F.33: the profile it was drawn with, and the seed of its mission.
     pub fn forme(&self) -> (&str, u64) { (&self.forme.0, self.forme.1) }
 
+    /// Icebreaker DF: its difficulty, 1 to 6.
+    pub fn difficulte(&self) -> u8 { self.dungeon.difficulte.numero }
+
     /// Icebreaker F.31: where players arrive, in the safe room (a block one stands in).
     pub fn arrival(&self) -> Vec3<i32> { self.arrival }
 
@@ -796,7 +799,7 @@ impl Site {
 impl IcebreakerDungeon {
     /// Tells what was generated.
     fn log(&self) {
-        info!(profil = %self.forme.0, seed = self.forme.1, "Icebreaker dungeon: {}\n{}", self.dungeon.summary, self.dungeon.plan.to_text());
+        info!(profil = %self.forme.0, seed = self.forme.1, difficulte = self.difficulte(), "Icebreaker dungeon: {}\n{}", self.dungeon.summary, self.dungeon.plan.to_text());
         // Icebreaker F.10 : where to stand to look at a room (`/goto`) : the free floor of the entrance level
         // nearest to the middle of the plan, and the corner of the plan (a cell is `cell` blocks wide).
         let floor: Vec<plan::Cell> =
@@ -828,13 +831,25 @@ impl Remplacable<IcebreakerDungeon> {
     /// safe room under the same `origin` (F.31), within the area kept for it.
     /// The current one stays if none fits; says whether it was replaced.
     /// Icebreaker F.33: `profil`, the shape asked for (none: as the launcher says, or drawn by the seed).
-    pub fn regenerate(&self, land: &Land, origin: Vec2<i32>, seed: u64, profil: Option<&str>) -> Result<bool, String> {
+    /// Icebreaker DF: `difficulte`, the one of the expedition (none: as the launcher says, or the default one).
+    pub fn regenerate(
+        &self,
+        land: &Land,
+        origin: Vec2<i32>,
+        seed: u64,
+        profil: Option<&str>,
+        difficulte: Option<u8>,
+    ) -> Result<bool, String> {
         let world = land.size().map(|e| e as i32);
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
         let (plot, fits) =
             IcebreakerDungeon::generate_inside(land, world, &mut rng, origin, |seed| {
                 let mission = dungeon::Mission::from_env(seed)?;
-                Ok(dungeon::Mission { profil: profil.map(String::from).or(mission.profil.clone()), ..mission })
+                Ok(dungeon::Mission {
+                    profil: profil.map(String::from).or(mission.profil.clone()),
+                    difficulte: difficulte.or(mission.difficulte),
+                    ..mission
+                })
             })?;
         if fits {
             plot.log();

@@ -47,9 +47,11 @@ pub struct Partance {
     pub site: common::store::Id<world::site::Site>,
     pub members: Vec<specs::Entity>,
     pub profil: Option<String>,
+    /// Icebreaker DF: the difficulty it chose, 1 to 6.
+    pub difficulte: Option<u8>,
     pub refait: bool,
-    /// What was dug (`Grotte`, `Donjon`), its shape and its seed.
-    pub grotte: Option<(&'static str, String, u64)>,
+    /// What was dug (`Grotte`, `Donjon`), its shape, its seed and its difficulty.
+    pub grotte: Option<(&'static str, String, u64, u8)>,
 }
 
 /// The sites (`-Site`) whose shape a party chooses: the cave (U.11), the generated dungeon (F.33).
@@ -99,10 +101,13 @@ impl FormeLieu {
 pub const HASARD: &str = "hasard";
 
 /// What a party reads when it arrives in its cave or generated dungeon (`lieu`: `Grotte`, `Donjon`): the same
-/// preset and seed in the workshop show its shape.
-pub fn annonce_forme(lieu: &str, profil: &str, seed: u64) -> String {
-    format!("{lieu} « {profil} », graine {seed}.")
+/// preset and seed in the workshop show its shape. Icebreaker DF: and its difficulty.
+pub fn annonce_forme(lieu: &str, profil: &str, seed: u64, difficulte: u8) -> String {
+    format!("{lieu} « {profil} », graine {seed}, difficulté {difficulte}.")
 }
+
+/// Icebreaker DF: the word of `/expedition difficulte <1-6>`.
+pub const DIFFICULTE: &str = "difficulte";
 
 impl IcebreakerExpedition {
     pub fn new(leader_pos: Option<Vec3<f32>>) -> Self {
@@ -215,6 +220,8 @@ pub struct Expedition {
     /// Icebreaker U.11: the shape chosen for the cave (a preset of
     /// `formes.ron`); none: drawn by the seed.
     pub profil: Option<String>,
+    /// Icebreaker DF: its difficulty, 1 to 6 (`difficulte.ron`), chosen by any member.
+    pub difficulte: u8,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -229,10 +236,12 @@ impl Expedition {
         let nom = lieux()
             .get(self.destination)
             .map_or_else(|| "?".to_string(), |lieu| lieu.nom.clone());
-        match &self.profil {
+        let nom = match &self.profil {
             Some(profil) => format!("{nom} — {profil}"),
             None => nom,
-        }
+        };
+        // Icebreaker DF: the difficulty, where there is one.
+        if self.forme().is_some() { format!("{nom}, difficulté {}", self.difficulte) } else { nom }
     }
 
     /// Whether it goes to a cave or a generated dungeon, whose shape is chosen.
@@ -474,6 +483,15 @@ fn panneau_de(
             let choisie = exp.profil.as_deref() == Some(preset.as_str());
             panneau.lignes.push(forme(format!("Forme {de} : {preset}"), &preset, choisie));
         }
+        // Icebreaker DF: the difficulty, 1 to 6, chosen by any member.
+        for n in 1..=common::icebreaker_difficulte::IcebreakerDifficulte::actuel().max() {
+            let choisie = exp.difficulte == n;
+            let ligne = Ligne::nouvelle(format!("Difficulté {n}")).icone("globe").action(
+                Action::nouvelle("Choisir", &["expedition", DIFFICULTE, &n.to_string()])
+                    .permise(membre && !choisie && !fantome),
+            );
+            panneau.lignes.push(if choisie { ligne.pastille("choisie", Ton::Or) } else { ligne });
+        }
     }
     match exp.member(player) {
         None => {
@@ -538,12 +556,14 @@ pub(crate) fn handle_expedition(
         return Err(Content::Plain(crate::icebreaker_registre::GHOST_REFUSAL.to_string()));
     }
     // Icebreaker U.11: `/expedition forme <preset|hasard>`, or the preset after the destination.
+    // Icebreaker DF: `/expedition difficulte <1-6>`.
+    let difficulte = args.first().is_some_and(|word| word == DIFFICULTE || word == "difficulté");
     let forme = args.first().is_some_and(|word| word == "forme");
     let id = args.first().and_then(|word| answer_of_word(word));
-    if (id.is_none() && !forme) || (forme && args.len() < 2) {
+    if (id.is_none() && !forme && !difficulte) || ((forme || difficulte) && args.len() < 2) {
         return Err(Content::Plain(
-            "/expedition <numéro de destination> [preset de grotte ou de donjon], forme <preset|hasard>, rejoindre, pret, attendre \
-             ou quitter"
+            "/expedition <numéro de destination> [preset de grotte ou de donjon], forme <preset|hasard>, difficulte <1-6>, rejoindre, pret, \
+             attendre ou quitter"
                 .to_string(),
         ));
     }
@@ -564,6 +584,9 @@ pub(crate) fn handle_expedition(
         let chosen = choose_forme_on(&mut expedition(), uid, &alias, preset, &presets);
         outcome.reply = chosen.reply.or(outcome.reply);
         outcome.announce.extend(chosen.announce);
+    }
+    if let Some(mot) = args.get(1).filter(|_| difficulte) {
+        outcome = choose_difficulte_on(&mut expedition(), uid, &alias, mot);
     }
     if let Some(reply) = outcome.reply {
         server.notify_client(client, ServerGeneral::server_msg(ChatType::Meta, Content::Plain(reply)));
@@ -611,6 +634,30 @@ fn choose_forme_on(
     outcome
 }
 
+/// Icebreaker DF: `player`, a member of the expedition to a cave, a generated dungeon or a forest, chooses its
+/// difficulty (`mot`: 1 to 6).
+fn choose_difficulte_on(expedition: &mut Option<Expedition>, player: Uid, alias: &str, mot: &str) -> Outcome {
+    let mut outcome = Outcome::default();
+    let Some(exp) = expedition.as_mut().filter(|exp| exp.member(player).is_some()) else {
+        outcome.reply = Some("Il faut être inscrit à l'expédition pour en choisir la difficulté.".to_string());
+        return outcome;
+    };
+    if exp.forme().is_none() {
+        outcome.reply = Some("La difficulté ne se choisit que pour un donjon généré, une grotte ou une forêt.".to_string());
+        return outcome;
+    }
+    let max = common::icebreaker_difficulte::IcebreakerDifficulte::actuel().max();
+    let Some(difficulte) = mot.parse::<u8>().ok().filter(|n| (1..=max).contains(n)) else {
+        outcome.reply = Some(format!("La difficulté va de 1 à {max}."));
+        return outcome;
+    };
+    if exp.difficulte != difficulte {
+        outcome.announce.push(format!("{alias} choisit la difficulté {difficulte}."));
+        exp.difficulte = difficulte;
+    }
+    outcome
+}
+
 /// Applies the answer `response_id` of `player` (`alias`) at time `now`.
 pub fn answer(player: Uid, alias: &str, response_id: u16, now: f64) -> Outcome {
     answer_to(&mut expedition(), player, alias, response_id, now)
@@ -654,6 +701,7 @@ fn answer_to(
                     }],
                     departure: None,
                     profil: None,
+                    difficulte: common::icebreaker_difficulte::IcebreakerDifficulte::actuel().borne(None),
                 });
             },
             None => outcome.reply = Some("Ce n'est pas une destination d'expédition.".to_string()),
@@ -716,8 +764,8 @@ pub fn tick(
     tick_on(&mut expedition(), now, present, has_room)
 }
 
-/// An expedition that leaves: where to, who, the shape chosen for a cave.
-pub type Departure = (Lieu, Vec<Uid>, Option<String>);
+/// An expedition that leaves: where to, who, the shape chosen for a cave, its difficulty (Icebreaker DF).
+pub type Departure = (Lieu, Vec<Uid>, Option<String>, u8);
 
 fn tick_on(
     expedition: &mut Option<Expedition>,
@@ -764,7 +812,7 @@ fn tick_on(
         if let Some(lieu) = lieu {
             announce.push(format!("L'expédition part vers {} !", lieu.nom));
             return (
-                Some((lieu, exp.members.into_iter().map(|m| m.uid).collect(), exp.profil)),
+                Some((lieu, exp.members.into_iter().map(|m| m.uid).collect(), exp.profil, exp.difficulte)),
                 announce,
             );
         }
@@ -912,7 +960,7 @@ mod tests {
         answer_to(&mut exp, flo, "Flo", READY, 20.0);
         answer_to(&mut exp, sayanel, "Sayanel", READY, 20.0);
         let (departure, _) = tick_on(&mut exp, 20.0 + DEPARTURE_DELAY, |_| true, |_| true);
-        let (lieu, members, _) = departure.unwrap();
+        let (lieu, members, ..) = departure.unwrap();
         assert_eq!(lieu.nom, lieux()[usize::from(donjon)].nom);
         assert_eq!(members, vec![flo, sayanel]);
         assert_eq!(exp, None);
@@ -961,6 +1009,7 @@ mod tests {
             }],
             departure: None,
             profil: None,
+            difficulte: 3,
         };
         let dehors = panneau_de(Some(&exp), flo, false, 0.0);
         assert_eq!(commandes(&dehors), vec![("expedition rejoindre".to_string(), true, true)]);
@@ -1065,7 +1114,26 @@ mod tests {
         // Chosen: everyone is told, the destination names it, the panel shows it.
         let chosen = choose_forme_on(&mut exp, flo, "Flo", "gouffre", &presets);
         assert_eq!((chosen.reply, chosen.announce.len()), (None, 1));
-        assert_eq!(exp.as_ref().unwrap().destination_name(), "Grotte — gouffre");
+        assert_eq!(exp.as_ref().unwrap().destination_name(), "Grotte — gouffre, difficulté 3");
+        // Icebreaker DF: the difficulty, 1 to 6, by a member only; the panel shows it, the party takes it along.
+        assert!(choose_difficulte_on(&mut exp, sayanel, "Sayanel", "5").reply.is_some());
+        assert!(choose_difficulte_on(&mut exp, flo, "Flo", "7").reply.is_some_and(|r| r.contains("1 à 6")));
+        assert!(choose_difficulte_on(&mut exp, flo, "Flo", "zéro").reply.is_some());
+        assert_eq!(exp.as_ref().unwrap().difficulte, 3);
+        let chosen = choose_difficulte_on(&mut exp, flo, "Flo", "5");
+        assert_eq!((chosen.reply, chosen.announce), (None, vec!["Flo choisit la difficulté 5.".to_string()]));
+        assert!(choose_difficulte_on(&mut exp, flo, "Flo", "5").announce.is_empty());
+        assert_eq!(exp.as_ref().unwrap().destination_name(), "Grotte — gouffre, difficulté 5");
+        let panneau = panneau_de(exp.as_ref(), flo, false, 0.0);
+        let choisies: Vec<bool> = panneau
+            .lignes
+            .iter()
+            .filter(|l| matches!(&l.titre, Content::Plain(t) if t.starts_with("Difficulté ")))
+            .map(|l| l.pastille.is_some())
+            .collect();
+        assert_eq!(choisies, vec![false, false, false, false, true, false]);
+        let (departure, _) = tick_on(&mut exp.clone(), 1.0e9, |_| true, |_| true);
+        assert!(departure.is_none(), "personne n'est prêt");
         let panneau = panneau_de(exp.as_ref(), flo, false, 0.0);
         let titre = |l: &common::icebreaker_panneau::Ligne| match &l.titre {
             Content::Plain(titre) => titre.clone(),
@@ -1087,6 +1155,6 @@ mod tests {
         choose_forme_on(&mut exp, flo, "Flo", HASARD, &presets);
         let (departure, _) = tick_on(&mut exp, DEPARTURE_DELAY, |_| true, |_| true);
         assert_eq!(departure.unwrap().2, None);
-        assert_eq!(annonce_forme("Grotte", "gouffre", 48213), "Grotte « gouffre », graine 48213.");
+        assert_eq!(annonce_forme("Grotte", "gouffre", 48213, 4), "Grotte « gouffre », graine 48213, difficulté 4.");
     }
 }
