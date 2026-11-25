@@ -35,6 +35,8 @@ members = [
     "icebreaker-foret",
     # Icebreaker : nos modèles voxel, générés par du code (docs/icebreaker/PLAN-PLAYTEST.md, F.23)
     "icebreaker-modeles",
+    # Icebreaker : le classeur d'équilibrage (docs/icebreaker/PLAN-PLAYTEST.md, § 8)
+    "icebreaker-equilibrage",
 ]
 
 ### PACKAGE ###

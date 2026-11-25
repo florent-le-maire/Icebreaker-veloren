@@ -429,6 +429,21 @@ campagne à deux :
 - le butin et l'or d'une descente (`butin.ron`), le minerai après U.14 et U.15 ;
 - la durée du sablier, la chance de lâcher une âme, la force de leurs effets.
 
+### Le classeur d'équilibrage (jalon EQ, worktree `Veloren-equilibrage`)
+
+La vue d'ensemble des chiffres : `.icebreaker.ps1 equilibrage` relit `assets/` avec les structures du jeu et réécrit
+`docs/icebreaker/equilibrage.xlsx`. Les calculs sont des formules branchées sur l'onglet « Hypothèses » : on y essaie une
+valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à vérifier en jeu.
+
+- [x] **EQ.1 Combat et ennemis** — crate `icebreaker-equilibrage` ; onglets Hypothèses, Combat (163 compétences et
+  niveaux : dégâts, dégâts par seconde, touches et secondes pour tuer chaque ennemi) et Ennemis (touches pour tuer chaque
+  classe). Formules recalculées par un moteur à part : 0 erreur, 0 écart ; pas ouvert dans Excel (absent du poste). — HASH1
+- [ ] **EQ.2 Progression et économie** — maîtrise et points d'arme, passifs ; or attendu par table de butin face aux prix.
+  — *en cours : Veloren-equilibrage, 2026-11-25*
+- [ ] **EQ.3 Expéditions** — créatures, coffres, PV à abattre et or par taille, menace et densité ; minerais de la grotte.
+- [ ] **EQ.4 Synthèse** — tableau de bord (matrices, graphiques, écarts aux cibles), onglets Réglages et Lisez-moi.
+- [ ] **EQ.5 Branchement** — sous-commande `equilibrage`, `CLAUDE.md`, tableau des jalons.
+
 ## 9. Le jour J : liste technique
 
 Ce qui fait échouer une soirée même si le jeu est prêt. Détail des commandes : `MAINTENANCE.md`.

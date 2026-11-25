@@ -3630,6 +3630,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "icebreaker-equilibrage"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "rand 0.10.3",
+ "ron",
+ "rust_xlsxwriter",
+ "serde",
+ "serde_json",
+ "vek 0.17.2",
+ "veloren-common",
+ "veloren-world",
+]
+
+[[package]]
 name = "icebreaker-foret"
 version = "0.1.0"
 dependencies = [
