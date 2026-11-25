@@ -670,7 +670,8 @@ impl Structure for IcebreakerDungeon {
                 if center.x == area.max.x || center.y == area.max.y {
                     continue;
                 }
-                let asset = &assets[noise as usize % assets.len()];
+                // Icebreaker DF: which of them, as the difficulty weighs the roles (no mage at difficulty 1).
+                let asset = self.dungeon.difficulte.fiche(assets, noise as usize, || (noise >> 8) as f32 / (1u32 << 24) as f32);
                 let mut rng = ChaCha8Rng::seed_from_u64(noise as u64);
                 // Icebreaker B.14: it drops the loot of its tier (butin.ron).
                 let palier = self.dungeon.paliers.get(cell).copied().unwrap_or(1);

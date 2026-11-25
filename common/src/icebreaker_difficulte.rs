@@ -111,6 +111,13 @@ impl Niveau {
     /// rôles, ou si elle ne connaît pas celui-ci : un monstre, un chef).
     pub fn poids(&self, asset: &str) -> f32 { self.classes.get(role(asset)).copied().unwrap_or(1.0).max(0.0) }
 
+    /// La fiche d'un ennemi tiré parmi `fiches` (au moins une) : celle du rang `du_lieu`, le tirage du lieu,
+    /// si la difficulté ne pèse pas les rôles ; sinon la sienne (`hasard`, entre 0 et 1, n'est demandé que là).
+    pub fn fiche<'a, S: AsRef<str>>(&self, fiches: &'a [S], du_lieu: usize, hasard: impl FnOnce() -> f32) -> &'a S {
+        let du_lieu = &fiches[du_lieu % fiches.len()];
+        if self.classes.is_empty() { du_lieu } else { self.tirer(fiches, hasard()).unwrap_or(du_lieu) }
+    }
+
     /// Tire une fiche parmi `fiches` selon les poids des rôles ; `hasard` est tiré entre 0 et 1.
     /// Si tous les poids sont nuls (un lieu qui n'a que des mages, en difficulté 1), le tirage du
     /// lieu reste : mieux vaut un mage qu'une salle vide.
@@ -184,7 +191,7 @@ mod tests {
             let cran = d.crans.get(&niveau.ia).unwrap_or_else(|| panic!("cran inconnu en difficulté {n} : {}", niveau.ia));
             for (role, competences) in cran {
                 assert!(ROLES.contains(&role.as_str()), "rôle inconnu : {role}");
-                crate::skillset_builder::SkillSetBuilder::default().with_asset_expect(competences);
+                let _ = crate::skillset_builder::SkillSetBuilder::default().with_asset_expect(competences);
             }
             for role in niveau.classes.keys() {
                 assert!(ROLES.contains(&role.as_str()), "rôle inconnu en difficulté {n} : {role}");
@@ -230,5 +237,8 @@ mod tests {
         // Un monstre n'est pas pesé.
         assert_eq!(un.poids("common.entity.wild.aggressive.cave_spider"), 1.0);
         assert!(un.tirer::<&str>(&[], 0.5).is_none());
+        // Par défaut : le tirage du lieu, sans tirage en plus.
+        assert_eq!(d.niveau(None).fiche(&fiches, 1, || panic!("pas de tirage")), &fiches[1]);
+        assert_eq!(un.fiche(&fiches, 1, || 0.99), &fiches[0]);
     }
 }

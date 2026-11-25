@@ -270,7 +270,11 @@ fn peupler(settings: &Settings, foret: &Foret, seed: u64) -> (Vec<(Vec3<i32>, St
             (libre(p, pris) && dessous.is_none_or(|b| g.bloc(p.x, p.y, p.z - 1) == b)).then_some(p)
         })
     };
-    let tirer = |liste: &[String], rng: &mut ChaCha8Rng| liste[rng.random_range(0..liste.len())].clone();
+    // Icebreaker DF: as the difficulty weighs the roles.
+    let tirer = |liste: &[String], rng: &mut ChaCha8Rng| {
+        let du_lieu = rng.random_range(0..liste.len());
+        settings.difficulte.fiche(liste, du_lieu, || rng.random()).clone()
+    };
 
     for (i, c) in foret.clairieres.iter().enumerate() {
         let centre = Vec3::from(c.centre);
@@ -439,5 +443,21 @@ mod tests {
         }
         assert!(totaux.windows(2).all(|w| w[0] < w[1]), "{totaux:?}");
         assert!(2 * totaux[5] > 3 * totaux[0], "{totaux:?}");
+    }
+    // Icebreaker DF: no mage at difficulty 1, on the ground nor on the platforms.
+    #[test]
+    fn the_difficulty_weighs_the_roles() {
+        let mut settings = Settings::load().unwrap();
+        let difficultes = common::icebreaker_difficulte::IcebreakerDifficulte::actuel();
+        let origine = Vec3::new(2048, 2048, 200);
+        let mages = |settings: &Settings| -> usize {
+            (1..=12)
+                .map(|seed| generate(settings, seed, origine, None).unwrap().inhabitants.iter().filter(|i| i.asset.ends_with(".mage")).count())
+                .sum()
+        };
+        settings.difficulte = difficultes.niveau(Some(1));
+        assert_eq!(mages(&settings), 0);
+        settings.difficulte = difficultes.niveau(Some(2));
+        assert!(mages(&settings) > 0);
     }
 }

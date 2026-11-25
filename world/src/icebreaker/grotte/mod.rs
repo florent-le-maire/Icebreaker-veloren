@@ -450,7 +450,9 @@ pub fn generate(
                 let asset = if rng.random_bool(pop.part_solitaires as f64) {
                     lone(&mut rng)
                 } else {
-                    settings.habitants[rng.random_range(0..settings.habitants.len())].clone()
+                    // Icebreaker DF: as the difficulty weighs the roles.
+                    let du_lieu = rng.random_range(0..settings.habitants.len());
+                    settings.difficulte.fiche(&settings.habitants, du_lieu, || rng.random()).clone()
                 };
                 inhabitants.push(Inhabitant {
                     pos: monde(p),
@@ -822,5 +824,21 @@ mod tests {
         }
         assert!(totaux.windows(2).all(|w| w[0] < w[1]), "{totaux:?}");
         assert!(2 * totaux[5] > 3 * totaux[0], "{totaux:?}");
+    }
+    // Icebreaker DF: no mage at difficulty 1, some from 2 on; the default difficulty draws as before.
+    #[test]
+    fn the_difficulty_weighs_the_roles() {
+        let mut settings = Settings::load().unwrap();
+        let difficultes = common::icebreaker_difficulte::IcebreakerDifficulte::actuel();
+        let mages = |settings: &Settings| -> usize {
+            (1..=50).map(|seed| cave(settings, seed).inhabitants.iter().filter(|i| i.asset.ends_with(".mage")).count()).sum()
+        };
+        settings.difficulte = difficultes.niveau(Some(1));
+        assert_eq!(mages(&settings), 0);
+        settings.difficulte = difficultes.niveau(Some(2));
+        let deux = mages(&settings);
+        settings.difficulte = difficultes.niveau(Some(6));
+        let six = mages(&settings);
+        assert!(deux > 0 && six > 2 * deux, "{deux} mages en 2, {six} en 6");
     }
 }
