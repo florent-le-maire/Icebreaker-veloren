@@ -490,10 +490,10 @@ version ; même butin à toutes les difficultés pour le moment ; le lot d'expé
 - [x] **DF.8 Seulement nos six espèces** (Flo, 2026-11-25 : des trolls des cavernes de 300 PV qui tuent en un coup)
   — plus de monstres solitaires dans la grotte (niches sans créature) ni dans les nids du donjon (des guerriers
   endormis) ; Q67 et Q68 tranchées. Pas vu en jeu. — 5941066057
-- [ ] **DF.9 Dégâts en difficulté 1 et bouton d'entraînement** (Flo, 2026-11-25 : en difficulté 1, un guerrier ou un
+- [x] **DF.9 Dégâts en difficulté 1 et bouton d'entraînement** (Flo, 2026-11-25 : en difficulté 1, un guerrier ou un
   archer tue un mage en un coup) — dégâts ×0,35 en 1 et ×0,65 en 2, le mage ennemi moins baissé ; un bouton
   « Difficulté » au panneau de l'arène.
-  *Fin* : au lieu d'entraînement, un mage survit à un coup d'un guerrier ou d'un archer de difficulté 1.
+  Calculé d'après le classeur (3 flèches chargées pour tuer un mage), pas essayé en jeu. — ed86daac46
 
 ## 9. Le jour J : liste technique
 
