@@ -92,7 +92,9 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   `cargo run -p icebreaker-equilibrage`) relit les chiffres du jeu avec les structures du jeu et réécrit
   `docs/icebreaker/equilibrage.xlsx` (Synthèse, Combat, Ennemis, Progression, Économie, Expéditions, Réglages) ; on essaie
   une valeur dans l'onglet Hypothèses, on la règle pour de bon dans le fichier qu'il indique. À relancer et committer
-  quand un chiffre de `assets/icebreaker/` change.
+  quand un chiffre de `assets/icebreaker/` change. Sans tableur : `cargo run -q -p icebreaker-equilibrage -- --resume
+  [filtre]` affiche l'essentiel en texte. Régler un chiffre (mesurer, quel fichier changer, vérifier) : skill
+  `equilibrage` (`.claude/skills/equilibrage`).
 - Lieu d'entraînement (jalon O, `docs/icebreaker/PLAN-ENTRAINEMENT.md`) : `.icebreaker.ps1 entrainement` (port
   14150) ; tout s'y règle par `/entrainement` (classe, arme, niveau, ennemi, allie, nettoyer, soin…) ou par les deux
   cases du plan (touche U). Sans registre : `ICEBREAKER_AUTO_PERSONNAGE=1` fait entrer le vrai client dans le monde

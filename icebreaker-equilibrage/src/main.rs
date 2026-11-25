@@ -1,7 +1,9 @@
 //! Icebreaker : écrit `docs/icebreaker/equilibrage.xlsx`, la vue d'ensemble de l'équilibrage (jalon EQ,
 //! `docs/icebreaker/PLAN-PLAYTEST.md`, § 8). Les chiffres sont lus dans `assets/` avec les structures du jeu ;
 //! les calculs sont des formules Excel branchées sur l'onglet « Hypothèses », qu'on peut modifier pour essayer.
-//! Lancer depuis la racine du dépôt : `cargo run -p icebreaker-equilibrage [sortie.xlsx]`.
+//! Lancer depuis la racine du dépôt : `cargo run -p icebreaker-equilibrage [sortie.xlsx] [--resume [filtre]]`.
+//! `--resume` affiche aussi l'essentiel en texte (matrices, expédition type, achats), et les lignes de Combat
+//! dont le jeu d'armes ou le nom contient `filtre`.
 
 mod butin;
 mod calcul;
@@ -14,6 +16,7 @@ mod expeditions;
 mod hyp;
 mod progression;
 mod reglages;
+mod resume;
 mod style;
 mod synthese;
 
@@ -29,7 +32,15 @@ fn version() -> String {
 }
 
 fn main() -> Result<()> {
-    let sortie = std::env::args().nth(1).unwrap_or_else(|| "docs/icebreaker/equilibrage.xlsx".into());
+    let arguments: Vec<String> = std::env::args().skip(1).collect();
+    let resume = arguments.iter().position(|a| a == "--resume");
+    let filtre = resume.and_then(|p| arguments.get(p + 1)).filter(|a| !a.starts_with("--"));
+    // La sortie : le premier argument qui n'est ni une option ni le filtre du résumé.
+    let sortie = arguments
+        .iter()
+        .enumerate()
+        .find(|(i, a)| !a.starts_with("--") && resume.is_none_or(|p| *i != p + 1))
+        .map_or_else(|| "docs/icebreaker/equilibrage.xlsx".to_string(), |(_, a)| a.clone());
     let d = donnees::Donnees::lire()?;
     // Toutes les hypothèses d'abord : les onglets y pointent par leur ligne.
     let mut hyp = hyp::Hyp::new();
@@ -81,6 +92,9 @@ fn main() -> Result<()> {
     );
     for alerte in &d.alertes {
         println!("lecture partielle : {alerte}");
+    }
+    if resume.is_some() {
+        resume::afficher(&d, &hyp, &competences, &ennemis, &expedition, filtre.map(String::as_str));
     }
     Ok(())
 }
