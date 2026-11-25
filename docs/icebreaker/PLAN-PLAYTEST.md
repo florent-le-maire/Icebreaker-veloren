@@ -452,7 +452,7 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
 - [x] **EQ.6 Touches et temps relus sur le code du jeu** (remarque de Flo, 2026-11-25 : la Fournaise à 227 s) — chaque
   capacité est lancée comme le jeu (`adjusted_by_stats`, arme × niveau) puis lue d'après son état de combat : rayons
   tenus ou à durée fixe, enchaînements, frappes du Séisme, projectiles qui n'explosent qu'au sol. « Secondes pour
-  tuer » : la compétence une fois, puis l'attaque principale. Pas comparé à des mesures en jeu. — 94aafb6f57
+  tuer » : la compétence une fois, puis l'attaque principale. Pas comparé à des mesures en jeu. — 36832cee24
 
 ## 9. Le jour J : liste technique
 
