@@ -437,18 +437,18 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
 
 - [x] **EQ.1 Combat et ennemis** — crate `icebreaker-equilibrage` ; onglets Hypothèses, Combat (163 compétences et
   niveaux : dégâts, dégâts par seconde, touches et secondes pour tuer chaque ennemi) et Ennemis (touches pour tuer chaque
-  classe). Formules recalculées par un moteur à part : 0 erreur, 0 écart ; pas ouvert dans Excel (absent du poste). — c6e24a0c7c
+  classe). Formules recalculées par un moteur à part : 0 erreur, 0 écart ; pas ouvert dans Excel (absent du poste). — e7f4d06170
 - [x] **EQ.2 Progression et économie** — onglets Progression (maîtrise par point d'arme, coût d'une compétence et d'un
   jeu d'armes, gain par niveau, passifs) et Économie (or et objets moyens des 9 tables de butin, butins qu'il faut par
-  achat). Recalcul à part : 0 erreur, 0 écart. — f623729659
+  achat). Recalcul à part : 0 erreur, 0 écart. — 7e4767a6ac
 - [x] **EQ.3 Expéditions** — onglet Expéditions : 21 cas (taille, menace, densité), 20 vrais donjons générés par cas ;
   créatures par sorte, coffres par palier, PV à abattre, or, expérience, points d'arme, minutes de frappe ; minerais de la
-  grotte par niveau. « Expéditions type » par achat dans Économie. Grotte et forêt : pas de comptage des habitants. — d55cfda455
+  grotte par niveau. « Expéditions type » par achat dans Économie. Grotte et forêt : pas de comptage des habitants. — 737a6bed78
 - [x] **EQ.4 Synthèse** — onglet Synthèse (6 cartes, matrices « tuer » et « mourir » colorées selon les cibles, deux
   graphiques), Réglages (1 316 nombres des `.ron` avec leur commentaire) et Lisez-moi. Essai « et si » vérifié par recalcul
-  (PV du guerrier ennemi 50 → 80 : la Synthèse suit). Graphiques et couleurs conditionnelles pas vus dans Excel. — 496ab20ebe
+  (PV du guerrier ennemi 50 → 80 : la Synthèse suit). Graphiques et couleurs conditionnelles pas vus dans Excel. — 4b8342a545
 - [x] **EQ.5 Branchement** — `.\icebreaker.ps1 equilibrage` (lancé : le classeur est réécrit), ligne dans `CLAUDE.md`,
-  jalon EQ au tableau du `README.md`. Pas ajouté à `icebreaker.sh`. — c4726d3953
+  jalon EQ au tableau du `README.md`. Pas ajouté à `icebreaker.sh`. — dd912e198c
 
 ## 9. Le jour J : liste technique
 
