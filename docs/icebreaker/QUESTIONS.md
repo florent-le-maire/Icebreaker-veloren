@@ -191,6 +191,18 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q63 Où est la caisse ?** Le croquis du village (2026-11-21) n'a pas de caisse : en attendant, son PNJ est dans
   la Guilde, à côté de celui de la charrette. Faut-il un bâtiment à elle (banque, mairie), et où ? *Qui* : Flo.
 
+## 10. Difficulté des expéditions (`design/difficulte.md`, jalon DF)
+
+- **Q67 Que rapporte une expédition plus difficile ?** La difficulté 1 à 6 (DF) rend les ennemis plus nombreux et
+  plus forts, mais le butin, l'or et l'expérience ne changent pas : rien ne pousse à choisir la difficulté 6. Le
+  butin a déjà trois paliers selon la profondeur (`butin.ron`). *Proposé* : un facteur d'or et d'expérience par
+  difficulté dans `difficulte.ron`, et les tables de butin décalées d'un palier aux difficultés 5 et 6 ; à régler
+  avec le classeur. *Qui* : Flo, Sayanel.
+- **Q68 La difficulté et le niveau de zone.** La difficulté se choisit librement au départ (2026-11-25) ; Q56 dit
+  que le niveau d'une zone monte avec les expéditions et bloque sur un boss aux niveaux 2, 4 et 6 (B.19, B.20). Quand
+  les zones seront codées, la difficulté sera-t-elle imposée par le niveau de la zone, ou seulement plafonnée par lui
+  (on peut rejouer plus bas) ? *Proposé* : plafonnée. *Qui* : Flo.
+
 ## Tranché
 
 Petites décisions, par date ; les règles qui en sortent sont dans le fichier indiqué.

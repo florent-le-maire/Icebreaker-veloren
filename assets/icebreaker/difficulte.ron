@@ -1,0 +1,37 @@
+// Icebreaker DF : la difficulté d'une expédition, de 1 à 6 (docs/icebreaker/design/difficulte.md). Une ligne par
+// difficulté, dans l'ordre ; elle vaut pour les trois lieux (donjon généré, grotte, forêt). La difficulté `defaut` est
+// le jeu tel qu'il était avant ce fichier : tous ses facteurs valent 1.
+//   nombre  : facteur du nombre d'ennemis (le chef et le boss restent uniques)
+//   pv      : facteur des PV de la fiche de l'ennemi (icebreaker_pv de assets/icebreaker/ennemis/)
+//   degats  : facteur des dégâts que l'ennemi inflige
+//   ia      : cran d'habileté, une clé de `crans` plus bas
+//   classes : poids de chaque rôle (nom de la fiche de assets/icebreaker/ennemis/) quand le lieu tire un ennemi
+//             parmi plusieurs rôles ; 0 = ce rôle n'apparaît pas ; rien = le tirage du lieu, inchangé
+// Lu par common/src/icebreaker_difficulte.rs ; le classeur d'équilibrage le relit (onglet Difficulté).
+(
+    defaut: 3,
+    niveaux: [
+        (nombre: 0.70, pv: 0.60, degats: 0.70, ia: "base", classes: {"guerrier": 3.0, "archer": 1.0, "mage": 0.0}),
+        (nombre: 0.85, pv: 0.80, degats: 0.85, ia: "base", classes: {"guerrier": 3.0, "archer": 2.0, "mage": 1.0}),
+        (nombre: 1.00, pv: 1.00, degats: 1.00, ia: "base"),
+        (nombre: 1.15, pv: 1.20, degats: 1.15, ia: "aguerri"),
+        (nombre: 1.30, pv: 1.40, degats: 1.30, ia: "aguerri", classes: {"guerrier": 2.0, "archer": 2.0, "mage": 2.0}),
+        (nombre: 1.45, pv: 1.60, degats: 1.45, ia: "veteran", classes: {"guerrier": 2.0, "archer": 2.0, "mage": 3.0}),
+    ],
+    // Les crans d'habileté : par rôle, les compétences qui remplacent celles de la fiche (le rang décide des
+    // enchaînements, parades et tirs que l'IA de Veloren sait faire). Un rôle absent garde celles de sa fiche :
+    // le chef reste au rang 5.
+    crans: {
+        "base": {},
+        "aguerri": {
+            "guerrier": "common.skillset.preset.rank3.sword",
+            "archer": "common.skillset.preset.rank3.bow",
+            "mage": "common.skillset.preset.rank3.staff",
+        },
+        "veteran": {
+            "guerrier": "common.skillset.preset.rank5.sword",
+            "archer": "common.skillset.preset.rank5.bow",
+            "mage": "common.skillset.preset.rank5.staff",
+        },
+    },
+)

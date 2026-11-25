@@ -71,6 +71,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | FO | La région Forêt et son atelier | `PLAN-FORET.md` | FO.0 à FO.4, FO.6 et FO.8 à FO.10 codés le 2026-11-24 (générateur, atelier, lieu seul et destination de campagne vus dans le client) ; habitants, coffres, mission (FO.5) et fiche du wiki (FO.7) le 2026-11-25 : jalon fini, vu en jeu par Flo le 2026-11-25 | `Veloren-foret` |
 | VF | Village fixe d'après le croquis | `PLAN.md` (décision `0022`) | VF.0 à VF.2 faits (2026-11-21) ; VF.3 à VF.5 restent | — (supprimé) |
 | EQ | Classeur d'équilibrage | `PLAN-PLAYTEST.md` (§ 8) | EQ.1 à EQ.5 faits (2026-11-25) : `equilibrage.xlsx`, pas ouvert dans Excel | `Veloren-equilibrage` |
+| DF | Difficulté 1 à 6 des expéditions | `PLAN-PLAYTEST.md` (§ 8, règles : `design/difficulte.md`) | découpage accepté le 2026-11-25 ; DF.1 à DF.7 | `Veloren-difficulte` |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 

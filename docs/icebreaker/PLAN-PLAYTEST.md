@@ -460,6 +460,34 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
   `synthese.md` (vue d'ensemble) et un fichier Markdown par onglet, mêmes tableaux et mêmes chiffres, versionnés (un
   réglage se lit dans le diff) ; ils deviennent aussi des pages du wiki. Skill mis à jour. — 6c02225ee4
 
+### La difficulté 1 à 6 (jalon DF, worktree `Veloren-difficulte`)
+
+Demande de Flo (2026-11-25) : les expéditions n'ont pas de difficulté croissante. Une difficulté 1 à 6, choisie au
+départ, règle le nombre d'ennemis, leurs PV, leurs dégâts, leurs classes et leur habileté, dans les trois lieux ;
+elle remplace la menace 1 à 5 du donjon. Règles et tableau : `design/difficulte.md` ; chiffres :
+`assets/icebreaker/difficulte.ron` (la difficulté 3 est le jeu d'avant). Le terrain ne change pas dans cette
+version ; récompense et lien avec les zones : Q67, Q68.
+
+- [ ] **DF.1 Design et données** — `design/difficulte.md`, `difficulte.ron` et sa lecture
+  (`common/src/icebreaker_difficulte.rs`) : six lignes, bornes, crans d'habileté, tirage pesé des rôles.
+  *Fin* : `cargo test -p veloren-common icebreaker_difficulte` passe.
+- [ ] **DF.2 Choisir la difficulté** — de l'expédition au lieu : panneau Départ, `/expedition difficulte <1-6>`,
+  `-Difficulte` du lanceur pour un lieu seul, annonce à l'arrivée et dans le journal.
+  *Fin* : en campagne, le journal du serveur montre la difficulté choisie à l'arrivée du groupe.
+- [ ] **DF.3 PV et dégâts** — les PV de la fiche et les dégâts infligés suivent la difficulté ; au lieu
+  d'entraînement, `/entrainement difficulte <n>` règle celle des ennemis qu'on fait apparaître.
+  *Fin* : le guerrier ennemi a 30, 50 et 80 PV aux difficultés 1, 3 et 6 ; ses coups suivent le facteur.
+- [ ] **DF.4 Nombre** — la difficulté remplace la menace du donjon (`threats`, `-Menace`) ; la grotte et la forêt
+  multiplient leurs effectifs ; chef et boss restent uniques.
+  *Fin* : pour une même graine, les effectifs montent de 1 à 6 dans les trois lieux.
+- [ ] **DF.5 Classes et compositions** — le tirage d'un ennemi parmi plusieurs rôles suit les poids de la difficulté.
+  *Fin* : aucun mage en difficulté 1 sur 50 graines, des mages en 2.
+- [ ] **DF.6 Habileté** — les compétences du cran (rangs 1, 3, 5 de Veloren) remplacent celles de la fiche.
+  *Fin* : le rang est posé à l'apparition ; essai des difficultés 1, 4 et 6 au lieu d'entraînement.
+- [ ] **DF.7 Classeur d'équilibrage** — onglet Difficulté (effectifs, temps pour tuer et pour mourir par ligne), sans
+  la menace ; tableaux Markdown et fiche du wiki.
+  *Fin* : `cargo run -q -p icebreaker-equilibrage -- --resume difficulte` montre six lignes croissantes.
+
 ## 9. Le jour J : liste technique
 
 Ce qui fait échouer une soirée même si le jeu est prêt. Détail des commandes : `MAINTENANCE.md`.
