@@ -20,7 +20,7 @@ interface du village) et se cochent ici ; les âmes ouvrent le jalon **AM**.
 | 5 | Améliorations : village sans dégâts, bouton Rentrer | L.6, X.18 | `Veloren-village` | prêt à coder |
 | 6 | Refonte des classes | — | `Veloren-classes` | à détailler par Flo ; pas obligatoire avant le premier playtest |
 | 7 | Craft et objets à trouver | E.17, E.18 | `Veloren-donjon` | attend (Q61 : « on verra au moment ») |
-| 8 | Équilibrage | EQ.1 à EQ.5 (le classeur) | `Veloren-equilibrage` | classeur fait ; l'équilibrage lui-même en dernier |
+| 8 | Équilibrage | EQ.1 à EQ.8 (le classeur), DF.1 à DF.7 (la difficulté 1 à 6) | `Veloren-equilibrage`, `Veloren-difficulte` | classeur fait ; difficulté 1 à 6 codée (2026-11-25), à jouer ; l'équilibrage lui-même en dernier |
 | 9 | Le jour J : technique | — | `Veloren-serveur` | liste de contrôle |
 
 **Ordre proposé** (Flo, 2026-11-16 : le développement démarre quand on veut ; zones et boss, pouvoirs des ennemis
@@ -468,25 +468,23 @@ elle remplace la menace 1 à 5 du donjon. Règles et tableau : `design/difficult
 `assets/icebreaker/difficulte.ron` (la difficulté 3 est le jeu d'avant). Le terrain ne change pas dans cette
 version ; récompense et lien avec les zones : Q67, Q68.
 
-- [ ] **DF.1 Design et données** — `design/difficulte.md`, `difficulte.ron` et sa lecture
-  (`common/src/icebreaker_difficulte.rs`) : six lignes, bornes, crans d'habileté, tirage pesé des rôles.
-  *Fin* : `cargo test -p veloren-common icebreaker_difficulte` passe.
-- [ ] **DF.2 Choisir la difficulté** — de l'expédition au lieu : panneau Départ, `/expedition difficulte <1-6>`,
-  `-Difficulte` du lanceur pour un lieu seul, annonce à l'arrivée et dans le journal.
-  *Fin* : en campagne, le journal du serveur montre la difficulté choisie à l'arrivée du groupe.
-- [ ] **DF.3 PV et dégâts** — les PV de la fiche et les dégâts infligés suivent la difficulté ; au lieu
-  d'entraînement, `/entrainement difficulte <n>` règle celle des ennemis qu'on fait apparaître.
-  *Fin* : le guerrier ennemi a 30, 50 et 80 PV aux difficultés 1, 3 et 6 ; ses coups suivent le facteur.
-- [ ] **DF.4 Nombre** — la difficulté remplace la menace du donjon (`threats`, `-Menace`) ; la grotte et la forêt
-  multiplient leurs effectifs ; chef et boss restent uniques.
-  *Fin* : pour une même graine, les effectifs montent de 1 à 6 dans les trois lieux.
-- [ ] **DF.5 Classes et compositions** — le tirage d'un ennemi parmi plusieurs rôles suit les poids de la difficulté.
-  *Fin* : aucun mage en difficulté 1 sur 50 graines, des mages en 2.
-- [ ] **DF.6 Habileté** — les compétences du cran (rangs 1, 3, 5 de Veloren) remplacent celles de la fiche.
-  *Fin* : le rang est posé à l'apparition ; essai des difficultés 1, 4 et 6 au lieu d'entraînement.
-- [ ] **DF.7 Classeur d'équilibrage** — onglet Difficulté (effectifs, temps pour tuer et pour mourir par ligne), sans
-  la menace ; tableaux Markdown et fiche du wiki.
-  *Fin* : `cargo run -q -p icebreaker-equilibrage -- --resume difficulte` montre six lignes croissantes.
+- [x] **DF.1 Design et données** — `design/difficulte.md`, `difficulte.ron` (six lignes, trois crans d'habileté) et sa
+  lecture (`common/src/icebreaker_difficulte.rs`) ; Q67 et Q68 posées. — be3e47ae18
+- [x] **DF.2 Choisir la difficulté** — six lignes au panneau Départ, `/expedition difficulte <1-6>`, `-Difficulte` du
+  lanceur ; elle suit le chemin de la forme jusqu'aux trois lieux et s'annonce à l'arrivée. Lieu seul lancé en
+  difficulté 5 (le journal la dit) ; le départ en campagne n'a pas été joué. — 68b4d113cb
+- [x] **DF.3 PV et dégâts** — les PV de la fiche et un facteur de dégâts gardé dans `Stats` (les stats sont refaites
+  à chaque tick) ; `/entrainement difficulte <n>`. Guerrier à 30, 50 et 80 PV en 1, 3 et 6 ; dégâts reçus pas
+  mesurés en jeu. — 49e656409e
+- [x] **DF.4 Nombre** — chaque groupe grossit ou rétrécit (le reste après la virgule est tiré) dans les trois lieux ;
+  la menace 1 à 5 est retirée (`threats`, `-Menace`) : le plan du donjon ne dépend plus de la difficulté. — 83cfb00c74
+- [x] **DF.5 Classes et compositions** — tirage pesé par rôle là où le lieu tire parmi plusieurs rôles : aucun mage
+  en 1 (50 grottes, 12 forêts). Les poids ne changent pas la part de guerriers d'une salle de guerriers. — 58391a7a41
+- [x] **DF.6 Habileté** — compétences de rang 1, 3 ou 5 posées à l'apparition, le chef garde les siennes. La
+  différence en combat n'a pas été regardée : à juger au lieu d'entraînement. — 953cf1c458
+- [x] **DF.7 Classeur d'équilibrage** — onglet Difficulté et `equilibrage/difficulte.md` : ennemis comptés dans les
+  trois lieux, PV à abattre ×0,43 à ×2,34 et dégâts reçus ×0,50 à ×2,12 de la difficulté 1 à la 6 ; fiche du wiki.
+  Pas ouvert dans un tableur. — 9747beaf07
 
 ## 9. Le jour J : liste technique
 

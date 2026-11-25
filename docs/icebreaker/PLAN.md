@@ -333,6 +333,10 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 `PLAN-GROTTE.md`). À parcourir dans le vrai client, en campagne, à deux si possible ; barrer ce qui est vu, ouvrir une
 tâche pour ce qui casse.
 
+- [ ] DF (difficulté 1 à 6, 2026-11-25) : au panneau Départ, les six lignes « Difficulté » ; partir en 1 puis en 6 dans
+  le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
+  mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au
+  lieu d'entraînement, `/entrainement difficulte 1`, `4`, `6` : les ennemis se battent-ils visiblement mieux ?
 - [ ] U.26 : miner un filon ne retire pas d'énergie, même à sec ; la roche en coûte toujours.
 - [ ] Thème du village (2026-11-24, `musique.ron`) : il démarre au village, à bas volume, tourne en boucle, ne repart
   pas du début au passage de fantôme à personnage et s'éteint en fondu au départ en expédition.
