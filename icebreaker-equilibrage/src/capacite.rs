@@ -74,6 +74,17 @@ pub struct Capacite {
     pub remarque: String,
 }
 
+/// Le serveur avance par ticks (`TPS` de `server-cli/src/main.rs`). Un état de combat ne change d'étape
+/// (préparation, frappe, récupération…) qu'à un tick, une fois sa durée dépassée, et ce tick-là ne fait pas
+/// avancer l'étape suivante.
+pub const TICKS_PAR_SECONDE: f64 = 30.0;
+
+/// Secondes perdues par un geste de `etapes` étapes qu'on répète : par étape, un tick de passage et un demi-tick
+/// de dépassement en moyenne ; un tick pour relancer le geste. Vérifié sur l'enchaînement et l'estoc de la grande
+/// épée, déroulés tick par tick (`common/src/states/combo_melee2.rs`, `charged_melee.rs`) : 1,00 s et 1,17 s,
+/// contre 0,75 s et 1,00 s d'après les seules durées des fichiers.
+pub fn ticks_perdus(etapes: f64) -> f64 { (etapes * 1.5 + 1.0) / TICKS_PAR_SECONDE }
+
 /// Rayon d'une cible vue du dessus, pour estimer combien de traits d'une pluie la touchent.
 const RAYON_CIBLE: f64 = 0.5;
 
@@ -191,6 +202,8 @@ impl Capacite {
                 composantes.push(Composante { source, touches: net64(touches), degats: net64(degats) });
             }
         };
+        // Les étapes du geste (préparation, frappe, récupération le plus souvent), pour les ticks perdus.
+        let mut etapes = 3.0;
         // (énergie, secondes d'une utilisation)
         let (energie, geste) = match variante.as_str() {
             "BasicMelee" => {
@@ -201,6 +214,7 @@ impl Capacite {
                 // Les coups s'enchaînent sans récupération ; seule celle du dernier compte.
                 let coups = corps["strikes"].as_array().cloned().unwrap_or_default();
                 let n = coups.len() as f64;
+                etapes = 2.0 * n + 1.0;
                 let degats: f64 = coups.iter().map(|c| melee(&c["melee_constructor"]).0).sum();
                 let duree: f64 = coups
                     .iter()
@@ -219,6 +233,7 @@ impl Capacite {
                 let d = melee(&corps["melee_constructor"]).0;
                 match corps.get("max_strikes").and_then(Value::as_f64) {
                     Some(n) => {
+                        etapes = n + 2.0;
                         ajoute(Source::Melee, n, d * n);
                         (cout * n, preparation + frappe * n + recuperation)
                     },
@@ -239,6 +254,7 @@ impl Capacite {
                 let (depart, charge) = melee(&corps["melee_constructor"]);
                 ajoute(Source::Melee, 1.0, depart + charge);
                 remarques.push(format!("À plein élan ; sans élan : {depart} de base."));
+                etapes = 4.0;
                 avant = preparation + lu("charge_duration");
                 (
                     cout + lu("energy_drain") * lu("charge_duration"),
@@ -257,6 +273,7 @@ impl Capacite {
             "LeapMelee" => {
                 ajoute(Source::Melee, 1.0, melee(&corps["melee_constructor"]).0);
                 avant = preparation + lu("movement_duration");
+                etapes = 4.0;
                 (cout, preparation + lu("movement_duration") + frappe + recuperation)
             },
             "ChargedMelee" => {
@@ -298,6 +315,7 @@ impl Capacite {
                     remarques.push(format!("{ensemble} projectiles en éventail ; un seul compté sur la cible."));
                 }
                 ajoute(source, touches, depart * touches);
+                etapes = 2.0;
                 (cout, preparation + recuperation)
             },
             "RapidRanged" => {
@@ -306,6 +324,7 @@ impl Capacite {
                 let tir = lu("shoot_duration");
                 match trouve(&corps, "max_projectiles").and_then(Value::as_f64) {
                     Some(n) => {
+                        etapes = n + 2.0;
                         ajoute(source, n, depart * n);
                         (cout * n, preparation + tir * n + recuperation)
                     },
@@ -346,6 +365,7 @@ impl Capacite {
                 // Icebreaker : plusieurs frappes d'affilée, une onde à chacune (Séisme).
                 let n = corps.get("icebreaker_frappes").and_then(Value::as_f64).unwrap_or(1.0).max(1.0);
                 ajoute(Source::Onde, n, lu("damage") * n);
+                etapes = 2.0 * n + 1.0;
                 avant = preparation + lu("movement_duration") + frappe;
                 (cout, lu("movement_duration") + (preparation + frappe) * n + recuperation)
             },
@@ -353,6 +373,7 @@ impl Capacite {
                 ajoute(Source::Explosion, 1.0, lu("explosion_damage"));
                 ajoute(Source::Onde, 1.0, lu("shockwave_damage"));
                 avant = preparation + lu("movement_duration");
+                etapes = 4.0;
                 (cout, preparation + lu("movement_duration") + frappe + recuperation)
             },
             "Explosion" => {
@@ -365,6 +386,8 @@ impl Capacite {
         if !composantes.is_empty() {
             remarques.extend(alteration(&corps));
         }
+        // EQ.9 : un geste qu'on répète perd des ticks à chaque étape ; un rayon ou un tir qu'on tient n'en change pas.
+        let geste = if tenu { geste } else { geste + ticks_perdus(etapes) };
         Ok(Self {
             id: id.to_string(),
             variante,
@@ -420,7 +443,7 @@ mod tests {
     fn fournaise_dure_son_temps() {
         let c = Capacite::lire("icebreaker.abilities.mage.ultimes.fournaise", stats(1.0)).unwrap();
         assert_eq!(c.composantes, vec![Composante { source: Source::Rayon, touches: 7.5, degats: 150.0 }]);
-        assert_eq!(c.geste, 1.5 + 2.5 + 0.4);
+        assert_eq!(c.geste, net64(1.5 + 2.5 + 0.4 + ticks_perdus(3.0)));
     }
 
     /// Le Séisme (`icebreaker_frappes: Some(3)`) : trois frappes d'affilée, une onde à chacune.
@@ -428,7 +451,7 @@ mod tests {
     fn seisme_frappe_trois_fois() {
         let c = Capacite::lire("icebreaker.abilities.guerrier.ultimes.seisme", stats(1.0)).unwrap();
         assert_eq!(c.composantes, vec![Composante { source: Source::Onde, touches: 3.0, degats: 90.0 }]);
-        assert_eq!(c.geste, net64((0.3 + 0.25) * 3.0 + 0.3));
+        assert_eq!(c.geste, net64((0.3 + 0.25) * 3.0 + 0.3 + ticks_perdus(7.0)));
     }
 
     /// Le lance-flammes du bâton se tient : on le compte par seconde, 3 touches de 5.
@@ -444,7 +467,7 @@ mod tests {
         let c = Capacite::lire("common.abilities.staff.flamethrower", stats(0.8)).unwrap();
         assert_eq!(c.touches(), 2.4);
         let coup = Capacite::lire("common.abilities.gnarling.chieftain.flamestrike", stats(0.5)).unwrap();
-        assert_eq!(coup.geste, 4.3);
+        assert_eq!(coup.geste, net64(4.3 + ticks_perdus(3.0)));
     }
 
     /// Un enchaînement : la récupération ne compte qu'après le dernier coup.
@@ -452,7 +475,20 @@ mod tests {
     fn enchainement() {
         let c = Capacite::lire("icebreaker.abilities.guerrier.grande_epee.balayage_lourd_3", stats(1.0)).unwrap();
         assert_eq!((c.touches(), c.degats(), c.energie), (2.0, 25.0, 24.0));
-        assert_eq!(c.geste, net64(0.3 + 0.2 + 0.15 + 0.2 + 0.2));
+        assert_eq!(c.geste, net64(0.3 + 0.2 + 0.15 + 0.2 + 0.2 + ticks_perdus(5.0)));
+    }
+
+    /// EQ.9 (mesure de Flo au mannequin, 2026-11-25) : à la grande épée (vitesse 0,8), l'enchaînement de base
+    /// déroulé tick par tick dure 30 ticks et l'estoc chargé 35 ; les durées des fichiers seules donnaient 0,75 s
+    /// et 1,00 s, ce qui mettait l'attaque normale devant l'attaque chargée.
+    #[test]
+    fn les_ticks_du_serveur_comptent() {
+        let combo = Capacite::lire("common.abilities.sword.basic_double_slash", stats(0.8)).unwrap();
+        let estoc = Capacite::lire("common.abilities.sword.basic_thrust", stats(0.8)).unwrap();
+        assert!((combo.geste - 30.0 / TICKS_PAR_SECONDE).abs() < 0.05, "{}", combo.geste);
+        assert!((estoc.geste - 35.0 / TICKS_PAR_SECONDE).abs() < 0.05, "{}", estoc.geste);
+        // Un rayon tenu ne change pas d'étape : une seconde reste une seconde.
+        assert_eq!(Capacite::lire("common.abilities.staff.flamethrower", stats(1.0)).unwrap().geste, 1.0);
     }
 
     /// Le Trait lourd frappe la cible comme un projectile : il n'explose qu'au sol.

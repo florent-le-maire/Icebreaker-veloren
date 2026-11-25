@@ -8,13 +8,13 @@ Cible contre un ennemi ordinaire (pas le chef) : 3 à 3 touches. Dans la cible :
 
 | Jeu d'armes | guerrier | archer | mage | chef | Dégâts par seconde |
 |---|---|---|---|---|---|
-| Épée et bouclier | 7 | 4 | 3 | 31 | 45.0 |
-| Grande épée | 6 | 3 | 3 | 26 | 48.0 |
-| Hache à deux mains | 6 | 3 | 3 | 26 | 50.8 |
-| Marteau à deux mains | 5 | 3 | 2 | 20 | 38.4 |
-| Bâton | 10 | 5 | 5 | 43 | 11.6 |
+| Épée et bouclier | 7 | 4 | 3 | 31 | 31.6 |
+| Grande épée | 6 | 3 | 3 | 26 | 34.8 |
+| Hache à deux mains | 6 | 3 | 3 | 26 | 37.3 |
+| Marteau à deux mains | 5 | 3 | 2 | 20 | 29.7 |
+| Bâton | 10 | 5 | 5 | 43 | 10.2 |
 | Sceptre | 24 | 12 | 11 | 108 | 10.4 |
-| Arc | 11 | 6 | 5 | 47 | 16.1 |
+| Arc | 11 | 6 | 5 | 47 | 13.3 |
 
 ## Mourir : touches d'un ennemi, attaque principale
 
@@ -29,7 +29,7 @@ Cible pour un ennemi ordinaire : 3 à 4 touches. Dans la cible : 3 cases sur 9 ;
 
 ## L'expédition type
 
-Donjon moyen, difficulté et densité par défaut : 44 créatures, 2100 PV à abattre, 789 or, 1.0 minutes de frappe du groupe, 3 points d'arme gagnés seul. Premier point d'arme : 6.7 ennemis « guerrier » à tuer seul.
+Donjon moyen, difficulté et densité par défaut : 44 créatures, 2100 PV à abattre, 789 or, 1.3 minutes de frappe du groupe, 3 points d'arme gagnés seul. Premier point d'arme : 6.7 ennemis « guerrier » à tuer seul.
 
 ## Les achats
 

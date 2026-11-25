@@ -114,4 +114,4 @@ Changer une valeur de la colonne jaune recalcule tout le classeur. La vraie vale
 | Réglage | Valeur du jeu | Où la régler |
 |---|---|---|
 | Joueurs dans une expédition | 2 | hypothèse : la campagne se joue à deux (docs/icebreaker/PLAN-PLAYTEST.md, § 8) |
-| Dégâts par seconde d'un joueur qui frappe | 31.5 | hypothèse : moyenne des attaques principales des jeux d'armes (onglet Combat), sans l'armure des ennemis (comptée à part dans l'onglet Expéditions) |
+| Dégâts par seconde d'un joueur qui frappe | 23.9 | hypothèse : moyenne des attaques principales des jeux d'armes (onglet Combat), sans l'armure des ennemis (comptée à part dans l'onglet Expéditions) |

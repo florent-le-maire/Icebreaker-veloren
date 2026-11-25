@@ -116,6 +116,8 @@ pub struct Serie {
     pub dernier: f64,
     pub coups: u32,
     pub degats: f32,
+    /// Icebreaker EQ.9 : les dégâts du premier coup, qui ouvre la série (voir `bilan`).
+    pub premier: f32,
 }
 
 impl Serie {
@@ -125,6 +127,7 @@ impl Serie {
             dernier: time,
             coups: 1,
             degats,
+            premier: degats,
         }
     }
 
@@ -137,8 +140,11 @@ impl Serie {
     /// The message for the attacker at the end of the series.
     pub fn bilan(&self) -> String {
         let duree = self.dernier - self.debut;
+        // Icebreaker EQ.9 : la durée va du premier au dernier coup, soit `coups - 1` intervalles : les dégâts du
+        // premier coup n'en font pas partie. Les compter gonflait les attaques lentes (9 coups en 8 intervalles :
+        // + 12 %) bien plus que les rapides.
         let par_seconde = if duree > 0.0 {
-            format!("{:.0} dégâts/s", f64::from(self.degats) / duree)
+            format!("{:.0} dégâts/s", f64::from(self.degats - self.premier) / duree)
         } else {
             "un seul instant".to_string()
         };
@@ -187,7 +193,7 @@ mod tests {
         assert_eq!(serie.coups, 3);
         assert_eq!(
             serie.bilan(),
-            "Mannequin : 100 dégâts en 3 coups sur 2,0 s (50 dégâts/s)."
+            "Mannequin : 100 dégâts en 3 coups sur 2,0 s (35 dégâts/s)."
         );
         assert_eq!(
             Serie::new(3.0, 12.4).bilan(),
