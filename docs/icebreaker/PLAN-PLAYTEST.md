@@ -448,7 +448,7 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
   graphiques), Réglages (1 316 nombres des `.ron` avec leur commentaire) et Lisez-moi. Essai « et si » vérifié par recalcul
   (PV du guerrier ennemi 50 → 80 : la Synthèse suit). Graphiques et couleurs conditionnelles pas vus dans Excel. — 496ab20ebe
 - [x] **EQ.5 Branchement** — `.\icebreaker.ps1 equilibrage` (lancé : le classeur est réécrit), ligne dans `CLAUDE.md`,
-  jalon EQ au tableau du `README.md`. Pas ajouté à `icebreaker.sh`. — HASH5
+  jalon EQ au tableau du `README.md`. Pas ajouté à `icebreaker.sh`. — c4726d3953
 
 ## 9. Le jour J : liste technique
 
