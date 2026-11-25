@@ -440,7 +440,7 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
   classe). Formules recalculées par un moteur à part : 0 erreur, 0 écart ; pas ouvert dans Excel (absent du poste). — c6e24a0c7c
 - [x] **EQ.2 Progression et économie** — onglets Progression (maîtrise par point d'arme, coût d'une compétence et d'un
   jeu d'armes, gain par niveau, passifs) et Économie (or et objets moyens des 9 tables de butin, butins qu'il faut par
-  achat). Recalcul à part : 0 erreur, 0 écart. — HASH2
+  achat). Recalcul à part : 0 erreur, 0 écart. — f623729659
 - [ ] **EQ.3 Expéditions** — créatures, coffres, PV à abattre et or par taille, menace et densité ; minerais de la grotte.
   — *en cours : Veloren-equilibrage, 2026-11-25*
 - [ ] **EQ.4 Synthèse** — tableau de bord (matrices, graphiques, écarts aux cibles), onglets Réglages et Lisez-moi.
