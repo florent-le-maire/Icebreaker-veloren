@@ -4,6 +4,7 @@
 //   nombre  : facteur du nombre d'ennemis (le chef et le boss restent uniques)
 //   pv      : facteur des PV de la fiche de l'ennemi (icebreaker_pv de assets/icebreaker/ennemis/)
 //   degats  : facteur des dégâts que l'ennemi inflige
+//   degats_roles : le même facteur pour certains rôles seulement (un rôle absent prend `degats`)
 //   ia      : cran d'habileté, une clé de `crans` plus bas
 //   classes : poids de chaque rôle (nom de la fiche de assets/icebreaker/ennemis/) quand le lieu tire un ennemi
 //             parmi plusieurs rôles ; 0 = ce rôle n'apparaît pas ; rien = le tirage du lieu, inchangé
@@ -11,8 +12,12 @@
 (
     defaut: 3,
     niveaux: [
-        (nombre: 0.70, pv: 0.60, degats: 0.70, ia: "base", classes: {"guerrier": 3.0, "archer": 1.0, "mage": 0.0}),
-        (nombre: 0.85, pv: 0.80, degats: 0.85, ia: "base", classes: {"guerrier": 3.0, "archer": 2.0, "mage": 1.0}),
+        // DF.9 (Flo, 2026-11-25, essai au lieu d'entraînement) : en difficulté 1, un guerrier ou un archer tuait
+        // un mage en un coup. Leurs dégâts descendent à x0,35 (la flèche chargée de l'archer, 135 à la difficulté 3,
+        // tue alors un mage de 90 PV en 3 touches) ; le mage ennemi, qui frappe déjà moins fort, baisse moins.
+        // La difficulté 2 est à mi-chemin de la 3.
+        (nombre: 0.70, pv: 0.60, degats: 0.35, degats_roles: {"mage": 0.60}, ia: "base", classes: {"guerrier": 3.0, "archer": 1.0, "mage": 0.0}),
+        (nombre: 0.85, pv: 0.80, degats: 0.65, degats_roles: {"mage": 0.80}, ia: "base", classes: {"guerrier": 3.0, "archer": 2.0, "mage": 1.0}),
         (nombre: 1.00, pv: 1.00, degats: 1.00, ia: "base"),
         (nombre: 1.15, pv: 1.20, degats: 1.15, ia: "aguerri"),
         (nombre: 1.30, pv: 1.40, degats: 1.30, ia: "aguerri", classes: {"guerrier": 2.0, "archer": 2.0, "mage": 2.0}),

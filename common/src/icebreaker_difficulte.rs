@@ -16,6 +16,9 @@ pub struct Niveau {
     pub pv: f32,
     /// Facteur des dégâts que l'ennemi inflige.
     pub degats: f32,
+    /// Le même facteur pour certains rôles seulement (DF.9 : le mage, qui frappe déjà moins fort) ; un rôle
+    /// absent prend `degats`.
+    pub degats_roles: HashMap<String, f32>,
     /// Cran d'habileté : une clé de `crans`.
     pub ia: String,
     /// Poids de chaque rôle quand le lieu tire un ennemi (vide : le tirage du lieu).
@@ -35,6 +38,7 @@ impl Default for Niveau {
             nombre: 1.0,
             pv: 1.0,
             degats: 1.0,
+            degats_roles: HashMap::new(),
             ia: String::new(),
             classes: HashMap::new(),
             numero: 0,
@@ -93,6 +97,9 @@ pub fn du_lanceur() -> Option<u8> { std::env::var("ICEBREAKER_DIFFICULTE").ok()?
 pub fn niveau(voulue: Option<u8>) -> Niveau { IcebreakerDifficulte::actuel().niveau(voulue.or_else(du_lanceur)) }
 
 impl Niveau {
+    /// Le facteur des dégâts de l'ennemi de la fiche `asset` : celui de son rôle, sinon `degats`.
+    pub fn degats_de(&self, asset: &str) -> f32 { self.degats_roles.get(role(asset)).copied().unwrap_or(self.degats) }
+
     /// Les compétences que son cran donne à l'ennemi de la fiche `asset` (rien : celles de sa fiche).
     pub fn competences(&self, asset: &str) -> Option<&str> { self.competences.get(role(asset)).map(String::as_str) }
 
@@ -159,6 +166,10 @@ mod tests {
         let lignes: Vec<Niveau> = (1..=6).map(|n| d.niveau(Some(n))).collect();
         for paire in lignes.windows(2) {
             assert!(paire[0].nombre < paire[1].nombre && paire[0].pv < paire[1].pv && paire[0].degats < paire[1].degats);
+            for role in ROLES {
+                let fiche = format!("icebreaker.ennemis.{role}");
+                assert!(paire[0].degats_de(&fiche) < paire[1].degats_de(&fiche), "{role}");
+            }
         }
     }
 
@@ -193,7 +204,7 @@ mod tests {
                 assert!(ROLES.contains(&role.as_str()), "rôle inconnu : {role}");
                 let _ = crate::skillset_builder::SkillSetBuilder::default().with_asset_expect(competences);
             }
-            for role in niveau.classes.keys() {
+            for role in niveau.classes.keys().chain(niveau.degats_roles.keys()) {
                 assert!(ROLES.contains(&role.as_str()), "rôle inconnu en difficulté {n} : {role}");
             }
         }

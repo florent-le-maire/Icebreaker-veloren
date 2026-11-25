@@ -25,6 +25,8 @@ pub struct Ligne {
     pub nombre: f64,
     pub pv: f64,
     pub degats: f64,
+    /// Les rôles dont le facteur de dégâts n'est pas celui de la ligne (« mage × 0,60 »), ou vide.
+    pub degats_roles: String,
     pub habilete: String,
     /// Poids guerrier / archer / mage, ou « tirage du lieu ».
     pub classes: String,
@@ -73,6 +75,11 @@ pub fn lire(d: &Donnees) -> Result<Vec<Ligne>> {
                 nombre: f64::from(niveau.nombre),
                 pv: f64::from(niveau.pv),
                 degats: f64::from(niveau.degats),
+                degats_roles: {
+                    let mut roles: Vec<String> = niveau.degats_roles.iter().map(|(r, f)| format!("{r} × {f:.2}")).collect();
+                    roles.sort();
+                    roles.join(", ")
+                },
                 habilete: match niveau.competences.get("guerrier").and_then(|c| c.split('.').find(|m| m.starts_with("rank"))) {
                     Some(rang) => format!("{} (rang {})", niveau.ia, rang.trim_start_matches("rank")),
                     None => format!("{} (celle des fiches)", niveau.ia),
@@ -105,6 +112,7 @@ pub fn ecrire(feuille: &mut Worksheet, lignes: &[Ligne]) -> Result<()> {
         col("Nombre d'ennemis", 10.0, Nb::Fois),
         col("PV des ennemis", 10.0, Nb::Fois),
         col("Dégâts des ennemis", 10.0, Nb::Fois),
+        col("Dégâts, par exception", 14.0, Nb::Texte),
         col("Habileté", 22.0, Nb::Texte),
         col("Poids guerrier / archer / mage", 16.0, Nb::Texte),
         col("Ennemis, donjon moyen", 10.0, Nb::Dec1),
@@ -130,14 +138,14 @@ pub fn ecrire(feuille: &mut Worksheet, lignes: &[Ligne]) -> Result<()> {
     style::section(feuille, ligne, colonnes.len() as u16 - 1, "Les six difficultés", ACCENT)?;
     let groupes = [
         (0, 1, "L'expédition".to_string()),
-        (2, 6, "Réglages (difficulte.ron)".to_string()),
-        (7, 9, "Ennemis comptés".to_string()),
-        (10, 14, "Par rapport à la difficulté par défaut".to_string()),
+        (2, 7, "Réglages (difficulte.ron)".to_string()),
+        (8, 10, "Ennemis comptés".to_string()),
+        (11, 15, "Par rapport à la difficulté par défaut".to_string()),
     ];
     // Les lignes de données commencent après l'intertitre, les groupes et l'en-tête.
     let premiere = ligne + 3;
     let reference = premiere + lignes.iter().position(|l| l.defaut).unwrap_or(0) as u32;
-    let total = |l: u32| format!("({}+{}+{})", a1(l, 7), a1(l, 8), a1(l, 9));
+    let total = |l: u32| format!("({}+{}+{})", a1(l, 8), a1(l, 9), a1(l, 10));
     let valeurs: Vec<Vec<Val>> = lignes
         .iter()
         .enumerate()
@@ -150,14 +158,15 @@ pub fn ecrire(feuille: &mut Worksheet, lignes: &[Ligne]) -> Result<()> {
                 Val::N(x.nombre),
                 Val::N(x.pv),
                 Val::N(x.degats),
+                Val::t(x.degats_roles.clone()),
                 Val::t(x.habilete.clone()),
                 Val::t(x.classes.clone()),
                 Val::N(x.donjon),
                 Val::N(x.grotte),
                 Val::N(x.foret),
                 Val::F(format!("={}/{}", total(l), total(reference)), ennemis),
-                Val::F(format!("={}*{}", a1(l, 10), a1(l, 3)), pv),
-                Val::F(format!("={}*{}", a1(l, 10), a1(l, 4)), degats),
+                Val::F(format!("={}*{}", a1(l, 11), a1(l, 3)), pv),
+                Val::F(format!("={}*{}", a1(l, 11), a1(l, 4)), degats),
                 Val::F(format!("={}/{}", a1(l, 3), a1(reference, 3)), x.pv),
                 Val::F(format!("={}/{}", a1(reference, 4), a1(l, 4)), 1.0 / x.degats),
             ]
@@ -165,7 +174,7 @@ pub fn ecrire(feuille: &mut Worksheet, lignes: &[Ligne]) -> Result<()> {
         .collect();
     let (_, debut, fin) = style::tableau(feuille, ligne + 1, 0, ACCENT, &groupes, &colonnes, &valeurs, |i| i.to_string())?;
     debug_assert_eq!(debut, premiere);
-    for (colonne, couleur) in [(10, 0x9FD8B0), (11, 0xF2A7A7), (12, 0xF5B58A)] {
+    for (colonne, couleur) in [(11, 0x9FD8B0), (12, 0xF2A7A7), (13, 0xF5B58A)] {
         let barres = ConditionalFormatDataBar::new().set_fill_color(Color::RGB(couleur)).set_solid_fill(true);
         feuille.add_conditional_format(debut, colonne, fin, colonne, &barres)?;
     }
@@ -201,7 +210,7 @@ pub fn resume(lignes: &[Ligne]) -> String {
                 if x.defaut { format!("{} (par défaut)", x.numero) } else { x.numero.to_string() },
                 format!("× {:.2}", x.nombre),
                 format!("× {:.2}", x.pv),
-                format!("× {:.2}", x.degats),
+                if x.degats_roles.is_empty() { format!("× {:.2}", x.degats) } else { format!("× {:.2} ({})", x.degats, x.degats_roles) },
                 x.habilete.clone(),
                 x.classes.clone(),
                 format!("{:.0}, {:.0}, {:.0}", x.donjon, x.grotte, x.foret),

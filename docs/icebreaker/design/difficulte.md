@@ -32,14 +32,20 @@ réglage** : les essais l'ont jugé très dur (2026-11-13), les difficultés 1 e
 
 | Difficulté | Nombre | PV | Dégâts | Habileté | Guerrier / archer / mage |
 |---|---|---|---|---|---|
-| 1 | ×0,70 | ×0,60 | ×0,70 | rang 1 | 3 / 1 / 0 |
-| 2 | ×0,85 | ×0,80 | ×0,85 | rang 1 | 3 / 2 / 1 |
+| 1 | ×0,70 | ×0,60 | ×0,35 (mage ×0,60) | rang 1 | 3 / 1 / 0 |
+| 2 | ×0,85 | ×0,80 | ×0,65 (mage ×0,80) | rang 1 | 3 / 2 / 1 |
 | 3 (par défaut) | ×1 | ×1 | ×1 | rang 1 | le tirage du lieu |
 | 4 | ×1,15 | ×1,20 | ×1,15 | rang 3 | le tirage du lieu |
 | 5 | ×1,30 | ×1,40 | ×1,30 | rang 3 | 2 / 2 / 2 |
 | 6 | ×1,45 | ×1,60 | ×1,45 | rang 5 | 2 / 2 / 3 |
 
 Le chef garde ses compétences (rang 5) à toutes les difficultés ; il prend les facteurs de PV et de dégâts.
+
+Les dégâts des difficultés 1 et 2 ne sont plus sur la droite (Flo, 2026-11-25, essai au lieu d'entraînement) : en
+difficulté 1 un guerrier ou un archer tuait un mage en un coup. D'après le classeur, la flèche chargée de l'archer
+fait 135 à la difficulté 3 contre un mage de 90 PV qui en retire 17 % : à ×0,35 il faut 3 flèches chargées. Le mage
+ennemi frappe déjà moins fort : il a son propre facteur (`degats_roles`), moins baissé. **À la difficulté 3, cette
+flèche tue toujours un mage en un coup.**
 
 ## Ce qu'il faut savoir en réglant
 

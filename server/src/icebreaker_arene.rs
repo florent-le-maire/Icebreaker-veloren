@@ -451,6 +451,8 @@ pub fn panneau_arene(
     panneau.actions = vec![
         Action::nouvelle(format!("Rôle : {role_nom}"), &["entrainement", "choix", "role"]),
         Action::nouvelle(format!("Nombre : {nombre}"), &["entrainement", "choix", "nombre"]),
+        // Icebreaker DF.9 : la difficulté des prochains ennemis, un clic pour passer à la suivante.
+        Action::nouvelle(format!("Difficulté : {}", difficulte().numero), &["entrainement", "difficulte", SUIVANTE]),
         Action::nouvelle("Nettoyer l'arène", &["entrainement", "nettoyer"]).permise(ennemis + allies > 0),
         Action::nouvelle("Soin", &["entrainement", "soin"]),
         Action::nouvelle("Retour à l'entrée", &["entrainement", "entree"]),
@@ -487,8 +489,11 @@ fn difficulte() -> common::icebreaker_difficulte::Niveau {
     common::icebreaker_difficulte::niveau(Some(reglee).filter(|n| *n > 0))
 }
 
+/// Le mot de `/entrainement difficulte suivante` (le bouton du panneau) : de 1 à 6, puis de nouveau 1.
+const SUIVANTE: &str = "suivante";
+
 const AIDE: &str = "/entrainement classe <id>, arme <jeu>, placer <1|2> [id], niveau <id|tout> \
-                    <1-5>, ultime <id>, passif <id>, ennemi <race> [role] [nombre], difficulte <1-6>, \
+                    <1-5>, ultime <id>, passif <id>, ennemi <race> [role] [nombre], difficulte <1-6|suivante>, \
                     allie <id> [nombre], nettoyer, soin, entree";
 
 /// `/entrainement …` : tout régler au lieu d'entraînement (les boutons de ses panneaux). Sans rôle
@@ -616,11 +621,17 @@ pub(crate) fn handle_entrainement(
         // Icebreaker DF : la difficulté des prochains ennemis (ceux qui sont là gardent la leur).
         ["difficulte", n] => (|| {
             let max = common::icebreaker_difficulte::IcebreakerDifficulte::actuel().max();
-            let n = n.parse::<u8>().ok().filter(|n| (1..=max).contains(n)).ok_or_else(|| format!("Difficulté de 1 à {max}."))?;
+            let n = if *n == SUIVANTE {
+                difficulte().numero % max.max(1) + 1
+            } else {
+                n.parse::<u8>().ok().filter(|n| (1..=max).contains(n)).ok_or_else(|| format!("Difficulté de 1 à {max}."))?
+            };
             DIFFICULTE.store(n, std::sync::atomic::Ordering::Relaxed);
             let ligne = difficulte();
+            let mage = ligne.degats_de("icebreaker.ennemis.mage");
+            let mage = if mage == ligne.degats { String::new() } else { format!(" (mage x{mage})") };
             Ok(format!(
-                "Difficulté {n} pour les prochains ennemis : PV x{}, dégâts x{}, habileté « {} ».",
+                "Difficulté {n} pour les prochains ennemis : PV x{}, dégâts x{}{mage}, habileté « {} ».",
                 ligne.pv, ligne.degats, ligne.ia
             ))
         })(),
@@ -933,6 +944,10 @@ mod tests {
         let vide = panneau_arene(&config, (0, 0), (0, 0), None);
         let nettoyer = vide.actions.iter().find(|a| a.commande == ["entrainement", "nettoyer"]).unwrap();
         assert!(!nettoyer.permise);
+        // Icebreaker DF.9 : un bouton dit la difficulté des prochains ennemis et passe à la suivante.
+        let bouton = vide.actions.iter().find(|a| a.commande == ["entrainement", "difficulte", SUIVANTE]).unwrap();
+        assert_eq!(bouton.libelle, texte(format!("Difficulté : {}", difficulte().numero)));
+        assert!((1..=6).contains(&difficulte().numero));
     }
 
     #[test]

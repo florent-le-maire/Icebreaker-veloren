@@ -38,7 +38,7 @@ pub fn entity(asset: &str, species: Option<&str>, pos: Vec3<f32>, rng: &mut ChaC
     let mut info = EntityInfo::at(pos).with_entity_config(config, Some(asset), rng, None);
     // Only the health of our files (`icebreaker_pv`): a creature of Veloren keeps the one of its body.
     info.icebreaker_pv = info.icebreaker_pv.map(|pv| pv * difficulte.pv);
-    info.icebreaker_degats = Some(difficulte.degats);
+    info.icebreaker_degats = Some(difficulte.degats_de(asset));
     // Icebreaker DF: the skills of the rank of its difficulty, in place of those of its file.
     if let Some(competences) = difficulte.competences(asset) {
         info.skillset_asset = Some(competences.to_string());
@@ -121,7 +121,7 @@ mod tests {
     fn enemies_follow_the_difficulty() {
         let difficultes = common::icebreaker_difficulte::IcebreakerDifficulte::actuel();
         let mut rng = ChaCha8Rng::seed_from_u64(4);
-        for (n, pv, degats) in [(1, 30.0, 0.7), (3, 50.0, 1.0), (6, 80.0, 1.45)] {
+        for (n, pv, degats) in [(1, 30.0, 0.35), (3, 50.0, 1.0), (6, 80.0, 1.45)] {
             let niveau = difficultes.niveau(Some(n));
             let info = entity("icebreaker.ennemis.guerrier", Some("orc"), Vec3::zero(), &mut rng, &niveau);
             assert!((info.icebreaker_pv.unwrap() - pv).abs() < 0.01, "difficulté {n} : {:?} PV", info.icebreaker_pv);
@@ -146,6 +146,9 @@ mod tests {
         // A creature of Veloren keeps the health of its body.
         let spider = entity("common.entity.wild.aggressive.cave_spider", None, Vec3::zero(), &mut rng, &difficultes.niveau(Some(6)));
         assert_eq!((spider.icebreaker_pv, spider.icebreaker_degats), (None, Some(1.45)));
+        // Icebreaker DF.9: at difficulty 1 the mage, who already hits less, is lowered less than the others.
+        let mage = entity("icebreaker.ennemis.mage", Some("orc"), Vec3::zero(), &mut rng, &difficultes.niveau(Some(1)));
+        assert_eq!(mage.icebreaker_degats, Some(0.6));
     }
 
     #[test]

@@ -47,8 +47,8 @@ Réglages de `assets/icebreaker/difficulte.ron` ; ennemis comptés dans de vrais
 
 | Difficulté | Nombre | PV | Dégâts | Habileté | Guerrier / archer / mage | Ennemis (donjon moyen, grotte, forêt) | PV à abattre | Dégâts reçus par seconde |
 |---|---|---|---|---|---|---|---|---|
-| 1 | × 0.70 | × 0.60 | × 0.70 | base (celle des fiches) | 3 / 1 / 0 | 31, 18, 26 | × 0.42 | × 0.49 |
-| 2 | × 0.85 | × 0.80 | × 0.85 | base (celle des fiches) | 3 / 2 / 1 | 38, 23, 31 | × 0.68 | × 0.72 |
+| 1 | × 0.70 | × 0.60 | × 0.35 (mage × 0.60) | base (celle des fiches) | 3 / 1 / 0 | 31, 18, 26 | × 0.42 | × 0.24 |
+| 2 | × 0.85 | × 0.80 | × 0.65 (mage × 0.80) | base (celle des fiches) | 3 / 2 / 1 | 38, 23, 31 | × 0.68 | × 0.55 |
 | 3 (par défaut) | × 1.00 | × 1.00 | × 1.00 | base (celle des fiches) | tirage du lieu | 44, 27, 37 | × 1.00 | × 1.00 |
 | 4 | × 1.15 | × 1.20 | × 1.15 | aguerri (rang 3) | tirage du lieu | 50, 29, 43 | × 1.36 | × 1.30 |
 | 5 | × 1.30 | × 1.40 | × 1.30 | aguerri (rang 3) | 2 / 2 / 2 | 57, 34, 49 | × 1.83 | × 1.70 |
