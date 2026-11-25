@@ -337,6 +337,8 @@ tâche pour ce qui casse.
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au
   lieu d'entraînement, `/entrainement difficulte 1`, `4`, `6` : les ennemis se battent-ils visiblement mieux ?
+- [ ] DF.8 : une grotte et un donjon généré sans aucun monstre hors de nos six espèces (plus de troll, d'araignée
+  ni de bête dans les nids).
 - [ ] U.26 : miner un filon ne retire pas d'énergie, même à sec ; la roche en coûte toujours.
 - [ ] Thème du village (2026-11-24, `musique.ron`) : il démarre au village, à bas volume, tourne en boucle, ne repart
   pas du début au passage de fantôme à personnage et s'éteint en fondu au départ en expédition.

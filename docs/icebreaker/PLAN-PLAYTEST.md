@@ -487,9 +487,9 @@ version ; même butin à toutes les difficultés pour le moment ; le lot d'expé
 - [x] **DF.7 Classeur d'équilibrage** — onglet Difficulté et `equilibrage/difficulte.md` : ennemis comptés dans les
   trois lieux, PV à abattre ×0,43 à ×2,34 et dégâts reçus ×0,50 à ×2,12 de la difficulté 1 à la 6 ; fiche du wiki.
   Pas ouvert dans un tableur. — 9747beaf07
-- [ ] **DF.8 Seulement nos six espèces** (Flo, 2026-11-25 : des trolls des cavernes de 300 PV qui tuent en un coup)
-  — plus de monstres solitaires dans la grotte ni dans les nids du donjon.
-  *Fin* : aucun habitant hors de `icebreaker.ennemis.*` dans une grotte ou un donjon généré.
+- [x] **DF.8 Seulement nos six espèces** (Flo, 2026-11-25 : des trolls des cavernes de 300 PV qui tuent en un coup)
+  — plus de monstres solitaires dans la grotte (niches sans créature) ni dans les nids du donjon (des guerriers
+  endormis) ; Q67 et Q68 tranchées. Pas vu en jeu. — 5941066057
 
 ## 9. Le jour J : liste technique
 
