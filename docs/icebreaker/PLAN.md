@@ -111,7 +111,7 @@ de remplacer les maisons par des bâtiments nommés à niveaux : à trancher ava
   Testé (test ciblé, lignes et confirmation vues au vrai client) ; clic réel sur « Oui » pas fait. — 964b6d6a59
 - [x] **X.19 Le rayon part vers le réticule** — la visée (réticule ou cercle) part du vrai départ de l'attaque : un
   rayon (sceptre, Fournaise) de la mi-hauteur du corps comme au serveur, plus des yeux ; il passait sous le réticule.
-  Testé (test ciblé, client entré au lieu d'entraînement) ; rayon sur le réticule pas vu en jeu. — HASH
+  Testé (test ciblé, client entré au lieu d'entraînement) ; rayon sur le réticule pas vu en jeu. — c37556b0ca
 
 ## Jalon L — Combat, suite (Flo, 2026-11-07)
 
