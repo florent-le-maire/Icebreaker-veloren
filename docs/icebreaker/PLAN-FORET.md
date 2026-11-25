@@ -1,6 +1,6 @@
 # Jalon FO — La région Forêt et son atelier de réglage
 
-*Plan validé par Flo le 2026-11-24.* Worktree `Veloren-foret`, branche `icebreaker-foret`.
+*Plan validé par Flo le 2026-11-24 ; jalon fini et vu en jeu par Flo le 2026-11-25.* Worktree `Veloren-foret`, branche `icebreaker-foret`.
 
 ## Pourquoi
 

@@ -331,16 +331,6 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 tâche pour ce qui casse.
 
 - [ ] U.26 : miner un filon ne retire pas d'énergie, même à sec ; la roche en coûte toujours.
-- [ ] FO.5, les habitants de la Forêt : le combat y est-il jouable (un camp tue un personnage neuf en quelques
-  secondes) ? Les tireurs restent-ils sur leur plateforme, touchent-ils d'en haut ? Ouvrir un coffre au sol, dans
-  une cabane, au bout d'une branche.
-- [ ] FO.6, la Forêt en campagne (`/expedition 6 <preset>`) : choisir le preset au panneau Départ, tuer le chef,
-  rentrer, lire le bilan.
-- [ ] FO.8, les bois immenses (`donjon -Site Foret -Profil immense`) : entrer dans un tronc creux, monter dedans,
-  sortir sur une plateforme ; y voit-on quelque chose (lanternes de FO.9) ? Entrer dans une cabane par sa porte.
-  Marcher sur une branche-pont et jusqu'au bout d'une branche sans issue (FO.10).
-- [ ] FO.4, la Forêt (`donjon -Site Foret -Profil passerelles`) : monter un escalier en spirale et une échelle,
-  traverser un pont, tomber et remonter ; les couleurs de jour (`forets/foret.ron`).
 - [ ] Thème du village (2026-11-24, `musique.ron`) : il démarre au village, à bas volume, tourne en boucle, ne repart
   pas du début au passage de fantôme à personnage et s'éteint en fondu au départ en expédition.
 
