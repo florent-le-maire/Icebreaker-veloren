@@ -455,7 +455,7 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
   tuer » : la compétence une fois, puis l'attaque principale. Pas comparé à des mesures en jeu. — 36832cee24
 - [x] **EQ.7 Skill et résumé en texte** (demande de Flo, 2026-11-25) — skill `equilibrage` (`.claude/skills/equilibrage`) :
   mesurer, quel fichier changer pour quel effet, remesurer, livrer, et quoi faire quand le classeur a tort ;
-  `--resume [filtre]` affiche les matrices, l'expédition type, les achats et des lignes de Combat sans tableur. — HASH7
+  `--resume [filtre]` affiche les matrices, l'expédition type, les achats et des lignes de Combat sans tableur. — ebc4d09310
 
 ## 9. Le jour J : liste technique
 
