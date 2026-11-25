@@ -17,4 +17,28 @@
         clairiere: (88, 128, 52),
         sente: (104, 100, 58),
     ),
+    // Icebreaker FO.5 : qui vit dans la forêt (QUESTIONS.md, Q66 : seulement nos six espèces, une par forêt).
+    population: (
+        // Ennemis d'une clairière « camp » (min, max), tirés parmi `habitants`.
+        camp: (3, 5),
+        // Ennemis d'une clairière « nid » (min, max), tirés parmi `meute`, serrés au milieu.
+        nid: (2, 4),
+        // Gardes autour du chef, dans la clairière du fond, tirés parmi `habitants`.
+        garde: (2, 3),
+        // Part des plateformes (atteintes à pied) qui portent un tireur, tiré parmi `tireurs`.
+        guetteurs: 0.5,
+        // Part des cabanes et des bouts de branche sans issue qui portent un coffre. Chaque clairière (hors arrivée)
+        // a le sien.
+        coffres_hauts: 0.3,
+        // Personne ni aucun coffre à moins de tant de blocs de l'arrivée.
+        calme: 30,
+        // Le sprite des coffres ; leur contenu vient de butin.ron, plus riche loin de l'arrivée.
+        coffre: "DungeonChest2",
+    ),
+    habitants: ["icebreaker.ennemis.guerrier", "icebreaker.ennemis.archer", "icebreaker.ennemis.mage"],
+    meute: ["icebreaker.ennemis.guerrier"],
+    tireurs: ["icebreaker.ennemis.archer", "icebreaker.ennemis.mage"],
+    // Le chef, au milieu de la clairière du fond : le tuer accomplit la mission.
+    chef: "icebreaker.ennemis.chef",
+    especes: ["human", "orc", "dwarf", "elf", "draugr", "danari"],
 )

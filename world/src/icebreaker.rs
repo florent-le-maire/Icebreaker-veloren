@@ -473,6 +473,8 @@ pub fn dungeon_mission(site: &Site) -> Option<crate::site::plot::MissionTargets>
     site.plots().find_map(|plot| match plot.kind() {
         PlotKind::IcebreakerDungeon(dungeon) => Some(dungeon.get().mission_targets()),
         PlotKind::IcebreakerGrotte(grotte) => Some(grotte.get().mission_targets()),
+        // Icebreaker FO.5: the chief of the forest.
+        PlotKind::IcebreakerForet(foret) => Some(foret.get().mission_targets()),
         _ => None,
     })
 }

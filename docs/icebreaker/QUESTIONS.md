@@ -191,15 +191,6 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q63 Où est la caisse ?** Le croquis du village (2026-11-21) n'a pas de caisse : en attendant, son PNJ est dans
   la Guilde, à côté de celui de la charrette. Faut-il un bâtiment à elle (banque, mairie), et où ? *Qui* : Flo.
 
-## 10. La région Forêt (`PLAN-FORET.md`, jalon FO)
-
-- **Q66 Qui vit dans la forêt, et où ?** Le lieu existe (clairières au sol, plateformes et ponts dans les arbres),
-  vide. *Proposé* : les mêmes races que le donjon et la grotte ; des archers sur les plateformes, des nids de bêtes
-  dans les clairières « nid », un camp dans les clairières « camp », le chef dans la clairière du fond ; un coffre
-  par clairière et quelques-uns en hauteur, butin de `butin.ron` selon la distance à l'arrivée ; rien à moins de
-  30 blocs de la clairière d'arrivée. La mission est-elle la même que dans la grotte (tuer le chef) ? *Origine* :
-  FO.5. *Qui* : Flo, Sayanel.
-
 ## Tranché
 
 Petites décisions, par date ; les règles qui en sortent sont dans le fichier indiqué.
@@ -267,3 +258,8 @@ Petites décisions, par date ; les règles qui en sortent sont dans le fichier i
 - **2026-11-21 (Flo, `decisions/0022`, `design/village.md`)** : le village est fixe et presque plat, disposé comme
   le croquis de Flo (`assets/icebreaker/village_plan.ron`) ; l'infirmerie est supprimée. Règle Q49 (village sans
   maison) : la graine ne change plus la disposition.
+- **2026-11-25 (Flo, `design/generation.md`, `PLAN-FORET.md` FO.5)** : Q66, dans la forêt ne vivent que nos six
+  espèces (humain, orc, nain, elfe, draugr, danari), une par forêt ; pas de bêtes dans les « nids ». Le reste de la
+  proposition est gardé tel quel, faute d'avis contraire : tireurs sur les plateformes, un groupe par clairière, le
+  chef dans celle du fond (le tuer accomplit la mission, comme dans la grotte), un coffre par clairière et
+  quelques-uns en hauteur, rien à moins de 30 blocs de l'arrivée.

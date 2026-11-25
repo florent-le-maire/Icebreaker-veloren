@@ -69,8 +69,12 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   clairière, troncs, buissons, une plateforme et ses garde-corps. Pas vérifié : monter un escalier et une échelle
   (l'endurance suffit-elle ?), traverser un pont, tomber puis remonter ; de jour. Pas encore dans `lieux.ron`
   (FO.6). — 864f44132d
-- [ ] **FO.5 Habitants et butin** — `assets/icebreaker/forets/foret.ron` : nids au sol, archers sur les plateformes,
-  chef dans la clairière du fond, coffres (certains en hauteur). Attend la réponse à `QUESTIONS.md`, Q66.
+- [x] **FO.5 Habitants, butin, mission** (Q66 tranchée le 2026-11-25 : nos six espèces seulement) — une espèce par
+  forêt ; un groupe par clairière, des tireurs sur les plateformes, le chef et ses gardes dans la clairière du fond ;
+  un coffre par clairière, d'autres dans les cabanes et au bout des branches ; réglages dans `forets/foret.ron`
+  (`population`). Tuer le chef accomplit la mission. Testé : 3 tests ; vu dans le vrai client (preset `geante`) : un
+  camp et son coffre, un tireur sur sa plateforme, le chef, « Mission accomplie » à sa mort. Pas vérifié : un vrai
+  combat (un camp tue un personnage neuf en quelques secondes), un coffre ouvert, la campagne (retour, bilan). — HASH
 - [x] **FO.6 En campagne** (demande de Flo, 2026-11-24, avant FO.5) — la Forêt est une destination : dernière ligne
   de `lieux.ron` (`/expedition 6 <preset>`, bouton « Forêt » du panneau Départ), un emplacement dans `campagne.ron`,
   `FormeLieu::Foret` (le preset se choisit comme pour la grotte et le donjon). Vu dans le vrai client : le bouton,

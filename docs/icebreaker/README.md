@@ -68,7 +68,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | U | Grottes organiques et atelier de réglage | `PLAN-CAVERNE.md` | U.1 à U.5 codés le 2026-11-15 ; profils à régler dans l'atelier, pas vu en jeu | `Veloren-caverne` |
 | AM | Âmes | `PLAN-PLAYTEST.md` (règles : `design/ames.md`) | règles tranchées le 2026-11-16 ; attend le tableau de Sayanel (Q58) | `Veloren-ames` (à créer) |
 | FT | Le fantôme du village a un corps | `PLAN-FANTOME.md` | FT.1 à FT.5 codés le 2026-11-16 ; FT.6 et l'essai à la main restent | `Veloren-fantome` |
-| FO | La région Forêt et son atelier | `PLAN-FORET.md` | FO.0 à FO.4, FO.6 et FO.8 à FO.10 codés le 2026-11-24 (générateur, atelier, lieu seul et destination de campagne vus dans le client) ; habitants (FO.5, Q66) et wiki restent | `Veloren-foret` |
+| FO | La région Forêt et son atelier | `PLAN-FORET.md` | FO.0 à FO.4, FO.6 et FO.8 à FO.10 codés le 2026-11-24 (générateur, atelier, lieu seul et destination de campagne vus dans le client) ; habitants, coffres et mission (FO.5) le 2026-11-25 ; le wiki reste (FO.7) | `Veloren-foret` |
 | VF | Village fixe d'après le croquis | `PLAN.md` (décision `0022`) | VF.0 à VF.2 faits (2026-11-21) ; VF.3 à VF.5 restent | — (supprimé) |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.

@@ -153,7 +153,12 @@ Régions et saisons sont **provisoires** (la carte du monde arrive en phase 4) ;
 
 La **Forêt** est aussi un lieu à part entière (jalon FO, `PLAN-FORET.md`, décidé le 2026-11-24) : deux étages, des
 clairières reliées par des sentiers au sol et des plateformes reliées par des ponts dans les arbres ; tomber d'un
-pont fait les dégâts de chute normaux, on atterrit sur un sol jouable et on peut toujours remonter.
+pont fait les dégâts de chute normaux, on atterrit sur un sol jouable et on peut toujours remonter. N'y vivent que
+nos six espèces, une par forêt (Q66, 2026-11-25), pas de bêtes : un groupe dans chaque clairière (mêlé dans un
+« camp », des guerriers serrés dans un « nid »), des tireurs sur les plateformes, le chef et ses gardes dans la
+clairière du fond, la plus loin de l'arrivée par les sentiers. Tuer le chef accomplit la mission. Un coffre par
+clairière, quelques-uns dans les cabanes et au bout des branches, plus riches loin de l'arrivée ; personne ni aucun
+coffre près de l'arrivée (`assets/icebreaker/forets/foret.ron`).
 
 | Paramètre | Effet |
 |---|---|

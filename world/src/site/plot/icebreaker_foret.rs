@@ -6,12 +6,16 @@
 use super::*;
 use crate::{
     Land,
-    icebreaker::foret::{self, Lieu},
+    icebreaker::{
+        dungeon::settings::{SleepSettings, sprite_kind},
+        foret::{self, Lieu},
+    },
     site::namegen::NameGen,
 };
-use common::terrain::{Block, BlockKind};
+use common::terrain::{Block, BlockKind, SpriteCfg};
 use ::icebreaker_foret::grille;
 use rand::prelude::*;
+use rand_chacha::ChaCha8Rng;
 use std::sync::Arc;
 use tracing::{error, info};
 use vek::*;
@@ -42,6 +46,26 @@ impl IcebreakerForet {
     /// Where players arrive: the clearing at the edge of the forest.
     pub fn entrance(&self) -> Vec2<i32> { self.lieu.arrival().xy() }
 
+    /// Icebreaker FO.5: what the mission counts, as in the cave: every
+    /// inhabitant, the chief as leader, the chests. No one sleeps, no rounds.
+    pub fn mission_targets(&self) -> MissionTargets {
+        let lieu = &self.lieu;
+        MissionTargets {
+            leader: lieu.inhabitants.iter().find(|i| i.chief).map(|i| (i.pos, "chief".to_string())),
+            creatures: lieu.inhabitants.iter().map(|i| i.pos).collect(),
+            chests: lieu.chests.clone(),
+            sleepers: Vec::new(),
+            sleep: SleepSettings {
+                wake_radius: 0.0,
+                wake_radius_sneaking: 0.0,
+                alert_radius: 0.0,
+                zzz_interval: 1.0e9,
+            },
+            rondes: Vec::new(),
+            ronde: None,
+        }
+    }
+
     /// The forest of `seed` around `origin`. `voulu`: the shape asked for (a
     /// preset of `formes.ron`), `-Profil` of the launcher otherwise.
     fn generate(
@@ -66,7 +90,11 @@ impl IcebreakerForet {
             lieu.origine + Vec3::new(t.pied[0] + (d * a.cos()) as i32, t.pied[1] + (d * a.sin()) as i32, t.pied[2] + 1)
         });
         let cabane = lieu.foret.cabanes.first().map(|h| lieu.origine + Vec3::from(h.centre));
-        info!(centre = ?lieu.origine, arrivee = ?lieu.arrival(), ?pont, ?porte, ?cabane, "Icebreaker forêt: {}", lieu.summary);
+        // Icebreaker FO.5: the chief, a shooter up on a platform, a chest.
+        let chef = lieu.inhabitants.iter().find(|i| i.chief).map(|i| i.pos);
+        let guetteur = lieu.inhabitants.iter().map(|i| i.pos).find(|p| lieu.bloc(*p - Vec3::unit_z()) == grille::PLANCHE);
+        let coffre = lieu.chests.first();
+        info!(centre = ?lieu.origine, arrivee = ?lieu.arrival(), ?pont, ?porte, ?cabane, ?chef, ?guetteur, ?coffre, "Icebreaker forêt: {}", lieu.summary);
         Ok(Self::new(lieu, settings.couleurs.clone()))
     }
 }
@@ -162,6 +190,35 @@ impl Structure for IcebreakerForet {
                 painter.sprite(*pos, if *bloc == grille::LANTERNE { SpriteKind::Lantern } else { SpriteKind::Liana });
             }
         }
+        // Icebreaker FO.5: the inhabitants and the chests, as in the cave. The
+        // painter's area includes its far edge, shared with the next chunk:
+        // spawn there only once.
+        let lieu = &self.lieu;
+        for (i, inhabitant) in lieu.inhabitants.iter().enumerate() {
+            let pos = inhabitant.pos;
+            if !area.contains_point(pos.xy()) || pos.x == area.max.x || pos.y == area.max.y {
+                continue;
+            }
+            let mut rng = ChaCha8Rng::seed_from_u64(i as u64);
+            let at = pos.as_::<f32>() + Vec3::new(0.5, 0.5, 0.0);
+            let mut info = crate::icebreaker::races::entity(&inhabitant.asset, lieu.species.as_deref(), at, &mut rng);
+            if let Some(loot) = &inhabitant.loot {
+                info = info.with_loot_drop(common::lottery::LootSpec::LootTable(loot.clone()));
+            }
+            painter.spawn(info);
+        }
+        if let Some(chest) = sprite_kind(&lieu.chest) {
+            for (i, pos) in lieu.chests.iter().enumerate() {
+                if !area.contains_point(pos.xy()) {
+                    continue;
+                }
+                let loot_table = lieu.butin.as_ref().map(|b| b.coffre(lieu.chest_tiers.get(i).copied().unwrap_or(1)).to_string());
+                painter.rotated_sprite_with_cfg(*pos, chest, (i % 4) as u8 * 2, SpriteCfg {
+                    loot_table,
+                    ..SpriteCfg::default()
+                });
+            }
+        }
     }
 }
 
@@ -238,6 +295,12 @@ mod tests {
             for (pos, vers) in &now.echelles {
                 assert_eq!(now.lieu().bloc(*pos + vers.with_z(0)), grille::BOIS);
             }
+            // Icebreaker FO.5: the mission is the chief of the new forest.
+            let targets = now.mission_targets();
+            let chef = now.lieu().inhabitants.iter().find(|i| i.chief).unwrap();
+            assert_eq!(targets.leader, Some((chef.pos, "chief".to_string())));
+            assert_eq!(targets.creatures.len(), now.lieu().inhabitants.len());
+            assert_eq!(targets.chests, now.lieu().chests);
         }
     }
 }
