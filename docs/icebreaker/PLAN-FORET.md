@@ -108,7 +108,7 @@ pour voir l'étage haut, coupe en hauteur, « Enregistrer le preset » (écrit `
   — 8c1a125db5
 - [x] **FO.7 Wiki** — fiche « La forêt » (`docs/icebreaker/wiki/foret.md`) : la règle, qui y vit, l'atelier, les presets, six chiffres lus
   dans `foret.ron`, quatre images (une vue de dessus du générateur, trois captures du jeu). Rendu contrôlé par une
-  capture du site. Pas de capture de la page de l'atelier. — HASH
+  capture du site. Pas de capture de la page de l'atelier. — 37feeb5ca3
 
 ## À savoir pour la suite
 
