@@ -337,6 +337,8 @@ tâche pour ce qui casse.
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au
   lieu d'entraînement, `/entrainement difficulte 1`, `4`, `6` : les ennemis se battent-ils visiblement mieux ?
+- [ ] EQ.9 : au mannequin, grande épée, 10 s touche tenue : le classeur attend environ 35 dégâts/s en attaque normale
+  (36 par enchaînement de 2 coups, un par seconde) et 38 en estoc chargé ; noter le nombre de coups du bilan.
 - [ ] DF.9 : au lieu d'entraînement, le bouton « Difficulté » de l'arène ; en difficulté 1, un mage survit à un coup
   d'un guerrier et à une flèche d'un archer (3 touches attendues pour la flèche chargée).
 - [ ] DF.8 : une grotte et un donjon généré sans aucun monstre hors de nos six espèces (plus de troll, d'araignée

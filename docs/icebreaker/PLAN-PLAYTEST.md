@@ -461,6 +461,10 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
 - [x] **EQ.8 Le classeur en texte** (demande de Flo, 2026-11-25) — la même commande écrit `docs/icebreaker/equilibrage/` :
   `synthese.md` (vue d'ensemble) et un fichier Markdown par onglet, mêmes tableaux et mêmes chiffres, versionnés (un
   réglage se lit dans le diff) ; ils deviennent aussi des pages du wiki. Skill mis à jour. — 6c02225ee4
+- [x] **EQ.9 Ticks du serveur et compteur du mannequin** (mesure de Flo, 2026-11-25 : grande épée, 28 dégâts/s en
+  coups normaux, 41 en coups chargés, contre 48 et 45 au classeur) — le classeur compte les ticks perdus à chaque
+  étape d'un geste (grande épée : 34,8 et 38,0) ; le mannequin ne compte plus les dégâts du premier coup dans le
+  rythme. Reste 20 % d'écart sur l'attaque normale, pas expliqué (coups qui ratent ?). — fbaed66a38
 
 ### La difficulté 1 à 6 (jalon DF, worktree `Veloren-difficulte`)
 
