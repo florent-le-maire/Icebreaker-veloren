@@ -456,6 +456,7 @@ pub fn hypotheses(hyp: &mut Hyp, d: &Donnees) {
         hyp.ajoute(g, &format!("{k}.armure"), &format!("{} : part des dégâts retirée par son armure", ennemi.role), ennemi.armure, Nb::Pct, &format!("{fichier} : pièces d'armure du loadout"));
         hyp.ajoute(g, &format!("{k}.puissance"), &format!("{} : puissance de son arme", ennemi.role), ennemi.arme.puissance, Nb::Fois, &format!("{arme} : power"));
         hyp.ajoute(g, &format!("{k}.vitesse"), &format!("{} : vitesse de son arme", ennemi.role), ennemi.arme.vitesse, Nb::Fois, &format!("{arme} : speed"));
+        hyp.ajoute(g, &format!("{k}.experience"), &format!("{} : expérience donnée à sa mort", ennemi.role), ennemi.experience, Nb::Entier, "calcul de Veloren : note de combat × 20 (common/src/combat.rs, combat_rating), d'après ses PV, son armure et son arme");
     }
 
     let g = "Cibles d'équilibrage";

@@ -4,9 +4,9 @@
 use anyhow::{Context, Result, anyhow};
 use common::{
     assets::{AssetExt, Ron},
-    combat::Damage,
+    combat::{Damage, combat_rating},
     comp::{
-        Inventory,
+        Energy, Health, Inventory, Poise, SkillSet,
         ability::CharacterAbility,
         buff::BuffEffect,
         inventory::{loadout_builder::LoadoutBuilder, slot::EquipSlot},
@@ -18,6 +18,7 @@ use common::{
     generation::EntityInfo,
     icebreaker_combat::IcebreakerCombat,
     icebreaker_competences::{Competence, SalleArmes, registre},
+    skillset_builder::SkillSetBuilder,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -332,6 +333,8 @@ pub struct Ennemi {
     pub pv: f64,
     pub arme: Arme,
     pub armure: f64,
+    /// Expérience que donne sa mort (la note de combat de Veloren × 20), partagée entre ceux qui l'ont blessé.
+    pub experience: f64,
 }
 
 impl Ennemi {
@@ -341,6 +344,17 @@ impl Ennemi {
         let info = EntityInfo::at(Vec3::zero()).with_asset_expect(&id, &mut alea, None);
         let pv = net(info.icebreaker_pv.unwrap_or_else(|| f32::from(info.body.base_health())));
         let inventaire = Inventory::with_loadout(info.loadout.build(), info.body);
+        let mut sante = Health::new(info.body);
+        sante.icebreaker_ennemi(info.icebreaker_pv);
+        let talents = info
+            .skillset_asset
+            .as_deref()
+            .map_or_else(SkillSet::default, |id| SkillSetBuilder::from_asset_expect(id).build());
+        let note = {
+            let msm = MaterialStatManifest::load().read();
+            let (energie, equilibre) = (Energy::new(info.body), Poise::new(info.body));
+            combat_rating(&inventaire, &sante, &energie, &equilibre, &talents, info.body, &msm)
+        };
         let arme = inventaire
             .equipped(EquipSlot::ActiveMainhand)
             .ok_or_else(|| anyhow!("{id} : pas d'arme en main"))
@@ -351,6 +365,7 @@ impl Ennemi {
             pv,
             arme,
             armure: (reduction(&inventaire) * 1e3).round() / 1e3,
+            experience: f64::from(note * 20.0).round(),
         })
     }
 }
@@ -485,6 +500,9 @@ pub struct Donnees {
     pub jeux: Vec<Jeu>,
     pub lignes: Vec<Ligne>,
     pub ennemis: Vec<Ennemi>,
+    pub tables: Vec<crate::butin::Table>,
+    pub village: crate::butin::Village,
+    pub prix_soin: Option<f64>,
     /// Ce qui n'a pas pu être lu : à montrer, pas à taire.
     pub alertes: Vec<String>,
 }
@@ -595,6 +613,13 @@ impl Donnees {
             jeux,
             lignes,
             ennemis,
+            tables: crate::butin::tables()?,
+            village: Ron::<crate::butin::Village>::load("icebreaker.village")
+                .map_err(|e| anyhow!("village.ron illisible : {e}"))?
+                .read()
+                .0
+                .clone(),
+            prix_soin: crate::butin::prix_du_soin(),
             alertes,
         })
     }

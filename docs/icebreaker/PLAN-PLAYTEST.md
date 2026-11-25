@@ -438,9 +438,11 @@ valeur, puis on la reporte dans le fichier indiqué. Outil hors jeu : rien à v�
 - [x] **EQ.1 Combat et ennemis** — crate `icebreaker-equilibrage` ; onglets Hypothèses, Combat (163 compétences et
   niveaux : dégâts, dégâts par seconde, touches et secondes pour tuer chaque ennemi) et Ennemis (touches pour tuer chaque
   classe). Formules recalculées par un moteur à part : 0 erreur, 0 écart ; pas ouvert dans Excel (absent du poste). — c6e24a0c7c
-- [ ] **EQ.2 Progression et économie** — maîtrise et points d'arme, passifs ; or attendu par table de butin face aux prix.
-  — *en cours : Veloren-equilibrage, 2026-11-25*
+- [x] **EQ.2 Progression et économie** — onglets Progression (maîtrise par point d'arme, coût d'une compétence et d'un
+  jeu d'armes, gain par niveau, passifs) et Économie (or et objets moyens des 9 tables de butin, butins qu'il faut par
+  achat). Recalcul à part : 0 erreur, 0 écart. — HASH2
 - [ ] **EQ.3 Expéditions** — créatures, coffres, PV à abattre et or par taille, menace et densité ; minerais de la grotte.
+  — *en cours : Veloren-equilibrage, 2026-11-25*
 - [ ] **EQ.4 Synthèse** — tableau de bord (matrices, graphiques, écarts aux cibles), onglets Réglages et Lisez-moi.
 - [ ] **EQ.5 Branchement** — sous-commande `equilibrage`, `CLAUDE.md`, tableau des jalons.
 
