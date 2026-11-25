@@ -261,6 +261,8 @@ pub struct EntityInfo {
 
     /// Icebreaker H.6: its base health, instead of its body's.
     pub icebreaker_pv: Option<f32>,
+    /// Icebreaker DF: the factor of the damage it deals (the difficulty of its expedition).
+    pub icebreaker_degats: Option<f32>,
 
     // Edge cases, override everything else
     pub special_entity: Option<SpecialEntity>,
@@ -293,6 +295,7 @@ impl EntityInfo {
             trading_information: None,
             special_entity: None,
             icebreaker_pv: None,
+            icebreaker_degats: None,
         }
     }
 

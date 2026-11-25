@@ -92,6 +92,10 @@ pub struct Stats {
     pub max_energy_modifiers: StatsModifier,
     pub poise_damage_modifier: f32,
     pub attack_damage_modifier: f32,
+    /// Icebreaker DF: the damage factor of an enemy of an expedition (`difficulte.ron`), kept through
+    /// `reset_temp_modifiers`: `attack_damage_modifier` starts from it.
+    #[serde(default = "icebreaker_un")]
+    pub icebreaker_degats: f32,
     pub conditional_precision_modifiers: Vec<(Option<CombatRequirement>, f32, bool)>,
     pub precision_vulnerability_multiplier_override: Option<f32>,
     pub swim_speed_modifier: f32,
@@ -141,6 +145,7 @@ impl Stats {
             max_energy_modifiers: StatsModifier::default(),
             poise_damage_modifier: 1.0,
             attack_damage_modifier: 1.0,
+            icebreaker_degats: 1.0,
             conditional_precision_modifiers: Vec::new(),
             precision_vulnerability_multiplier_override: None,
             swim_speed_modifier: 1.0,
@@ -172,9 +177,21 @@ impl Stats {
         let name = std::mem::replace(&mut self.name, Content::dummy());
         let body = self.original_body;
 
+        // Icebreaker DF: the damage factor of its difficulty stays.
+        let degats = self.icebreaker_degats;
+
         *self = Self::new(name, body);
+        self.icebreaker_regler_degats(degats);
+    }
+
+    /// Icebreaker DF: sets the damage factor of the difficulty of an enemy.
+    pub fn icebreaker_regler_degats(&mut self, degats: f32) {
+        self.icebreaker_degats = degats;
+        self.attack_damage_modifier = degats;
     }
 }
+
+fn icebreaker_un() -> f32 { 1.0 }
 
 impl Component for Stats {
     type Storage = DerefFlaggedStorage<Self, specs::VecStorage<Self>>;

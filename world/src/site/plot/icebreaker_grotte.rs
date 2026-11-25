@@ -158,7 +158,7 @@ impl Structure for IcebreakerGrotte {
             let mut rng = ChaCha8Rng::seed_from_u64(i as u64);
             // Icebreaker H.4: a humanoid of the race of the cave.
             let at = pos.as_::<f32>() + Vec3::new(0.5, 0.5, 0.0);
-            let mut info = crate::icebreaker::races::entity(&inhabitant.asset, grotte.species.as_deref(), at, &mut rng);
+            let mut info = crate::icebreaker::races::entity(&inhabitant.asset, grotte.species.as_deref(), at, &mut rng, &grotte.difficulte);
             // Icebreaker B.14: it drops the loot of its tier (butin.ron).
             if let Some(loot) = &inhabitant.loot {
                 info = info.with_loot_drop(common::lottery::LootSpec::LootTable(loot.clone()));
@@ -320,7 +320,7 @@ mod tests {
         let slot = Remplacable::new(first);
         let mut caves = vec![slot.get().grotte.summary.clone()];
         for seed in [100, 200, 300] {
-            assert!(slot.regenerate(&land, origin, seed, None).unwrap(), "graine {seed}");
+            assert!(slot.regenerate(&land, origin, seed, None, None).unwrap(), "graine {seed}");
             let now = slot.get();
             let b = now.bounds();
             assert!(kept.contains_point(b.min) && kept.contains_point(b.max), "graine {seed} : {b:?} hors de {kept:?}");
@@ -332,9 +332,10 @@ mod tests {
         assert_eq!(caves.len(), 4, "deux grottes identiques");
         // Icebreaker U.11: the shape asked for, and the seed kept to show it.
         for preset in crate::icebreaker::grotte_presets() {
-            assert!(slot.regenerate(&land, origin, 400, Some(&preset)).unwrap(), "{preset}");
+            assert!(slot.regenerate(&land, origin, 400, Some(&preset), Some(5)).unwrap(), "{preset}");
             let now = slot.get();
             assert_eq!(now.grotte.profil, preset);
+            assert_eq!(now.grotte.difficulte.numero, 5);
             assert!((400..400 + FIT_TRIES).contains(&now.grotte.seed));
             assert!(now.grotte.summary.contains(&format!("graine {}", now.grotte.seed)), "{}", now.grotte.summary);
         }

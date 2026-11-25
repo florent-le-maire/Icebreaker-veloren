@@ -477,9 +477,19 @@ fn dire_au_panneau(ecs: &World, client: Entity, message: &str, sorte: Sorte) {
     }
 }
 
+/// Icebreaker DF : la difficulté des ennemis qu'on fait venir (`/entrainement difficulte <1-6>`) ; 0 : celle
+/// par défaut.
+static DIFFICULTE: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
+
+/// La ligne de la difficulté réglée au lieu d'entraînement.
+fn difficulte() -> common::icebreaker_difficulte::Niveau {
+    let reglee = DIFFICULTE.load(std::sync::atomic::Ordering::Relaxed);
+    common::icebreaker_difficulte::niveau(Some(reglee).filter(|n| *n > 0))
+}
+
 const AIDE: &str = "/entrainement classe <id>, arme <jeu>, placer <1|2> [id], niveau <id|tout> \
-                    <1-5>, ultime <id>, passif <id>, ennemi <race> [role] [nombre], allie <id> \
-                    [nombre], nettoyer, soin, entree";
+                    <1-5>, ultime <id>, passif <id>, ennemi <race> [role] [nombre], difficulte <1-6>, \
+                    allie <id> [nombre], nettoyer, soin, entree";
 
 /// `/entrainement …` : tout régler au lieu d'entraînement (les boutons de ses panneaux). Sans rôle
 /// requis, refusée ailleurs.
@@ -595,12 +605,24 @@ pub(crate) fn handle_entrainement(
             let (ennemis, allies) = en_piste(ecs);
             let nombre = nombre_demande(nombre, ennemis + allies, &config)?;
             let centre = arene.ok_or_else(|| "Pas d'arène dans ce monde.".to_string())?;
+            let difficulte = difficulte();
             let infos = positions(centre, config.rayon_apparition, nombre)
                 .into_iter()
-                .map(|pos| world::icebreaker::races::entity_au_hasard(&fichier, Some(race), pos))
+                .map(|pos| world::icebreaker::races::entity_au_hasard(&fichier, Some(race), pos, &difficulte))
                 .collect();
             faire_venir(ecs, infos)?;
-            Ok(format!("{race_nom} : {nombre} x {role_nom} dans l'arène."))
+            Ok(format!("{race_nom} : {nombre} x {role_nom} dans l'arène, difficulté {}.", difficulte.numero))
+        })(),
+        // Icebreaker DF : la difficulté des prochains ennemis (ceux qui sont là gardent la leur).
+        ["difficulte", n] => (|| {
+            let max = common::icebreaker_difficulte::IcebreakerDifficulte::actuel().max();
+            let n = n.parse::<u8>().ok().filter(|n| (1..=max).contains(n)).ok_or_else(|| format!("Difficulté de 1 à {max}."))?;
+            DIFFICULTE.store(n, std::sync::atomic::Ordering::Relaxed);
+            let ligne = difficulte();
+            Ok(format!(
+                "Difficulté {n} pour les prochains ennemis : PV x{}, dégâts x{}, habileté « {} ».",
+                ligne.pv, ligne.degats, ligne.ia
+            ))
         })(),
         ["allie", id, reste @ ..] if reste.len() <= 1 => (|| {
             use common::{
@@ -808,7 +830,7 @@ mod tests {
             for (role, _) in &config.roles {
                 let (fichier, ..) = ennemi_demande(&config, race, Some(role)).unwrap();
                 let info =
-                    world::icebreaker::races::entity_au_hasard(&fichier, Some(race), vek::Vec3::zero());
+                    world::icebreaker::races::entity_au_hasard(&fichier, Some(race), vek::Vec3::zero(), &Default::default());
                 // Un humanoïde de la race demandée.
                 assert!(
                     matches!(info.body, common::comp::Body::Humanoid(_)),

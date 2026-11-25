@@ -677,7 +677,13 @@ impl Structure for IcebreakerDungeon {
                 let loot = self.dungeon.butin.creature(kind, palier).to_string();
                 painter.spawn(
                     // Icebreaker H.2: a humanoid of the race of the dungeon.
-                    crate::icebreaker::races::entity(asset, self.dungeon.species.as_deref(), self.spawn_pos(*cell), &mut rng)
+                    crate::icebreaker::races::entity(
+                        asset,
+                        self.dungeon.species.as_deref(),
+                        self.spawn_pos(*cell),
+                        &mut rng,
+                        &self.dungeon.difficulte,
+                    )
                         .with_loot_drop(common::lottery::LootSpec::LootTable(loot)),
                 );
             }

@@ -3,7 +3,10 @@
 //! of the place, replaces the `humanoid` body of the enemy files; any other
 //! creature (the lone monsters, the factions of Veloren) keeps its own body.
 
-use common::generation::{BodyBuilder, EntityConfig, EntityInfo};
+use common::{
+    generation::{BodyBuilder, EntityConfig, EntityInfo},
+    icebreaker_difficulte::Niveau,
+};
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use vek::Vec3;
@@ -23,20 +26,25 @@ pub fn species_of(species: &[String], seed: u64) -> Option<&String> {
 
 /// The entity of `asset` at `pos`; a humanoid of `species` if the file says
 /// `RandomWith("humanoid")` and a species is given (its name is drawn after
-/// the body, so it fits the species).
-pub fn entity(asset: &str, species: Option<&str>, pos: Vec3<f32>, rng: &mut ChaCha8Rng) -> EntityInfo {
+/// the body, so it fits the species). Icebreaker DF: its health and its damage follow the difficulty of the
+/// place.
+pub fn entity(asset: &str, species: Option<&str>, pos: Vec3<f32>, rng: &mut ChaCha8Rng, difficulte: &Niveau) -> EntityInfo {
     let mut config = EntityConfig::from_asset_expect_owned(asset);
     if let (Some(species), BodyBuilder::RandomWith(body)) = (species, &config.body)
         && body == HUMANOID
     {
         config = config.with_body(BodyBuilder::RandomWith(species.to_string()));
     }
-    EntityInfo::at(pos).with_entity_config(config, Some(asset), rng, None)
+    let mut info = EntityInfo::at(pos).with_entity_config(config, Some(asset), rng, None);
+    // Only the health of our files (`icebreaker_pv`): a creature of Veloren keeps the one of its body.
+    info.icebreaker_pv = info.icebreaker_pv.map(|pv| pv * difficulte.pv);
+    info.icebreaker_degats = Some(difficulte.degats);
+    info
 }
 
 /// Icebreaker O : un ennemi à la demande (lieu d'entraînement), tiré au hasard.
-pub fn entity_au_hasard(asset: &str, species: Option<&str>, pos: Vec3<f32>) -> EntityInfo {
-    entity(asset, species, pos, &mut ChaCha8Rng::from_seed(rand::rng().random()))
+pub fn entity_au_hasard(asset: &str, species: Option<&str>, pos: Vec3<f32>, difficulte: &Niveau) -> EntityInfo {
+    entity(asset, species, pos, &mut ChaCha8Rng::from_seed(rand::rng().random()), difficulte)
 }
 
 #[cfg(test)]
@@ -64,7 +72,7 @@ mod tests {
         let mut rng = ChaCha8Rng::seed_from_u64(1);
         for asset in ENEMIES {
             for (name, species) in SPECIES {
-                let info = entity(asset, Some(name), Vec3::zero(), &mut rng);
+                let info = entity(asset, Some(name), Vec3::zero(), &mut rng, &Niveau::default());
                 assert!(
                     matches!(info.body, Body::Humanoid(b) if b.species == species),
                     "{asset} en {name} : {:?}",
@@ -73,7 +81,7 @@ mod tests {
             }
         }
         // The chief holds the staff of the gnarling chief (its abilities).
-        let chief = entity("icebreaker.ennemis.chef", Some("orc"), Vec3::zero(), &mut rng);
+        let chief = entity("icebreaker.ennemis.chef", Some("orc"), Vec3::zero(), &mut rng, &Niveau::default());
         let inventory = common::comp::Inventory::with_loadout(chief.loadout.build(), chief.body);
         assert!(
             inventory
@@ -88,7 +96,7 @@ mod tests {
     fn enemies_have_the_health_of_their_file() {
         let mut rng = ChaCha8Rng::seed_from_u64(3);
         for (asset, pv) in [("icebreaker.ennemis.guerrier", 50.0), ("icebreaker.ennemis.chef", 150.0)] {
-            let info = entity(asset, Some("elf"), Vec3::zero(), &mut rng);
+            let info = entity(asset, Some("elf"), Vec3::zero(), &mut rng, &Niveau::default());
             assert_eq!(info.icebreaker_pv, Some(pv), "{asset}");
             let mut health = common::comp::Health::new(info.body);
             health.icebreaker_ennemi(info.icebreaker_pv);
@@ -100,8 +108,30 @@ mod tests {
     #[test]
     fn other_creatures_keep_their_body() {
         let mut rng = ChaCha8Rng::seed_from_u64(2);
-        let spider = entity("common.entity.wild.aggressive.cave_spider", Some("orc"), Vec3::zero(), &mut rng);
+        let spider = entity("common.entity.wild.aggressive.cave_spider", Some("orc"), Vec3::zero(), &mut rng, &Niveau::default());
         assert!(!matches!(spider.body, Body::Humanoid(_)));
+    }
+
+    // Icebreaker DF: the health and the damage of the difficulty of the place.
+    #[test]
+    fn enemies_follow_the_difficulty() {
+        let difficultes = common::icebreaker_difficulte::IcebreakerDifficulte::actuel();
+        let mut rng = ChaCha8Rng::seed_from_u64(4);
+        for (n, pv, degats) in [(1, 30.0, 0.7), (3, 50.0, 1.0), (6, 80.0, 1.45)] {
+            let niveau = difficultes.niveau(Some(n));
+            let info = entity("icebreaker.ennemis.guerrier", Some("orc"), Vec3::zero(), &mut rng, &niveau);
+            assert!((info.icebreaker_pv.unwrap() - pv).abs() < 0.01, "difficulté {n} : {:?} PV", info.icebreaker_pv);
+            assert_eq!(info.icebreaker_degats, Some(degats), "difficulté {n}");
+            // The factor stays when the buffs reset the stats, each tick.
+            let mut stats = common::comp::Stats::new(common::comp::Content::dummy(), info.body);
+            stats.icebreaker_regler_degats(degats);
+            stats.attack_damage_modifier *= 2.0;
+            stats.reset_temp_modifiers();
+            assert_eq!(stats.attack_damage_modifier, degats);
+        }
+        // A creature of Veloren keeps the health of its body.
+        let spider = entity("common.entity.wild.aggressive.cave_spider", None, Vec3::zero(), &mut rng, &difficultes.niveau(Some(6)));
+        assert_eq!((spider.icebreaker_pv, spider.icebreaker_degats), (None, Some(1.45)));
     }
 
     #[test]

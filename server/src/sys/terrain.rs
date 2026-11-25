@@ -560,6 +560,7 @@ impl SpawnEntityData {
             death_effects,
             rider_effects,
             icebreaker_pv,
+            icebreaker_degats,
         } = entity;
 
         if let Some(special) = special_entity {
@@ -567,7 +568,11 @@ impl SpawnEntityData {
         }
 
         let name = name.unwrap_or_else(Content::dummy);
-        let stats = comp::Stats::new(name, body);
+        let mut stats = comp::Stats::new(name, body);
+        // Icebreaker DF: an enemy hits as hard as the difficulty of its expedition says.
+        if let Some(degats) = icebreaker_degats.filter(|_| alignment == comp::Alignment::Enemy) {
+            stats.icebreaker_regler_degats(degats);
+        }
 
         let skill_set = {
             let skillset_builder = SkillSetBuilder::default();

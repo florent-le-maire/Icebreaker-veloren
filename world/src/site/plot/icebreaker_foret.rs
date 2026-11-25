@@ -201,7 +201,7 @@ impl Structure for IcebreakerForet {
             }
             let mut rng = ChaCha8Rng::seed_from_u64(i as u64);
             let at = pos.as_::<f32>() + Vec3::new(0.5, 0.5, 0.0);
-            let mut info = crate::icebreaker::races::entity(&inhabitant.asset, lieu.species.as_deref(), at, &mut rng);
+            let mut info = crate::icebreaker::races::entity(&inhabitant.asset, lieu.species.as_deref(), at, &mut rng, &lieu.difficulte);
             if let Some(loot) = &inhabitant.loot {
                 info = info.with_loot_drop(common::lottery::LootSpec::LootTable(loot.clone()));
             }
@@ -297,9 +297,10 @@ mod tests {
         let slot = Remplacable::new(IcebreakerForet::generate(&settings, &land, origin, 0, None).unwrap());
         let first = slot.get().lieu().summary.clone();
         for preset in settings.formes.as_ref().unwrap().profils.keys() {
-            assert!(slot.regenerate(&land, origin, 400, Some(preset)).unwrap());
+            assert!(slot.regenerate(&land, origin, 400, Some(preset), Some(5)).unwrap());
             let now = slot.get();
             assert_eq!(&now.lieu().profil, preset);
+            assert_eq!(now.lieu().difficulte.numero, 5);
             assert_eq!(now.lieu().origine.xy(), origin);
             assert_ne!(now.lieu().summary, first);
             // A ladder leans on its trunk.
