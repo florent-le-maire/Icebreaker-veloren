@@ -91,10 +91,9 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Ecrit> 
         accent::EXPEDITIONS,
         colonnes_en_tout,
     )?;
-    let titre = style::intertitre(accent::EXPEDITIONS);
 
     // 1. Qui habite le donjon.
-    feuille.merge_range(ligne, 0, ligne, 9, "Qui habite le donjon", &titre)?;
+    style::section(feuille, ligne, 9, "Qui habite le donjon", accent::EXPEDITIONS)?;
     ligne += 1;
     let colonnes = [
         col("Sorte", 13.0, Nb::Texte),
@@ -131,7 +130,7 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Ecrit> 
 
     // 2. Les cas.
     ligne = fin + 3;
-    feuille.merge_range(ligne, 0, ligne, 9, "Ce qu'un donjon contient, rapporte et demande", &titre)?;
+    style::section(feuille, ligne, 9, "Ce qu'un donjon contient, rapporte et demande", accent::EXPEDITIONS)?;
     ligne += 1;
     let mut colonnes = vec![
         col("Taille", 13.0, Nb::Texte),
@@ -258,7 +257,7 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result<Ecrit> 
 
     // 3. La grotte : ses habitants et ses minerais.
     ligne = fin + 3;
-    feuille.merge_range(ligne, 0, ligne, 9, "La grotte : minerais par niveau", &titre)?;
+    style::section(feuille, ligne, 9, "La grotte : minerais par niveau", accent::EXPEDITIONS)?;
     ligne += 1;
     let liste = minerais().liste();
     let niveaux = liste.iter().map(|(_, m)| m.poids.len()).max().unwrap_or(1);

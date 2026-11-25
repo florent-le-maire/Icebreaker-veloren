@@ -2,8 +2,9 @@
 //! `docs/icebreaker/PLAN-PLAYTEST.md`, § 8). Les chiffres sont lus dans `assets/` avec les structures du jeu ;
 //! les calculs sont des formules Excel branchées sur l'onglet « Hypothèses », qu'on peut modifier pour essayer.
 //! Lancer depuis la racine du dépôt : `cargo run -p icebreaker-equilibrage [sortie.xlsx] [--resume [filtre]]`.
-//! `--resume` affiche aussi l'essentiel en texte (matrices, expédition type, achats), et les lignes de Combat
-//! dont le jeu d'armes ou le nom contient `filtre`.
+//! À côté du classeur, le dossier `equilibrage/` reçoit les mêmes tableaux en Markdown (`texte.rs`).
+//! `--resume` affiche aussi la vue d'ensemble (`synthese.md`), et les lignes de Combat dont le jeu d'armes ou
+//! le nom contient `filtre`.
 
 mod butin;
 mod calcul;
@@ -19,6 +20,7 @@ mod reglages;
 mod resume;
 mod style;
 mod synthese;
+mod texte;
 
 use anyhow::{Context, Result};
 use rust_xlsxwriter::{DocProperties, ExcelDateTime, Workbook, Worksheet};
@@ -84,6 +86,11 @@ fn main() -> Result<()> {
         classeur.push_worksheet(feuille);
     }
     classeur.save(&sortie).with_context(|| format!("écriture de {sortie} (fermer le classeur dans Excel ?)"))?;
+    // Les mêmes tableaux en texte, dans le dossier du même nom que le classeur.
+    let vue = resume::synthese(&d, &hyp, &competences, &ennemis, &expedition);
+    let dossier = std::path::Path::new(&sortie).with_extension("");
+    let fichiers = texte::ecrire(&dossier, &vue)?;
+    println!("{} : {fichiers} fichiers Markdown", dossier.display());
     println!(
         "{sortie} : {} compétences et niveaux, {} attaques d'ennemis, {} cas de donjon, {reglages} réglages",
         competences.len(),
@@ -94,7 +101,11 @@ fn main() -> Result<()> {
         println!("lecture partielle : {alerte}");
     }
     if resume.is_some() {
-        resume::afficher(&d, &hyp, &competences, &ennemis, &expedition, filtre.map(String::as_str));
+        println!("
+{vue}");
+        if let Some(filtre) = filtre {
+            println!("{}", resume::lignes(&d, &competences, filtre));
+        }
     }
     Ok(())
 }

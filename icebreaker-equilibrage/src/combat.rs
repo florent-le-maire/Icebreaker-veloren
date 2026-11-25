@@ -423,7 +423,7 @@ pub fn ecrire_ennemis(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp) -> Result
 
     // Les classes en face : leurs PV et leur armure, d'après les hypothèses.
     let mut ligne = fin + 3;
-    feuille.merge_range(ligne, 0, ligne, 4, "Les classes en face", &style::intertitre(accent::ENNEMIS))?;
+    style::section(feuille, ligne, 4, "Les classes en face", accent::ENNEMIS)?;
     ligne += 1;
     let colonnes_classes = [
         col("Classe", 11.0, Nb::Texte),

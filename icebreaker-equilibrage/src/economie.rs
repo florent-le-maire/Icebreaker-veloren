@@ -59,9 +59,8 @@ pub fn ecrire(
         accent::ECONOMIE,
         12,
     )?;
-    let titre = style::intertitre(accent::ECONOMIE);
 
-    feuille.merge_range(ligne, 0, ligne, 10, "Ce que donne chaque butin, en moyenne", &titre)?;
+    style::section(feuille, ligne, 10, "Ce que donne chaque butin, en moyenne", accent::ECONOMIE)?;
     ligne += 1;
     let mut colonnes = vec![
         col("Butin", 26.0, Nb::Texte),
@@ -95,7 +94,7 @@ pub fn ecrire(
     feuille.add_conditional_format(debut, 2, fin, 2, &barres)?;
 
     ligne = fin + 3;
-    feuille.merge_range(ligne, 0, ligne, 10, "Combien de butins pour s'offrir…", &titre)?;
+    style::section(feuille, ligne, 10, "Combien de butins pour s'offrir…", accent::ECONOMIE)?;
     ligne += 1;
     let mut colonnes = vec![
         col("Achat", 26.0, Nb::Texte),

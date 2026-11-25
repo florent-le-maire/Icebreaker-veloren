@@ -16,24 +16,34 @@ agents »). Cargo n'est pas dans le PATH des outils : `export PATH="$HOME/.cargo
 
 ## 1. Mesurer
 
+Le classeur existe aussi **en texte**, écrit par la même commande : `docs/icebreaker/equilibrage/`, un fichier
+Markdown par onglet, mêmes tableaux et mêmes chiffres. C'est par là qu'un agent lit l'équilibrage ; le `.xlsx` est
+pour l'équipe (il n'y a ni Excel ni LibreOffice sur le poste de Flo, et rien ne sert de l'ouvrir en Python).
+
+| Fichier | Ce qu'on y trouve |
+|---|---|
+| `synthese.md` | **à lire d'abord** : touches pour tuer (jeu d'armes × ennemi) et pour mourir (ennemi × classe) face aux cibles, expédition type, achats en expéditions |
+| `combat.md` | une ligne par compétence et par niveau (163) : touches, dégâts, énergie, geste, recharge, dégâts par seconde, touches et secondes pour tuer chaque ennemi, notes. Gros : y chercher un nom avec Grep plutôt que tout lire |
+| `ennemis.md` | les attaques de base des ennemis face à chaque classe ; PV et armure des classes |
+| `progression.md` | maîtrise par point d'arme, coût d'une compétence, gain par niveau, passifs |
+| `economie.md` | or et objets moyens de chaque table de butin ; butins qu'il faut par achat |
+| `expeditions.md` | qui habite le donjon ; 21 cas (taille, menace, densité) ; minerais de la grotte |
+| `hypotheses.md` | chaque chiffre du jeu qui entre dans un calcul, **et le fichier où il se règle** |
+
+Ces fichiers sont versionnés : ils disent l'état du jeu au dernier lancement. Après avoir touché un chiffre de
+`assets/`, ou en cas de doute sur leur fraîcheur, relancer :
+
 ```
-cargo run -q -p icebreaker-equilibrage -- --resume            # matrices, expédition type, achats
+cargo run -q -p icebreaker-equilibrage -- --resume            # réécrit classeur et fichiers, affiche synthese.md
 cargo run -q -p icebreaker-equilibrage -- --resume fournaise  # + les lignes de Combat dont le nom contient « fournaise »
 cargo run -q -p icebreaker-equilibrage -- --resume baton      # + toutes les lignes d'un jeu d'armes (son id)
 ```
 
-Chaque lancement réécrit aussi le classeur. Le résumé donne :
-- **Tuer** : touches à l'attaque principale de chaque jeu d'armes contre chaque ennemi ;
-- **Mourir** : touches de chaque ennemi (attaque principale) pour tuer chaque classe ;
-- **l'expédition type** (donjon moyen, menace et densité par défaut) et les **achats** comptés en expéditions.
+`git diff docs/icebreaker/equilibrage/` montre alors exactement ce que le changement a déplacé : c'est la mesure
+avant / après, sans rien noter à la main.
 
 Une ligne « lecture partielle » en sortie veut dire qu'un chiffre n'a pas pu être lu ou que la formule du classeur ne
 redonne pas les dégâts du jeu : la traiter avant de conclure quoi que ce soit (§ 5).
-
-Pour un détail que le résumé ne montre pas (énergie, geste, recharge, niveaux, butin par table, cas de donjon), lire
-le classeur : `py -c "import openpyxl; f = openpyxl.load_workbook('docs/icebreaker/equilibrage.xlsx',
-data_only=True)['Combat']; ..."`. Les résultats des formules sont écrits dans le fichier, pas besoin de tableur (il
-n'y a ni Excel ni LibreOffice sur le poste de Flo).
 
 ## 2. Ce que les chiffres supposent
 
@@ -80,16 +90,18 @@ ennemis ou monter les dégâts des joueurs).
 
 ## 4. Changer, remesurer, livrer
 
-1. Noter la mesure d'avant (copier les lignes utiles du résumé).
+1. Partir de fichiers à jour et committés (`git status docs/icebreaker/equilibrage/` propre après un lancement) :
+   ils sont la mesure d'avant.
 2. Changer **un** levier dans son fichier. Calculer d'avance ce qu'il faut : les dégâts sont un produit (base ×
    niveau × arme × multiplicateur de `combat.ron`), l'armure retire sa part ensuite ; touches = PV / (dégâts d'une
    touche × (1 − armure)), arrondi au-dessus. Viser le milieu de la marche, pas le bord : 49,9 PV et 50,1 PV ne
    donnent pas le même nombre de touches.
-3. Relancer avec `--resume` : la mesure d'après. Regarder aussi ce qui n'était **pas** visé (un multiplicateur
-   global déplace toutes les lignes ; les PV d'un ennemi déplacent l'expérience et les minutes d'une expédition).
+3. Relancer avec `--resume`, puis lire `git diff docs/icebreaker/equilibrage/` : la mesure d'après, et tout ce
+   qui a bougé sans être visé (un multiplicateur global déplace toutes les lignes ; les PV d'un ennemi déplacent
+   l'expérience et les minutes d'une expédition).
 4. Présenter à l'équipe un tableau avant / après / cible, avec ce que le calcul suppose (§ 2).
-5. `cargo test -p icebreaker-equilibrage`, puis un commit par réglage, en français, avec le fichier de données **et**
-   le classeur régénéré (il est reproductible : mêmes données, même fichier). Le changement n'est pas vérifié en
+5. `cargo test -p icebreaker-equilibrage`, puis un commit par réglage, en français, avec le fichier de données, le
+   classeur **et** le dossier `equilibrage/` régénérés (reproductibles : mêmes données, mêmes fichiers). Le changement n'est pas vérifié en
    jeu : l'ajouter à « À vérifier en jeu » de `docs/icebreaker/PLAN.md`.
 6. Proposer l'essai : `.\icebreaker.ps1 entrainement` (port 14150), puis `/entrainement classe`, `arme`, `ennemi`…
    pour compter les coups sur le vrai ennemi. Si le serveur tournait déjà, il est périmé : le relancer.
@@ -119,6 +131,9 @@ le jeu lance ; un écart sort en « lecture partielle ».
 ## 6. Changer le classeur lui-même
 
 - Un module par onglet dans `icebreaker-equilibrage/src/` ; `style.rs` pour l'allure (`tableau`, `bandeau`, `Val`).
+- La version texte suit toute seule : chaque `style::tableau` est aussi rangé dans le fichier Markdown de son
+  onglet (`texte.rs`), sous le titre donné par `style::section` juste avant. Un tableau écrit à la main, sans
+  `style::tableau` (comme l'onglet Hypothèses), se déclare avec `style::noter`. `synthese.md` vient de `resume.rs`.
 - Tout chiffre du jeu qui entre dans un calcul est une case de l'onglet Hypothèses (`hyp.ajoute`, avec le fichier
   où il se règle) ; les formules pointent dessus (`hyp.r`), et portent leur résultat calculé en Rust (`Val::F`).
   Le calcul vit dans `calcul.rs`, testé, et la formule Excel doit dire la même chose.

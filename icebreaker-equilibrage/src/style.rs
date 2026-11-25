@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use rust_xlsxwriter::{Color, Format, FormatAlign, FormatBorder, Formula, Worksheet};
+use std::cell::RefCell;
 
 pub const POLICE: &str = "Arial";
 pub const ENCRE: u32 = 0x1F2937;
@@ -154,6 +155,7 @@ pub fn bandeau(feuille: &mut Worksheet, titre: &str, explication: &str, accent: 
     feuille.merge_range(1, 0, 1, fin, explication, &explication_format)?;
     feuille.set_row_height(1, 32)?;
     feuille.set_tab_color(Color::RGB(accent));
+    ONGLETS.with_borrow_mut(|o| o.push(Onglet { nom: feuille.name(), titre: titre.to_string(), explication: explication.to_string() }));
     Ok(3)
 }
 
@@ -258,8 +260,83 @@ pub fn tableau(
         }
         ligne += 1;
     }
+    // La même chose en texte, pour `texte.rs` : un titre répété (« Touches pour tuer ») prend celui de son groupe.
+    let titres: Vec<String> = colonnes
+        .iter()
+        .enumerate()
+        .map(|(i, c)| {
+            let double = colonnes.iter().filter(|autre| autre.titre == c.titre).count() > 1;
+            match groupes.iter().find(|(debut, fin, _)| double && (*debut..=*fin).contains(&(i as u16))) {
+                Some((_, _, groupe)) => format!("{groupe} — {}", c.titre),
+                None => c.titre.clone(),
+            }
+        })
+        .collect();
+    let en_texte = lignes.iter().map(|l| l.iter().zip(colonnes).map(|(v, c)| texte_de(v, c.nb)).collect()).collect();
+    noter(&feuille.name(), &SECTION.take(), titres, en_texte);
     Ok((ligne_entete, premiere, ligne.saturating_sub(1).max(premiere)))
 }
 
 /// `A1` d'une case.
 pub fn a1(ligne: u32, colonne: u16) -> String { rust_xlsxwriter::utility::row_col_to_cell(ligne, colonne) }
+
+/// Un onglet écrit : son nom, le titre et l'explication de son bandeau.
+pub struct Onglet {
+    pub nom: String,
+    pub titre: String,
+    pub explication: String,
+}
+
+/// Un tableau écrit, en texte : ce que `texte.rs` range dans les fichiers lisibles sans tableur.
+pub struct Tableau {
+    pub onglet: String,
+    /// L'intertitre qui le précède (vide : le seul tableau de l'onglet).
+    pub titre: String,
+    pub colonnes: Vec<String>,
+    pub lignes: Vec<Vec<String>>,
+}
+
+thread_local! {
+    static ONGLETS: RefCell<Vec<Onglet>> = const { RefCell::new(Vec::new()) };
+    static TABLEAUX: RefCell<Vec<Tableau>> = const { RefCell::new(Vec::new()) };
+    static SECTION: RefCell<String> = const { RefCell::new(String::new()) };
+}
+
+/// Un intertitre au-dessus d'un tableau ; il sera aussi le titre du tableau dans la version texte.
+pub fn section(feuille: &mut Worksheet, ligne: u32, derniere_colonne: u16, titre: &str, accent: u32) -> Result<()> {
+    feuille.merge_range(ligne, 0, ligne, derniere_colonne, titre, &intertitre(accent))?;
+    SECTION.set(titre.to_string());
+    Ok(())
+}
+
+/// Garde un tableau pour la version texte.
+pub fn noter(onglet: &str, titre: &str, colonnes: Vec<String>, lignes: Vec<Vec<String>>) {
+    TABLEAUX.with_borrow_mut(|t| {
+        t.push(Tableau { onglet: onglet.to_string(), titre: titre.to_string(), colonnes, lignes })
+    });
+}
+
+/// Tout ce qui a été écrit, dans l'ordre.
+pub fn ecrits() -> (Vec<Onglet>, Vec<Tableau>) { (ONGLETS.take(), TABLEAUX.take()) }
+
+/// Un nombre comme on le lit dans le classeur, avec un point.
+pub fn nombre_en_texte(x: f64, nb: Nb) -> String {
+    if !x.is_finite() {
+        return "—".into();
+    }
+    match nb {
+        Nb::Entier => format!("{x:.0}"),
+        Nb::Dec1 | Nb::Secondes => format!("{x:.1}"),
+        Nb::Pct => format!("{:.0} %", x * 100.0),
+        Nb::Dec2 | Nb::Fois | Nb::Texte => format!("{}", (x * 100.0).round() / 100.0),
+    }
+}
+
+fn texte_de(valeur: &Val, nb: Nb) -> String {
+    match valeur {
+        Val::Vide => String::new(),
+        Val::T(texte) => texte.clone(),
+        Val::N(n) | Val::F(_, n) => nombre_en_texte(*n, nb),
+        Val::FVide(_) => "—".into(),
+    }
+}

@@ -43,10 +43,9 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp, combat: &[Ecrite]
         accent::PROGRESSION,
         14,
     )?;
-    let titre = style::intertitre(accent::PROGRESSION);
 
     // 1. Gagner des points d'arme.
-    feuille.merge_range(ligne, 0, ligne, 7, "Gagner des points d'arme", &titre)?;
+    style::section(feuille, ligne, 7, "Gagner des points d'arme", accent::PROGRESSION)?;
     ligne += 1;
     let premier_point = ligne + 1;
     let mut colonnes = vec![
@@ -83,7 +82,7 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp, combat: &[Ecrite]
 
     // 2. Monter une compétence.
     ligne = fin + 3;
-    feuille.merge_range(ligne, 0, ligne, 7, "Monter une compétence", &titre)?;
+    style::section(feuille, ligne, 7, "Monter une compétence", accent::PROGRESSION)?;
     ligne += 1;
     let colonnes = [
         col("Étape", L[0], Nb::Texte),
@@ -122,7 +121,7 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp, combat: &[Ecrite]
 
     // 3. Ce qu'un niveau apporte.
     ligne = fin + 3;
-    feuille.merge_range(ligne, 0, ligne, 13, "Ce qu'un niveau apporte (du niveau 1 au dernier)", &titre)?;
+    style::section(feuille, ligne, 13, "Ce qu'un niveau apporte (du niveau 1 au dernier)", accent::PROGRESSION)?;
     ligne += 1;
     let colonnes = [
         col("Classe", L[0], Nb::Texte),
@@ -190,7 +189,7 @@ pub fn ecrire(feuille: &mut Worksheet, d: &Donnees, hyp: &Hyp, combat: &[Ecrite]
 
     // 4. Passifs et inné.
     ligne = fin + 3;
-    feuille.merge_range(ligne, 0, ligne, 7, "Passifs et inné des classes", &titre)?;
+    style::section(feuille, ligne, 7, "Passifs et inné des classes", accent::PROGRESSION)?;
     ligne += 1;
     let colonnes = [
         col("Classe", L[0], Nb::Texte),

@@ -110,6 +110,19 @@ impl Hyp {
             )?;
             feuille.write_string_with_format(p.ligne, COL_SOURCE, &p.source, &style::texte_long(false))?;
         }
+        // La version texte : un tableau par groupe.
+        let colonnes = || vec!["Réglage".to_string(), "Valeur du jeu".to_string(), "Où la régler".to_string()];
+        let mut groupes: Vec<(&str, Vec<Vec<String>>)> = Vec::new();
+        for p in &self.params {
+            if groupes.last().is_none_or(|(g, _)| *g != p.groupe) {
+                groupes.push((&p.groupe, Vec::new()));
+            }
+            let ligne = vec![p.libelle.clone(), style::nombre_en_texte(p.valeur, p.nb), p.source.clone()];
+            groupes.last_mut().expect("un groupe vient d'être ajouté").1.push(ligne);
+        }
+        for (groupe, lignes) in groupes {
+            style::noter(ONGLET, groupe, colonnes(), lignes);
+        }
         Ok(())
     }
 }
