@@ -193,15 +193,8 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 
 ## 10. Difficulté des expéditions (`design/difficulte.md`, jalon DF)
 
-- **Q67 Que rapporte une expédition plus difficile ?** La difficulté 1 à 6 (DF) rend les ennemis plus nombreux et
-  plus forts, mais le butin, l'or et l'expérience ne changent pas : rien ne pousse à choisir la difficulté 6. Le
-  butin a déjà trois paliers selon la profondeur (`butin.ron`). *Proposé* : un facteur d'or et d'expérience par
-  difficulté dans `difficulte.ron`, et les tables de butin décalées d'un palier aux difficultés 5 et 6 ; à régler
-  avec le classeur. *Qui* : Flo, Sayanel.
-- **Q68 La difficulté et le niveau de zone.** La difficulté se choisit librement au départ (2026-11-25) ; Q56 dit
-  que le niveau d'une zone monte avec les expéditions et bloque sur un boss aux niveaux 2, 4 et 6 (B.19, B.20). Quand
-  les zones seront codées, la difficulté sera-t-elle imposée par le niveau de la zone, ou seulement plafonnée par lui
-  (on peut rejouer plus bas) ? *Proposé* : plafonnée. *Qui* : Flo.
+- **Q67** *(numéro réservé : « que rapporte une expédition plus difficile » est tranchée, voir plus bas, 2026-11-25).*
+- **Q68** *(numéro réservé : « la difficulté et le niveau de zone » est tranchée, voir plus bas, 2026-11-25).*
 
 ## Tranché
 
@@ -270,6 +263,13 @@ Petites décisions, par date ; les règles qui en sortent sont dans le fichier i
 - **2026-11-21 (Flo, `decisions/0022`, `design/village.md`)** : le village est fixe et presque plat, disposé comme
   le croquis de Flo (`assets/icebreaker/village_plan.ron`) ; l'infirmerie est supprimée. Règle Q49 (village sans
   maison) : la graine ne change plus la disposition.
+- **2026-11-25 (Flo, `design/difficulte.md`, `PLAN-PLAYTEST.md` B.19 et DF.8)** : (1) récompense (ex-Q67) : même
+  butin à toutes les difficultés pour le moment, « on verra quand on y sera » ; (2) difficulté et zones (ex-Q68) :
+  la difficulté d'une zone est plafonnée par son niveau, et le lot d'expéditions proposé, toutes zones confondues,
+  contient toujours au moins une expédition de difficulté 1 (exemple : grotte 5, 4, 5, 3 ; forêt 3, 2, 3 ; donjon
+  6, 6, 1), pour qu'un groupe de nouveaux aventuriers puisse monter de niveau ; (3) ennemis : seulement nos six
+  espèces, les monstres solitaires de la grotte et des nids du donjon sont retirés (un troll des cavernes de
+  300 PV tuait en un coup).
 - **2026-11-25 (Flo, `design/generation.md`, `PLAN-FORET.md` FO.5)** : Q66, dans la forêt ne vivent que nos six
   espèces (humain, orc, nain, elfe, draugr, danari), une par forêt ; pas de bêtes dans les « nids ». Le reste de la
   proposition est gardé tel quel, faute d'avis contraire : tireurs sur les plateformes, un groupe par clairière, le

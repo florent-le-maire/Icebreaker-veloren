@@ -13,7 +13,9 @@
     // part des monstres solitaires de l'ambiance parmi les créatures des zones, les autres sont de la race ; les niches
     // n'ont que des solitaires. calme (U.8) : aucune créature à moins de ce nombre de blocs de la salle sûre, où
     // l'équipe arrive (la grotte n'a plus de bouche en surface).
-    population: (par_poche: (2, 3), par_niveau: 1, trous: 0.5, coffres: 0.3, coffre: "DungeonChest2", part_solitaires: 0.3, calme: 30),
+    // DF.8 (Flo, 2026-11-25) : seulement nos six espèces. trous et part_solitaires à 0 : plus aucun monstre solitaire
+    // (un troll des cavernes de 300 PV tuait en un coup) ; les niches n'ont plus qu'un coffre, et les zones que la race.
+    population: (par_poche: (2, 3), par_niveau: 1, trous: 0.0, coffres: 0.3, coffre: "DungeonChest2", part_solitaires: 0.0, calme: 30),
     // U.19 : le minerai est en filons, des bandes de blocs prises dans la roche des parois (docs/icebreaker/design/
     // filons.md) ; leur minerai, leur forme et leur dureté : minerais.ron, à côté. Ici, combien : dans chaque zone,
     // veines.par_zone filons (une valeur par niveau, la dernière pour les niveaux plus profonds). niveaux : le
@@ -30,6 +32,7 @@
     // ICEBREAKER_GROTTE_AMBIANCE). roche : couleur des parois ; lueur : couleur de la roche luisante et sa part dans
     // les parois ; sol et plafond : sprites de Veloren (nom, chance par bloc) ; cristaux luisants par zone ;
     // solitaires (H.4) : les monstres sans race de l'ambiance (entités de Veloren), l'araignée des cavernes partout.
+    // DF.8 : plus aucun n'apparaît (population.trous et part_solitaires à 0) ; les listes restent pour un essai.
     ambiances: {
         "champignons": (
             roche: (70, 80, 60), lueur: (40, 110, 180), lueur_chance: 0.04,

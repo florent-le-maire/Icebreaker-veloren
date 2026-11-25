@@ -784,13 +784,16 @@ mod tests {
         assert_eq!(settings.resolve(&gnarlings).unwrap().species, None);
     }
 
-    // Icebreaker H.3: the nests of the races hold the lone monsters.
+    // Icebreaker DF.8: only our six species; the nests of the races hold warriors, no lone monster (H.3).
     #[test]
-    fn nests_hold_the_lone_monsters() {
+    fn nests_hold_people_of_the_race() {
         let settings = Settings::load().unwrap();
-        assert!(!settings.solitaires.is_empty());
         let resolved = settings.resolve(&Mission::default()).unwrap();
-        assert_eq!(resolved.faction.creatures["beast"], settings.solitaires);
+        assert_eq!(resolved.faction.creatures["beast"], ["icebreaker.ennemis.guerrier"]);
+        for seed in 0..10 {
+            let dungeon = generate(&settings, &Mission { seed, ..Mission::default() }).unwrap();
+            assert!(dungeon.faction.creatures.values().flatten().all(|a| a.starts_with("icebreaker.ennemis.")), "graine {seed}");
+        }
         let gnarlings = Mission { faction: Some("gnarling".into()), ..Mission::default() };
         let resolved = settings.resolve(&gnarlings).unwrap();
         assert_eq!(resolved.faction.creatures["beast"], ["common.entity.dungeon.gnarling.mandragora"]);

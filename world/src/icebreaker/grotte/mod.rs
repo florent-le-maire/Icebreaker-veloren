@@ -802,7 +802,8 @@ mod tests {
             assert_eq!(chief.asset, settings.chef);
             let people = grotte.inhabitants.iter().filter(|i| settings.habitants.contains(&i.asset)).count();
             let lone = grotte.inhabitants.iter().filter(|i| grotte.look.solitaires.contains(&i.asset)).count();
-            assert!(people > 0 && lone > 0, "graine {seed} : {people} de la race, {lone} solitaire(s)");
+            // Icebreaker DF.8: only our six species, no lone monster any more.
+            assert!(people > 0 && lone == 0, "graine {seed} : {people} de la race, {lone} solitaire(s)");
             assert_eq!(people + lone + 1, grotte.inhabitants.len());
         }
         // Spiders live in every mood.

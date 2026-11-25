@@ -29,7 +29,7 @@ Cible pour un ennemi ordinaire : 3 à 4 touches. Dans la cible : 3 cases sur 9 ;
 
 ## L'expédition type
 
-Donjon moyen, difficulté et densité par défaut : 44 créatures, 2370 PV à abattre, 789 or, 1.1 minutes de frappe du groupe, 3 points d'arme gagnés seul. Premier point d'arme : 6.7 ennemis « guerrier » à tuer seul.
+Donjon moyen, difficulté et densité par défaut : 44 créatures, 2100 PV à abattre, 789 or, 1.0 minutes de frappe du groupe, 3 points d'arme gagnés seul. Premier point d'arme : 6.7 ennemis « guerrier » à tuer seul.
 
 ## Les achats
 
@@ -47,12 +47,12 @@ Réglages de `assets/icebreaker/difficulte.ron` ; ennemis comptés dans de vrais
 
 | Difficulté | Nombre | PV | Dégâts | Habileté | Guerrier / archer / mage | Ennemis (donjon moyen, grotte, forêt) | PV à abattre | Dégâts reçus par seconde |
 |---|---|---|---|---|---|---|---|---|
-| 1 | × 0.70 | × 0.60 | × 0.70 | base (celle des fiches) | 3 / 1 / 0 | 31, 22, 26 | × 0.43 | × 0.50 |
-| 2 | × 0.85 | × 0.80 | × 0.85 | base (celle des fiches) | 3 / 2 / 1 | 38, 26, 31 | × 0.69 | × 0.73 |
-| 3 (par défaut) | × 1.00 | × 1.00 | × 1.00 | base (celle des fiches) | tirage du lieu | 44, 29, 37 | × 1.00 | × 1.00 |
-| 4 | × 1.15 | × 1.20 | × 1.15 | aguerri (rang 3) | tirage du lieu | 50, 32, 43 | × 1.37 | × 1.31 |
-| 5 | × 1.30 | × 1.40 | × 1.30 | aguerri (rang 3) | 2 / 2 / 2 | 57, 35, 49 | × 1.80 | × 1.67 |
-| 6 | × 1.45 | × 1.60 | × 1.45 | veteran (rang 5) | 2 / 2 / 3 | 63, 42, 56 | × 2.34 | × 2.12 |
+| 1 | × 0.70 | × 0.60 | × 0.70 | base (celle des fiches) | 3 / 1 / 0 | 31, 18, 26 | × 0.42 | × 0.49 |
+| 2 | × 0.85 | × 0.80 | × 0.85 | base (celle des fiches) | 3 / 2 / 1 | 38, 23, 31 | × 0.68 | × 0.72 |
+| 3 (par défaut) | × 1.00 | × 1.00 | × 1.00 | base (celle des fiches) | tirage du lieu | 44, 27, 37 | × 1.00 | × 1.00 |
+| 4 | × 1.15 | × 1.20 | × 1.15 | aguerri (rang 3) | tirage du lieu | 50, 29, 43 | × 1.36 | × 1.30 |
+| 5 | × 1.30 | × 1.40 | × 1.30 | aguerri (rang 3) | 2 / 2 / 2 | 57, 34, 49 | × 1.83 | × 1.70 |
+| 6 | × 1.45 | × 1.60 | × 1.45 | veteran (rang 5) | 2 / 2 / 3 | 63, 39, 56 | × 2.34 | × 2.12 |
 
 ## Le détail, un fichier par onglet
 

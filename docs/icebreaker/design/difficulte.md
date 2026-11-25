@@ -55,6 +55,25 @@ Le chef garde ses compétences (rang 5) à toutes les difficultés ; il prend le
 
 ## Pas dans cette version
 
-- La récompense selon la difficulté (Q67).
-- Le lien avec le niveau des zones et leurs boss aux niveaux 2, 4 et 6 (B.19, B.20, Q68).
+- La récompense selon la difficulté : même butin partout pour le moment (Flo, 2026-11-25, ex-Q67).
+- Le lot d'expéditions et les zones (B.19, B.20), règle ci-dessous.
 - Le terrain, les pièges, la difficulté selon le nombre de joueurs (`design/creatures.md`, pas codée).
+
+## Le lot d'expéditions (Flo, 2026-11-25, ex-Q68 ; à coder avec les zones, B.19)
+
+Aujourd'hui le groupe choisit librement sa difficulté. Avec les zones, le panneau Départ proposera un **lot
+d'expéditions**, chacune avec sa difficulté :
+
+- la difficulté d'une expédition est **plafonnée par le niveau de sa zone** ;
+- dans le lot, toutes zones confondues, il y a **toujours au moins une expédition de difficulté 1**. Exemple :
+  grotte 5, 4, 5, 3 ; forêt 3, 2, 3 ; donjon 6, 6, 1.
+
+La raison : un village qui n'a plus que de nouveaux aventuriers doit toujours pouvoir les faire monter de niveau.
+
+## Qui on affronte (Flo, 2026-11-25, DF.8)
+
+Seulement nos **six espèces** (humain, orc, nain, elfe, draugr, danari), dans les trois lieux. Les monstres
+solitaires de Veloren sont retirés : dans la grotte (araignées, trolls des cavernes, onis…), les niches n'ont plus
+qu'un coffre et les zones ne sont peuplées que par la race ; dans le donjon, les nids sont des dortoirs de guerriers
+endormis. Les factions de Veloren (gnarlings, adlets, cultistes) ne restent que derrière `-Faction` du lanceur, pour
+un essai.

@@ -44,7 +44,7 @@ tire une **forme** par sa graine :
 L'équipe arrive dans une **salle sûre**, sous terre, à un endroit tiré par la graine : aucune créature autour, et le
 chef à l'autre bout. La grotte n'a pas de sortie en surface : on rentre par `/rentrer`. De la salle sûre, un
 **sentier** relie toutes les zones : on peut toujours le suivre à pied, à l'aller comme au retour. Falaises, trous et replats sont à côté. De petites **niches** s'ouvrent au bord des
-zones : parfois une bête, parfois un coffre.
+zones : parfois un coffre. Il n'y a plus de bêtes : seule la race de la grotte l'habite.
 
 Chaque grotte tire aussi une **ambiance** (champignons, cristaux, ossuaire) : la couleur de la roche, la roche
 luisante, les sprites au sol et au plafond, les créatures. Le **chef** attend dans la zone la plus loin de l'entrée.

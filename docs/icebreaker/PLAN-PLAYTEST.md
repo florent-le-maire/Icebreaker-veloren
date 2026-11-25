@@ -316,7 +316,9 @@ rôle du contrat. Les patrouilles toutes les 12 minutes (B.4) restent à discute
 - [ ] **B.18 Collecter** — des champignons violets posés exprès dans le lieu (nombre posé et nombre demandé en
   données) ; une caisse à l'arrivée ; la mission est gagnée quand le nombre demandé est déposé dans la caisse.
   *Fin* : déposer le dernier champignon gagne la mission ; les avoir dans le sac ne suffit pas.
-- [ ] **B.19 Zones et choix de la mission** — les zones en données (lieu, thème : race, réglage de grotte) ; le panneau
+- [ ] **B.19 Zones et choix de la mission** — (difficulté : le « niveau » d'une zone plafonne la difficulté 1 à 6
+  de ses expéditions, et le lot proposé, toutes zones confondues, a toujours au moins une expédition de difficulté 1,
+  `design/difficulte.md`, Flo 2026-11-25) les zones en données (lieu, thème : race, réglage de grotte) ; le panneau
   Départ les liste, chacune avec son niveau et ses missions ; une expédition faite dans la zone monte son **niveau
   d'exploration** (combien d'expéditions par niveau : réglage), gardé dans la campagne.
   *Fin* : une expédition monte le niveau de sa zone, encore affiché après une relance du serveur.
@@ -466,7 +468,7 @@ Demande de Flo (2026-11-25) : les expéditions n'ont pas de difficulté croissan
 départ, règle le nombre d'ennemis, leurs PV, leurs dégâts, leurs classes et leur habileté, dans les trois lieux ;
 elle remplace la menace 1 à 5 du donjon. Règles et tableau : `design/difficulte.md` ; chiffres :
 `assets/icebreaker/difficulte.ron` (la difficulté 3 est le jeu d'avant). Le terrain ne change pas dans cette
-version ; récompense et lien avec les zones : Q67, Q68.
+version ; même butin à toutes les difficultés pour le moment ; le lot d'expéditions des zones : B.19.
 
 - [x] **DF.1 Design et données** — `design/difficulte.md`, `difficulte.ron` (six lignes, trois crans d'habileté) et sa
   lecture (`common/src/icebreaker_difficulte.rs`) ; Q67 et Q68 posées. — be3e47ae18
@@ -485,6 +487,9 @@ version ; récompense et lien avec les zones : Q67, Q68.
 - [x] **DF.7 Classeur d'équilibrage** — onglet Difficulté et `equilibrage/difficulte.md` : ennemis comptés dans les
   trois lieux, PV à abattre ×0,43 à ×2,34 et dégâts reçus ×0,50 à ×2,12 de la difficulté 1 à la 6 ; fiche du wiki.
   Pas ouvert dans un tableur. — 9747beaf07
+- [ ] **DF.8 Seulement nos six espèces** (Flo, 2026-11-25 : des trolls des cavernes de 300 PV qui tuent en un coup)
+  — plus de monstres solitaires dans la grotte ni dans les nids du donjon.
+  *Fin* : aucun habitant hors de `icebreaker.ennemis.*` dans une grotte ou un donjon généré.
 
 ## 9. Le jour J : liste technique
 

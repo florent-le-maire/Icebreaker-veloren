@@ -54,5 +54,6 @@ dans de vrais lieux générés. C'est lui qu'il faut regarder avant de toucher u
 
 ## Pas encore
 
-Une expédition plus difficile ne rapporte pas plus (question Q67). La difficulté n'est pas liée au niveau des zones
-ni à leurs boss (Q68).
+Une expédition plus difficile ne rapporte pas plus : même butin partout pour le moment. Quand les zones existeront
+(B.19), le panneau Départ proposera un lot d'expéditions, chacune avec sa difficulté, plafonnée par le niveau de sa
+zone, avec toujours au moins une expédition de difficulté 1 pour faire monter de nouveaux aventuriers.

@@ -182,6 +182,8 @@
     // restent pour -Faction.
     default_faction: "races",
     // H.3 : les monstres solitaires, sans race : ils habitent les nids (sorte beast) d'une faction qui n'a pas les siens.
+    // DF.8 (Flo, 2026-11-25) : seulement nos six espèces ; la faction « races » a ses propres nids (des guerriers
+    // endormis), cette liste ne sert donc plus à aucune faction.
     solitaires: [
         "common.entity.wild.aggressive.cave_spider",
         "common.entity.dungeon.gnarling.mandragora",
@@ -195,6 +197,8 @@
                 "lookout": ["icebreaker.ennemis.guerrier", "icebreaker.ennemis.archer", "icebreaker.ennemis.mage"],
                 "chief": ["icebreaker.ennemis.chef"],
                 "boss": ["icebreaker.ennemis.chef"],
+                // DF.8 : les nids sont des dortoirs de guerriers, plus des monstres solitaires.
+                "beast": ["icebreaker.ennemis.guerrier"],
             },
             especes: ["human", "orc", "dwarf", "elf", "draugr", "danari"],
             chest: "DungeonChest0",
