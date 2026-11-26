@@ -1,16 +1,17 @@
 //! Icebreaker Y.3: the rounds of a race in the generated dungeons
 //! (`assets/icebreaker/ennemis/races.ron` → `ronde`, planned by
 //! `world::icebreaker::dungeon::rondes`). The members of a round walk together
-//! to its next stop (an rtsim « go to » the agent follows when idle), wait
+//! to its next stop (an order given to their brain, `icebreaker_ia::Ordre`), wait
 //! there a moment, then go on; at the end of the route they come back. A
 //! member fighting is left alone and takes the round up again after.
 
 use crate::icebreaker_mission::IcebreakerMission;
 use common::{
     comp::{Agent, Health, Pos},
+    icebreaker_ia::Ordre,
     icebreaker_races::Ronde,
     resources::Time,
-    rtsim::{DungeonSlot, NpcActivity},
+    rtsim::DungeonSlot,
     store::Id,
 };
 use common_ecs::{Job, Origin, Phase, System};
@@ -121,7 +122,12 @@ impl<'a> System<'a> for Sys {
                     if let Some(agent) = agents.get_mut(*entity) {
                         // Side by side, not on one another.
                         let offset = Vec3::new((i as f32 - 1.0) * 1.5, 0.0, 0.0);
-                        agent.rtsim_controller.activity = Some(NpcActivity::Goto(stop + offset, ronde.vitesse));
+                        // Icebreaker IA.10: the round is an order in the box of its brain; a fight or a
+                        // noise comes first, then it takes the round up again.
+                        agent
+                            .icebreaker_ia
+                            .get_or_insert_default()
+                            .ordonner(Some(Ordre::Aller { lieu: stop + offset, allure: ronde.vitesse }));
                     }
                 }
             }

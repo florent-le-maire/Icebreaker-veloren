@@ -90,8 +90,11 @@ Règles de conduite :
   « Fuite ! », guerriers 4 s, archers et mages 8 s, puis ils reviennent voir. Scènes `appel` et `garde`. Testé ;
   client texte : « À l'aide ! » puis le guerrier éloigné arrive ; chef tué, trois « Fuite ! » puis retour. Pas vu :
   le vrai client, le guerrier qui quitte un autre combat pour venir.
-- [ ] **IA.10 Ordres** — boîte d'ordres ; les rondes humaines (Y.3) passent dessus.
-  *Fin* : la ronde tourne comme avant ; une ronde qui entend un combat enquête, puis reprend.
+- [x] **IA.10 Ordres** — boîte d'ordres du cerveau (`Cerveau::ordonner`, `Ordre::Aller` : un lieu et une allure, ni
+  joueur ni position de joueur) ; les rondes humaines (Y.3, `icebreaker_rondes`) y écrivent au lieu de passer par
+  rtsim ; combat, enquête et fuite passent avant, puis il reprend son ordre sans rentrer à son poste. Testé ; client
+  texte, donjon humain : deux rondes font 1, 2, 1, 0, 1, 2 dans le journal. Pas vu : une ronde qui entend un combat,
+  enquête et reprend (testé dans le crate seulement), le vrai client.
 - [ ] **IA.11 Une race en plus** — Y.4, orcs en rage : une réaction et trois lignes de profil, tronc intact.
   *Fin* : un orc sous la moitié de ses PV s'enrage, une fois.
 - [ ] **IA.12 Mémoire du lieu et niveau d'alerte** (ex-G.15) — à redécouper.

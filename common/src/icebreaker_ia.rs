@@ -8,7 +8,8 @@ use crate::{
     icebreaker_races::nom,
 };
 pub use icebreaker_ia::{
-    Allie, Apercu, Bruits, Cerveau, Etat, Evenement, Geste, Id, Intention, Message, Niveau, Observation, Percu, Profil,
+    Allie, Apercu, Bruits, Cerveau, Etat, Evenement, Geste, Id, Intention, Message, Niveau, Observation, Ordre, Percu,
+    Profil,
     Profils, Reaction, Situation, Sort, niveau,
 };
 use serde::Deserialize;

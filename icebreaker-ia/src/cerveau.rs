@@ -116,6 +116,16 @@ pub enum Intention {
     SeTapir(Vec3<f32>),
     /// Foncer à cet endroit, à travers ce qui le menace.
     Forcer(Vec3<f32>),
+    /// Aller à cet endroit à cette allure, parce qu'on le lui a ordonné.
+    Obeir(Vec3<f32>, f32),
+}
+
+/// Un ordre donné à un ennemi par plus haut que lui (une ronde aujourd'hui, le maître du jeu plus
+/// tard). Il ne contient ni joueur ni position de joueur : seulement un lieu fixe du donjon.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Ordre {
+    /// Aller à cet endroit, à cette allure (1 : sa course).
+    Aller { lieu: Vec3<f32>, allure: f32 },
 }
 
 /// Distance à laquelle un endroit est atteint quand le profil ne dit rien (`arrivee`).
@@ -214,6 +224,8 @@ pub struct Cerveau {
     chef_tombe: Option<Vec3<f32>>,
     /// En déroute : ce qu'il fuit, jusqu'à quelle heure.
     deroute: Option<(Vec3<f32>, f64)>,
+    /// L'ordre qu'il suit quand rien d'autre ne l'occupe.
+    ordre: Option<Ordre>,
 }
 
 impl Default for Cerveau {
@@ -256,6 +268,7 @@ impl Default for Cerveau {
             renfort: None,
             chef_tombe: None,
             deroute: None,
+            ordre: None,
         }
     }
 }
@@ -268,6 +281,10 @@ impl Cerveau {
     pub fn fiche(&self) -> (&str, &str) { (&self.fiche.0, &self.fiche.1) }
 
     pub fn etat(&self) -> Etat { self.etat }
+
+    /// Sa boîte d'ordres : l'ordre qu'il suit au repos (rien : il vaque). Un combat, une enquête, une
+    /// fuite passent avant ; ensuite il reprend son ordre au lieu de rentrer à son poste.
+    pub fn ordonner(&mut self, ordre: Option<Ordre>) { self.ordre = ordre; }
 
     /// En combat, il se retient de frapper à ce tick (délai de réaction, temps mort après une
     /// attaque) : il garde sa cible en face, sans lancer de coup.
@@ -737,6 +754,11 @@ impl Cerveau {
         }
 
         self.etat = Etat::Repos;
+        // Sous les ordres, il ne rentre pas à son poste : il reprend là où on l'envoie.
+        if let Some(Ordre::Aller { lieu, allure }) = self.ordre {
+            self.rentre = false;
+            return if obs.pos.distance(lieu) > arrivee { Intention::Obeir(lieu, allure) } else { Intention::Repos };
+        }
         if self.rentre {
             let poste = self.poste.unwrap_or(poste);
             if obs.pos.distance(poste) > arrivee {
@@ -1752,6 +1774,49 @@ mod tests {
             c.recevoir(Message::ChefTombe { lieu: chef_tombe }, 1.0);
             assert_eq!(c.tick(&obs(1.0, vec![joueur(1, 3.0)]), &tient_bon), Intention::Combattre(1));
         }
+    }
+
+    // --- IA.10 : ordres ---
+
+    /// Un ordre reçu (une ronde) : au repos, il y va à l'allure demandée ; arrivé, il attend le suivant.
+    #[test]
+    fn au_repos_il_suit_son_ordre() {
+        let etape = en(0.0, 30.0);
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![]), &orc());
+        c.ordonner(Some(Ordre::Aller { lieu: etape, allure: 0.5 }));
+        assert_eq!(c.tick(&obs(1.0, vec![]), &orc()), Intention::Obeir(etape, 0.5));
+        assert_eq!(c.etat(), Etat::Repos);
+        assert_eq!(c.tick(&obs_en(20.0, en(0.5, 29.0), vec![]), &orc()), Intention::Repos);
+        // L'ordre retiré, il vaque.
+        c.ordonner(None);
+        assert_eq!(c.tick(&obs_en(21.0, en(0.0, 10.0), vec![]), &orc()), Intention::Repos);
+    }
+
+    /// « Une ronde qui entend un combat enquête, puis reprend » : après la fouille, il ne rentre pas
+    /// à son ancien poste, il reprend son ordre.
+    #[test]
+    fn la_ronde_enquete_sur_un_bruit_puis_reprend() {
+        let etape = en(0.0, 30.0);
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![]), &orc());
+        c.ordonner(Some(Ordre::Aller { lieu: etape, allure: 0.5 }));
+        c.tick(&obs_en(5.0, en(0.0, 10.0), vec![]), &orc());
+        c.entendre(en(15.0, 10.0), 6.0);
+        assert_eq!(c.tick(&obs_en(6.0, en(0.0, 10.0), vec![]), &orc()), Intention::AllerVoir(en(15.0, 10.0)));
+        assert!(matches!(c.tick(&obs_en(9.0, en(14.0, 10.0), vec![]), &orc()), Intention::Regarder(_)));
+        assert_eq!(c.tick(&obs_en(16.0, en(14.0, 10.0), vec![]), &orc()), Intention::Obeir(etape, 0.5));
+    }
+
+    /// Un combat passe avant l'ordre ; l'intrus mort, il reprend sa ronde.
+    #[test]
+    fn le_combat_passe_avant_l_ordre() {
+        let etape = en(0.0, 30.0);
+        let mut c = Cerveau::default();
+        c.ordonner(Some(Ordre::Aller { lieu: etape, allure: 0.5 }));
+        assert_eq!(c.tick(&obs(0.0, vec![joueur(1, 5.0)]), &orc()), Intention::Combattre(1));
+        let morte = Observation { cible_en_vie: false, ..obs_en(4.0, en(8.0, 0.0), vec![]) };
+        assert_eq!(c.tick(&morte, &orc()), Intention::Obeir(etape, 0.5));
     }
 
     /// `menace.md`, principe 1 : « les créatures ne trichent pas ». Deux cerveaux qui reçoivent les

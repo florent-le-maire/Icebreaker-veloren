@@ -373,6 +373,9 @@ tâche pour ce qui casse.
   l'archer meurt au premier coup) : frapper l'archer, il crie « À l'aide ! » et le guerrier du nord-est accourt sur
   nous. `/entrainement scene garde` : tuer le chef, sa garde crie « Fuite ! », se disperse quelques secondes, puis
   revient. Le répit est-il assez long pour souffler ou partir ?
+- [ ] IA.10 (ordres, 2026-11-27) : en donjon humain (`donjon -Site Genere -Race human`), les rondes tournent
+  toujours entre leurs salles ; se battre à portée d'oreille d'une ronde : elle vient voir, fouille, puis reprend
+  sa ronde là où elle en était (elle ne retourne pas d'abord à sa salle de départ).
 - [ ] DF (difficulté 1 à 6, 2026-11-25) : au panneau Départ, les six lignes « Difficulté » ; partir en 1 puis en 6 dans
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au

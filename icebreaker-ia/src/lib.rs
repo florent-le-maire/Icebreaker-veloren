@@ -15,7 +15,7 @@ pub mod reactions;
 pub mod tirage;
 
 pub use combat::{Situation, Sort};
-pub use cerveau::{Allie, Cerveau, Etat, Id, Intention, Observation, Percu};
+pub use cerveau::{Allie, Cerveau, Etat, Id, Intention, Observation, Ordre, Percu};
 pub use evenements::{Evenement, Message};
 pub use ouie::Bruits;
 pub use perception::{Apercu, Niveau, niveau};

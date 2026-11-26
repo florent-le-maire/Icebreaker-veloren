@@ -164,6 +164,10 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
         Intention::Prevenir(allie) => {
             agent_data.path_toward_target(agent, controller, allie, read_data, Path::AtTarget, None);
         },
+        // Icebreaker IA.10 : un ordre (sa ronde), à l'allure demandée.
+        Intention::Obeir(lieu, allure) => {
+            agent_data.path_toward_target(agent, controller, lieu, read_data, Path::AtTarget, Some(allure));
+        },
         Intention::Rentrer(poste) => {
             agent_data.path_toward_target(agent, controller, poste, read_data, Path::AtTarget, Some(ALLURE_RETOUR));
         },
