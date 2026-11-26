@@ -44,9 +44,9 @@ Règles de conduite :
 
 - [x] **IA.0 Décision et plan** — décision `0024`, ce plan, section « Pour Veloren » de `design/creatures.md`,
   questions Q69 à Q73. Plan validé par Flo le 2026-11-26 ; Sayanel n'a pas relu. `2575e705`
-- [ ] **IA.1 Socle** — *en cours : `Veloren-ia`, 2026-11-26* — le crate, le cerveau (repos et combat délégués à Veloren), le nœud, le champ, les profils, les
-  règles de cible migrées (patches Y.2 et Y.9 retirés de Veloren), `/entrainement ia` (l'état au-dessus des ennemis).
-  *Fin* : au lieu d'entraînement, orcs et danari se battent comme avant, et leur état s'affiche.
+- [x] **IA.1 Socle** — crate `icebreaker-ia`, cerveau (repos, combat, fuite), nœud, champ, `ia/profils.ron`, règles de
+  cible migrées (patches Y retirés de Veloren), `/entrainement ia`. Testé ; client texte : orcs et danari se battent,
+  achèvent, repassent au repos. Pas vu : vrai client, fuite des danari, répartition à plusieurs, rondes. `78b24298`
 - [ ] **IA.2 Voir et chercher** — cône, dos, soupçon puis repéré, dernière position connue, poursuite aveugle,
   enquête (« ? »), retour au poste.
   *Fin* : on se cache derrière un mur : l'ennemi vient là où il nous a vus, fouille, rentre ; il ne nous suit plus à
