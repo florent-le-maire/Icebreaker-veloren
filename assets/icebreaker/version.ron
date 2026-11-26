@@ -2,5 +2,5 @@
 // Changer ce numéro et le pousser sur master : GitHub Actions (.github/workflows/release-client.yml) compile le
 // client Windows et Mac et publie la Release « v<version> », si elle n'existe pas déjà.
 (
-    version: "0.1.0",
+    version: "0.1.1",
 )
