@@ -1,6 +1,6 @@
 # Icebreaker
 
-Prototype du jeu **Icebreaker** (équipe : Flo, Sayanel), construit sur une copie modifiée de
+Prototype du jeu **Icebreaker**, construit sur une copie modifiée de
 [Veloren](https://github.com/veloren/veloren).
 
 Icebreaker est un jeu de donjon en coop et en temps réel : chaque joueur a une classe, on part en expédition depuis
