@@ -842,6 +842,7 @@ impl Server {
         state.ecs_mut().insert(common::icebreaker_races::IcebreakerFocus::default());
         // Icebreaker IA: what goes on between our enemies (noises).
         state.ecs_mut().insert(sys::icebreaker_ia_monde::IcebreakerIaMonde::default());
+        state.ecs_mut().insert(common::icebreaker_ia::IcebreakerIaAllies::default());
 
         // Icebreaker: players can't leave the area of an encounter instance; in
         // the campaign, of the village or of the dungeon slot they are in.

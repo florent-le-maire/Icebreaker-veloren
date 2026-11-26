@@ -1,6 +1,7 @@
 //! Les réglages d'un ennemi : ceux de sa race posés sur ceux qui sont communs à toutes
 //! (`assets/icebreaker/ia/profils.ron`). Tout est facultatif : une race ne dit que ce qui la distingue.
 
+use crate::{evenements::Evenement, reactions::Reaction};
 use serde::Deserialize;
 use std::collections::HashMap;
 
@@ -47,6 +48,15 @@ pub struct Profil {
     pub reciblage: Option<f64>,
     /// Blocs « ajoutés » à la distance d'une cible par allié qui la vise déjà (0 = le plus proche).
     pub repartition: Option<f32>,
+    // --- Réactions (IA.4) ---
+    /// Par événement : les réactions qu'il tire, avec leur poids. Un événement absent : ce que fait le tronc.
+    pub reactions: HashMap<Evenement, Vec<(Reaction, f32)>>,
+    /// Secondes au moins entre deux tirages du même événement.
+    pub tirage_delai: Option<f64>,
+    /// Distance (blocs) à l'allié à laquelle celui qui vient prévenir crie.
+    pub prevenir_a: Option<f32>,
+    /// Rayon (blocs) dans lequel il connaît les postes des siens.
+    pub voisinage: Option<f32>,
     // --- Fuite ---
     /// Part de ses PV (0 à 1) sous laquelle il fuit ; rien = ne fuit pas.
     pub fuite: Option<f32>,
@@ -73,6 +83,15 @@ impl Profil {
             provoque_par_coup: self.provoque_par_coup.or(base.provoque_par_coup),
             reciblage: self.reciblage.or(base.reciblage),
             repartition: self.repartition.or(base.repartition),
+            reactions: {
+                // Événement par événement : la liste d'ici remplace celle de la base.
+                let mut reactions = base.reactions.clone();
+                reactions.extend(self.reactions.clone());
+                reactions
+            },
+            tirage_delai: self.tirage_delai.or(base.tirage_delai),
+            prevenir_a: self.prevenir_a.or(base.prevenir_a),
+            voisinage: self.voisinage.or(base.voisinage),
             fuite: self.fuite.or(base.fuite),
         }
     }
@@ -86,12 +105,22 @@ pub struct Profils {
     /// Par race : "human", "orc", "dwarf", "elf", "draugr", "danari".
     #[serde(default)]
     pub races: HashMap<String, Profil>,
+    /// Par rôle : "guerrier", "archer", "mage", "chef" (le nom de la fiche de `ennemis/`).
+    #[serde(default)]
+    pub roles: HashMap<String, Profil>,
+    /// Par cran d'habileté : les clés de `crans` de `difficulte.ron`.
+    #[serde(default)]
+    pub crans: HashMap<String, Profil>,
 }
 
 impl Profils {
-    /// Le profil d'un ennemi de cette race (une race absente du fichier : le commun).
-    pub fn profil(&self, race: &str) -> Profil {
-        self.races.get(race).map_or_else(|| self.commun.clone(), |r| r.sur(&self.commun))
+    /// Le profil d'un ennemi : son cran posé sur son rôle, posé sur sa race, posée sur le commun
+    /// (ce que le fichier ne connaît pas ne change rien).
+    pub fn profil(&self, race: &str, role: &str, cran: &str) -> Profil {
+        [self.races.get(race), self.roles.get(role), self.crans.get(cran)]
+            .into_iter()
+            .flatten()
+            .fold(self.commun.clone(), |base, couche| couche.sur(&base))
     }
 }
 
@@ -108,13 +137,31 @@ mod tests {
                 fuite: Some(0.3),
                 ..Profil::default()
             })]),
+            ..Profils::default()
         };
-        let danari = profils.profil("danari");
+        let danari = profils.profil("danari", "", "");
         assert_eq!(danari.reciblage, Some(2.0));
         assert_eq!(danari.repartition, Some(8.0));
         assert_eq!(danari.fuite, Some(0.3));
         // Une race que le fichier ne décrit pas : le commun.
-        assert_eq!(profils.profil("orc"), profils.commun);
+        assert_eq!(profils.profil("orc", "", ""), profils.commun);
+    }
+
+    /// « Profil = commun + race + rôle + cran » : le cran l'emporte sur le rôle, qui l'emporte sur
+    /// la race, qui l'emporte sur le commun.
+    #[test]
+    fn le_cran_l_emporte_sur_le_role_puis_la_race() {
+        let un = |profil: Profil| HashMap::from([("x".to_string(), profil)]);
+        let profils = Profils {
+            commun: Profil { vue: Some(1.0), cone: Some(1.0), dos: Some(1.0), ouie: Some(1.0), ..Profil::default() },
+            races: un(Profil { cone: Some(2.0), dos: Some(2.0), ouie: Some(2.0), ..Profil::default() }),
+            roles: un(Profil { dos: Some(3.0), ouie: Some(3.0), ..Profil::default() }),
+            crans: un(Profil { ouie: Some(4.0), ..Profil::default() }),
+        };
+        let p = profils.profil("x", "x", "x");
+        assert_eq!((p.vue, p.cone, p.dos, p.ouie), (Some(1.0), Some(2.0), Some(3.0), Some(4.0)));
+        // Un rôle ou un cran inconnu ne change rien.
+        assert_eq!(profils.profil("x", "?", "?").ouie, Some(2.0));
     }
 
     /// Chaque réglage se pose sur le commun : un champ oublié dans `sur` ferait perdre le réglage
@@ -139,6 +186,10 @@ mod tests {
             provoque_par_coup: Some(1.0),
             reciblage: Some(1.0),
             repartition: Some(1.0),
+            reactions: HashMap::from([(Evenement::VoitIntrus, vec![(Reaction::Prevenir, 1.0)])]),
+            tirage_delai: Some(1.0),
+            prevenir_a: Some(1.0),
+            voisinage: Some(1.0),
             fuite: Some(1.0),
         };
         assert_eq!(tout.sur(&Profil::default()), tout);

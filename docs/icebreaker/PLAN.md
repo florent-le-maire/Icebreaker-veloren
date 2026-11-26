@@ -350,6 +350,10 @@ tâche pour ce qui casse.
   bruit` : l'orc qui nous tourne le dos vient voir. En donjon : tuer un ennemi hors de vue d'un autre, à moins de 22
   blocs : l'autre vient voir, fouille, puis rentre ; un dormeur proche se réveille. Les portées (22 et 28 blocs,
   à travers les murs) sont à régler.
+- [ ] IA.4 (prévenir, 2026-11-26) : `/entrainement scene massacre` : tuer les trois orcs du centre ; celui de l'écart
+  se bat, ou crie « Je vais chercher les autres ! » et court au groupe du nord, qui arrive après « Des intrus ! » ;
+  si on s'est caché, ils fouillent puis rentrent. Jamais deux messagers à la fois ; un chef ne part pas. En donjon :
+  le messager trouve-t-il son chemin jusqu'à la salle voisine ?
 - [ ] DF (difficulté 1 à 6, 2026-11-25) : au panneau Départ, les six lignes « Difficulté » ; partir en 1 puis en 6 dans
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au

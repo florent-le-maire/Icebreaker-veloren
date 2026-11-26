@@ -447,6 +447,8 @@ pub struct ReadData<'a> {
     pub time: Read<'a, Time>,
     // Icebreaker Y.9: how many enemies aim at each target.
     pub icebreaker_focus: Read<'a, common::icebreaker_races::IcebreakerFocus>,
+    // Icebreaker IA: our enemies as their own know them.
+    pub icebreaker_allies: Read<'a, common::icebreaker_ia::IcebreakerIaAllies>,
     pub cached_spatial_grid: Read<'a, common::CachedSpatialGrid>,
     pub group_manager: Read<'a, group::GroupManager>,
     pub energies: ReadStorage<'a, Energy>,

@@ -1,7 +1,8 @@
 // Icebreaker IA : les réglages de la décision de nos ennemis humanoïdes (crate icebreaker-ia,
 // docs/icebreaker/PLAN-IA.md, design/creatures.md « Pour Veloren »). Rechargé à chaud.
 //
-// Le profil d'un ennemi = les réglages de sa race posés sur `commun` : une race ne dit que ce qui la distingue.
+// Le profil d'un ennemi = `commun`, puis sa race, puis son rôle (`roles` : le nom de sa fiche de ennemis/), puis son
+// cran d'habileté (`crans` : les clés de difficulte.ron) : chaque couche ne dit que ce qui la distingue.
 //
 // Choix de cible (Y.2, Y.9) : parmi les joueurs qu'il perçoit, un joueur debout passe avant un joueur à terre ; si
 // tous sont à terre, ils sont achevés. Entre joueurs de même rang, les ennemis se répartissent.
@@ -27,6 +28,16 @@
 //   trajet : secondes au plus pour arriver à l'endroit ; arrivee : distance (blocs) à laquelle il y est ;
 //   fouille : secondes passées à regarder autour de lui, puis il rentre à son poste ;
 //   laisse : blocs au plus entre lui et son poste en combat (absent = il suit sa cible partout).
+// Réactions (IA.4) : pas de rôle fixe dans un groupe. À un événement, chaque ennemi tire sa réaction.
+//   reactions : par événement, les réactions possibles et leur poids. Une couche qui cite un événement remplace
+//     toute sa liste. Un événement absent : il fait ce qu'il ferait sans tirage.
+//       VoitIntrus (il repère un intrus alors qu'il n'avait pas de cible) : Combattre, Prevenir ;
+//       AllieTombe (un des siens meurt à portée d'oreille) : AllerVoir, Prevenir.
+//     Prevenir : il court vers l'allié non alerté le plus proche, crie « Des intrus ! », et y retourne avec ceux
+//     qui l'ont entendu. Il ne sort pas s'il n'y a personne à prévenir, ou si un voisin est déjà parti.
+//   tirage_delai : secondes au moins entre deux tirages du même événement ;
+//   prevenir_a : distance (blocs) à l'allié à laquelle le messager crie ;
+//   voisinage : rayon (blocs) dans lequel il connaît les postes des siens.
 #![enable(implicit_some)]
 (
     commun: (
@@ -42,6 +53,13 @@
         trajet: 20.0,
         arrivee: 2.5,
         fouille: 6.0,
+        reactions: {
+            VoitIntrus: [(Combattre, 5.0), (Prevenir, 1.0)],
+            AllieTombe: [(AllerVoir, 2.0), (Prevenir, 1.0)],
+        },
+        tirage_delai: 45.0,
+        prevenir_a: 6.0,
+        voisinage: 80.0,
     ),
     races: {
         // Fourbes : à plusieurs ils achèvent les blessés ; ils filent quand ça tourne mal.
@@ -63,5 +81,17 @@
         "elf": (),
         // Morts qui dorment.
         "draugr": (),
+    },
+    roles: {
+        "guerrier": (),
+        "archer": (),
+        "mage": (),
+        // Le chef ne quitte pas les siens (Q70, proposé).
+        "chef": (
+            reactions: {
+                VoitIntrus: [(Combattre, 1.0)],
+                AllieTombe: [(AllerVoir, 1.0)],
+            },
+        ),
     },
 )

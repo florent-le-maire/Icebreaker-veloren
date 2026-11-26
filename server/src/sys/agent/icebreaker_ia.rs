@@ -13,12 +13,13 @@ use super::{
 use common::{
     combat::perception_dist_multiplier_from_stealth,
     comp::{Alignment, Body, Content, UtteranceKind, agent::Target, is_downed},
-    icebreaker_ia::{self, Apercu, Cerveau, Etat, Id, Intention, Niveau, Observation, Percu, Profil},
+    icebreaker_ia::{self, Allie, Apercu, Cerveau, Etat, Id, Intention, Niveau, Observation, Percu, Profil},
     terrain::Block,
     uid::Uid,
     util::Dir,
     vol::ReadVol,
 };
+use rand::RngExt;
 use specs::Entity as EcsEntity;
 use std::num::NonZeroU64;
 use vek::Vec3;
@@ -41,13 +42,13 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
     if !matches!(agent_data.alignment, Some(Alignment::Enemy)) {
         return false;
     }
-    let Some(profil) = icebreaker_ia::profil(agent_data.body) else {
+    let mut cerveau = agent.icebreaker_ia.take().unwrap_or_default();
+    let Some(profil) = icebreaker_ia::profil(agent_data.body, cerveau.fiche()) else {
+        agent.icebreaker_ia = Some(cerveau);
         return false;
     };
-
-    let mut cerveau = agent.icebreaker_ia.take().unwrap_or_default();
     let avant = cerveau.etat();
-    let obs = observation(&cerveau, &profil, agent_data, read_data);
+    let obs = observation(&cerveau, &profil, agent_data, read_data, rng.random());
     let intention = cerveau.tick(&obs, &profil);
     let etat = cerveau.etat();
     agent.icebreaker_ia = Some(cerveau);
@@ -90,6 +91,9 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
         Intention::AllerVoir(lieu) => {
             agent_data.path_toward_target(agent, controller, lieu, read_data, Path::AtTarget, None);
         },
+        Intention::Prevenir(allie) => {
+            agent_data.path_toward_target(agent, controller, allie, read_data, Path::AtTarget, None);
+        },
         Intention::Rentrer(poste) => {
             agent_data.path_toward_target(agent, controller, poste, read_data, Path::AtTarget, Some(ALLURE_RETOUR));
         },
@@ -113,6 +117,8 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
                 Some("!")
             },
             Etat::Enquete => Some("?"),
+            // « Chaque décision tirée s'annonce. »
+            Etat::Prevenir => Some("Je vais chercher les autres !"),
             Etat::Fuite => icebreaker_ia::afficher().then_some("fuite !"),
             Etat::Repos => icebreaker_ia::afficher().then_some("… repos"),
         };
@@ -128,7 +134,13 @@ const ALLURE_RETOUR: f32 = 0.6;
 
 /// Ce que l'ennemi perçoit à ce tick : la règle est dans `icebreaker_ia::perception`, les mesures
 /// (distance, angle, ligne de vue, discrétion) viennent d'ici.
-fn observation(cerveau: &Cerveau, profil: &Profil, agent_data: &AgentData, read_data: &ReadData) -> Observation {
+fn observation(
+    cerveau: &Cerveau,
+    profil: &Profil,
+    agent_data: &AgentData,
+    read_data: &ReadData,
+    hasard: f32,
+) -> Observation {
     let temps = read_data.time.0;
     let moi: Vec3<f32> = agent_data.pos.0;
     let hauteur_yeux = |body: Option<&Body>, echelle: f32| body.map_or(0.0, |b| b.eye_height(echelle));
@@ -192,7 +204,21 @@ fn observation(cerveau: &Cerveau, profil: &Profil, agent_data: &AgentData, read_
                 dessus: read_data.icebreaker_focus.0.get(&uid).copied().unwrap_or(0),
             })
         })
-        .collect();
+        .collect::<Vec<Percu>>();
+
+    // Les siens dont il connaît le poste : seulement quand il a une décision à prendre.
+    let voisinage = profil.voisinage.unwrap_or(0.0);
+    let allies = if percus.is_empty() && !cerveau.alerte() {
+        Vec::new()
+    } else {
+        read_data
+            .icebreaker_allies
+            .0
+            .iter()
+            .filter(|a| a.id != agent_data.uid.0.get() && a.pos.distance_squared(moi) < voisinage.powi(2))
+            .cloned()
+            .collect::<Vec<Allie>>()
+    };
 
     // Les siens autour de lui, lui compris (pour ceux qui n'achèvent qu'à plusieurs).
     let espece = |b: Option<&Body>| match b {
@@ -218,6 +244,8 @@ fn observation(cerveau: &Cerveau, profil: &Profil, agent_data: &AgentData, read_
         pv: agent_data.damage.min(1.0),
         meute,
         percus,
+        allies,
+        hasard,
         cible_en_vie: cerveau
             .cible()
             .and_then(|id| entite(id, read_data))

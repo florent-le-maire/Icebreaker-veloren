@@ -3,7 +3,15 @@
 //! Il ne connaît que ce que son [`Observation`] contient : ceux qu'il perçoit à ce tick. D'une cible
 //! perdue de vue, il ne garde que la dernière position où il l'a perçue.
 
-use crate::profil::Profil;
+use crate::{
+    evenements::{Evenement, Message},
+    profil::Profil,
+    reactions::{
+        Reaction,
+        prevenir::{self, Etape, Prevenir},
+    },
+    tirage::tirer,
+};
 use vek::Vec3;
 
 /// Une créature ou un joueur, vu du cerveau (le serveur y met l'`Uid` de Veloren).
@@ -23,6 +31,17 @@ pub struct Percu {
     pub dessus: u8,
 }
 
+/// Un des siens, dont il connaît le poste (IA.4).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Allie {
+    pub id: Id,
+    pub pos: Vec3<f32>,
+    /// Il sait déjà qu'il se passe quelque chose (il enquête, se bat, fuit, ou vient d'être prévenu).
+    pub alerte: bool,
+    /// Il est parti prévenir.
+    pub messager: bool,
+}
+
 /// Ce qu'un ennemi sait à ce tick.
 #[derive(Clone, Debug, Default)]
 pub struct Observation {
@@ -39,6 +58,10 @@ pub struct Observation {
     pub percus: Vec<Percu>,
     /// Sa cible du tick précédent est-elle encore en vie (et attaquable) ?
     pub cible_en_vie: bool,
+    /// Les siens autour de lui (`voisinage`), sans lui.
+    pub allies: Vec<Allie>,
+    /// Un nombre tiré entre 0 et 1 à ce tick, pour ses tirages.
+    pub hasard: f32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -48,6 +71,8 @@ pub enum Etat {
     Enquete,
     Combat,
     Fuite,
+    /// Il court prévenir un allié.
+    Prevenir,
 }
 
 /// Ce que l'ennemi veut faire ; le serveur l'exécute.
@@ -65,6 +90,8 @@ pub enum Intention {
     Regarder(Vec3<f32>),
     /// Rentrer à son poste.
     Rentrer(Vec3<f32>),
+    /// Courir prévenir l'allié qui est là.
+    Prevenir(Vec3<f32>),
 }
 
 /// Distance à laquelle un endroit est atteint quand le profil ne dit rien (`arrivee`).
@@ -76,6 +103,8 @@ const TOUR: f32 = 1.0;
 /// de là où il l'a vue.
 const VICTIME: f64 = 1.0;
 const VICTIME_PRES: f32 = 6.0;
+/// Secondes pendant lesquelles celui qu'un allié vient de prévenir compte comme alerté.
+const PREVENU: f64 = 30.0;
 
 /// Un endroit où il est venu voir.
 #[derive(Clone, Copy, Debug)]
@@ -106,6 +135,18 @@ pub struct Cerveau {
     bruit: Option<(Vec3<f32>, f64)>,
     /// Sa victime vient de mourir là, à cette heure : le bruit de cette mort n'est pas à aller voir.
     victime: Option<(Vec3<f32>, f64)>,
+    /// Il court prévenir un allié.
+    prevenir: Option<Prevenir>,
+    /// Un des siens vient de tomber là, à cette heure : à lui de tirer sa réaction.
+    allie_tombe: Option<(Vec3<f32>, f64)>,
+    /// Quand il a tiré chaque événement pour la dernière fois.
+    tirages: Vec<(Evenement, f64)>,
+    /// Ce qu'il a crié depuis la dernière fois qu'on le lui a demandé (`cris`).
+    cris: Vec<Message>,
+    /// Prévenu par un allié à cette heure.
+    prevenu_a: Option<f64>,
+    /// Son rôle et son cran d'habileté (`Profils::profil`), posés à son apparition.
+    fiche: (String, String),
 }
 
 impl Default for Cerveau {
@@ -122,11 +163,23 @@ impl Default for Cerveau {
             rentre: false,
             bruit: None,
             victime: None,
+            prevenir: None,
+            allie_tombe: None,
+            tirages: Vec::new(),
+            cris: Vec::new(),
+            prevenu_a: None,
+            fiche: Default::default(),
         }
     }
 }
 
 impl Cerveau {
+    /// Le cerveau d'un ennemi de ce rôle ("guerrier", "chef"…) et de ce cran d'habileté.
+    pub fn pour(role: &str, cran: &str) -> Self { Self { fiche: (role.to_string(), cran.to_string()), ..Self::default() } }
+
+    /// Son rôle et son cran d'habileté (vides : inconnus).
+    pub fn fiche(&self) -> (&str, &str) { (&self.fiche.0, &self.fiche.1) }
+
     pub fn etat(&self) -> Etat { self.etat }
 
     pub fn cible(&self) -> Option<Id> { self.cible }
@@ -138,9 +191,82 @@ impl Cerveau {
         }
     }
 
+    /// Il sait qu'il se passe quelque chose : un allié n'a pas à venir le prévenir.
+    pub fn alerte(&self) -> bool { self.etat != Etat::Repos || self.bruit.is_some() || self.prevenu_a.is_some() }
+
+    /// Il est parti prévenir un allié.
+    pub fn messager(&self) -> bool { self.prevenir.is_some() }
+
+    /// Ce qu'il a crié depuis le dernier appel : le serveur le fait entendre aux siens.
+    pub fn cris(&mut self) -> Vec<Message> { std::mem::take(&mut self.cris) }
+
+    /// Il reçoit un message, à cette heure (un cri d'allié entendu, ou ce que le monde lui apprend).
+    pub fn recevoir(&mut self, message: Message, temps: f64) {
+        match message {
+            Message::Signalement { lieu, .. } => {
+                self.prevenu_a = Some(temps);
+                self.entendre(lieu, temps);
+            },
+            Message::AllieTombe { lieu } => {
+                self.allie_tombe = Some((lieu, temps));
+                self.entendre(lieu, temps);
+            },
+        }
+    }
+
+    /// La réaction qu'il tire à cet événement (rien : celle du tronc). « Prévenir » ne sort que s'il
+    /// y a quelqu'un à prévenir ; un même événement n'est pas retiré avant `tirage_delai`.
+    fn tirer(&mut self, evenement: Evenement, obs: &Observation, profil: &Profil) -> Option<Reaction> {
+        let poids = profil.reactions.get(&evenement)?;
+        let delai = profil.tirage_delai.unwrap_or(0.0);
+        if self.tirages.iter().any(|(e, quand)| *e == evenement && obs.temps - quand < delai) {
+            return None;
+        }
+        self.tirages.retain(|(e, _)| *e != evenement);
+        self.tirages.push((evenement, obs.temps));
+        let possibles: Vec<(Reaction, f32)> = poids
+            .iter()
+            .filter(|(reaction, _)| *reaction != Reaction::Prevenir || prevenir::qui(obs).is_some())
+            .copied()
+            .collect();
+        tirer(&possibles, obs.hasard)
+    }
+
+    /// Il part prévenir, s'il y a quelqu'un à prévenir : où courir.
+    fn partir_prevenir(&mut self, lieu: Vec3<f32>, obs: &Observation) -> Option<Intention> {
+        let allie = prevenir::qui(obs)?;
+        self.prevenir = Some(Prevenir { qui: allie.id, lieu, vu_a: obs.temps, depuis: obs.temps });
+        self.cible = None;
+        self.enquete = None;
+        self.bruit = None;
+        self.etat = Etat::Prevenir;
+        Some(Intention::Prevenir(allie.pos))
+    }
+
     pub fn tick(&mut self, obs: &Observation, profil: &Profil) -> Intention {
         let poste = *self.poste.get_or_insert(obs.pos);
         let arrivee = profil.arrivee.unwrap_or(ARRIVEE);
+        if self.prevenu_a.is_some_and(|quand| obs.temps - quand > PREVENU) {
+            self.prevenu_a = None;
+        }
+
+        // Parti prévenir : il court vers l'allié sans se retourner, crie à portée de voix, puis
+        // retourne voir là où étaient les intrus.
+        if let Some(course) = self.prevenir {
+            match course.etape(obs, profil) {
+                Etape::Courir(vers) => {
+                    self.etat = Etat::Prevenir;
+                    return Intention::Prevenir(vers);
+                },
+                etape => {
+                    if etape == Etape::Crier {
+                        self.cris.push(Message::Signalement { lieu: course.lieu, vu_a: course.vu_a });
+                    }
+                    self.prevenir = None;
+                    self.enquete = Some(Enquete { lieu: course.lieu, depuis: obs.temps, sur_place: None });
+                },
+            }
+        }
         // Trop loin de son poste (`laisse`) : il ne se bat plus, il rentre.
         let dehors = profil.laisse.is_some_and(|laisse| obs.pos.distance(poste) > laisse);
 
@@ -179,6 +305,13 @@ impl Cerveau {
                 || profil.reciblage_de(obs.moi).is_some_and(|delai| depuis > delai)
                 || (a_terre && depuis > 0.5));
         if a_choisir && let Some(choisie) = self.choisir(obs, profil) {
+            // Un intrus, alors qu'il n'avait pas de cible : il tire sa réaction.
+            if self.cible.is_none()
+                && self.tirer(Evenement::VoitIntrus, obs, profil) == Some(Reaction::Prevenir)
+                && let Some(intention) = self.partir_prevenir(choisie.pos, obs)
+            {
+                return intention;
+            }
             vue = true;
             self.cible = Some(choisie.id);
             self.choisie_a = obs.temps;
@@ -214,12 +347,22 @@ impl Cerveau {
             }
         }
 
+        // Un des siens est tombé : il tire sa réaction (aller voir, comme pour un bruit, ou prévenir).
+        let fuirait = profil.fuite.is_some_and(|seuil| obs.pv < seuil);
+        if let Some((lieu, _)) = self.allie_tombe.take()
+            && !dehors
+            && !fuirait
+            && self.tirer(Evenement::AllieTombe, obs, profil) == Some(Reaction::Prevenir)
+            && let Some(intention) = self.partir_prevenir(lieu, obs)
+        {
+            return intention;
+        }
+
         // Un bruit : il va voir (pas celui qui fuirait, ni celui que sa laisse retient).
         if let Some((lieu, quand)) = self.bruit.take()
-
             && !self.victime.is_some_and(|(ou, mort)| quand - mort < VICTIME && lieu.distance(ou) < VICTIME_PRES)
             && !dehors
-            && !profil.fuite.is_some_and(|seuil| obs.pv < seuil)
+            && !fuirait
         {
             self.enquete = Some(Enquete { lieu, depuis: obs.temps, sur_place: None });
         }
@@ -293,6 +436,7 @@ impl Cerveau {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
 
     fn orc() -> Profil {
         Profil {
@@ -328,7 +472,7 @@ mod tests {
     /// L'observation d'un ennemi en pleine forme à l'origine, seul de sa race (`moi` 0 : reciblage
     /// à 75 %).
     fn obs(temps: f64, percus: Vec<Percu>) -> Observation {
-        Observation { temps, moi: 0, pos: Vec3::zero(), pv: 1.0, meute: 1, percus, cible_en_vie: true }
+        Observation { temps, moi: 0, pos: Vec3::zero(), pv: 1.0, meute: 1, percus, cible_en_vie: true, ..Observation::default() }
     }
 
     fn obs_en(temps: f64, pos: Vec3<f32>, percus: Vec<Percu>) -> Observation {
@@ -599,6 +743,146 @@ mod tests {
         let mut c = Cerveau::default();
         c.entendre(en(15.0, 0.0), 0.0);
         assert_eq!(c.tick(&Observation { pv: 0.2, ..obs(0.0, vec![]) }, &danari()), Intention::Repos);
+    }
+
+    // --- IA.4 : prévenir ---
+
+    /// Un orc qui, à la vue d'un intrus, se bat (poids 1) ou part prévenir (poids 1).
+    fn orc_qui_previent() -> Profil {
+        Profil {
+            reactions: HashMap::from([
+                (Evenement::VoitIntrus, vec![(Reaction::Combattre, 1.0), (Reaction::Prevenir, 1.0)]),
+                (Evenement::AllieTombe, vec![(Reaction::AllerVoir, 1.0), (Reaction::Prevenir, 1.0)]),
+            ]),
+            prevenir_a: Some(6.0),
+            tirage_delai: Some(45.0),
+            ..orc()
+        }
+    }
+
+    /// Un allié au repos, à `distance` blocs à l'ouest.
+    fn allie(id: Id, distance: f32) -> Allie {
+        Allie { id, pos: en(-distance, 0.0), alerte: false, messager: false }
+    }
+
+    fn avec(obs: Observation, hasard: f32, allies: Vec<Allie>) -> Observation { Observation { hasard, allies, ..obs } }
+
+    /// « À chaque événement […] chaque ennemi tire sa réaction » : à la vue d'un intrus, selon le
+    /// tirage, il se bat ou part prévenir. « Chaque décision tirée s'annonce » : son état le dit.
+    #[test]
+    fn a_la_vue_d_un_intrus_il_tire_se_battre_ou_prevenir() {
+        let vu = |hasard| avec(obs(0.0, vec![joueur(7, 10.0)]), hasard, vec![allie(2, 40.0)]);
+        let mut c = Cerveau::default();
+        assert_eq!(c.tick(&vu(0.2), &orc_qui_previent()), Intention::Combattre(7));
+        let mut c = Cerveau::default();
+        assert_eq!(c.tick(&vu(0.8), &orc_qui_previent()), Intention::Prevenir(en(-40.0, 0.0)));
+        assert_eq!(c.etat(), Etat::Prevenir);
+        assert!(c.messager());
+        // Un profil sans tirage se bat toujours.
+        let mut c = Cerveau::default();
+        assert_eq!(c.tick(&vu(0.8), &orc()), Intention::Combattre(7));
+    }
+
+    /// « Celui qui tire "aller prévenir" court vers l'allié non alerté le plus proche. » Sans allié
+    /// à prévenir, il se bat.
+    #[test]
+    fn il_previent_l_allie_non_alerte_le_plus_proche() {
+        let vu = |allies| avec(obs(0.0, vec![joueur(7, 10.0)]), 0.8, allies);
+        let alerte = Allie { alerte: true, ..allie(2, 20.0) };
+        let mut c = Cerveau::default();
+        let allies = vec![alerte.clone(), allie(3, 50.0), allie(4, 35.0)];
+        assert_eq!(c.tick(&vu(allies), &orc_qui_previent()), Intention::Prevenir(en(-35.0, 0.0)));
+        let mut c = Cerveau::default();
+        assert_eq!(c.tick(&vu(vec![alerte]), &orc_qui_previent()), Intention::Combattre(7));
+        let mut c = Cerveau::default();
+        assert_eq!(c.tick(&vu(vec![]), &orc_qui_previent()), Intention::Combattre(7));
+    }
+
+    /// « Les poids tiennent compte de ce qu'il voit faire ses voisins (pas deux messagers). »
+    #[test]
+    fn pas_deux_messagers() {
+        let parti = Allie { alerte: true, messager: true, ..allie(2, 8.0) };
+        let vu = avec(obs(0.0, vec![joueur(7, 10.0)]), 0.8, vec![parti, allie(3, 40.0)]);
+        let mut c = Cerveau::default();
+        assert_eq!(c.tick(&vu, &orc_qui_previent()), Intention::Combattre(7));
+    }
+
+    /// « … et crie ; le cri porte un signalement (où il a vu les intrus, quand). » Puis il retourne
+    /// voir là-bas.
+    #[test]
+    fn arrive_pres_de_l_allie_il_crie_le_signalement_et_y_retourne() {
+        let mut c = Cerveau::default();
+        c.tick(&avec(obs(0.0, vec![joueur(7, 10.0)]), 0.8, vec![allie(2, 40.0)]), &orc_qui_previent());
+        // En route, il ne se retourne pas vers l'intrus, et ne crie pas encore.
+        let en_route = avec(obs_en(2.0, en(-15.0, 0.0), vec![joueur(7, 30.0)]), 0.0, vec![allie(2, 40.0)]);
+        assert_eq!(c.tick(&en_route, &orc_qui_previent()), Intention::Prevenir(en(-40.0, 0.0)));
+        assert!(c.cris().is_empty());
+        // À portée de voix de l'allié.
+        let arrive = avec(obs_en(6.0, en(-35.0, 0.0), vec![]), 0.0, vec![allie(2, 40.0)]);
+        assert_eq!(c.tick(&arrive, &orc_qui_previent()), Intention::AllerVoir(en(10.0, 0.0)));
+        assert_eq!(c.cris(), vec![Message::Signalement { lieu: en(10.0, 0.0), vu_a: 0.0 }]);
+        assert!(!c.messager());
+        assert_eq!(c.etat(), Etat::Enquete);
+        // Le cri n'est poussé qu'une fois.
+        assert!(c.cris().is_empty());
+    }
+
+    /// « Ceux qui l'entendent vont voir à cet endroit ; ils attaquent s'ils voient un joueur, sinon
+    /// ils fouillent. »
+    #[test]
+    fn celui_qui_recoit_le_signalement_va_voir_attaque_ou_fouille() {
+        let lieu = en(30.0, 0.0);
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![]), &orc());
+        c.recevoir(Message::Signalement { lieu, vu_a: 0.0 }, 5.0);
+        assert!(c.alerte());
+        assert_eq!(c.tick(&obs(5.0, vec![]), &orc()), Intention::AllerVoir(lieu));
+        // Personne sur place : il fouille.
+        assert!(matches!(c.tick(&obs_en(9.0, en(29.0, 0.0), vec![]), &orc()), Intention::Regarder(_)));
+        // Un joueur en vue : il attaque.
+        let la = Percu { pos: en(35.0, 0.0), ..joueur(7, 0.0) };
+        assert_eq!(c.tick(&obs_en(10.0, en(29.0, 0.0), vec![la]), &orc()), Intention::Combattre(7));
+    }
+
+    /// Il ne retire pas « prévenir » à chaque fois qu'il revoit l'intrus : pas avant `tirage_delai`.
+    #[test]
+    fn il_ne_repart_pas_prevenir_tout_de_suite() {
+        let mut c = Cerveau::default();
+        c.tick(&avec(obs(0.0, vec![joueur(7, 10.0)]), 0.8, vec![allie(2, 40.0)]), &orc_qui_previent());
+        c.tick(&avec(obs_en(6.0, en(-35.0, 0.0), vec![]), 0.0, vec![allie(2, 40.0)]), &orc_qui_previent());
+        // Il revoit l'intrus : un autre allié est encore au repos, mais il se bat.
+        let revu = avec(obs_en(10.0, en(-20.0, 0.0), vec![joueur(7, 0.0)]), 0.8, vec![allie(3, 60.0)]);
+        assert_eq!(c.tick(&revu, &orc_qui_previent()), Intention::Combattre(7));
+    }
+
+    /// L'allié reste introuvable : il renonce après `trajet` secondes et retourne voir.
+    #[test]
+    fn il_renonce_a_prevenir_un_allie_qu_il_n_atteint_pas() {
+        let mut c = Cerveau::default();
+        c.tick(&avec(obs(0.0, vec![joueur(7, 10.0)]), 0.8, vec![allie(2, 40.0)]), &orc_qui_previent());
+        let bloque = |temps| avec(obs_en(temps, en(-5.0, 0.0), vec![]), 0.0, vec![allie(2, 40.0)]);
+        assert_eq!(c.tick(&bloque(19.0), &orc_qui_previent()), Intention::Prevenir(en(-40.0, 0.0)));
+        assert_eq!(c.tick(&bloque(21.0), &orc_qui_previent()), Intention::AllerVoir(en(10.0, 0.0)));
+        assert!(c.cris().is_empty());
+    }
+
+    /// Un allié tombe à portée d'oreille : il tire aller voir, ou prévenir (le signalement dit où
+    /// l'allié est tombé).
+    #[test]
+    fn un_allie_tombe_il_va_voir_ou_previent() {
+        let la = en(15.0, 0.0);
+        let entendu = |hasard| {
+            let mut c = Cerveau::default();
+            c.tick(&obs(0.0, vec![]), &orc_qui_previent());
+            c.recevoir(Message::AllieTombe { lieu: la }, 1.0);
+            let intention = c.tick(&avec(obs(1.0, vec![]), hasard, vec![allie(2, 40.0)]), &orc_qui_previent());
+            (c, intention)
+        };
+        assert_eq!(entendu(0.2).1, Intention::AllerVoir(la));
+        let (mut c, intention) = entendu(0.8);
+        assert_eq!(intention, Intention::Prevenir(en(-40.0, 0.0)));
+        c.tick(&avec(obs_en(6.0, en(-36.0, 0.0), vec![]), 0.0, vec![allie(2, 40.0)]), &orc_qui_previent());
+        assert_eq!(c.cris(), vec![Message::Signalement { lieu: la, vu_a: 1.0 }]);
     }
 
     /// `menace.md`, principe 1 : « les créatures ne trichent pas ». Deux cerveaux qui reçoivent les

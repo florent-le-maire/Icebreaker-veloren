@@ -39,6 +39,8 @@ pub fn entity(asset: &str, species: Option<&str>, pos: Vec3<f32>, rng: &mut ChaC
     // Only the health of our files (`icebreaker_pv`): a creature of Veloren keeps the one of its body.
     info.icebreaker_pv = info.icebreaker_pv.map(|pv| pv * difficulte.pv);
     info.icebreaker_degats = Some(difficulte.degats_de(asset));
+    // Icebreaker IA: its role and its skill tier, for its brain (`ia/profils.ron`).
+    info.icebreaker_ia = Some((common::icebreaker_difficulte::role(asset).to_string(), difficulte.ia.clone()));
     // Icebreaker DF: the skills of the rank of its difficulty, in place of those of its file.
     if let Some(competences) = difficulte.competences(asset) {
         info.skillset_asset = Some(competences.to_string());
@@ -126,6 +128,8 @@ mod tests {
             let info = entity("icebreaker.ennemis.guerrier", Some("orc"), Vec3::zero(), &mut rng, &niveau);
             assert!((info.icebreaker_pv.unwrap() - pv).abs() < 0.01, "difficulté {n} : {:?} PV", info.icebreaker_pv);
             assert_eq!(info.icebreaker_degats, Some(degats), "difficulté {n}");
+            // Icebreaker IA: its brain gets its role and its skill tier.
+            assert_eq!(info.icebreaker_ia, Some(("guerrier".to_string(), niveau.ia.clone())), "difficulté {n}");
             // The factor stays when the buffs reset the stats, each tick.
             let mut stats = common::comp::Stats::new(common::comp::Content::dummy(), info.body);
             stats.icebreaker_regler_degats(degats);

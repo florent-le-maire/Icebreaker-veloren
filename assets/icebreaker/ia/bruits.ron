@@ -10,6 +10,8 @@
         "combat": 22.0,
         // Quelqu'un meurt.
         "mort": 28.0,
+        // Un ennemi crie aux siens (« Des intrus ! », IA.4) : ceux qui l'entendent reçoivent ce qu'il a à dire.
+        "cri": 24.0,
     },
     // Ce que compte un bloc d'écart de hauteur : 2 = un étage au-dessus s'entend de deux fois moins loin.
     hauteur: 2.0,

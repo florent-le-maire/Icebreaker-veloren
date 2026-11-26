@@ -263,6 +263,9 @@ pub struct EntityInfo {
     pub icebreaker_pv: Option<f32>,
     /// Icebreaker DF: the factor of the damage it deals (the difficulty of its expedition).
     pub icebreaker_degats: Option<f32>,
+    /// Icebreaker IA: its role ("guerrier", "chef"...) and its skill tier, for its brain
+    /// (`icebreaker_ia::Cerveau::pour`).
+    pub icebreaker_ia: Option<(String, String)>,
 
     // Edge cases, override everything else
     pub special_entity: Option<SpecialEntity>,
@@ -296,6 +299,7 @@ impl EntityInfo {
             special_entity: None,
             icebreaker_pv: None,
             icebreaker_degats: None,
+            icebreaker_ia: None,
         }
     }
 

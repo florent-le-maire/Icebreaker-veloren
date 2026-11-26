@@ -56,10 +56,11 @@ Règles de conduite :
   retient pour quand il perd sa cible ; un dormeur qui entend se réveille. Scènes d'essai (`ia/scenes.ron`,
   `/entrainement scene ecoute`, `/entrainement bruit`). Testé ; client texte : dans le dos de l'orc rien, au bruit
   « ? » puis « ! ». Pas vu : un vrai meurtre hors de vue, le réveil d'un dormeur, le vrai client.
-- [ ] **IA.4 Prévenir** — tirage à l'événement, `aller_prevenir`, cri porteur d'un signalement, scènes
-  (`ia/scenes.ron`).
-  *Fin* : scène `massacre` : on tue un groupe d'orcs, un survivant éloigné part (ou non) chercher des renforts, qui
-  viennent sur le lieu du massacre ; ils attaquent s'ils nous voient, sinon ils fouillent.
+- [x] **IA.4 Prévenir** — tirage pondéré à l'événement (`reactions` du profil : `VoitIntrus`, `AllieTombe`),
+  réaction `reactions/prevenir.rs`, cri porteur d'un signalement, profil = commun + race + rôle + cran (le chef ne
+  part pas), liste des nôtres tenue par `icebreaker_ia_monde`. Testé ; client texte, scène `massacre` (poids forcés) :
+  « Je vais chercher les autres ! », « Des intrus ! », le groupe du nord arrive (« ? » puis « ! »). Pas vu : le vrai
+  client, un donjon (chemin du messager), le tirage aux vrais poids (1 sur 6 à la vue, 1 sur 3 à une mort).
 - [ ] **IA.5 Habileté** — crans étendus (`difficulte.ron`) : délai de réaction, roulade, parade, pause entre deux
   attaques, sens ; classeur d'équilibrage relancé.
   *Fin* : le même ennemi en difficulté 1 et 6 : l'un frappe simple et laisse des temps morts, l'autre roule et enchaîne.

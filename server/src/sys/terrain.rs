@@ -561,6 +561,7 @@ impl SpawnEntityData {
             rider_effects,
             icebreaker_pv,
             icebreaker_degats,
+            icebreaker_ia,
         } = entity;
 
         if let Some(special) = special_entity {
@@ -661,7 +662,12 @@ impl SpawnEntityData {
         let agent = if matches!(alignment, comp::Alignment::Enemy)
             && matches!(body, comp::Body::Humanoid(_))
         {
-            agent.map(|a| a.with_aggro_no_warn().with_no_flee_if(true))
+            agent.map(|mut a| {
+                // Icebreaker IA: its brain knows its role and its skill tier.
+                a.icebreaker_ia = icebreaker_ia
+                    .map(|(role, cran)| Box::new(common::icebreaker_ia::Cerveau::pour(&role, &cran)));
+                a.with_aggro_no_warn().with_no_flee_if(true)
+            })
         } else {
             agent
         };

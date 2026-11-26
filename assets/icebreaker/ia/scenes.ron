@@ -16,5 +16,17 @@
                 (race: "orc", role: "guerrier", nombre: 1, en: (0.0, 0.0), regard: (0.0, 1.0), immobile: true),
             ],
         ),
+        // IA.4 : trois orcs au centre, un quatrième à l'écart, et un groupe loin au nord qui ne voit ni n'entend
+        // le combat. On tue ceux du centre : celui de l'écart vient se battre, ou part chercher le groupe du nord
+        // (« Je vais chercher les autres ! », puis « Des intrus ! ») ; le groupe vient voir là où on a été vu.
+        "massacre": (
+            texte: "trois orcs au centre, un à l'écart, quatre loin au nord. Tuez ceux du centre : celui de l'écart se bat, ou part chercher les autres.",
+            joueur: (0.0, -12.0),
+            groupes: [
+                (race: "orc", role: "guerrier", nombre: 3, en: (0.0, 0.0), regard: (0.0, 1.0), immobile: true),
+                (race: "orc", role: "guerrier", nombre: 1, en: (-8.0, 10.0), regard: (0.0, 1.0), immobile: true),
+                (race: "orc", role: "guerrier", nombre: 4, en: (-10.0, 40.0), regard: (0.0, 1.0), immobile: true),
+            ],
+        ),
     },
 )
