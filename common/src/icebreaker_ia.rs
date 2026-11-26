@@ -7,7 +7,9 @@ use crate::{
     comp::Body,
     icebreaker_races::nom,
 };
-pub use icebreaker_ia::{Cerveau, Etat, Id, Intention, Observation, Percu, Profil, Profils};
+pub use icebreaker_ia::{
+    Apercu, Cerveau, Etat, Id, Intention, Niveau, Observation, Percu, Profil, Profils, niveau,
+};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Le profil de la race d'un corps (rien hors humanoïde, ou si le fichier manque). Relu à chaque
@@ -42,9 +44,15 @@ mod tests {
         for race in ["human", "orc", "dwarf", "elf", "draugr", "danari"] {
             assert!(profils.races.contains_key(race), "{race} manque dans profils.ron");
         }
-        // Tous se répartissent, rechoisissent leur cible et finissent par l'abandonner.
+        // Tous se répartissent et rechoisissent leur cible.
         let orc = profil(Some(&corps(humanoid::Species::Orc))).unwrap();
-        assert!(orc.repartition.is_some_and(|r| r > 0.0) && orc.reciblage.is_some() && orc.oubli.is_some());
+        assert!(orc.repartition.is_some_and(|r| r > 0.0) && orc.reciblage.is_some());
+        // Tous voient : net de moins loin que soupçonné, dans un cône, et un peu dans leur dos.
+        let (vue, nette) = (orc.vue.unwrap(), orc.vue_nette.unwrap());
+        assert!(nette < vue && orc.dos.unwrap() < nette && orc.cone.is_some_and(|c| c > 0.0 && c < 360.0));
+        // Tous cherchent une cible perdue : poursuite, trajet, fouille, puis retour.
+        assert!(orc.poursuite.is_some() && orc.fouille.is_some() && orc.soupcon.is_some());
+        assert!(orc.trajet.unwrap() > orc.poursuite.unwrap() && orc.arrivee.is_some_and(|a| a > 0.0));
         // Y.1, Y.2 : les danari achèvent à plusieurs et fuient blessés ; pas les orcs.
         let danari = profil(Some(&corps(humanoid::Species::Danari))).unwrap();
         assert!(danari.acheve_a(2) && !danari.acheve_a(1));

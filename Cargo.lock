@@ -3659,6 +3659,7 @@ name = "icebreaker-ia"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "vek 0.17.2",
 ]
 
 [[package]]

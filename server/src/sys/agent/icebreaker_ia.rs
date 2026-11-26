@@ -1,20 +1,23 @@
 //! Icebreaker IA : le branchement du cerveau de nos ennemis (crate `icebreaker-ia`, décision 0024) dans
-//! l'arbre de comportement de Veloren. Pour un ennemi humanoïde, [`noeud`] construit ce qu'il perçoit,
+//! l'arbre de comportement de Veloren. Pour un ennemi humanoïde, [`noeud`] mesure ce qu'il perçoit,
 //! laisse le cerveau décider, puis exécute son intention avec les moyens de Veloren (`idle`, `attack`,
-//! `flee`). La décision elle-même se teste sans le jeu : `cargo test -p icebreaker-ia`.
-//!
-//! IA.1 : la perception est encore celle de Veloren (`detects_other`) ; IA.2 la remplace.
+//! `flee`, `path_toward_target`). La décision elle-même se teste sans le jeu :
+//! `cargo test -p icebreaker-ia`.
 
 use super::{
     behavior_tree::BehaviorData,
     consts::DAMAGE_MEMORY_DURATION,
-    data::{AgentData, ReadData, TargetData},
+    data::{AgentData, Path, ReadData, TargetData},
     util::{is_dead, is_invulnerable},
 };
 use common::{
-    comp::{Agent, Alignment, Body, Content, Controller, UtteranceKind, agent::Target, is_downed},
-    icebreaker_ia::{self, Cerveau, Etat, Id, Intention, Observation, Percu, Profil},
+    combat::perception_dist_multiplier_from_stealth,
+    comp::{Alignment, Body, Content, UtteranceKind, agent::Target, is_downed},
+    icebreaker_ia::{self, Apercu, Cerveau, Etat, Id, Intention, Niveau, Observation, Percu, Profil},
+    terrain::Block,
     uid::Uid,
+    util::Dir,
+    vol::ReadVol,
 };
 use specs::Entity as EcsEntity;
 use std::num::NonZeroU64;
@@ -44,19 +47,22 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
 
     let mut cerveau = agent.icebreaker_ia.take().unwrap_or_default();
     let avant = cerveau.etat();
-    let obs = observation(&cerveau, &profil, agent, agent_data, controller, read_data);
+    let obs = observation(&cerveau, &profil, agent_data, read_data);
     let intention = cerveau.tick(&obs, &profil);
     let etat = cerveau.etat();
     agent.icebreaker_ia = Some(cerveau);
 
-    // L'intention vise quelqu'un qui n'est plus là : on vaque ce tick-ci.
-    let vise = |id: Id| entite(id, read_data).and_then(|e| Some((e, read_data.positions.get(e)?)));
+    let yeux = agent_data.pos.0 + Vec3::unit_z() * agent_data.body.map_or(0.0, |b| b.eye_height(agent_data.scale));
+    // `agent.target` ne sert plus qu'au compte de qui vise qui (icebreaker_focus) : seulement en combat.
+    let cible = match intention {
+        Intention::Combattre(id) => entite(id, read_data).and_then(|e| Some((e, read_data.positions.get(e)?))),
+        _ => None,
+    };
+    if cible.is_none() {
+        agent.target = None;
+    }
     match intention {
-        Intention::Combattre(id) if let Some((cible, pos)) = vise(id) => {
-            if agent.target.is_none() {
-                controller.push_utterance(UtteranceKind::Angry);
-            }
-            // `agent.target` reste à jour : le compte de qui vise qui (icebreaker_focus) le lit.
+        Intention::Combattre(_) if let Some((cible, pos)) = cible => {
             let choisie_a = agent
                 .target
                 .filter(|t| t.target == cible)
@@ -71,8 +77,7 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
             let cible = TargetData::new(pos, cible, read_data);
             agent_data.attack(agent, controller, &cible, read_data, rng);
         },
-        Intention::Fuir(id) if let Some((_, pos)) = vise(id) => {
-            agent.target = None;
+        Intention::Fuir(de) => {
             if avant != Etat::Fuite {
                 agent_data.chat_npc_if_allowed_to_speak(
                     Content::localized("npc-speech-cultist_low_health_fleeing"),
@@ -80,40 +85,59 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
                     emitters,
                 );
             }
-            agent_data.flee(agent, controller, read_data, pos);
+            agent_data.flee(agent, controller, read_data, &common::comp::Pos(de));
         },
-        _ => {
-            agent.target = None;
-            // L'errance de Veloren, ses ordres (rondes) et sa façon d'aller voir un bruit fort.
+        Intention::AllerVoir(lieu) => {
+            agent_data.path_toward_target(agent, controller, lieu, read_data, Path::AtTarget, None);
+        },
+        Intention::Rentrer(poste) => {
+            agent_data.path_toward_target(agent, controller, poste, read_data, Path::AtTarget, Some(ALLURE_RETOUR));
+        },
+        Intention::Regarder(vers) => {
+            if let Some(dir) = Dir::from_unnormalized(vers - yeux) {
+                controller.inputs.look_dir = dir;
+            }
+        },
+        // Vaquer : l'errance de Veloren, ses ordres (rondes) et sa façon d'aller voir un bruit fort.
+        Intention::Repos | Intention::Combattre(_) => {
             agent_data.handle_sounds_heard(agent, controller, read_data, emitters, rng);
         },
     }
 
-    if etat != avant && icebreaker_ia::afficher() {
-        let texte = match etat {
-            Etat::Repos => "… repos",
-            Etat::Combat => "! combat",
-            Etat::Fuite => "fuite !",
+    // Les signes au-dessus de lui (`creatures.md` : « ! » quand il passe en combat, « ? » quand il
+    // cherche) ; le repos ne se dit qu'au lieu d'entraînement (`/entrainement ia`).
+    if etat != avant {
+        let signe = match etat {
+            Etat::Combat => {
+                controller.push_utterance(UtteranceKind::Angry);
+                Some("!")
+            },
+            Etat::Enquete => Some("?"),
+            Etat::Fuite => icebreaker_ia::afficher().then_some("fuite !"),
+            Etat::Repos => icebreaker_ia::afficher().then_some("… repos"),
         };
-        agent_data.chat_npc(Content::Plain(texte.to_string()), emitters);
+        if let Some(signe) = signe {
+            agent_data.chat_npc(Content::Plain(signe.to_string()), emitters);
+        }
     }
     true
 }
 
-/// Ce que l'ennemi perçoit à ce tick.
-fn observation(
-    cerveau: &Cerveau,
-    profil: &Profil,
-    agent: &Agent,
-    agent_data: &AgentData,
-    controller: &Controller,
-    read_data: &ReadData,
-) -> Observation {
+/// Part de sa vitesse à laquelle il rentre à son poste.
+const ALLURE_RETOUR: f32 = 0.6;
+
+/// Ce que l'ennemi perçoit à ce tick : la règle est dans `icebreaker_ia::perception`, les mesures
+/// (distance, angle, ligne de vue, discrétion) viennent d'ici.
+fn observation(cerveau: &Cerveau, profil: &Profil, agent_data: &AgentData, read_data: &ReadData) -> Observation {
     let temps = read_data.time.0;
     let moi: Vec3<f32> = agent_data.pos.0;
+    let hauteur_yeux = |body: Option<&Body>, echelle: f32| body.map_or(0.0, |b| b.eye_height(echelle));
+    let yeux = moi + Vec3::unit_z() * hauteur_yeux(agent_data.body, agent_data.scale);
+    let regard = agent_data.ori.look_vec().xy();
+    let rayon = profil.vue.unwrap_or(0.0).max(profil.dos.unwrap_or(0.0)).max(profil.meute_rayon.unwrap_or(0.0));
     let common::CachedSpatialGrid(grille) = agent_data.cached_spatial_grid;
     let proches: Vec<EcsEntity> = grille
-        .in_circle_aabr(moi.xy(), agent.psyche.search_dist())
+        .in_circle_aabr(moi.xy(), rayon)
         .filter(|e| *e != *agent_data.entity)
         .collect();
     let en_vie = |e: EcsEntity| !is_dead(e, read_data) && !is_invulnerable(e, read_data);
@@ -129,16 +153,40 @@ fn observation(
         .copied()
         .filter(|e| read_data.healths.contains(*e) && en_vie(*e) && agent_data.is_enemy(*e, read_data))
         .filter_map(|e| {
-            let pos = read_data.positions.get(e)?;
+            let pos = read_data.positions.get(e)?.0;
             let uid = *read_data.uids.get(e)?;
             let l_a_frappe_depuis = frappe_par.filter(|(par, _)| *par == uid).map(|(_, depuis)| depuis);
-            // Il le voit ou le sent tout près (Veloren), ou il vient d'en recevoir un coup : « une
-            // créature touchée sait d'où vient le coup, même de dos ».
-            let percu = l_a_frappe_depuis.is_some_and(|d| d < DAMAGE_MEMORY_DURATION)
-                || agent_data.detects_other(agent, controller, &e, pos, read_data.scales.get(e), read_data);
-            percu.then(|| Percu {
+            let vers = pos - moi;
+            let ses_yeux = pos
+                + Vec3::unit_z()
+                    * hauteur_yeux(read_data.bodies.get(e), read_data.scales.get(e).map_or(1.0, |s| s.0));
+            let apercu = Apercu {
+                distance: vers.magnitude(),
+                angle: if vers.xy().magnitude_squared() < 0.01 {
+                    0.0
+                } else {
+                    regard.angle_between(vers.xy()).to_degrees()
+                },
+                // Comme Veloren : d'yeux à yeux, arrêté par un bloc opaque.
+                ligne_de_vue: read_data.terrain.ray(yeux, ses_yeux).until(Block::is_opaque).cast().0.powi(2)
+                    >= yeux.distance_squared(ses_yeux) - 0.01,
+                discretion: perception_dist_multiplier_from_stealth(
+                    read_data.inventories.get(e),
+                    read_data.char_states.get(e),
+                    agent_data.msm,
+                ),
+            };
+            // « Une créature touchée sait d'où vient le coup, même de dos. »
+            let net = match icebreaker_ia::niveau(profil, &apercu) {
+                _ if l_a_frappe_depuis.is_some_and(|d| d < DAMAGE_MEMORY_DURATION) => true,
+                Niveau::Net => true,
+                Niveau::Soupcon => false,
+                Niveau::Rien => return None,
+            };
+            Some(Percu {
                 id: uid.0.get(),
-                distance: pos.0.distance(moi),
+                pos,
+                net,
                 a_terre: is_downed(read_data.healths.get(e), read_data.char_states.get(e)),
                 l_a_frappe_depuis,
                 dessus: read_data.icebreaker_focus.0.get(&uid).copied().unwrap_or(0),
@@ -166,6 +214,7 @@ fn observation(
     Observation {
         temps,
         moi: agent_data.uid.0.get(),
+        pos: moi,
         pv: agent_data.damage.min(1.0),
         meute,
         percus,

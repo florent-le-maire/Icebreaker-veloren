@@ -339,6 +339,10 @@ tâche pour ce qui casse.
 - [ ] IA.1 (cerveau des ennemis, 2026-11-26, `PLAN-IA.md`) : au lieu d'entraînement, `/entrainement ia` puis des
   orcs et des danari : ils se battent comme avant (cible, répartition à plusieurs joueurs, danari qui achèvent à
   plusieurs et fuient sous 30 % de PV) ; en donjon humain, les rondes tournent toujours.
+- [ ] IA.2 (voir et chercher, 2026-11-26) : dans un donjon généré, se faire voir puis passer derrière un mur :
+  l'ennemi court là où il nous a vus (« ? »), fouille quelques secondes, puis rentre à son poste, sans nous suivre à
+  travers le mur ; de loin ou accroupi, il soupçonne d'abord (« ? ») avant d'attaquer (« ! ») ; de dos, on l'approche
+  jusqu'à 3 blocs. Les chemins longs (portes, escaliers) pour aller voir et rentrer sont à regarder.
 - [ ] DF (difficulté 1 à 6, 2026-11-25) : au panneau Départ, les six lignes « Difficulté » ; partir en 1 puis en 6 dans
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au

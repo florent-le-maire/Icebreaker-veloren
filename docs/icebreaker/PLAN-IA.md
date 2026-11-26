@@ -47,10 +47,10 @@ Règles de conduite :
 - [x] **IA.1 Socle** — crate `icebreaker-ia`, cerveau (repos, combat, fuite), nœud, champ, `ia/profils.ron`, règles de
   cible migrées (patches Y retirés de Veloren), `/entrainement ia`. Testé ; client texte : orcs et danari se battent,
   achèvent, repassent au repos. Pas vu : vrai client, fuite des danari, répartition à plusieurs, rondes. `78b24298`
-- [ ] **IA.2 Voir et chercher** — cône, dos, soupçon puis repéré, dernière position connue, poursuite aveugle,
-  enquête (« ? »), retour au poste.
-  *Fin* : on se cache derrière un mur : l'ennemi vient là où il nous a vus, fouille, rentre ; il ne nous suit plus à
-  travers le mur.
+- [x] **IA.2 Voir et chercher** — vue à nous (cône, dos, soupçon « ? » puis repéré « ! »), dernière position connue,
+  poursuite, fouille, retour au poste, `laisse` (réglage, aucune race ne s'en sert). Testé ; client texte au lieu
+  d'entraînement : « ? », « ! », combat, puis le joueur téléporté au loin : l'orc fouille et rentre. Pas vu : derrière
+  un vrai mur, les chemins longs en donjon, le vrai client. `HASH_IA2`
 - [ ] **IA.3 Entendre** — bruits de combat et de mort (`icebreaker_ia_monde`, `ia/bruits.ron`), ouïe par profil,
   enquête sur un bruit, aussi en combat.
   *Fin* : on tue un ennemi hors de vue d'un autre : l'autre vient voir.

@@ -13,16 +13,32 @@
 //     seul, il fait comme les autres ;
 //   provoque_par_coup : secondes pendant lesquelles celui qui vient de le frapper passe avant tout (contre : frapper,
 //     repousser).
-// États :
-//   fuite : part des PV sous laquelle il fuit (absent = ne fuit pas) ;
-//   oubli : secondes sans percevoir sa cible après lesquelles il l'abandonne (IA.1 ; IA.2 le remplace par la
-//     poursuite vers la dernière position connue, puis l'enquête).
+// Fuite :
+//   fuite : part des PV sous laquelle il fuit (absent = ne fuit pas).
+// Vue (IA.2) : un cône devant lui, sans mur entre les deux ; un joueur discret (accroupi) est vu de moins loin.
+//   vue, vue_nette : blocs ; jusqu'à vue_nette il reconnaît tout de suite, de là à vue il soupçonne (« ? ») ;
+//   cone : largeur du cône, en degrés ;
+//   dos : rayon dans lequel il perçoit aussi dans son dos ;
+//   soupcon : secondes pendant lesquelles un soupçon doit rester en vue pour devenir un combat (« ! »).
+// Chercher (IA.2) : il ne sait d'une cible perdue de vue que le dernier endroit où il l'a perçue.
+//   poursuite : secondes pendant lesquelles il y court sans la voir ; ensuite il n'a plus de cible : il enquête ;
+//   trajet : secondes au plus pour arriver à l'endroit ; arrivee : distance (blocs) à laquelle il y est ;
+//   fouille : secondes passées à regarder autour de lui, puis il rentre à son poste ;
+//   laisse : blocs au plus entre lui et son poste en combat (absent = il suit sa cible partout).
 #![enable(implicit_some)]
 (
     commun: (
         reciblage: 3.0,
         repartition: 8.0,
-        oubli: 8.0,
+        vue: 32.0,
+        vue_nette: 18.0,
+        cone: 140.0,
+        dos: 3.0,
+        soupcon: 1.2,
+        poursuite: 3.0,
+        trajet: 20.0,
+        arrivee: 2.5,
+        fouille: 6.0,
     ),
     races: {
         // Fourbes : à plusieurs ils achèvent les blessés ; ils filent quand ça tourne mal.
