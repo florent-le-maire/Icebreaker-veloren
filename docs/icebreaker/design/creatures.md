@@ -3,6 +3,54 @@
 Comportement de base, habitants (piste H) et fiches des créatures.
 Index des règles : [`docs/GAME_DESIGN.md`](../GAME_DESIGN.md).
 
+## Pour Veloren : l'IA de nos six espèces (jalon IA, 2026-11-26)
+
+Le reste de ce fichier a été écrit pour le prototype Godot. Sur Veloren, ces règles valent pour nos six espèces
+(humain, orc, nain, elfe, draugr, danari), dans les rôles guerrier, archer, mage et chef. Décision : `0024` ; tâches :
+`PLAN-IA.md` ; chiffres : `assets/icebreaker/ia/` (ceux cités ici sont des valeurs de départ, à régler en jeu).
+
+**Ce qu'on reprend**
+
+- **Quatre états** : repos, enquête (l'« alerte » du texte d'origine), combat, fuite.
+- **Les créatures ne trichent pas** (`menace.md`, principe 1) : un ennemi ne connaît que ce qu'il voit, entend ou
+  reçoit d'un allié. Il ne connaît jamais la position d'un joueur qu'il ne perçoit pas.
+- **Vue** : un cône devant lui, sans mur entre les deux ; tout près, il perçoit aussi dans son dos. Un joueur loin ou
+  discret est d'abord **soupçonné** (l'ennemi se tourne et regarde), puis **repéré** s'il reste visible.
+- **Ouïe** : un combat, une mort, un cri font un bruit qui porte à un rayon donné, multiplié par la finesse d'ouïe.
+  Entendre un bruit → enquête : il va voir l'endroit, fouille un moment, puis rentre à son poste. Il entend aussi
+  pendant un combat.
+- **Combat** : il garde sa cible tant qu'il la perçoit. Perdue de vue, il la poursuit quelques secondes vers sa
+  **dernière position connue**, puis enquête là. Un ennemi touché sait d'où vient le coup, même de dos.
+- **Choix de cible** (Y.2, Y.9) : inchangé (debout avant à terre, répartition, danari qui achèvent à plusieurs).
+- **Fuite** : sous un seuil de PV selon le profil ; le fuyard n'oublie pas (il ne revient pas voir) ; coincé, il tire
+  une réaction.
+- **Appel à l'aide, déroute à la mort du chef** : repris, avec des poids au lieu de rôles.
+- **Après un combat ou une enquête**, il rentre à son poste.
+
+**Ce qui change**
+
+- **Pas de rôle fixe dans un groupe.** Il n'y a plus de guetteur : à chaque événement (il voit un intrus, un allié
+  tombe, il est touché, ses PV passent un seuil, il reçoit un message…), chaque ennemi tire sa réaction, avec des
+  poids par race, rôle et cran. Les poids tiennent compte de ce qu'il voit faire ses voisins (pas deux messagers).
+- **Chaque décision tirée s'annonce** (`menace.md`, principe 2) : un cri, une bulle au-dessus de lui.
+- **Prévenir** : celui qui tire « aller prévenir » court vers l'allié non alerté le plus proche (il connaît les postes
+  des siens) et crie ; le cri porte un signalement (où il a vu les intrus, quand). Ceux qui l'entendent vont voir à
+  cet endroit ; ils attaquent s'ils voient un joueur, sinon ils fouillent.
+- **Trois crans d'habileté** (`design/difficulte.md`) règlent à quel point l'ennemi sait se battre : délai de
+  réaction, roulade, parade, temps mort entre deux attaques, compétences utilisées. Les sens s'aiguisent un peu avec
+  le cran et restent bornés.
+
+**Ce qui ne se transpose pas**
+
+- Les rôles brute, guetteur, archer, chef et leurs fiches (bas de ce fichier) : nos ennemis sont dans `ennemis/`.
+- L'armement annoncé, `turnRate`, `trackLock`, la trajectoire de la lame : Veloren a ses propres temps de préparation.
+- « ! » et « ? » au-dessus des têtes : des bulles de texte pour l'instant (Q73).
+- Le bruit divisé par plancher : atténué selon l'écart de hauteur ; les murs n'arrêtent aucun son tant que les salles
+  ne sont pas connues du serveur (IA.13).
+- Faire le mort, se fondre dans l'ombre : demandent une animation et de la transparence côté client.
+- L'encerclement : Veloren écarte déjà les ennemis les uns des autres, on n'y ajoute rien.
+- La difficulté selon le nombre de joueurs, la provocation (Q50), les distances en mètres.
+
 ## Créatures : comportement de base
 
 Chaque créature a un état : **repos**, **alerte**, **combat** ou **fuite** (réglages par créature ; valeurs par défaut) :

@@ -156,6 +156,8 @@ créatures endormies, éclairage selon les habitants).
 
 **IA du donjon** (`design/creatures.md`, tâches H du projet ; `design/menace.md`, palier 1) — en s'appuyant sur ce
 que Veloren fait déjà (vue, ouïe, combat, fuite). G.11 à G.14 d'abord ; G.15 et G.16 à redécouper après.
+**Repris par le jalon IA (2026-11-26, `PLAN-IA.md`, décision `0024`)** : G.12 et G.13 → IA.9, G.14 → IA.4, G.15 →
+IA.12, G.16 → IA.13 ; G.11 reste ici (après IA.2).
 - [ ] **G.11 Attaque surprise** — un coup sur une créature endormie fait ×1,5 dégâts, « Surprise ! » au-dessus d'elle.
   *Fin* : frapper un dormeur fait plus mal qu'une créature éveillée.
 - [ ] **G.12 Appel à l'aide** — l'archer sous 75 % de ses PV et le guetteur dès le premier coup crient « À l'aide ! »
@@ -274,7 +276,8 @@ chef gnarling, aussi dans la salle du boss. Pas de comportement de race pour l'i
 
 Chaque race a un trait de comportement lisible et contrable (`design/ames.md`, identités à valider : `QUESTIONS.md`,
 Q50). Réglages : `assets/icebreaker/ennemis/races.ron` ; code : `common/src/icebreaker_races.rs`. Worktree
-`Veloren-races-ia` (supprimé, à recréer pour la suite).
+`Veloren-races-ia` (supprimé). **La suite passe par le jalon IA (2026-11-26, `PLAN-IA.md`)** : Y.4 → IA.11, Y.5 →
+IA.2 et IA.13, Y.6 et Y.7 → profils et générateur, Y.8 → IA.15 ; les règles de Y.1 à Y.3 et Y.9 migrent en IA.1 et IA.10.
 
 - [x] **Y.1 à Y.3 Réglages par race, danari qui achèvent, humains en ronde** (un commit, code commun) : danari :
   joueur à terre à 20 blocs en tête des cibles, sauf celui qui vient de les frapper ; fuite à 30 %. Humains : rondes

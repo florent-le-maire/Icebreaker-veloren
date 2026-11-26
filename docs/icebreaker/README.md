@@ -31,6 +31,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | `PLAN-PLAYTEST.md` | Feuille de route d'avant playtest (liste de Flo, 2026-11-16) : neuf chantiers, leurs tâches (F.10+, U.13+, B.16+, AM, L.6, X.18, E.17+) |
 | `PLAN-FORET.md` | La région Forêt : générateur à deux étages (sentiers, plateformes, ponts) et atelier de réglage (jalon FO) |
 | `PLAN-FANTOME.md` | Le fantôme du village : un corps bleu translucide qui plane, à la place du spectateur (jalon FT) |
+| `PLAN-IA.md` | L'IA de nos six espèces : un cerveau à nous branché en un point de Veloren (jalon IA, décision `0024`) |
 | `A-FAIRE.md` | Todos de l'équipe (wiki local) : « Ouvert » à traiter en début de session, puis « Pris en compte » |
 | `MAINTENANCE.md` | Lancer le jeu et le serveur, faire le zip du client, déployer sur le VPS |
 | `IDEES.md` | Boîte à idées non décidées, avec leur effort |
@@ -48,7 +49,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | V | Village, première version | `HISTORIQUE.md` | fait | — (supprimé) |
 | C | Le village qui grandit | `PLAN.md` | C.1 à C.3 faits ; C.4 à C.6 restent | — (supprimé) |
 | P | Pillage sur la route | `PLAN.md` | pas commencé | à créer |
-| G | Donjon généré | `PLAN.md` | G.1 à G.10 faits ; IA G.11 à G.16 restent | `Veloren-donjon` |
+| G | Donjon généré | `PLAN.md` | G.1 à G.10 faits ; G.11 reste, G.12 à G.16 repris par le jalon IA | `Veloren-donjon` |
 | F | Forme et vie du donjon généré | `PLAN.md`, suite dans `PLAN-PLAYTEST.md` | F.1 à F.10 faits ; atelier des salles fait (F.14 à F.17, 2026-11-16) ; salles à meubler (F.18), puis F.11 à F.13 ; formes du plan, labyrinthe de remplissage et relief (tours, escaliers en Z) faits (F.45 à F.57, 2026-11-23) | `Veloren-donjon` |
 | L | Combat létal | `HISTORIQUE.md` | fait | — (supprimé) |
 | R | Charrette et registre commun | `HISTORIQUE.md` | fait | — (supprimé) |
@@ -62,7 +63,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | J | Balise lumineuse | `HISTORIQUE.md` | fait, vu en jeu | — (supprimé) |
 | W | Wiki de l'équipe | `PLAN-WIKI.md` | W.1 à W.6 et W.8 à W.18 faits ; W.7 (VPS) à lancer | `Veloren-wiki` |
 | N | Interface Icebreaker | `HISTORIQUE.md` (charte et règles : `PLAN-INTERFACE.md`) | fait, vu en jeu | — (supprimé) |
-| Y | Une identité par race ennemie | `PLAN.md` | Y.1 à Y.3 et Y.9 codés (2026-11-14) ; Y.4 à Y.8 restent | — (supprimé) |
+| Y | Une identité par race ennemie | `PLAN.md` | Y.1 à Y.3 et Y.9 codés (2026-11-14) ; Y.4 à Y.8 repris par le jalon IA | — (supprimé) |
 | A | Armes, classes et compétences | `PLAN-CLASSES.md` | codé le 2026-11-11 pour les trois classes, ultimes refaits le 2026-11-15 (A.19 à A.23) ; reste l'avis sur les maquettes (A.2) et l'essai dans le vrai client | `Veloren-classes` |
 | O | Lieu d'entraînement et de playtest | `PLAN-ENTRAINEMENT.md` | O.1 à O.8 codés le 2026-11-14 ; reste l'essai à la main dans le vrai client | `Veloren-entrainement` |
 | U | Grottes organiques et atelier de réglage | `PLAN-CAVERNE.md` | U.1 à U.5 codés le 2026-11-15 ; profils à régler dans l'atelier, pas vu en jeu | `Veloren-caverne` |
@@ -72,6 +73,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | VF | Village fixe d'après le croquis | `PLAN.md` (décision `0022`) | VF.0 à VF.2 faits (2026-11-21) ; VF.3 à VF.5 restent | — (supprimé) |
 | EQ | Classeur d'équilibrage | `PLAN-PLAYTEST.md` (§ 8) | EQ.1 à EQ.5 faits (2026-11-25) : `equilibrage.xlsx`, pas ouvert dans Excel | `Veloren-equilibrage` |
 | DF | Difficulté 1 à 6 des expéditions | `PLAN-PLAYTEST.md` (§ 8, règles : `design/difficulte.md`) | DF.1 à DF.7 codés le 2026-11-25 ; pas joué en campagne ni au lieu d'entraînement | `Veloren-difficulte` |
+| IA | L'IA de nos six espèces | `PLAN-IA.md` (décision `0024`, règles : `design/creatures.md`) | plan validé le 2026-11-26 ; IA.1 à IA.15 à faire | `Veloren-ia` |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 
@@ -84,6 +86,6 @@ Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont 
 - Une question nouvelle va dans `QUESTIONS.md` (numéro Qn suivant, jamais réattribué) ; le plan concerné y renvoie.
   Une fois tranchée, elle passe dans « Tranché » avec la date et le fichier où la règle est écrite.
 - Une décision importante (choix technique, changement de cap) = une note `decisions/00NN-<sujet>.md` (prochain
-  numéro : 0024), au format des existantes (date, statut, problème, options, décision, conséquences).
+  numéro : 0025), au format des existantes (date, statut, problème, options, décision, conséquences).
 - Une idée pas encore décidée va dans `IDEES.md` ; retenue, elle devient une tâche et sort de là.
 - Un worktree par piste (`CLAUDE.md`) ; la colonne ci-dessus dit lequel.

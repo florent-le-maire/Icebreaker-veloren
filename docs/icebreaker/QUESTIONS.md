@@ -196,6 +196,25 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q67** *(numéro réservé : « que rapporte une expédition plus difficile » est tranchée, voir plus bas, 2026-11-25).*
 - **Q68** *(numéro réservé : « la difficulté et le niveau de zone » est tranchée, voir plus bas, 2026-11-25).*
 
+## 11. L'IA des ennemis (`PLAN-IA.md`, `decisions/0024`, jalon IA)
+
+- **Q69 Jusqu'où avant le playtest ?** Le jalon IA compte quinze tâches. *Proposé* : IA.1 à IA.6 avant le playtest
+  (voir, chercher, entendre, prévenir, habileté, mage) ; le reste après. *Qui* : Flo.
+- **Q70 Sans rôle fixe, qui prévient et qui fuit ?** Le guetteur disparaît : tout ennemi peut tirer « aller prévenir »
+  ou « fuir ». Le chef tire-t-il aussi ? *Proposé* : le chef ne fuit jamais et ne quitte pas sa salle. *Qui* : Flo,
+  Sayanel.
+- **Q71 Le maître du jeu et la position des joueurs.** Il connaîtra la position des joueurs et donnera des ordres
+  (renforcer la garde du chef, faire sortir une patrouille). S'il choisit la destination d'une patrouille d'après
+  cette position, il la transmet quand même. *Proposé* : la vraie position ne sert qu'à décider quand et combien ;
+  les destinations viennent des intrus signalés par un habitant ou de lieux fixes (antre du chef, portes). *Qui* :
+  Flo, Sayanel.
+- **Q72 Les crans d'habileté et la difficulté.** Aujourd'hui : difficultés 1 à 3 au cran de base, 4 et 5 aguerri, 6
+  vétéran. Avec une vraie habileté (réaction, roulade, parade), la marche entre 3 et 4 devient haute. Garder ce
+  découpage, ou un cran par paire (1-2, 3-4, 5-6) ? *Proposé* : garder, et régler après l'essai de IA.5. *Qui* : Flo.
+- **Q73 Les signes au-dessus des ennemis.** « ? » quand il cherche, « ! » quand il repère, un cri quand il part
+  prévenir : des bulles de texte suffisent-elles pour le playtest, ou faut-il de vraies icônes (travail côté
+  client) ? *Proposé* : des bulles. *Qui* : Flo.
+
 ## Tranché
 
 Petites décisions, par date ; les règles qui en sortent sont dans le fichier indiqué.

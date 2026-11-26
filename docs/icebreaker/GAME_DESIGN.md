@@ -14,8 +14,8 @@ foi. La vision complète est dans `VISION.md`. La colonne « Pour Veloren » dit
 | Génération | [`design/generation.md`](design/generation.md) | graphe de mission, salles préfaites, assemblage, habitants crédibles, paramètres de mission | **repris** : traduit en Rust (G.2 à G.6) |
 | Habillage 2D | [`design/habillage.md`](design/habillage.md) | tuiles par lieu, mobilier par rôle de salle, traces des occupants | Godot 2D, ne pas lire (F.6 fait son propre décor par rôle) |
 | Combat | [`design/combat.md`](design/combat.md) | classes, armes et enchaînements, capacités, endurance, esquive, équilibre | référence seulement : L.1 et `PLAN-DONJON.md` (E.1, E.2) règlent le combat de Veloren |
-| Créatures | [`design/creatures.md`](design/creatures.md) | comportement de base, sommeil, errance, appel à l'aide, encerclement, déroute, fiches | **repris** : G.9 fait, G.11 à G.16 à faire |
-| Menace | [`design/menace.md`](design/menace.md) | *proposition* : intelligence du donjon, alerte, embuscades, indices, idées pour la suite | **repris** (proposition, Q35) : G.15 et G.16 |
+| Créatures | [`design/creatures.md`](design/creatures.md) | comportement de base, sommeil, errance, appel à l'aide, encerclement, déroute, fiches | **repris** : G.9 fait ; section « Pour Veloren » en tête du fichier, jalon IA (`PLAN-IA.md`) |
+| Menace | [`design/menace.md`](design/menace.md) | *proposition* : intelligence du donjon, alerte, embuscades, indices, idées pour la suite | **repris** (proposition, Q35) : IA.12 et IA.13 de `PLAN-IA.md` |
 | Mission | [`design/mission.md`](design/mission.md) | le chef et l'objectif, le butin, le HUD | repris pour les objectifs (missions B.16 à B.20 de `PLAN-PLAYTEST.md`, contrats B.9) ; HUD Godot |
 | Boss | [`design/boss.md`](design/boss.md) | séquence d'actions, seuils de PV et rage | Godot (boss d'AmbianceurZinzin), ne pas lire ; les boss de Veloren servent tels quels |
 | Destruction | [`design/destruction.md`](design/destruction.md) | matières, points de vie, outils (arme, bombe, foreuses), ce qui cède | repris comme base de `PLAN-DONJON.md` (E.5 à E.8) |
