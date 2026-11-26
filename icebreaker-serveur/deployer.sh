@@ -47,6 +47,9 @@ for l in $LIEUX; do
     systemctl restart icebreaker-veloren@$l
 done
 sleep 20
-for l in $LIEUX; do printf '%s : ' $l; systemctl is-active icebreaker-veloren@$l; done
+# Icebreaker S.8 : un lieu qui ne tourne pas fait échouer le script (et le job « deployer » de GitHub Actions).
+echec=0
+for l in $LIEUX; do printf '%s : ' $l; systemctl is-active icebreaker-veloren@$l || echec=1; done
 ss -tln | grep -E ':141[0-9]0 ' || true
+[ $echec = 0 ] || { journalctl -u "icebreaker-veloren@*" -n 40 --no-pager; exit 1; }
 DISTANT

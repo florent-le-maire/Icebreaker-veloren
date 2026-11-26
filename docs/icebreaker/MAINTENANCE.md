@@ -50,11 +50,24 @@ Le lancer dans un terminal Git Bash ouvert à la racine du dépôt, pas par doub
 Le zip contient le jeu, ses assets et `Icebreaker.bat`. Le joueur dézippe, lance `Icebreaker.bat`, clique
 **En ligne** (seul bouton du menu) : il rejoint le VPS, dont l'adresse est dans `assets/icebreaker/lieux.ron`.
 
-Client et serveur doivent venir du **même commit** : si le protocole a changé, redéployer le serveur (§ 4).
+Client et serveur doivent venir du **même commit** : la Release d'une version (pas `dernier-build`) redéploie
+d'elle-même le serveur du VPS (§ 4). Après un essai `dernier-build`, ou sans nouvelle version, redéployer à la main.
 
 ## 4. Déployer le serveur sur le VPS
 
-VPS : `root@116.202.107.125`, ARM64 Debian 12. Le binaire se compile dans WSL (`Ubuntu-22.04`, clone `/root/veloren`).
+VPS : `root@116.202.107.125`, ARM64 Debian 12.
+
+**Par GitHub (automatique)** : à chaque Release d'une version (§ 3), le workflow compile le serveur ARM64 du même
+commit (job `serveur`, Ubuntu 22.04) et, une fois la Release publiée, le job `deployer` lance `deployer.sh` (b.
+ci-dessous) vers le VPS. Il échoue si le service ne tourne pas après la relance (journal affiché dans le run).
+À régler une fois : une clé SSH pour GitHub (`ssh-keygen -t ed25519 -f vps-ci -N ""`, `vps-ci.pub` ajoutée à
+`/root/.ssh/authorized_keys` du VPS), puis sur GitHub, Settings → Environments → `vps`, trois secrets :
+`VPS_HOTE` (`root@116.202.107.125`), `VPS_CLE_SSH` (contenu de `vps-ci`), `VPS_KNOWN_HOSTS` (sortie de
+`ssh-keyscan 116.202.107.125`). On peut demander une approbation avant chaque déploiement dans ce même écran
+(« Required reviewers »).
+
+**À la main** (secours, ou sans nouvelle version) : le binaire se compile dans WSL (`Ubuntu-22.04`, clone
+`/root/veloren`).
 
 **a. Compiler dans WSL** (PowerShell, racine du dépôt, après avoir committé sur master) :
 

@@ -7,7 +7,10 @@
 #
 # Chaque zip contient le jeu, ses assets et un lanceur (Icebreaker.bat / Icebreaker.command) ; au menu, seul le
 # bouton « En ligne » (serveur du VPS) est proposé. Le paquet est fait par icebreaker-serveur/paquet-client.sh.
-# Le serveur du VPS doit venir du même commit que le client (docs/icebreaker/MAINTENANCE.md, § 3).
+# Le serveur du VPS doit venir du même commit que le client (docs/icebreaker/MAINTENANCE.md, § 3) : pour une
+# version (pas pour « dernier-build »), le job `serveur` le compile pour le VPS (ARM64) et le job `deployer`
+# l'y envoie après la Release, par icebreaker-serveur/deployer.sh (S.8). Secrets de l'environnement GitHub
+# « vps » : VPS_HOTE (root@<ip>), VPS_CLE_SSH (clé privée), VPS_KNOWN_HOSTS (sortie de ssh-keyscan <ip>).
 name: Release du client
 
 on:
@@ -117,6 +120,46 @@ jobs:
           compression-level: 0
           retention-days: 7
 
+  # Icebreaker S.8 : le serveur du VPS (ARM64 Debian 12), même recette que icebreaker-serveur/compiler-vps.sh.
+  # Ubuntu 22.04 et pas ubuntu-latest : sa glibc (2.35) ne doit pas dépasser celle de Debian 12 (2.36).
+  serveur:
+    needs: version
+    if: needs.version.outputs.publier == 'true' && needs.version.outputs.etiquette != 'dernier-build'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
+    env:
+      CARGO_TERM_COLOR: always
+      CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+      CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
+      AR_aarch64_unknown_linux_gnu: aarch64-linux-gnu-ar
+    steps:
+      - uses: actions/checkout@v4 # sans LFS : la compilation n'a pas besoin des assets
+
+      # .cargo/config.toml : éditeur de liens aarch64-linux-gnu-gcc avec -fuse-ld=mold ; le gcc croisé
+      # cherche mold sous le nom aarch64-linux-gnu-ld.mold.
+      - name: Outils de compilation croisée
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q gcc-aarch64-linux-gnu g++-aarch64-linux-gnu mold cmake clang
+          sudo ln -sf "$(command -v mold)" /usr/bin/aarch64-linux-gnu-ld.mold
+
+      - name: Chaîne Rust
+        run: |
+          rustup toolchain install
+          rustup target add aarch64-unknown-linux-gnu
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: serveur-vps
+
+      - name: Compilation du serveur
+        run: cargo build --release --target aarch64-unknown-linux-gnu -p veloren-server-cli --features plugins
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: veloren-server-cli-vps
+          path: target/aarch64-unknown-linux-gnu/release/veloren-server-cli
+          retention-days: 7
+
   # Publie les zips présents, même si un système a échoué (ex. pas de Mac libre chez GitHub) : « Re-run failed
   # jobs » sur le run ajoute ensuite le zip manquant à la même Release.
   release:
@@ -132,6 +175,7 @@ jobs:
         continue-on-error: true # aucun zip : l'étape suivante échoue avec un message clair
         with:
           path: zips
+          pattern: Icebreaker-* # les zips, pas le serveur du VPS
           merge-multiple: true
 
       - name: Release
@@ -168,3 +212,54 @@ jobs:
             [ "$etiquette" = dernier-build ] && { gh release delete "$etiquette" --cleanup-tag --yes || true; }
             gh release create "$etiquette" zips/*.zip --target "$GITHUB_SHA" --title "$titre" --notes-file notes.md $pre
           fi
+
+  # Icebreaker S.8 : une fois la Release publiée (même avec un seul zip), le serveur du même commit part sur le
+  # VPS. Les personnages du VPS restent ; le service icebreaker-veloren@campagne est relancé.
+  deployer:
+    needs: [version, serveur, release]
+    if: >-
+      always() && needs.serveur.result == 'success' && needs.release.result == 'success' &&
+      needs.version.outputs.etiquette != 'dernier-build'
+    runs-on: ubuntu-latest
+    environment: vps
+    concurrency:
+      group: deployer-vps
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      # deployer.sh envoie assets/common, server, world et icebreaker, dont des fichiers LFS (même cache que les
+      # clients).
+      - name: Liste des fichiers LFS
+        run: git lfs ls-files --long | cut -d' ' -f1 | sort > .lfs-assets-id
+      - uses: actions/cache@v4
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.lfs-assets-id') }}
+          restore-keys: lfs-
+          enableCrossOsArchive: true
+      - name: Assets LFS
+        run: git lfs pull --include "assets/common/**,assets/server/**,assets/world/**,assets/icebreaker/**"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: veloren-server-cli-vps
+          path: target/vps
+
+      - name: Clé SSH du VPS
+        env:
+          VPS_CLE_SSH: ${{ secrets.VPS_CLE_SSH }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          [ -n "$VPS_CLE_SSH" ] && [ -n "$VPS_KNOWN_HOSTS" ] ||
+            { echo "Secrets VPS_CLE_SSH / VPS_KNOWN_HOSTS absents (environnement « vps »)." >&2; exit 1; }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$VPS_CLE_SSH" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Déploiement
+        env:
+          VPS_HOTE: ${{ secrets.VPS_HOTE }}
+        run: |
+          [ -n "$VPS_HOTE" ] || { echo "Secret VPS_HOTE absent (environnement « vps »)." >&2; exit 1; }
+          BINAIRE="$PWD/target/vps/veloren-server-cli" sh icebreaker-serveur/deployer.sh "$VPS_HOTE"

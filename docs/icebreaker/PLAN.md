@@ -321,6 +321,9 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
 - [x] **S.7 Release même si un système échoue** — publiée avec les zips présents (1er run : pas de Mac libre chez
   GitHub, job annulé) ; « Re-run failed jobs » complète la même Release. Essayé en local avec un faux `gh` ; pas
   encore vu sur GitHub. `dd991211`
+- [x] **S.8 La Release d'une version déploie le serveur** — jobs `serveur` (ARM64 croisé, Ubuntu 22.04) et
+  `deployer` (`deployer.sh`, environnement GitHub `vps`) ; pas pour `dernier-build`. YAML relu et contrôle du service
+  essayé en local ; pas encore lancé sur GitHub, secrets à créer (MAINTENANCE.md § 4).
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
   avec Sayanel (`0015`). Contenu à confirmer (`QUESTIONS.md`, Q1).
 
@@ -526,6 +529,8 @@ tâche pour ce qui casse.
 - S.2 / S.3 : le zip du client chez un pote (autre réseau, PC sans outils de dev) ; un départ en expédition sur le VPS.
 - S.5 : lancer la Release du client sur GitHub (Actions → « Release du client ») ; le zip Mac sur un vrai Mac
   (Apple Silicon), le zip Windows chez un pote. S.6 : le push de `version.ron` 0.1.0 donne la Release `v0.1.0`.
+- S.8 : secrets `vps` créés, une nouvelle version poussée : jobs `serveur` et `deployer` verts, le zip de la
+  Release se connecte au VPS (« En ligne »).
 - W.15 : prendre en jeu les captures des créatures du wiki (rubrique Créatures, nom du fichier sur chaque carte).
 - Balises : plafond 200 par joueur et 200 au total (la plus ancienne s'éteint) ; vu en test seulement.
 
