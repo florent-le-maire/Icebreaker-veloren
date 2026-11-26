@@ -9,6 +9,7 @@ use crate::{
     profil::Profil,
     reactions::{
         Reaction,
+        defense::{Defense, Geste},
         prevenir::{self, Etape, Prevenir},
     },
     tirage::tirer,
@@ -32,6 +33,9 @@ pub struct Percu {
     pub dessus: u8,
     /// La vitesse à laquelle il se rapproche de l'ennemi (blocs par seconde ; négative : il s'éloigne).
     pub approche: f32,
+    /// Il arme un coup contre l'ennemi, qui tombera dans tant de secondes (0 : le coup est en train de
+    /// tomber ; rien : il n'arme rien, ou pas contre lui).
+    pub frappe_dans: Option<f32>,
 }
 
 /// Un des siens, dont il connaît le poste (IA.4).
@@ -69,6 +73,8 @@ pub struct Observation {
     pub attaque: bool,
     /// Les sorts qu'il a et peut payer à ce tick (le nom de `combat::Sort`) ; vide s'il n'a pas de table.
     pub sorts: Vec<String>,
+    /// Il a de quoi parer (une garde à son arme).
+    pub peut_parer: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -171,6 +177,10 @@ pub struct Cerveau {
     lache: bool,
     /// Son dernier lancer de chaque sort.
     lances: Vec<(String, f64)>,
+    /// Sa réponse au coup qu'on arme contre lui en ce moment.
+    defense: Option<Defense>,
+    /// Le geste de défense à faire à ce tick.
+    geste: Option<Geste>,
 }
 
 impl Default for Cerveau {
@@ -201,6 +211,8 @@ impl Default for Cerveau {
             sort_depuis: 0.0,
             lache: false,
             lances: Vec::new(),
+            defense: None,
+            geste: None,
         }
     }
 }
@@ -221,6 +233,26 @@ impl Cerveau {
     /// Le sort qu'il veut lancer (ou tenir) à ce tick, s'il a une table de sorts (`combat.rs`).
     pub fn sort(&self) -> Option<&str> {
         self.sort.as_deref().filter(|_| self.etat == Etat::Combat && !self.lache)
+    }
+
+    /// Le geste de défense qu'il fait à ce tick, face à un coup armé (IA.7).
+    pub fn geste(&self) -> Option<Geste> { self.geste }
+
+    /// Un coup s'arme contre lui : il tire une fois sa réponse, et la fait après son délai de réaction.
+    fn regler_defense(&mut self, obs: &Observation, profil: &Profil) {
+        if !obs.percus.iter().any(|p| p.frappe_dans.is_some()) {
+            self.defense = None;
+            return;
+        }
+        if self.defense.is_none() {
+            let geste = match self.tirer(Evenement::CoupArme, obs, profil) {
+                Some(Reaction::Esquiver) => Some(Geste::Esquiver),
+                Some(Reaction::Parer) => Some(Geste::Parer),
+                _ => None,
+            };
+            self.defense = Some(Defense { vu_a: obs.temps, geste, fait: false });
+        }
+        self.geste = self.defense.as_mut().and_then(|d| d.geste(obs.temps, profil.reaction.unwrap_or(0.0)));
     }
 
     /// Ce sort est parti (ou ne part pas) : sa recharge court.
@@ -287,11 +319,15 @@ impl Cerveau {
         }
     }
 
-    /// La réaction qu'il tire à cet événement (rien : celle du tronc). « Prévenir » ne sort que s'il
-    /// y a quelqu'un à prévenir ; un même événement n'est pas retiré avant `tirage_delai`.
+    /// La réaction qu'il tire à cet événement (rien : celle du tronc). Une réaction ne sort que s'il
+    /// peut la faire : « prévenir » s'il y a quelqu'un à prévenir, « esquiver » et « parer » s'il sait
+    /// (et a de quoi). Voir un intrus ou entendre tomber un allié n'est pas retiré avant `tirage_delai`.
     fn tirer(&mut self, evenement: Evenement, obs: &Observation, profil: &Profil) -> Option<Reaction> {
         let poids = profil.reactions.get(&evenement)?;
-        let delai = profil.tirage_delai.unwrap_or(0.0);
+        let delai = match evenement {
+            Evenement::VoitIntrus | Evenement::AllieTombe => profil.tirage_delai.unwrap_or(0.0),
+            Evenement::CoupArme => 0.0,
+        };
         if self.tirages.iter().any(|(e, quand)| *e == evenement && obs.temps - quand < delai) {
             return None;
         }
@@ -299,7 +335,12 @@ impl Cerveau {
         self.tirages.push((evenement, obs.temps));
         let possibles: Vec<(Reaction, f32)> = poids
             .iter()
-            .filter(|(reaction, _)| *reaction != Reaction::Prevenir || prevenir::qui(obs).is_some())
+            .filter(|(reaction, _)| match reaction {
+                Reaction::Prevenir => prevenir::qui(obs).is_some(),
+                Reaction::Esquiver => profil.roule.unwrap_or(true),
+                Reaction::Parer => profil.pare.unwrap_or(true) && obs.peut_parer,
+                Reaction::Combattre | Reaction::AllerVoir | Reaction::Rien => true,
+            })
             .copied()
             .collect();
         tirer(&possibles, obs.hasard)
@@ -324,6 +365,7 @@ impl Cerveau {
         }
         // Une attaque qui finit ouvre son temps mort.
         self.lache = false;
+        self.geste = None;
         if self.attaque_depuis.is_some() && !obs.attaque {
             self.pause_jusqu_a = obs.temps + profil.pause.unwrap_or(0.0);
             self.attaque_depuis = None;
@@ -422,6 +464,7 @@ impl Cerveau {
                         Some(debut) => profil.enchainement.is_some_and(|max| obs.temps - debut > max),
                         None => obs.temps - self.engage_a < profil.reaction.unwrap_or(0.0) || obs.temps < self.pause_jusqu_a,
                     };
+                    self.regler_defense(obs, profil);
                     if let Some(p) = obs.percus.iter().find(|p| p.id == cible) {
                         let situation = Situation { distance: p.pos.distance(obs.pos), approche: p.approche };
                         self.regler_sort(obs, profil, situation);
@@ -533,7 +576,7 @@ impl Cerveau {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::combat::Sort;
+    use crate::{combat::Sort, reactions::defense::Geste};
     use std::collections::HashMap;
 
     fn orc() -> Profil {
@@ -564,7 +607,16 @@ mod tests {
 
     /// Un joueur debout, reconnu, à `distance` blocs à l'est de l'origine.
     fn joueur(id: Id, distance: f32) -> Percu {
-        Percu { id, pos: en(distance, 0.0), net: true, a_terre: false, l_a_frappe_depuis: None, dessus: 0, approche: 0.0 }
+        Percu {
+            id,
+            pos: en(distance, 0.0),
+            net: true,
+            a_terre: false,
+            l_a_frappe_depuis: None,
+            dessus: 0,
+            approche: 0.0,
+            frappe_dans: None,
+        }
     }
 
     /// L'observation d'un ennemi en pleine forme à l'origine, seul de sa race (`moi` 0 : reciblage
@@ -1130,6 +1182,113 @@ mod tests {
         let sans_rayon = |temps| Observation { sorts: vec!["boule".to_string()], ..face(temps, 10.0, false) };
         c.tick(&sans_rayon(0.5), &mage());
         assert_eq!(c.sort(), Some("boule"));
+    }
+
+    // --- IA.7 : défense réactive ---
+
+    /// Un vétéran : il réagit en 0,25 s, sait rouler et parer, et tire l'un ou l'autre.
+    fn veteran() -> Profil {
+        Profil {
+            reaction: Some(0.25),
+            roule: Some(true),
+            pare: Some(true),
+            reactions: HashMap::from([(Evenement::CoupArme, vec![(Reaction::Esquiver, 1.0), (Reaction::Parer, 1.0)])]),
+            ..orc()
+        }
+    }
+
+    /// Le joueur 1, au contact, dont le coup tombera dans `dans` secondes (rien : il n'arme rien).
+    fn arme(temps: f64, dans: Option<f32>, hasard: f32) -> Observation {
+        let joueur = Percu { frappe_dans: dans, ..joueur(1, 2.0) };
+        Observation { hasard, peut_parer: true, ..obs(temps, vec![joueur]) }
+    }
+
+    /// « Défense réactive : le joueur arme un coup : esquive ou parade tirée après le délai de
+    /// réaction. » Un coup lent est esquivé ou paré.
+    #[test]
+    fn un_coup_lent_est_esquive_ou_pare() {
+        for (hasard, geste) in [(0.2, Geste::Esquiver), (0.8, Geste::Parer)] {
+            let mut c = Cerveau::default();
+            c.tick(&arme(0.0, None, hasard), &veteran());
+            c.tick(&arme(1.0, Some(0.8), hasard), &veteran());
+            assert_eq!(c.geste(), None, "il n'a pas encore réagi");
+            c.tick(&arme(1.2, Some(0.6), hasard), &veteran());
+            assert_eq!(c.geste(), None);
+            c.tick(&arme(1.3, Some(0.5), hasard), &veteran());
+            assert_eq!(c.geste(), Some(geste));
+        }
+    }
+
+    /// « Une compétence rapide passe » : le coup tombe avant la fin de son délai de réaction.
+    #[test]
+    fn un_coup_rapide_passe() {
+        let mut c = Cerveau::default();
+        c.tick(&arme(0.0, None, 0.2), &veteran());
+        c.tick(&arme(1.0, Some(0.2), 0.2), &veteran());
+        c.tick(&arme(1.1, Some(0.1), 0.2), &veteran());
+        assert_eq!(c.geste(), None);
+        // Le coup est tombé.
+        c.tick(&arme(1.3, None, 0.2), &veteran());
+        assert_eq!(c.geste(), None);
+    }
+
+    /// La roulade est un geste d'un instant ; la parade se tient jusqu'à ce que le coup soit passé.
+    #[test]
+    fn la_roulade_part_une_fois_la_parade_se_tient() {
+        let mut c = Cerveau::default();
+        c.tick(&arme(0.0, None, 0.2), &veteran());
+        c.tick(&arme(1.0, Some(0.8), 0.2), &veteran());
+        c.tick(&arme(1.3, Some(0.5), 0.2), &veteran());
+        assert_eq!(c.geste(), Some(Geste::Esquiver));
+        c.tick(&arme(1.4, Some(0.4), 0.2), &veteran());
+        assert_eq!(c.geste(), None);
+        let mut c = Cerveau::default();
+        c.tick(&arme(0.0, None, 0.8), &veteran());
+        c.tick(&arme(1.0, Some(0.8), 0.8), &veteran());
+        c.tick(&arme(1.3, Some(0.5), 0.8), &veteran());
+        c.tick(&arme(1.7, Some(0.1), 0.8), &veteran());
+        assert_eq!(c.geste(), Some(Geste::Parer));
+        // Le coup passé, il baisse sa garde.
+        c.tick(&arme(1.9, None, 0.8), &veteran());
+        assert_eq!(c.geste(), None);
+    }
+
+    /// Un seul tirage par coup armé ; le coup suivant en fait tirer un autre.
+    #[test]
+    fn un_tirage_par_coup_arme() {
+        let hesitant = Profil {
+            reactions: HashMap::from([(Evenement::CoupArme, vec![(Reaction::Rien, 1.0), (Reaction::Parer, 1.0)])]),
+            ..veteran()
+        };
+        let mut c = Cerveau::default();
+        c.tick(&arme(0.0, None, 0.2), &hesitant);
+        // Il tire « rien » : même si le hasard change ensuite, il ne pare pas ce coup-là.
+        c.tick(&arme(1.0, Some(0.9), 0.2), &hesitant);
+        c.tick(&arme(1.4, Some(0.5), 0.8), &hesitant);
+        assert_eq!(c.geste(), None);
+        c.tick(&arme(2.0, None, 0.8), &hesitant);
+        // Le coup suivant : il tire « parer ».
+        c.tick(&arme(3.0, Some(0.9), 0.8), &hesitant);
+        c.tick(&arme(3.4, Some(0.5), 0.2), &hesitant);
+        assert_eq!(c.geste(), Some(Geste::Parer));
+    }
+
+    /// Le cran bas ne sait ni rouler ni parer ; celui qui n'a pas de garde (un arc) ne pare pas.
+    #[test]
+    fn sans_savoir_faire_pas_de_defense() {
+        let maladroit = Profil { roule: Some(false), pare: Some(false), ..veteran() };
+        let mut c = Cerveau::default();
+        c.tick(&arme(0.0, None, 0.8), &maladroit);
+        c.tick(&arme(1.0, Some(0.9), 0.8), &maladroit);
+        c.tick(&arme(1.5, Some(0.4), 0.8), &maladroit);
+        assert_eq!(c.geste(), None);
+        // Sans garde, « parer » ne sort pas : il lui reste la roulade.
+        let sans_garde = |temps, dans| Observation { peut_parer: false, ..arme(temps, dans, 0.8) };
+        let mut c = Cerveau::default();
+        c.tick(&sans_garde(0.0, None), &veteran());
+        c.tick(&sans_garde(1.0, Some(0.9)), &veteran());
+        c.tick(&sans_garde(1.3, Some(0.6)), &veteran());
+        assert_eq!(c.geste(), Some(Geste::Esquiver));
     }
 
     /// `menace.md`, principe 1 : « les créatures ne trichent pas ». Deux cerveaux qui reçoivent les

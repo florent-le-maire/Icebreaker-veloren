@@ -44,6 +44,10 @@
 //   enchainement : secondes au plus pendant lesquelles il tient une attaque sans s'arrêter (absent : sans limite) ;
 //   roule, pare : il fait (ou non) les roulades et les parades que sa façon de se battre lui propose ;
 //   un cran peut aussi aiguiser un peu les sens (vue_nette, soupcon, ouie) : ils restent bornés.
+// Défense réactive (IA.7) : un adversaire à moins de `garde` blocs arme un coup de mêlée vers lui (CoupArme) : il
+//   tire une fois Rien, Esquiver (une roulade de côté) ou Parer, et fait ce geste `reaction` secondes plus tard.
+//   Un coup lent est donc esquivé ou paré, une compétence rapide passe. Esquiver ne sort que s'il `roule`, Parer
+//   que s'il `pare` et que son arme a une garde.
 // Le mage (IA.6) : `sorts`, sa table de sorts, dans `roles` plus bas. Parmi les sorts qu'il a (le rang de son
 // cran, difficulte.ron : 1 = onde de feu ; 3 = + ruée et cape ; 5 = tous) et peut payer, il tire celui qui convient.
 //   sort : la fin du nom de la capacité de Veloren (assets/common/abilities/staff/<sort>.ron) ;
@@ -72,6 +76,7 @@
         tirage_delai: 45.0,
         prevenir_a: 6.0,
         voisinage: 80.0,
+        garde: 5.0,
     ),
     races: {
         // Fourbes : à plusieurs ils achèvent les blessés ; ils filent quand ça tourne mal.
@@ -129,8 +134,14 @@
     crans: {
         // Il frappe simple et laisse des temps morts.
         "base": (reaction: 0.8, pause: 1.4, enchainement: 0.8, roule: false, pare: false),
-        "aguerri": (reaction: 0.45, pause: 0.7, enchainement: 2.0, roule: false, pare: true, vue_nette: 20.0),
+        "aguerri": (
+            reaction: 0.45, pause: 0.7, enchainement: 2.0, roule: false, pare: true, vue_nette: 20.0,
+            reactions: { CoupArme: [(Rien, 2.0), (Parer, 1.0)] },
+        ),
         // Il roule, pare et enchaîne.
-        "veteran": (reaction: 0.25, pause: 0.15, roule: true, pare: true, vue_nette: 22.0, soupcon: 0.9, ouie: 1.2),
+        "veteran": (
+            reaction: 0.25, pause: 0.15, roule: true, pare: true, vue_nette: 22.0, soupcon: 0.9, ouie: 1.2,
+            reactions: { CoupArme: [(Rien, 1.0), (Parer, 2.0), (Esquiver, 2.0)] },
+        ),
     },
 )

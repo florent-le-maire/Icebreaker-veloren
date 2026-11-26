@@ -1,6 +1,7 @@
 //! Les réactions qu'un ennemi peut tirer à un événement. Les deux premières sont celles du tronc
 //! (`cerveau.rs`) ; chaque autre a son fichier ici.
 
+pub mod defense;
 pub mod prevenir;
 
 use serde::Deserialize;
@@ -13,4 +14,10 @@ pub enum Reaction {
     AllerVoir,
     /// Courir prévenir un allié qui ne sait rien (`prevenir.rs`).
     Prevenir,
+    /// Ne rien faire de plus (encaisser un coup, par exemple).
+    Rien,
+    /// Rouler hors d'un coup qui arrive (`defense.rs`).
+    Esquiver,
+    /// Parer un coup qui arrive (`defense.rs`).
+    Parer,
 }

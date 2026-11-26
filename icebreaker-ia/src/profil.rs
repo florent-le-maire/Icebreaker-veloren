@@ -96,6 +96,9 @@ profil! {
     roule: bool,
     /// Il pare quand sa façon de se battre le lui propose.
     pare: bool,
+    // --- Défense réactive (IA.7) ---
+    /// Distance (blocs) sous laquelle un coup de mêlée armé vers lui le menace.
+    garde: f32,
     // --- Le mage (IA.6) ---
     /// Sa table de sorts (`combat.rs`) : il choisit lui-même le sort à lancer, selon la distance et
     /// la situation. Rien = la façon de se battre de Veloren choisit.

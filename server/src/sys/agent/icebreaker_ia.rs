@@ -16,7 +16,8 @@ use common::{
         Alignment, Body, Content, ControlAction, InputKind, UtteranceKind, ability::AbilityInput, agent::Target,
         is_downed,
     },
-    icebreaker_ia::{self, Allie, Apercu, Cerveau, Etat, Id, Intention, Niveau, Observation, Percu, Profil},
+    icebreaker_ia::{self, Allie, Apercu, Cerveau, Etat, Geste, Id, Intention, Niveau, Observation, Percu, Profil},
+    states::utils::StageSection,
     terrain::Block,
     uid::Uid,
     util::Dir,
@@ -52,6 +53,7 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
     };
     let avant = cerveau.etat();
     let sort_avant = cerveau.sort().map(str::to_string);
+    let geste_avant = cerveau.geste();
     // Icebreaker IA.6 : celui qui a une table de sorts choisit lui-même ; il lui faut ceux qu'il peut lancer.
     let prets = if profil.sorts.is_some() { sorts_prets(agent_data) } else { Vec::new() };
     let mut obs = observation(&cerveau, &profil, agent_data, read_data, rng.random());
@@ -59,6 +61,18 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
     let intention = cerveau.tick(&obs, &profil);
     let etat = cerveau.etat();
     let retenu = cerveau.retenu();
+    let geste = cerveau.geste();
+    // `/entrainement ia` : il dit sa défense.
+    if icebreaker_ia::afficher()
+        && geste != geste_avant
+        && let Some(geste) = geste
+    {
+        let dit = match geste {
+            Geste::Esquiver => "esquive !",
+            Geste::Parer => "pare !",
+        };
+        agent_data.chat_npc(Content::Plain(dit.to_string()), emitters);
+    }
     let sort = cerveau.sort().and_then(|voulu| prets.iter().find(|(_, nom)| nom == voulu)).map(|(touche, _)| *touche);
     // `/entrainement ia` : le mage dit le sort qu'il choisit.
     if icebreaker_ia::afficher()
@@ -79,6 +93,7 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
     }
     match intention {
         Intention::Combattre(_) if let Some((cible, pos)) = cible => {
+            let vers_cible = (pos.0 - agent_data.pos.0).xy();
             let choisie_a = agent
                 .target
                 .filter(|t| t.target == cible)
@@ -99,13 +114,27 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
                     InputKind::Roll => roule,
                     InputKind::Block => pare,
                     // Le mage à table de sorts (IA.6) choisit lui-même : le choix de Veloren est retiré.
-                    InputKind::Primary | InputKind::Secondary | InputKind::Ability(_) => !retenu && profil.sorts.is_none(),
+                    InputKind::Primary | InputKind::Secondary | InputKind::Ability(_) => {
+                        !retenu && geste.is_none() && profil.sorts.is_none()
+                    },
                     _ => true,
                 },
                 _ => true,
             });
-            if let Some(touche) = sort {
-                controller.push_basic_input(touche);
+            match geste {
+                // Icebreaker IA.7 : une roulade de côté, hors du coup qui arrive.
+                Some(Geste::Esquiver) => {
+                    let cote = if rng.random_bool(0.5) { 1.0 } else { -1.0 };
+                    controller.inputs.move_dir =
+                        vers_cible.rotated_z(cote * std::f32::consts::FRAC_PI_2).try_normalized().unwrap_or_default();
+                    controller.push_basic_input(InputKind::Roll);
+                },
+                Some(Geste::Parer) => controller.push_basic_input(InputKind::Block),
+                None => {
+                    if let Some(touche) = sort {
+                        controller.push_basic_input(touche);
+                    }
+                },
             }
         },
         Intention::Fuir(de) => {
@@ -158,6 +187,40 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
     }
     true
 }
+
+/// Cet adversaire arme-t-il un coup de mêlée contre l'ennemi (à `vers_lui` de lui) ? Dans combien de
+/// secondes il tombe (0 : il est en train de tomber). Il faut qu'il soit à moins de `garde` blocs et
+/// tourné vers l'ennemi.
+fn coup_arme(adversaire: EcsEntity, vers_lui: Vec3<f32>, profil: &Profil, read_data: &ReadData) -> Option<f32> {
+    let etat = read_data.char_states.get(adversaire)?;
+    if etat.is_attack() {
+        tracing::trace!(
+            melee = etat.is_melee_attack(),
+            distance = vers_lui.magnitude(),
+            angle = read_data.orientations.get(adversaire).map(|o| o.look_vec().xy().angle_between(vers_lui.xy()).to_degrees()),
+            etape = ?etat.stage_section(),
+            "Icebreaker IA : un adversaire attaque"
+        );
+    }
+    if !etat.is_melee_attack() || vers_lui.magnitude_squared() > profil.garde.unwrap_or(0.0).powi(2) {
+        return None;
+    }
+    let regard = read_data.orientations.get(adversaire)?.look_vec().xy();
+    if regard.angle_between(vers_lui.xy()).to_degrees() > ANGLE_DE_MENACE {
+        return None;
+    }
+    match etat.stage_section()? {
+        StageSection::Buildup => {
+            let (arme, ecoule) = (etat.durations()?.buildup?, etat.timer()?);
+            Some(arme.saturating_sub(ecoule).as_secs_f32())
+        },
+        StageSection::Action => Some(0.0),
+        _ => None,
+    }
+}
+
+/// Un coup menace celui qui est à moins de tant de degrés du regard de l'attaquant.
+const ANGLE_DE_MENACE: f32 = 60.0;
 
 /// Les sorts qu'il a et peut payer à ce tick : (la touche de Veloren, le nom de `combat::Sort`, c'est-à-dire
 /// la fin de l'identifiant de la capacité).
@@ -263,6 +326,7 @@ fn observation(
                 approche: vers
                     .try_normalized()
                     .map_or(0.0, |direction| -read_data.velocities.get(e).map_or(0.0, |v| v.0.dot(direction))),
+                frappe_dans: coup_arme(e, -vers, profil, read_data),
             })
         })
         .collect::<Vec<Percu>>();
@@ -309,6 +373,20 @@ fn observation(
         hasard,
         attaque: agent_data.char_state.is_attack(),
         sorts: Vec::new(),
+        peut_parer: agent_data
+            .active_abilities
+            .activate_ability(
+                AbilityInput::Guard,
+                Some(agent_data.inventory),
+                agent_data.skill_set,
+                agent_data.body,
+                Some(agent_data.char_state),
+                agent_data.stance,
+                agent_data.combo,
+                agent_data.stats,
+                agent_data.buffs,
+            )
+            .is_some(),
         cible_en_vie: cerveau
             .cible()
             .and_then(|id| entite(id, read_data))

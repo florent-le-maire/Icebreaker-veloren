@@ -11,6 +11,8 @@ pub enum Evenement {
     VoitIntrus,
     /// Un des siens meurt à portée d'oreille.
     AllieTombe,
+    /// Un adversaire arme un coup contre lui.
+    CoupArme,
 }
 
 /// Ce qu'un ennemi crie aux siens, ou ce que le monde lui apprend. Jamais la position d'un joueur

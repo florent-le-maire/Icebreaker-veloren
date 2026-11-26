@@ -16,6 +16,16 @@
                 (race: "orc", role: "guerrier", nombre: 1, en: (0.0, 0.0), regard: (0.0, 1.0), immobile: true),
             ],
         ),
+        // IA.5, IA.7 : un guerrier en face, à 10 blocs. À essayer en /entrainement difficulte 1, 4 puis 6 : il
+        // réagit plus vite, laisse moins de temps morts ; en 4 il pare parfois un coup armé, en 6 il pare ou roule
+        // (avec /entrainement ia : « pare ! », « esquive ! »). Un coup rapide passe.
+        "duel": (
+            texte: "un guerrier en face. Essayez un coup lent puis un coup rapide, en difficulté 1, 4 et 6.",
+            joueur: (0.0, -10.0),
+            groupes: [
+                (race: "orc", role: "guerrier", nombre: 1, en: (0.0, 0.0), regard: (0.0, -1.0), immobile: true),
+            ],
+        ),
         // IA.6 : un mage à 25 blocs, de face. Avec /entrainement ia il dit le sort qu'il choisit : de loin la boule
         // de feu ; approchez : le lance-flammes ; collez-le : l'onde de feu. En difficulté 6 il a tous ses sorts.
         "mage": (

@@ -8,7 +8,7 @@ use crate::{
     icebreaker_races::nom,
 };
 pub use icebreaker_ia::{
-    Allie, Apercu, Bruits, Cerveau, Etat, Evenement, Id, Intention, Message, Niveau, Observation, Percu, Profil,
+    Allie, Apercu, Bruits, Cerveau, Etat, Evenement, Geste, Id, Intention, Message, Niveau, Observation, Percu, Profil,
     Profils, Reaction, Situation, Sort, niveau,
 };
 use serde::Deserialize;
@@ -146,6 +146,18 @@ mod tests {
             assert!(b >= a && b <= a * 1.3, "sens de {a} à {b}");
         }
         assert!(dur.vue_nette.unwrap() < dur.vue.unwrap());
+        // IA.7 : le cran bas encaisse un coup armé ; plus le cran monte, plus il s'en défend.
+        let defend = |p: &Profil| {
+            let poids = p.reactions.get(&Evenement::CoupArme).cloned().unwrap_or_default();
+            let total: f32 = poids.iter().map(|(_, p)| *p).sum();
+            if total > 0.0 { poids.iter().filter(|(r, _)| *r != Reaction::Rien).map(|(_, p)| *p).sum::<f32>() / total } else { 0.0 }
+        };
+        assert_eq!(defend(facile), 0.0);
+        for paire in crans.windows(2) {
+            assert!(defend(&paire[0]) <= defend(&paire[1]));
+        }
+        assert!(defend(dur) > 0.0 && defend(dur) < 1.0, "un coup doit pouvoir passer");
+        assert!(dur.garde.is_some_and(|g| g > 0.0));
     }
 
     /// IA.6 : le mage a une table de sorts faite de vrais sorts du bâton, qui couvre toutes les distances

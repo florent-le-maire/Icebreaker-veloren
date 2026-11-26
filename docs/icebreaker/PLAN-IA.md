@@ -72,8 +72,12 @@ Règles de conduite :
   déplacement et la visée, son choix de sort est retiré et remplacé par celui du cerveau. Scène `mage`. Testé ;
   client texte : boule de feu à 25 blocs, lance-flammes ou boule à 10, onde de feu à 3, napalm en difficulté 6. Pas
   vu : le vrai client (visée de chaque sort, ruée, cape), une cible qui fonce.
-- [ ] **IA.7 Défense réactive** — « le joueur arme un coup » : esquive ou parade tirée après le délai de réaction.
-  *Fin* : au cran haut, un coup lent est esquivé ou paré ; une compétence rapide passe.
+- [x] **IA.7 Défense réactive** — un adversaire à moins de `garde` blocs arme un coup de mêlée vers lui
+  (`CoupArme`) : il tire une fois rien, esquiver ou parer (`reactions/defense.rs`), et fait le geste après son délai
+  de réaction ; un coup qui tombe avant passe. Poids par cran (base : rien ; aguerri : pare 1 fois sur 3 ; vétéran :
+  pare ou roule 4 fois sur 5). Scène `duel`. Testé ; client texte, difficulté 6 : « esquive ! » deux fois sur quatre
+  coups du joueur. Pas vu : la parade, l'effet réel (le coup est-il évité ?), le vrai client ; les tirs ne sont pas
+  esquivés.
 - [ ] **IA.8 Fuite et coincé** — le fuyard n'oublie pas ; coincé, il tire : se cacher, forcer le passage.
   *Fin* : un danari blessé fuit ; coincé, il force le passage ou se tapit.
 - [ ] **IA.9 Appel à l'aide et déroute** (ex-G.12, G.13).
