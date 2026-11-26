@@ -9,6 +9,7 @@ use crate::{
     profil::Profil,
     reactions::{
         Reaction,
+        coince::Forcer,
         defense::{Defense, Geste},
         prevenir::{self, Etape, Prevenir},
     },
@@ -86,6 +87,10 @@ pub enum Etat {
     Fuite,
     /// Il court prévenir un allié.
     Prevenir,
+    /// Coincé, il se tapit sur place.
+    Tapi,
+    /// Coincé, il force le passage.
+    Force,
 }
 
 /// Ce que l'ennemi veut faire ; le serveur l'exécute.
@@ -105,6 +110,10 @@ pub enum Intention {
     Rentrer(Vec3<f32>),
     /// Courir prévenir l'allié qui est là.
     Prevenir(Vec3<f32>),
+    /// Se tapir sur place, face à cet endroit.
+    SeTapir(Vec3<f32>),
+    /// Foncer à cet endroit, à travers ce qui le menace.
+    Forcer(Vec3<f32>),
 }
 
 /// Distance à laquelle un endroit est atteint quand le profil ne dit rien (`arrivee`).
@@ -120,6 +129,8 @@ const VICTIME_PRES: f32 = 6.0;
 const PREVENU: f64 = 30.0;
 /// Secondes pendant lesquelles un mage demande un sort qui ne part pas, avant d'en choisir un autre.
 const SORT_ATTENTE: f64 = 1.5;
+/// Un fuyard qui a fait moins de tant de blocs pendant `coince_temps` n'avance pas.
+const COINCE_PAS: f32 = 1.5;
 
 /// Un endroit où il est venu voir.
 #[derive(Clone, Copy, Debug)]
@@ -181,6 +192,14 @@ pub struct Cerveau {
     defense: Option<Defense>,
     /// Le geste de défense à faire à ce tick.
     geste: Option<Geste>,
+    /// En fuite : où il était, et quand, la dernière fois qu'il a regardé s'il s'éloignait.
+    repere: Option<(Vec3<f32>, f64)>,
+    /// Sa dernière réaction de coincé (rien : jamais).
+    coince_a: Option<f64>,
+    /// Il force le passage.
+    forcer: Option<Forcer>,
+    /// Il s'est tapi à cette heure.
+    tapi: Option<f64>,
 }
 
 impl Default for Cerveau {
@@ -213,6 +232,10 @@ impl Default for Cerveau {
             lances: Vec::new(),
             defense: None,
             geste: None,
+            repere: None,
+            coince_a: None,
+            forcer: None,
+            tapi: None,
         }
     }
 }
@@ -233,6 +256,71 @@ impl Cerveau {
     /// Le sort qu'il veut lancer (ou tenir) à ce tick, s'il a une table de sorts (`combat.rs`).
     pub fn sort(&self) -> Option<&str> {
         self.sort.as_deref().filter(|_| self.etat == Etat::Combat && !self.lache)
+    }
+
+    /// Il force le passage à travers ce qui est là.
+    fn forcer_le_passage(&mut self, menace: Vec3<f32>, obs: &Observation) -> Intention {
+        // À gauche ou à droite : selon l'instant.
+        let passage = Forcer::a_travers(obs.pos, menace, (obs.temps * 10.0) as u64 % 2 == 0, obs.temps);
+        self.forcer = Some(passage);
+        self.etat = Etat::Force;
+        Intention::Forcer(passage.lieu)
+    }
+
+    /// Il fuit la menace (là où il l'a perçue pour la dernière fois). Coincé, il tire une réaction :
+    /// se tapir, forcer le passage ; sinon il continue de fuir comme il peut.
+    fn fuir(&mut self, obs: &Observation, profil: &Profil, arrivee: f32) -> Intention {
+        let menace = self.percue_en;
+        self.etat = Etat::Fuite;
+        // Il force le passage : jusqu'à la sortie, ou tant de secondes au plus.
+        if let Some(passage) = self.forcer {
+            if obs.temps - passage.depuis <= profil.forcer_duree.unwrap_or(0.0) && obs.pos.distance(passage.lieu) > arrivee {
+                self.etat = Etat::Force;
+                return Intention::Forcer(passage.lieu);
+            }
+            self.forcer = None;
+            self.repere = Some((obs.pos, obs.temps));
+        }
+        // Tapi, il guette ; frappé, il détale à travers son agresseur.
+        if let Some(depuis) = self.tapi {
+            let agresseur = obs.percus.iter().find(|p| p.l_a_frappe_depuis.is_some_and(|il_y_a| obs.temps - il_y_a > depuis));
+            if let Some(agresseur) = agresseur {
+                self.tapi = None;
+                return self.forcer_le_passage(agresseur.pos, obs);
+            }
+            self.etat = Etat::Tapi;
+            return Intention::SeTapir(menace);
+        }
+        // Coincé : il n'a pas avancé depuis `coince_temps`, la menace est proche.
+        let (ou, quand) = *self.repere.get_or_insert((obs.pos, obs.temps));
+        if profil.coince_temps.is_some_and(|duree| obs.temps - quand >= duree) {
+            self.repere = Some((obs.pos, obs.temps));
+            let coince = obs.pos.distance(ou) < COINCE_PAS && obs.pos.distance(menace) <= profil.coince_portee.unwrap_or(0.0);
+            let delai = profil.coince_delai.unwrap_or(0.0);
+            if coince && self.coince_a.is_none_or(|avant| obs.temps - avant >= delai) {
+                match self.tirer(Evenement::Coince, obs, profil) {
+                    Some(Reaction::SeTapir) => {
+                        self.coince_a = Some(obs.temps);
+                        self.tapi = Some(obs.temps);
+                        self.etat = Etat::Tapi;
+                        return Intention::SeTapir(menace);
+                    },
+                    Some(Reaction::Forcer) => {
+                        self.coince_a = Some(obs.temps);
+                        return self.forcer_le_passage(menace, obs);
+                    },
+                    _ => {},
+                }
+            }
+        }
+        Intention::Fuir(menace)
+    }
+
+    /// Il ne fuit plus : il oublie où il en était de sa fuite.
+    fn fin_de_fuite(&mut self) {
+        self.repere = None;
+        self.forcer = None;
+        self.tapi = None;
     }
 
     /// Le geste de défense qu'il fait à ce tick, face à un coup armé (IA.7).
@@ -326,7 +414,7 @@ impl Cerveau {
         let poids = profil.reactions.get(&evenement)?;
         let delai = match evenement {
             Evenement::VoitIntrus | Evenement::AllieTombe => profil.tirage_delai.unwrap_or(0.0),
-            Evenement::CoupArme => 0.0,
+            Evenement::CoupArme | Evenement::Coince => 0.0,
         };
         if self.tirages.iter().any(|(e, quand)| *e == evenement && obs.temps - quand < delai) {
             return None;
@@ -339,7 +427,7 @@ impl Cerveau {
                 Reaction::Prevenir => prevenir::qui(obs).is_some(),
                 Reaction::Esquiver => profil.roule.unwrap_or(true),
                 Reaction::Parer => profil.pare.unwrap_or(true) && obs.peut_parer,
-                Reaction::Combattre | Reaction::AllerVoir | Reaction::Rien => true,
+                Reaction::Combattre | Reaction::AllerVoir | Reaction::Rien | Reaction::SeTapir | Reaction::Forcer => true,
             })
             .copied()
             .collect();
@@ -452,12 +540,14 @@ impl Cerveau {
 
         if let Some(cible) = self.cible {
             let fuit = profil.fuite.is_some_and(|seuil| obs.pv < seuil);
-            // Perdue de vue : il sait encore un moment où elle était.
-            if vue || obs.temps - self.percue_a <= profil.poursuite.unwrap_or(0.0) {
-                return if fuit {
-                    self.etat = Etat::Fuite;
-                    Intention::Fuir(self.percue_en)
-                } else if vue {
+            // Perdue de vue : il sait encore un moment où elle était (le fuyard, plus longtemps).
+            let memoire = if fuit { profil.fuite_memoire.or(profil.poursuite) } else { profil.poursuite };
+            if vue || obs.temps - self.percue_a <= memoire.unwrap_or(0.0) {
+                if fuit {
+                    return self.fuir(obs, profil, arrivee);
+                }
+                self.fin_de_fuite();
+                return if vue {
                     self.etat = Etat::Combat;
                     self.retenu = match self.attaque_depuis {
                         // Il ne tient pas un enchaînement plus longtemps que son cran ne le permet.
@@ -476,6 +566,7 @@ impl Cerveau {
                 };
             }
             self.cible = None;
+            self.fin_de_fuite();
             if fuit {
                 // Le fuyard se calme là où il est : c'est sa nouvelle place.
                 self.poste = Some(obs.pos);
@@ -1289,6 +1380,133 @@ mod tests {
         c.tick(&sans_garde(1.0, Some(0.9)), &veteran());
         c.tick(&sans_garde(1.3, Some(0.6)), &veteran());
         assert_eq!(c.geste(), Some(Geste::Esquiver));
+    }
+
+    // --- IA.8 : fuite et coincé ---
+
+    /// Un danari qui, coincé, se tapit (poids 1) ou force le passage (poids 1).
+    fn fuyard() -> Profil {
+        Profil {
+            fuite_memoire: Some(10.0),
+            coince_temps: Some(1.0),
+            coince_portee: Some(8.0),
+            coince_delai: Some(3.0),
+            forcer_duree: Some(4.0),
+            reactions: HashMap::from([(Evenement::Coince, vec![(Reaction::SeTapir, 1.0), (Reaction::Forcer, 1.0)])]),
+            ..danari()
+        }
+    }
+
+    /// Le danari blessé, à `pos`, qui voit le joueur 1 à `menace`.
+    fn blesse(temps: f64, pos: Vec3<f32>, menace: Vec3<f32>, hasard: f32) -> Observation {
+        Observation { pv: 0.2, hasard, ..obs_en(temps, pos, vec![Percu { pos: menace, ..joueur(1, 0.0) }]) }
+    }
+
+    /// « Le fuyard n'oublie pas » : il fuit encore `fuite_memoire` secondes une menace qu'il ne voit
+    /// plus (plus longtemps qu'un combattant ne poursuit), puis se calme là où il est.
+    #[test]
+    fn le_fuyard_fuit_longtemps_une_menace_qu_il_ne_voit_plus() {
+        let mut c = Cerveau::default();
+        c.tick(&blesse(0.0, Vec3::zero(), en(3.0, 0.0), 0.0), &fuyard());
+        let seul = |temps| Observation { pv: 0.2, ..obs_en(temps, en(-30.0, 0.0), vec![]) };
+        assert_eq!(c.tick(&seul(8.0), &fuyard()), Intention::Fuir(en(3.0, 0.0)));
+        assert_eq!(c.tick(&seul(11.0), &fuyard()), Intention::Repos);
+        assert_eq!(c.tick(&seul(40.0), &fuyard()), Intention::Repos);
+    }
+
+    /// « Une créature qui fuit est coincée quand elle essaie d'avancer depuis 1 s sans s'éloigner,
+    /// menace à moins de 8 m. Elle tire alors au sort une réaction » : se tapir, ou forcer le passage.
+    #[test]
+    fn coince_il_se_tapit_ou_force_le_passage() {
+        let (coin, menace) = (Vec3::zero(), en(4.0, 0.0));
+        let coince = |hasard| {
+            let mut c = Cerveau::default();
+            assert_eq!(c.tick(&blesse(0.0, coin, menace, hasard), &fuyard()), Intention::Fuir(menace));
+            assert_eq!(c.tick(&blesse(0.8, coin, menace, hasard), &fuyard()), Intention::Fuir(menace));
+            let intention = c.tick(&blesse(1.2, coin, menace, hasard), &fuyard());
+            (c, intention)
+        };
+        let (c, intention) = coince(0.2);
+        assert_eq!(intention, Intention::SeTapir(menace));
+        assert_eq!(c.etat(), Etat::Tapi);
+        // « Forcer le passage : elle fonce vers un point 6 m derrière la menace, 1,5 m sur le côté. »
+        let (c, intention) = coince(0.8);
+        let Intention::Forcer(lieu) = intention else { panic!("il doit forcer le passage : {intention:?}") };
+        assert_eq!(c.etat(), Etat::Force);
+        assert!((lieu.x - 10.0).abs() < 0.01 && (lieu.y.abs() - 1.5).abs() < 0.01, "{lieu:?}");
+    }
+
+    /// Il n'est pas coincé s'il s'éloigne, ni si la menace est loin ; sans réaction dans son profil,
+    /// « elle continue de fuir comme elle peut ».
+    #[test]
+    fn pas_coince_s_il_avance_ou_si_la_menace_est_loin() {
+        let menace = en(4.0, 0.0);
+        let mut c = Cerveau::default();
+        c.tick(&blesse(0.0, Vec3::zero(), menace, 0.2), &fuyard());
+        assert_eq!(c.tick(&blesse(1.2, en(-5.0, 0.0), menace, 0.2), &fuyard()), Intention::Fuir(menace));
+        assert_eq!(c.tick(&blesse(2.4, en(-10.0, 0.0), menace, 0.2), &fuyard()), Intention::Fuir(menace));
+        // Bloqué, mais la menace est à 20 blocs.
+        let loin = en(20.0, 0.0);
+        let mut c = Cerveau::default();
+        c.tick(&blesse(0.0, Vec3::zero(), loin, 0.2), &fuyard());
+        assert_eq!(c.tick(&blesse(1.2, Vec3::zero(), loin, 0.2), &fuyard()), Intention::Fuir(loin));
+        // Un profil sans réaction à « coincé ».
+        let mut c = Cerveau::default();
+        c.tick(&blesse(0.0, Vec3::zero(), menace, 0.2), &danari());
+        assert_eq!(c.tick(&blesse(1.2, Vec3::zero(), menace, 0.2), &danari()), Intention::Fuir(menace));
+    }
+
+    /// « Cachée, elle guette ; frappée, elle détale à travers son agresseur. »
+    #[test]
+    fn tapi_il_guette_et_frappe_il_detale_a_travers_l_agresseur() {
+        let (coin, menace) = (Vec3::zero(), en(4.0, 0.0));
+        let mut c = Cerveau::default();
+        c.tick(&blesse(0.0, coin, menace, 0.2), &fuyard());
+        c.tick(&blesse(1.2, coin, menace, 0.2), &fuyard());
+        // Il reste tapi, face à la menace, même longtemps.
+        assert_eq!(c.tick(&blesse(9.0, coin, en(2.0, 1.0), 0.8), &fuyard()), Intention::SeTapir(en(2.0, 1.0)));
+        // On le frappe.
+        let frappe = Percu { pos: en(2.0, 0.0), l_a_frappe_depuis: Some(0.1), ..joueur(1, 0.0) };
+        let touche = Observation { pv: 0.1, hasard: 0.2, ..obs_en(9.5, coin, vec![frappe]) };
+        assert!(matches!(c.tick(&touche, &fuyard()), Intention::Forcer(lieu) if lieu.x > 6.0));
+    }
+
+    /// Tapi, la menace partie : « elle se calme sur place ».
+    #[test]
+    fn tapi_il_se_calme_quand_la_menace_est_partie() {
+        let coin = en(7.0, 7.0);
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![]), &fuyard());
+        c.tick(&blesse(1.0, coin, en(11.0, 7.0), 0.2), &fuyard());
+        assert_eq!(c.tick(&blesse(2.2, coin, en(11.0, 7.0), 0.2), &fuyard()), Intention::SeTapir(en(11.0, 7.0)));
+        let seul = |temps| Observation { pv: 0.2, ..obs_en(temps, coin, vec![]) };
+        assert_eq!(c.tick(&seul(8.0), &fuyard()), Intention::SeTapir(en(11.0, 7.0)));
+        // Plus de menace depuis 10 s : il vaque là, sans rentrer à son ancien poste.
+        assert_eq!(c.tick(&seul(13.0), &fuyard()), Intention::Repos);
+        assert_eq!(c.etat(), Etat::Repos);
+    }
+
+    /// Il force le passage « pendant 4 s au plus », ou jusqu'à la sortie, puis reprend sa fuite ;
+    /// « pas de nouvelle réaction avant 3 s ».
+    #[test]
+    fn le_passage_force_il_reprend_sa_fuite() {
+        let (coin, menace) = (Vec3::zero(), en(4.0, 0.0));
+        let mut c = Cerveau::default();
+        c.tick(&blesse(0.0, coin, menace, 0.8), &fuyard());
+        let Intention::Forcer(sortie) = c.tick(&blesse(1.2, coin, menace, 0.8), &fuyard()) else { panic!() };
+        // En route, il garde le même but.
+        assert_eq!(c.tick(&blesse(2.0, en(3.0, 2.0), menace, 0.8), &fuyard()), Intention::Forcer(sortie));
+        // Arrivé : il fuit de nouveau.
+        assert_eq!(c.tick(&blesse(3.0, sortie, menace, 0.8), &fuyard()), Intention::Fuir(menace));
+        // Bloqué par un joueur : il renonce après 4 s, et ne retire pas de réaction tout de suite.
+        let mut c = Cerveau::default();
+        c.tick(&blesse(0.0, coin, menace, 0.8), &fuyard());
+        c.tick(&blesse(1.2, coin, menace, 0.8), &fuyard());
+        assert!(matches!(c.tick(&blesse(5.0, coin, menace, 0.8), &fuyard()), Intention::Forcer(_)));
+        assert_eq!(c.tick(&blesse(5.3, coin, menace, 0.8), &fuyard()), Intention::Fuir(menace));
+        assert_eq!(c.tick(&blesse(6.0, coin, menace, 0.8), &fuyard()), Intention::Fuir(menace));
+        // 3 s après sa dernière réaction (et de nouveau bloqué depuis 1 s) : il en tire une autre.
+        assert_eq!(c.tick(&blesse(8.4, coin, menace, 0.2), &fuyard()), Intention::SeTapir(menace));
     }
 
     /// `menace.md`, principe 1 : « les créatures ne trichent pas ». Deux cerveaux qui reçoivent les

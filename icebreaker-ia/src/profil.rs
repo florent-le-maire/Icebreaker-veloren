@@ -106,6 +106,17 @@ profil! {
     // --- Fuite ---
     /// Part de ses PV (0 à 1) sous laquelle il fuit ; rien = ne fuit pas.
     fuite: f32,
+    /// Secondes pendant lesquelles il fuit encore une menace qu'il ne voit plus (rien : `poursuite`).
+    fuite_memoire: f64,
+    // --- Coincé (IA.8) ---
+    /// Il est coincé s'il fuit depuis tant de secondes sans s'éloigner ; rien = jamais coincé.
+    coince_temps: f64,
+    /// … et si la menace est à moins de tant de blocs.
+    coince_portee: f32,
+    /// Secondes au moins entre deux réactions de coincé.
+    coince_delai: f64,
+    /// Secondes au plus d'un passage en force.
+    forcer_duree: f64,
 }
 
 /// Le fichier `profils.ron`.

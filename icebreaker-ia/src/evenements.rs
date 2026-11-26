@@ -13,6 +13,8 @@ pub enum Evenement {
     AllieTombe,
     /// Un adversaire arme un coup contre lui.
     CoupArme,
+    /// Il fuit sans arriver à s'éloigner, la menace toute proche.
+    Coince,
 }
 
 /// Ce qu'un ennemi crie aux siens, ou ce que le monde lui apprend. Jamais la position d'un joueur

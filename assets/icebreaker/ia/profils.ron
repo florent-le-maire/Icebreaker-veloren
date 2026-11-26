@@ -15,7 +15,13 @@
 //   provoque_par_coup : secondes pendant lesquelles celui qui vient de le frapper passe avant tout (contre : frapper,
 //     repousser).
 // Fuite :
-//   fuite : part des PV sous laquelle il fuit (absent = ne fuit pas).
+//   fuite : part des PV sous laquelle il fuit (absent ou 0 = ne fuit pas) ;
+//   fuite_memoire : secondes pendant lesquelles il fuit encore une menace qu'il ne voit plus ; puis il se calme là
+//     où il est, sans revenir voir.
+// Coincé (IA.8) : il fuit depuis `coince_temps` secondes sans s'éloigner, la menace à moins de `coince_portee` blocs :
+//   il tire (événement Coince) SeTapir (il se tapit face à la menace ; frappé, il détale à travers son agresseur) ou
+//   Forcer (il fonce `forcer_duree` secondes au plus vers un point derrière la menace, puis reprend sa fuite) ;
+//   coince_delai : secondes au moins entre deux de ces réactions.
 // Vue (IA.2) : un cône devant lui, sans mur entre les deux ; un joueur discret (accroupi) est vu de moins loin.
 //   vue, vue_nette : blocs ; jusqu'à vue_nette il reconnaît tout de suite, de là à vue il soupçonne (« ? ») ;
 //   cone : largeur du cône, en degrés ;
@@ -72,7 +78,13 @@
         reactions: {
             VoitIntrus: [(Combattre, 5.0), (Prevenir, 1.0)],
             AllieTombe: [(AllerVoir, 2.0), (Prevenir, 1.0)],
+            Coince: [(SeTapir, 3.0), (Forcer, 2.0)],
         },
+        fuite_memoire: 10.0,
+        coince_temps: 1.0,
+        coince_portee: 8.0,
+        coince_delai: 3.0,
+        forcer_duree: 4.0,
         tirage_delai: 45.0,
         prevenir_a: 6.0,
         voisinage: 80.0,
@@ -123,8 +135,9 @@
                 (sort: "pyroclasm", min: 12.0, max: 36.0, poids: 3.0, recharge: 10.0),
             ],
         ),
-        // Le chef ne quitte pas les siens (Q70, proposé).
+        // Le chef ne quitte pas les siens et ne fuit jamais (Q70, proposé).
         "chef": (
+            fuite: 0.0,
             reactions: {
                 VoitIntrus: [(Combattre, 1.0)],
                 AllieTombe: [(AllerVoir, 1.0)],

@@ -26,6 +26,16 @@
                 (race: "orc", role: "guerrier", nombre: 1, en: (0.0, 0.0), regard: (0.0, -1.0), immobile: true),
             ],
         ),
+        // IA.8 : un danari déjà blessé (sous son seuil de fuite), en face. Il fuit dès qu'il nous voit ; perdu de vue
+        // 10 s, il se calme là où il est. Dans un donjon, acculé au fond d'une salle : « Pitié ! » (il se tapit ; le
+        // frapper le fait détaler à travers nous) ou « Poussez-vous ! » (il force le passage).
+        "fuyard": (
+            texte: "un danari blessé, en face : il fuit. Rattrapez-le, acculez-le.",
+            joueur: (0.0, -12.0),
+            groupes: [
+                (race: "danari", role: "guerrier", nombre: 1, en: (0.0, 0.0), regard: (0.0, -1.0), immobile: true, pv: 0.25),
+            ],
+        ),
         // IA.6 : un mage à 25 blocs, de face. Avec /entrainement ia il dit le sort qu'il choisit : de loin la boule
         // de feu ; approchez : le lance-flammes ; collez-le : l'onde de feu. En difficulté 6 il a tous ses sorts.
         "mage": (

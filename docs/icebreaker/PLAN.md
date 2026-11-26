@@ -365,6 +365,10 @@ tâche pour ce qui casse.
 - [ ] IA.7 (défense réactive, 2026-11-26) : `/entrainement ia` puis `/entrainement scene duel` en difficulté 6 :
   sur un coup lent (grande épée, marteau) l'orc dit « pare ! » ou « esquive ! » et le coup est-il vraiment paré ou
   évité ? Un coup rapide passe-t-il ? En 4 il pare parfois, en 1 jamais. Est-ce lisible, ou frustrant ?
+- [ ] IA.8 (fuite et coincé, 2026-11-27) : `/entrainement scene fuyard` : le danari blessé fuit et se calme plus
+  loin. Dans un donjon danari (`donjon -Site Genere -Race danari`) : blesser un danari, l'acculer au fond d'une
+  salle : « Pitié ! » (il se tapit ; le frapper le fait détaler à travers nous) ou « Poussez-vous ! » (il nous
+  contourne en courant, puis reprend sa fuite). Reste-t-il bloqué contre un mur sans rien tirer ?
 - [ ] DF (difficulté 1 à 6, 2026-11-25) : au panneau Départ, les six lignes « Difficulté » ; partir en 1 puis en 6 dans
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au

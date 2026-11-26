@@ -78,8 +78,12 @@ Règles de conduite :
   pare ou roule 4 fois sur 5). Scène `duel`. Testé ; client texte, difficulté 6 : « esquive ! » deux fois sur quatre
   coups du joueur. Pas vu : la parade, l'effet réel (le coup est-il évité ?), le vrai client ; les tirs ne sont pas
   esquivés.
-- [ ] **IA.8 Fuite et coincé** — le fuyard n'oublie pas ; coincé, il tire : se cacher, forcer le passage.
-  *Fin* : un danari blessé fuit ; coincé, il force le passage ou se tapit.
+- [x] **IA.8 Fuite et coincé** — `fuite_memoire` (il fuit 10 s une menace qu'il ne voit plus, puis se calme sur
+  place) ; coincé (1 s sans s'éloigner, menace à 8 blocs) il tire `SeTapir` (frappé, il détale à travers son
+  agresseur) ou `Forcer` (4 s au plus vers un point derrière la menace), `reactions/coince.rs` ; le chef ne fuit pas.
+  Scène `fuyard` (un danari à 25 % de ses PV). Testé ; client texte : « fuite ! », il court à 36 blocs, « repos »
+  10 s plus tard, sans revenir. Pas vu : coincé (l'arène n'a pas de mur), se cacher derrière un angle (pas codé :
+  il se tapit sur place), le vrai client.
 - [ ] **IA.9 Appel à l'aide et déroute** (ex-G.12, G.13).
   *Fin* : frapper l'archer fait venir le guerrier voisin ; tuer le chef disperse sa garde.
 - [ ] **IA.10 Ordres** — boîte d'ordres ; les rondes humaines (Y.3) passent dessus.

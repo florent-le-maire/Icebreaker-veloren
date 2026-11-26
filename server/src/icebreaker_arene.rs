@@ -545,7 +545,11 @@ fn jouer_scene(server: &mut crate::Server, client: Entity, nom: &str) -> Result<
                 info.idle_wander_factor = 0.0;
             }
             if let crate::sys::terrain::SpawnEntityData::Npc(data) = crate::sys::terrain::SpawnEntityData::from_entity_info(info) {
-                bus.emit_now(common::event::CreateNpcEvent { pos: Pos(pos), ori, npc: data.to_npc_builder().0 });
+                let (mut npc, _) = data.to_npc_builder();
+                if let (Some(pv), Some(sante)) = (groupe.pv, npc.health.as_mut()) {
+                    sante.set_fraction(pv);
+                }
+                bus.emit_now(common::event::CreateNpcEvent { pos: Pos(pos), ori, npc });
             }
         }
     }

@@ -150,6 +150,17 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
         Intention::AllerVoir(lieu) => {
             agent_data.path_toward_target(agent, controller, lieu, read_data, Path::AtTarget, None);
         },
+        // Icebreaker IA.8 : coincé, il fonce à travers ce qui le menace, ou se tapit face à lui.
+        Intention::Forcer(lieu) => {
+            agent_data.path_toward_target(agent, controller, lieu, read_data, Path::AtTarget, None);
+        },
+        Intention::SeTapir(vers) => {
+            if let Some(dir) = Dir::from_unnormalized(vers - yeux) {
+                controller.inputs.look_dir = dir;
+            }
+            controller.push_action(ControlAction::Unwield);
+            controller.push_action(ControlAction::Sneak);
+        },
         Intention::Prevenir(allie) => {
             agent_data.path_toward_target(agent, controller, allie, read_data, Path::AtTarget, None);
         },
@@ -178,6 +189,8 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
             Etat::Enquete => Some("?"),
             // « Chaque décision tirée s'annonce. »
             Etat::Prevenir => Some("Je vais chercher les autres !"),
+            Etat::Tapi => Some("Pitié !"),
+            Etat::Force => Some("Poussez-vous !"),
             Etat::Fuite => icebreaker_ia::afficher().then_some("fuite !"),
             Etat::Repos => icebreaker_ia::afficher().then_some("… repos"),
         };

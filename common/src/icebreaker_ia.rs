@@ -56,6 +56,9 @@ pub struct Groupe {
     /// Ils ne flânent pas au repos.
     #[serde(default)]
     pub immobile: bool,
+    /// La part de leurs PV qu'ils ont en arrivant (rien : tous).
+    #[serde(default)]
+    pub pv: Option<f32>,
 }
 
 /// Une scène d'essai du lieu d'entraînement (`/entrainement scene <nom>`).
@@ -184,6 +187,22 @@ mod tests {
         }
     }
 
+    /// IA.8, `creatures.md` « Le fuyard n'oublie pas », « Coincé » : celui qui fuit fuit plus longtemps qu'un
+    /// combattant ne poursuit ; coincé, il peut se tapir ou forcer le passage ; le chef ne fuit jamais (Q70).
+    #[test]
+    fn la_fuite_et_le_coince() {
+        let danari = profil(Some(&corps(humanoid::Species::Danari)), ("guerrier", "base")).unwrap();
+        assert!(danari.fuite.is_some_and(|seuil| seuil > 0.0));
+        assert!(danari.fuite_memoire.unwrap() > danari.poursuite.unwrap());
+        assert!(danari.coince_temps.is_some() && danari.coince_portee.is_some() && danari.forcer_duree.is_some());
+        let coince = &danari.reactions[&Evenement::Coince];
+        for reaction in [Reaction::SeTapir, Reaction::Forcer] {
+            assert!(coince.iter().any(|(r, poids)| *r == reaction && *poids > 0.0), "{reaction:?}");
+        }
+        let chef = profil(Some(&corps(humanoid::Species::Danari)), ("chef", "base")).unwrap();
+        assert!(!chef.fuite.is_some_and(|seuil| seuil > 0.0), "le chef danari fuit");
+    }
+
     /// Les scènes d'essai ne nomment que des races et des rôles de l'arène, et tiennent sur le plateau.
     #[test]
     fn scenes_lisibles() {
@@ -198,6 +217,7 @@ mod tests {
                 assert!(arene.races.iter().any(|(id, _)| *id == g.race), "{nom} : race {}", g.race);
                 assert!(arene.roles.iter().any(|(id, _)| *id == g.role), "{nom} : rôle {}", g.role);
                 assert!(g.nombre >= 1 && sur_le_plateau(g.en), "{nom}");
+                assert!(g.pv.is_none_or(|pv| pv > 0.0 && pv <= 1.0), "{nom}");
             }
         }
     }

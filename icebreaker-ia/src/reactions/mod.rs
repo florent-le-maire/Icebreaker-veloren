@@ -1,6 +1,7 @@
 //! Les réactions qu'un ennemi peut tirer à un événement. Les deux premières sont celles du tronc
 //! (`cerveau.rs`) ; chaque autre a son fichier ici.
 
+pub mod coince;
 pub mod defense;
 pub mod prevenir;
 
@@ -20,4 +21,8 @@ pub enum Reaction {
     Esquiver,
     /// Parer un coup qui arrive (`defense.rs`).
     Parer,
+    /// Coincé : se tapir sur place, face à la menace (`coince.rs`).
+    SeTapir,
+    /// Coincé : forcer le passage à travers la menace (`coince.rs`).
+    Forcer,
 }
