@@ -99,6 +99,17 @@ profil! {
     // --- Défense réactive (IA.7) ---
     /// Distance (blocs) sous laquelle un coup de mêlée armé vers lui le menace.
     garde: f32,
+    // --- Appel à l'aide et déroute (IA.9) ---
+    /// Frappé alors que ses PV sont sous cette part (0 à 1), il tire sa réaction à `Touche`.
+    appel_pv: f32,
+    /// Secondes au moins entre deux appels à l'aide.
+    appel_delai: f64,
+    /// Il défend : s'il entend un appel à l'aide, il prend l'agresseur pour cible.
+    defend: bool,
+    /// Secondes pendant lesquelles il s'en tient à l'agresseur qu'on lui a signalé.
+    defend_duree: f64,
+    /// Secondes de déroute quand son chef tombe (0 : il tient bon).
+    deroute: f64,
     // --- Le mage (IA.6) ---
     /// Sa table de sorts (`combat.rs`) : il choisit lui-même le sort à lancer, selon la distance et
     /// la situation. Rien = la façon de se battre de Veloren choisit.

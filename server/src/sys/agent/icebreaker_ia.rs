@@ -138,7 +138,7 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
             }
         },
         Intention::Fuir(de) => {
-            if avant != Etat::Fuite {
+            if etat == Etat::Fuite && avant != Etat::Fuite {
                 agent_data.chat_npc_if_allowed_to_speak(
                     Content::localized("npc-speech-cultist_low_health_fleeing"),
                     agent,
@@ -191,6 +191,7 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
             Etat::Prevenir => Some("Je vais chercher les autres !"),
             Etat::Tapi => Some("Pitié !"),
             Etat::Force => Some("Poussez-vous !"),
+            Etat::Deroute => Some("Fuite !"),
             Etat::Fuite => icebreaker_ia::afficher().then_some("fuite !"),
             Etat::Repos => icebreaker_ia::afficher().then_some("… repos"),
         };

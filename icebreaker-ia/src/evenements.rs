@@ -15,6 +15,10 @@ pub enum Evenement {
     CoupArme,
     /// Il fuit sans arriver à s'éloigner, la menace toute proche.
     Coince,
+    /// On le frappe alors que ses PV sont sous `appel_pv`.
+    Touche,
+    /// Son chef meurt à portée d'oreille.
+    ChefTombe,
 }
 
 /// Ce qu'un ennemi crie aux siens, ou ce que le monde lui apprend. Jamais la position d'un joueur
@@ -25,4 +29,8 @@ pub enum Message {
     Signalement { lieu: Vec3<f32>, vu_a: f64 },
     /// Un des siens est mort là.
     AllieTombe { lieu: Vec3<f32> },
+    /// « À l'aide ! » : qui l'a frappé, et où il est.
+    Appel { agresseur: crate::cerveau::Id, lieu: Vec3<f32> },
+    /// Le chef est tombé là.
+    ChefTombe { lieu: Vec3<f32> },
 }

@@ -160,7 +160,7 @@ que Veloren fait déjà (vue, ouïe, combat, fuite). G.11 à G.14 d'abord ; G.15
 IA.12, G.16 → IA.13 ; G.11 reste ici (après IA.2).
 - [ ] **G.11 Attaque surprise** — un coup sur une créature endormie fait ×1,5 dégâts, « Surprise ! » au-dessus d'elle.
   *Fin* : frapper un dormeur fait plus mal qu'une créature éveillée.
-- [ ] **G.12 Appel à l'aide** — l'archer sous 75 % de ses PV et le guetteur dès le premier coup crient « À l'aide ! »
+- [x] **G.12 Appel à l'aide** (fait par IA.9, `PLAN-IA.md`) — l'archer sous 75 % de ses PV et le guetteur dès le premier coup crient « À l'aide ! »
   (24 blocs, une fois toutes les 6 s) ; brutes et chef qui l'entendent prennent l'agresseur pour cible même sans le
   voir ; les dormeurs à portée se réveillent.
   *Fin* : frapper l'archer fait venir la brute de la salle voisine.
@@ -369,6 +369,10 @@ tâche pour ce qui casse.
   loin. Dans un donjon danari (`donjon -Site Genere -Race danari`) : blesser un danari, l'acculer au fond d'une
   salle : « Pitié ! » (il se tapit ; le frapper le fait détaler à travers nous) ou « Poussez-vous ! » (il nous
   contourne en courant, puis reprend sa fuite). Reste-t-il bloqué contre un mur sans rien tirer ?
+- [ ] IA.9 (appel à l'aide et déroute, 2026-11-27) : `/entrainement scene appel` (en difficulté 4 ou plus, sinon
+  l'archer meurt au premier coup) : frapper l'archer, il crie « À l'aide ! » et le guerrier du nord-est accourt sur
+  nous. `/entrainement scene garde` : tuer le chef, sa garde crie « Fuite ! », se disperse quelques secondes, puis
+  revient. Le répit est-il assez long pour souffler ou partir ?
 - [ ] DF (difficulté 1 à 6, 2026-11-25) : au panneau Départ, les six lignes « Difficulté » ; partir en 1 puis en 6 dans
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au

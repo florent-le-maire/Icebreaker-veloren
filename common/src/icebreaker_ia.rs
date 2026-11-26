@@ -203,6 +203,26 @@ mod tests {
         assert!(!chef.fuite.is_some_and(|seuil| seuil > 0.0), "le chef danari fuit");
     }
 
+    /// IA.9, `creatures.md` « Appel à l'aide », « Moral : la mort du chef » : les fragiles (archer, mage) appellent
+    /// à l'aide, les guerriers et le chef défendent ; l'appel s'entend de plus loin qu'un coup ; à la mort du chef,
+    /// les fragiles fuient plus longtemps que les guerriers, et le chef lui-même n'est pas concerné.
+    #[test]
+    fn appel_a_l_aide_et_deroute() {
+        let de = |role: &str| profil(Some(&corps(humanoid::Species::Orc)), (role, "base")).unwrap();
+        let appelle = |p: &Profil| {
+            p.appel_pv.is_some_and(|seuil| seuil > 0.0)
+                && p.reactions.get(&Evenement::Touche).is_some_and(|r| r.iter().any(|(r, poids)| *r == Reaction::AppelerALAide && *poids > 0.0))
+        };
+        assert!(appelle(&de("archer")) && appelle(&de("mage")) && !appelle(&de("guerrier")) && !appelle(&de("chef")));
+        assert!(de("guerrier").defend == Some(true) && de("chef").defend == Some(true) && de("archer").defend != Some(true));
+        assert!(de("guerrier").defend_duree.is_some_and(|d| d > 0.0) && de("archer").appel_delai.is_some_and(|d| d > 0.0));
+        let bruits = bruits();
+        assert!(bruits.portee("appel") > bruits.portee("combat") && bruits.portee("chef") > 0.0);
+        let deroute = |role: &str| de(role).deroute.unwrap_or(0.0);
+        assert!(deroute("guerrier") > 0.0 && deroute("archer") > deroute("guerrier") && deroute("chef") == 0.0);
+        assert!(de("guerrier").reactions[&Evenement::ChefTombe].iter().any(|(r, _)| *r == Reaction::Deroute));
+    }
+
     /// Les scènes d'essai ne nomment que des races et des rôles de l'arène, et tiennent sur le plateau.
     #[test]
     fn scenes_lisibles() {

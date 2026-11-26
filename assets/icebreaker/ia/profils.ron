@@ -50,6 +50,12 @@
 //   enchainement : secondes au plus pendant lesquelles il tient une attaque sans s'arrêter (absent : sans limite) ;
 //   roule, pare : il fait (ou non) les roulades et les parades que sa façon de se battre lui propose ;
 //   un cran peut aussi aiguiser un peu les sens (vue_nette, soupcon, ouie) : ils restent bornés.
+// Appel à l'aide (IA.9) : frappé alors que ses PV sont sous `appel_pv`, il tire (événement Touche) AppelerALAide :
+//   il crie « À l'aide ! » (au plus toutes les `appel_delai` secondes) ; ceux qui l'entendent et `defend` prennent
+//   l'agresseur pour cible `defend_duree` secondes, même s'ils se battaient contre un autre (sans le voir, ils courent
+//   là où le cri le dit) ; les autres viennent voir.
+// Déroute (IA.9) : son chef meurt à portée d'oreille (événement ChefTombe) : il tire Deroute et fuit l'ennemi le plus
+//   proche pendant `deroute` secondes (0 : il tient bon), même si on le frappe ; puis il se reprend et va voir.
 // Défense réactive (IA.7) : un adversaire à moins de `garde` blocs arme un coup de mêlée vers lui (CoupArme) : il
 //   tire une fois Rien, Esquiver (une roulade de côté) ou Parer, et fait ce geste `reaction` secondes plus tard.
 //   Un coup lent est donc esquivé ou paré, une compétence rapide passe. Esquiver ne sort que s'il `roule`, Parer
@@ -79,7 +85,9 @@
             VoitIntrus: [(Combattre, 5.0), (Prevenir, 1.0)],
             AllieTombe: [(AllerVoir, 2.0), (Prevenir, 1.0)],
             Coince: [(SeTapir, 3.0), (Forcer, 2.0)],
+            ChefTombe: [(Deroute, 1.0)],
         },
+        appel_delai: 6.0,
         fuite_memoire: 10.0,
         coince_temps: 1.0,
         coince_portee: 8.0,
@@ -112,9 +120,14 @@
         "draugr": (),
     },
     roles: {
-        "guerrier": (),
-        "archer": (),
+        // Il défend les fragiles ; la mort du chef le fait fuir un instant.
+        "guerrier": (defend: true, defend_duree: 6.0, deroute: 4.0),
+        // Fragile : il appelle à l'aide ; la mort du chef le fait fuir longtemps.
+        "archer": (appel_pv: 0.75, deroute: 8.0, reactions: { Touche: [(AppelerALAide, 1.0)] }),
         "mage": (
+            appel_pv: 0.75,
+            deroute: 8.0,
+            reactions: { Touche: [(AppelerALAide, 1.0)] },
             sorts: [
                 // La boule de feu : de loin, tout le temps.
                 (sort: "firebomb", min: 9.0, max: 40.0, poids: 4.0),
@@ -138,6 +151,8 @@
         // Le chef ne quitte pas les siens et ne fuit jamais (Q70, proposé).
         "chef": (
             fuite: 0.0,
+            defend: true,
+            defend_duree: 6.0,
             reactions: {
                 VoitIntrus: [(Combattre, 1.0)],
                 AllieTombe: [(AllerVoir, 1.0)],

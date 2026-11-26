@@ -25,4 +25,8 @@ pub enum Reaction {
     SeTapir,
     /// Coincé : forcer le passage à travers la menace (`coince.rs`).
     Forcer,
+    /// Frappé : crier « À l'aide ! » (le tronc ; ceux qui défendent viennent sur l'agresseur).
+    AppelerALAide,
+    /// Le chef est tombé : fuir un moment, puis se reprendre (le tronc).
+    Deroute,
 }

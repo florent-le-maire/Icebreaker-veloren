@@ -91,6 +91,8 @@ pub enum Etat {
     Tapi,
     /// Coincé, il force le passage.
     Force,
+    /// Son chef est tombé : il fuit sans réfléchir.
+    Deroute,
 }
 
 /// Ce que l'ennemi veut faire ; le serveur l'exécute.
@@ -200,6 +202,18 @@ pub struct Cerveau {
     forcer: Option<Forcer>,
     /// Il s'est tapi à cette heure.
     tapi: Option<f64>,
+    /// Sa part de PV au tick précédent (un coup la fait baisser).
+    pv_avant: Option<f32>,
+    /// Son dernier appel à l'aide.
+    appel_a: Option<f64>,
+    /// Un appel à l'aide entendu, pas encore traité : l'agresseur, où il est, quand.
+    appel_recu: Option<(Id, Vec3<f32>, f64)>,
+    /// Il vient défendre un allié : l'agresseur, où on le lui a signalé, jusqu'à quelle heure.
+    renfort: Option<(Id, Vec3<f32>, f64)>,
+    /// Son chef vient de tomber là : à lui de tirer sa réaction.
+    chef_tombe: Option<Vec3<f32>>,
+    /// En déroute : ce qu'il fuit, jusqu'à quelle heure.
+    deroute: Option<(Vec3<f32>, f64)>,
 }
 
 impl Default for Cerveau {
@@ -236,6 +250,12 @@ impl Default for Cerveau {
             coince_a: None,
             forcer: None,
             tapi: None,
+            pv_avant: None,
+            appel_a: None,
+            appel_recu: None,
+            renfort: None,
+            chef_tombe: None,
+            deroute: None,
         }
     }
 }
@@ -404,6 +424,8 @@ impl Cerveau {
                 self.allie_tombe = Some((lieu, temps));
                 self.entendre(lieu, temps);
             },
+            Message::Appel { agresseur, lieu } => self.appel_recu = Some((agresseur, lieu, temps)),
+            Message::ChefTombe { lieu } => self.chef_tombe = Some(lieu),
         }
     }
 
@@ -414,7 +436,7 @@ impl Cerveau {
         let poids = profil.reactions.get(&evenement)?;
         let delai = match evenement {
             Evenement::VoitIntrus | Evenement::AllieTombe => profil.tirage_delai.unwrap_or(0.0),
-            Evenement::CoupArme | Evenement::Coince => 0.0,
+            Evenement::CoupArme | Evenement::Coince | Evenement::Touche | Evenement::ChefTombe => 0.0,
         };
         if self.tirages.iter().any(|(e, quand)| *e == evenement && obs.temps - quand < delai) {
             return None;
@@ -427,7 +449,13 @@ impl Cerveau {
                 Reaction::Prevenir => prevenir::qui(obs).is_some(),
                 Reaction::Esquiver => profil.roule.unwrap_or(true),
                 Reaction::Parer => profil.pare.unwrap_or(true) && obs.peut_parer,
-                Reaction::Combattre | Reaction::AllerVoir | Reaction::Rien | Reaction::SeTapir | Reaction::Forcer => true,
+                Reaction::Combattre
+                | Reaction::AllerVoir
+                | Reaction::Rien
+                | Reaction::SeTapir
+                | Reaction::Forcer
+                | Reaction::AppelerALAide
+                | Reaction::Deroute => true,
             })
             .copied()
             .collect();
@@ -464,6 +492,61 @@ impl Cerveau {
             self.attaque_depuis.get_or_insert(obs.temps);
         }
         self.retenu = false;
+        let fuirait = profil.fuite.is_some_and(|seuil| obs.pv < seuil);
+
+        // On le frappe (ses PV baissent) alors qu'il est sous `appel_pv` : il tire sa réaction ; l'appel à
+        // l'aide dit qui l'a frappé et où il est.
+        let touche = self.pv_avant.is_some_and(|avant| obs.pv < avant);
+        self.pv_avant = Some(obs.pv);
+        if touche
+            && profil.appel_pv.is_some_and(|seuil| obs.pv < seuil)
+            && self.appel_a.is_none_or(|avant| obs.temps - avant >= profil.appel_delai.unwrap_or(0.0))
+            && let Some(agresseur) = obs
+                .percus
+                .iter()
+                .filter(|p| p.l_a_frappe_depuis.is_some())
+                .min_by(|a, b| a.l_a_frappe_depuis.unwrap_or(f64::MAX).total_cmp(&b.l_a_frappe_depuis.unwrap_or(f64::MAX)))
+            && self.tirer(Evenement::Touche, obs, profil) == Some(Reaction::AppelerALAide)
+        {
+            self.appel_a = Some(obs.temps);
+            self.cris.push(Message::Appel { agresseur: agresseur.id, lieu: agresseur.pos });
+        }
+
+        // Un appel à l'aide entendu : celui qui défend vient sur l'agresseur, les autres viennent voir.
+        if let Some((agresseur, lieu, quand)) = self.appel_recu.take() {
+            if profil.defend == Some(true) && !fuirait {
+                self.renfort = Some((agresseur, lieu, quand + profil.defend_duree.unwrap_or(0.0)));
+            } else {
+                self.entendre(lieu, quand);
+            }
+        }
+
+        // Son chef est tombé : il tire sa réaction. En déroute, il fuit l'ennemi le plus proche (ou l'endroit
+        // où le chef est tombé), même si on le frappe ; puis il se reprend et va voir où était la menace.
+        if let Some(lieu) = self.chef_tombe.take()
+            && let Some(duree) = profil.deroute.filter(|duree| *duree > 0.0)
+            && self.tirer(Evenement::ChefTombe, obs, profil) == Some(Reaction::Deroute)
+        {
+            self.deroute = Some((lieu, obs.temps + duree));
+        }
+        if let Some((menace, fin)) = self.deroute {
+            if obs.temps <= fin {
+                let proche = obs.percus.iter().min_by(|a, b| {
+                    a.pos.distance_squared(obs.pos).total_cmp(&b.pos.distance_squared(obs.pos))
+                });
+                let menace = proche.map_or(menace, |p| p.pos);
+                self.deroute = Some((menace, fin));
+                self.cible = None;
+                self.prevenir = None;
+                self.renfort = None;
+                self.enquete = None;
+                self.fin_de_fuite();
+                self.etat = Etat::Deroute;
+                return Intention::Fuir(menace);
+            }
+            self.deroute = None;
+            self.enquete = Some(Enquete { lieu: menace, depuis: obs.temps, sur_place: None });
+        }
 
         // Parti prévenir : il court vers l'allié sans se retourner, crie à portée de voix, puis
         // retourne voir là où étaient les intrus.
@@ -512,10 +595,37 @@ impl Cerveau {
             }
         }
 
+        // Il vient défendre un allié : l'agresseur est sa cible s'il le perçoit ; sinon il court là où on le
+        // lui a signalé, même s'il se battait contre un autre.
+        let mut defend = false;
+        if let Some((agresseur, lieu, jusqu_a)) = self.renfort {
+            if obs.temps > jusqu_a || dehors {
+                self.renfort = None;
+            } else if let Some(p) = obs.percus.iter().find(|p| p.id == agresseur) {
+                if self.cible != Some(agresseur) {
+                    self.cible = Some(agresseur);
+                    self.choisie_a = obs.temps;
+                }
+                vue = true;
+                defend = true;
+                self.percue_a = obs.temps;
+                self.percue_en = p.pos;
+                self.enquete = None;
+            } else if obs.pos.distance(lieu) <= arrivee {
+                self.renfort = None;
+                self.enquete = Some(Enquete { lieu, depuis: obs.temps, sur_place: None });
+            } else {
+                self.cible = None;
+                self.etat = Etat::Enquete;
+                return Intention::AllerVoir(lieu);
+            }
+        }
+
         // Il (re)choisit : sans cible, à intervalles, ou dès que sa cible tombe à terre.
         let depuis = obs.temps - self.choisie_a;
         let a_terre = self.cible.is_some_and(|c| obs.percus.iter().any(|p| p.id == c && p.a_terre));
         let a_choisir = !dehors
+            && !defend
             && (self.cible.is_none()
                 || profil.reciblage_de(obs.moi).is_some_and(|delai| depuis > delai)
                 || (a_terre && depuis > 0.5));
@@ -579,7 +689,6 @@ impl Cerveau {
         }
 
         // Un des siens est tombé : il tire sa réaction (aller voir, comme pour un bruit, ou prévenir).
-        let fuirait = profil.fuite.is_some_and(|seuil| obs.pv < seuil);
         if let Some((lieu, _)) = self.allie_tombe.take()
             && !dehors
             && !fuirait
@@ -1507,6 +1616,142 @@ mod tests {
         assert_eq!(c.tick(&blesse(6.0, coin, menace, 0.8), &fuyard()), Intention::Fuir(menace));
         // 3 s après sa dernière réaction (et de nouveau bloqué depuis 1 s) : il en tire une autre.
         assert_eq!(c.tick(&blesse(8.4, coin, menace, 0.2), &fuyard()), Intention::SeTapir(menace));
+    }
+
+    // --- IA.9 : appel à l'aide et déroute ---
+
+    /// Un archer : fragile, il appelle à l'aide quand on le frappe sous 75 % de ses PV.
+    fn archer() -> Profil {
+        Profil {
+            appel_pv: Some(0.75),
+            appel_delai: Some(6.0),
+            reactions: HashMap::from([(Evenement::Touche, vec![(Reaction::AppelerALAide, 1.0)])]),
+            ..orc()
+        }
+    }
+
+    /// Un guerrier : il défend ceux qui appellent, et la mort du chef le met en déroute 4 s.
+    fn guerrier() -> Profil {
+        Profil {
+            defend: Some(true),
+            defend_duree: Some(6.0),
+            deroute: Some(4.0),
+            reactions: HashMap::from([(Evenement::ChefTombe, vec![(Reaction::Deroute, 1.0)])]),
+            ..orc()
+        }
+    }
+
+    /// Lui, à `pv`, face au joueur 1 à 3 blocs qui vient (ou non) de le frapper.
+    fn frappe(temps: f64, pv: f32, vient_de_frapper: bool) -> Observation {
+        let agresseur = Percu { l_a_frappe_depuis: vient_de_frapper.then_some(0.05), ..joueur(1, 3.0) };
+        Observation { pv, ..obs(temps, vec![agresseur]) }
+    }
+
+    /// « Les fragiles crient À l'aide quand on les frappe : l'archer sous 75 % de ses PV. » Le
+    /// cri dit qui l'a frappé, et où il est.
+    #[test]
+    fn l_archer_frappe_appelle_a_l_aide() {
+        let mut c = Cerveau::default();
+        c.tick(&frappe(0.0, 1.0, false), &archer());
+        // Un premier coup le laisse à 80 % : il ne crie pas.
+        c.tick(&frappe(1.0, 0.8, true), &archer());
+        assert!(c.cris().is_empty());
+        // Le suivant le fait passer sous 75 %.
+        assert_eq!(c.tick(&frappe(2.0, 0.7, true), &archer()), Intention::Combattre(1));
+        assert_eq!(c.cris(), vec![Message::Appel { agresseur: 1, lieu: en(3.0, 0.0) }]);
+        // Un guerrier, lui, ne crie pas.
+        let mut c = Cerveau::default();
+        c.tick(&frappe(0.0, 1.0, false), &guerrier());
+        c.tick(&frappe(1.0, 0.5, true), &guerrier());
+        assert!(c.cris().is_empty());
+    }
+
+    /// « Au plus une fois toutes les 6 s. »
+    #[test]
+    fn un_appel_toutes_les_six_secondes_au_plus() {
+        let mut c = Cerveau::default();
+        c.tick(&frappe(0.0, 1.0, false), &archer());
+        c.tick(&frappe(1.0, 0.7, true), &archer());
+        assert_eq!(c.cris().len(), 1);
+        c.tick(&frappe(3.0, 0.6, true), &archer());
+        assert!(c.cris().is_empty());
+        c.tick(&frappe(8.0, 0.5, true), &archer());
+        assert_eq!(c.cris().len(), 1);
+        // Sans nouveau coup, pas de nouveau cri.
+        c.tick(&frappe(20.0, 0.5, false), &archer());
+        assert!(c.cris().is_empty());
+    }
+
+    /// « Les brutes et le chef défendent : s'ils entendent l'appel, ils prennent l'agresseur pour
+    /// cible (même s'ils se battaient contre un autre joueur). » Sans le voir, ils courent là où
+    /// l'appel le dit ; après 6 s, ils choisissent de nouveau comme d'habitude.
+    #[test]
+    fn le_guerrier_qui_entend_l_appel_prend_l_agresseur_pour_cible() {
+        let autre = joueur(2, 4.0);
+        let agresseur = Percu { pos: en(-20.0, 0.0), ..joueur(1, 0.0) };
+        let mut c = Cerveau::default();
+        assert_eq!(c.tick(&obs(0.0, vec![autre.clone()]), &guerrier()), Intention::Combattre(2));
+        c.recevoir(Message::Appel { agresseur: 1, lieu: en(-20.0, 0.0) }, 1.0);
+        // Il ne voit pas l'agresseur : il quitte son combat et court là où on l'appelle.
+        assert_eq!(c.tick(&obs(1.0, vec![autre.clone()]), &guerrier()), Intention::AllerVoir(en(-20.0, 0.0)));
+        // Il le voit : c'est sa cible, même si l'autre joueur est plus près.
+        assert_eq!(c.tick(&obs(2.0, vec![autre.clone(), agresseur.clone()]), &guerrier()), Intention::Combattre(1));
+        assert_eq!(c.tick(&obs(5.0, vec![autre.clone(), agresseur.clone()]), &guerrier()), Intention::Combattre(1));
+        // Passé 6 s, il rechoisit comme d'habitude (au reciblage) : le plus proche.
+        assert_eq!(c.tick(&obs(11.0, vec![autre, agresseur]), &guerrier()), Intention::Combattre(2));
+    }
+
+    /// « Les autres créatures qui l'entendent viennent seulement voir. »
+    #[test]
+    fn celui_qui_ne_defend_pas_vient_seulement_voir() {
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![]), &archer());
+        c.recevoir(Message::Appel { agresseur: 1, lieu: en(-20.0, 0.0) }, 1.0);
+        assert_eq!(c.tick(&obs(1.0, vec![]), &archer()), Intention::AllerVoir(en(-20.0, 0.0)));
+        assert_eq!(c.etat(), Etat::Enquete);
+        // En plein combat, il ne lâche pas sa cible pour autant.
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![joueur(2, 4.0)]), &archer());
+        c.recevoir(Message::Appel { agresseur: 1, lieu: en(-20.0, 0.0) }, 1.0);
+        assert_eq!(c.tick(&obs(1.0, vec![joueur(2, 4.0)]), &archer()), Intention::Combattre(2));
+    }
+
+    /// « Quand le chef tombe […] les créatures qui l'entendent sont en déroute : brute 4 s. En
+    /// déroute, une créature fuit l'ennemi le plus proche, même si on la frappe. Ensuite elle se
+    /// reprend et va voir où était la menace. »
+    #[test]
+    fn la_mort_du_chef_met_sa_garde_en_deroute() {
+        let chef_tombe = en(0.0, 10.0);
+        let mut c = Cerveau::default();
+        assert_eq!(c.tick(&obs(0.0, vec![joueur(1, 3.0)]), &guerrier()), Intention::Combattre(1));
+        c.recevoir(Message::ChefTombe { lieu: chef_tombe }, 1.0);
+        assert_eq!(c.tick(&obs(1.0, vec![joueur(1, 3.0), joueur(2, 9.0)]), &guerrier()), Intention::Fuir(en(3.0, 0.0)));
+        assert_eq!(c.etat(), Etat::Deroute);
+        assert_eq!(c.cible(), None);
+        // On le frappe : il fuit toujours.
+        assert_eq!(c.tick(&frappe(3.0, 0.5, true), &guerrier()), Intention::Fuir(en(3.0, 0.0)));
+        // Sans plus voir personne, il fuit encore là où était la menace.
+        assert_eq!(c.tick(&obs_en(4.5, en(-12.0, 0.0), vec![]), &guerrier()), Intention::Fuir(en(3.0, 0.0)));
+        // 4 s après : il se reprend et va voir où était la menace.
+        assert_eq!(c.tick(&obs_en(5.5, en(-15.0, 0.0), vec![]), &guerrier()), Intention::AllerVoir(en(3.0, 0.0)));
+        assert_eq!(c.etat(), Etat::Enquete);
+    }
+
+    /// Sans ennemi en vue, il fuit l'endroit où le chef est tombé ; celui dont le profil dit « tient
+    /// bon » (déroute de 0 s, ou pas de réaction) continue.
+    #[test]
+    fn deroute_sans_ennemi_en_vue_et_ceux_qui_tiennent_bon() {
+        let chef_tombe = en(0.0, 10.0);
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![]), &guerrier());
+        c.recevoir(Message::ChefTombe { lieu: chef_tombe }, 1.0);
+        assert_eq!(c.tick(&obs(1.0, vec![]), &guerrier()), Intention::Fuir(chef_tombe));
+        for tient_bon in [Profil { deroute: Some(0.0), ..guerrier() }, Profil { deroute: Some(4.0), ..orc() }] {
+            let mut c = Cerveau::default();
+            c.tick(&obs(0.0, vec![joueur(1, 3.0)]), &tient_bon);
+            c.recevoir(Message::ChefTombe { lieu: chef_tombe }, 1.0);
+            assert_eq!(c.tick(&obs(1.0, vec![joueur(1, 3.0)]), &tient_bon), Intention::Combattre(1));
+        }
     }
 
     /// `menace.md`, principe 1 : « les créatures ne trichent pas ». Deux cerveaux qui reçoivent les

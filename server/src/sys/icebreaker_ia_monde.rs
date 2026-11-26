@@ -17,7 +17,7 @@ use common::{
     uid::Uid,
 };
 use common_ecs::{Job, Origin, Phase, System};
-use hashbrown::HashSet;
+use hashbrown::{HashMap, HashSet};
 use specs::{Entities, Entity, Join, Read, ReadStorage, Write, WriteStorage};
 use vek::Vec3;
 
@@ -56,8 +56,8 @@ pub struct IcebreakerIaMonde {
     coups: Coups,
     /// Les bruits demandés par ailleurs (lieu d'entraînement), à faire entendre au prochain tick.
     demandes: Vec<(&'static str, Vec3<f32>)>,
-    /// Nos ennemis en vie au tick précédent : un mort qui en était est un allié tombé.
-    connus: HashSet<Entity>,
+    /// Nos ennemis en vie au tick précédent (et s'ils sont chefs) : un mort qui en était est un allié tombé.
+    connus: HashMap<Entity, bool>,
 }
 
 impl IcebreakerIaMonde {
@@ -73,6 +73,8 @@ enum Son {
     Mort(Vec3<f32>),
     /// Le cri d'un des nôtres, fait là.
     Cri(Entity, Vec3<f32>, Message),
+    /// Le chef des nôtres est tombé là.
+    Chef(Vec3<f32>),
 }
 
 /// Ce qu'un ennemi dit quand il crie ce message.
@@ -80,6 +82,8 @@ fn paroles(message: &Message) -> &'static str {
     match message {
         Message::Signalement { .. } => "Des intrus !",
         Message::AllieTombe { .. } => "Il est tombé !",
+        Message::Appel { .. } => "À l'aide !",
+        Message::ChefTombe { .. } => "Le chef est tombé !",
     }
 }
 
@@ -116,9 +120,17 @@ impl<'a> System<'a> for Sys {
             .map(|(pos, _)| Son::Bruit("combat", pos.0))
             .collect();
         monde.coups.fin(time.0);
-        sons.extend(morts.0.iter().map(|(entite, pos)| {
-            if monde.connus.contains(entite) { Son::Mort(pos.0) } else { Son::Bruit("mort", pos.0) }
-        }));
+        for (entite, pos) in &morts.0 {
+            match monde.connus.get(entite) {
+                Some(chef) => {
+                    sons.push(Son::Mort(pos.0));
+                    if *chef {
+                        sons.push(Son::Chef(pos.0));
+                    }
+                },
+                None => sons.push(Son::Bruit("mort", pos.0)),
+            }
+        }
         let demandes = std::mem::take(&mut monde.demandes);
         sons.extend(demandes.into_iter().map(|(sorte, lieu)| Son::Bruit(sorte, lieu)));
 
@@ -130,8 +142,11 @@ impl<'a> System<'a> for Sys {
             .join()
             .filter(|(.., body, alignment)| matches!(alignment, Alignment::Enemy) && body.is_humanoid())
         {
-            monde.connus.insert(entite);
-            let Some(cerveau) = agent.icebreaker_ia.as_mut() else { continue };
+            let Some(cerveau) = agent.icebreaker_ia.as_mut() else {
+                monde.connus.insert(entite, false);
+                continue;
+            };
+            monde.connus.insert(entite, cerveau.fiche().0 == "chef");
             allies.0.push(Allie {
                 id: uid.0.get(),
                 pos: pos.0,
@@ -163,7 +178,9 @@ impl<'a> System<'a> for Sys {
                     Son::Bruit(sorte, lieu) => (*sorte, *lieu),
                     Son::Mort(lieu) => ("mort", *lieu),
                     Son::Cri(auteur, ..) if *auteur == entite => continue,
+                    Son::Cri(_, lieu, Message::Appel { .. }) => ("appel", *lieu),
                     Son::Cri(_, lieu, _) => ("cri", *lieu),
+                    Son::Chef(lieu) => ("chef", *lieu),
                 };
                 if !portees.entend(sorte, finesse, lieu - pos.0) {
                     continue;
@@ -178,6 +195,7 @@ impl<'a> System<'a> for Sys {
                     Son::Bruit(..) => cerveau.entendre(lieu, time.0),
                     Son::Mort(lieu) => cerveau.recevoir(Message::AllieTombe { lieu: *lieu }, time.0),
                     Son::Cri(_, _, message) => cerveau.recevoir(*message, time.0),
+                    Son::Chef(lieu) => cerveau.recevoir(Message::ChefTombe { lieu: *lieu }, time.0),
                 }
                 tracing::debug!(sorte, ?lieu, "Icebreaker IA : un ennemi entend");
             }

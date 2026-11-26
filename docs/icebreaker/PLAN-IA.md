@@ -84,8 +84,12 @@ Règles de conduite :
   Scène `fuyard` (un danari à 25 % de ses PV). Testé ; client texte : « fuite ! », il court à 36 blocs, « repos »
   10 s plus tard, sans revenir. Pas vu : coincé (l'arène n'a pas de mur), se cacher derrière un angle (pas codé :
   il se tapit sur place), le vrai client.
-- [ ] **IA.9 Appel à l'aide et déroute** (ex-G.12, G.13).
-  *Fin* : frapper l'archer fait venir le guerrier voisin ; tuer le chef disperse sa garde.
+- [x] **IA.9 Appel à l'aide et déroute** (ex-G.12, G.13) — archer et mage frappés sous 75 % de leurs PV crient
+  « À l'aide ! » (30 blocs, toutes les 6 s au plus) ; guerriers et chef qui l'entendent prennent l'agresseur pour
+  cible 6 s (sans le voir, ils courent où le cri le dit), les autres viennent voir ; à la mort du chef (24 blocs) :
+  « Fuite ! », guerriers 4 s, archers et mages 8 s, puis ils reviennent voir. Scènes `appel` et `garde`. Testé ;
+  client texte : « À l'aide ! » puis le guerrier éloigné arrive ; chef tué, trois « Fuite ! » puis retour. Pas vu :
+  le vrai client, le guerrier qui quitte un autre combat pour venir.
 - [ ] **IA.10 Ordres** — boîte d'ordres ; les rondes humaines (Y.3) passent dessus.
   *Fin* : la ronde tourne comme avant ; une ronde qui entend un combat enquête, puis reprend.
 - [ ] **IA.11 Une race en plus** — Y.4, orcs en rage : une réaction et trois lignes de profil, tronc intact.

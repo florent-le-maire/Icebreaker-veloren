@@ -12,6 +12,10 @@
         "mort": 28.0,
         // Un ennemi crie aux siens (« Des intrus ! », IA.4) : ceux qui l'entendent reçoivent ce qu'il a à dire.
         "cri": 24.0,
+        // « À l'aide ! » (IA.9) : ceux qui défendent viennent sur l'agresseur, les autres viennent voir.
+        "appel": 30.0,
+        // Le chef meurt (IA.9) : ceux qui l'entendent peuvent partir en déroute.
+        "chef": 24.0,
     },
     // Ce que compte un bloc d'écart de hauteur : 2 = un étage au-dessus s'entend de deux fois moins loin.
     hauteur: 2.0,
