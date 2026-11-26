@@ -323,7 +323,7 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
   encore vu sur GitHub. `dd991211`
 - [x] **S.8 La Release d'une version déploie le serveur** — jobs `serveur` (ARM64 croisé, Ubuntu 22.04) et
   `deployer` (`deployer.sh`, environnement GitHub `vps`) ; pas pour `dernier-build`. YAML relu et contrôle du service
-  essayé en local ; pas encore lancé sur GitHub, secrets à créer (MAINTENANCE.md § 4).
+  essayé en local ; pas encore lancé sur GitHub, secrets à créer (MAINTENANCE.md § 4). `e41c9e62`
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
   avec Sayanel (`0015`). Contenu à confirmer (`QUESTIONS.md`, Q1).
 
