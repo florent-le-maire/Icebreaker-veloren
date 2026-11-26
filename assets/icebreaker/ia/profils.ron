@@ -1,5 +1,5 @@
 // Icebreaker IA : les réglages de la décision de nos ennemis humanoïdes (crate icebreaker-ia,
-// docs/icebreaker/PLAN-IA.md, design/creatures.md « Pour Veloren »). Rechargé à chaud.
+// docs/icebreaker/PLAN-IA.md, design/creatures.md « Pour Veloren »). Lu au lancement du serveur.
 //
 // Le profil d'un ennemi = `commun`, puis sa race, puis son rôle (`roles` : le nom de sa fiche de ennemis/), puis son
 // cran d'habileté (`crans` : les clés de difficulte.ron) : chaque couche ne dit que ce qui la distingue.
@@ -38,6 +38,12 @@
 //   tirage_delai : secondes au moins entre deux tirages du même événement ;
 //   prevenir_a : distance (blocs) à l'allié à laquelle le messager crie ;
 //   voisinage : rayon (blocs) dans lequel il connaît les postes des siens.
+// Habileté (IA.5) : ce que le cran de la difficulté (difficulte.ron → `ia`) change, dans `crans` plus bas.
+//   reaction : secondes entre le moment où il repère un intrus et son premier coup ;
+//   pause : temps mort (secondes) après chacune de ses attaques ;
+//   enchainement : secondes au plus pendant lesquelles il tient une attaque sans s'arrêter (absent : sans limite) ;
+//   roule, pare : il fait (ou non) les roulades et les parades que sa façon de se battre lui propose ;
+//   un cran peut aussi aiguiser un peu les sens (vue_nette, soupcon, ouie) : ils restent bornés.
 #![enable(implicit_some)]
 (
     commun: (
@@ -93,5 +99,12 @@
                 AllieTombe: [(AllerVoir, 1.0)],
             },
         ),
+    },
+    crans: {
+        // Il frappe simple et laisse des temps morts.
+        "base": (reaction: 0.8, pause: 1.4, enchainement: 0.8, roule: false, pare: false),
+        "aguerri": (reaction: 0.45, pause: 0.7, enchainement: 2.0, roule: false, pare: true, vue_nette: 20.0),
+        // Il roule, pare et enchaîne.
+        "veteran": (reaction: 0.25, pause: 0.15, roule: true, pare: true, vue_nette: 22.0, soupcon: 0.9, ouie: 1.2),
     },
 )

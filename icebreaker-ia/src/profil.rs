@@ -1,100 +1,104 @@
-//! Les réglages d'un ennemi : ceux de sa race posés sur ceux qui sont communs à toutes
-//! (`assets/icebreaker/ia/profils.ron`). Tout est facultatif : une race ne dit que ce qui la distingue.
+//! Les réglages d'un ennemi : ceux de sa race, de son rôle et de son cran d'habileté, posés sur ceux
+//! qui sont communs à tous (`assets/icebreaker/ia/profils.ron`). Tout est facultatif : une couche ne
+//! dit que ce qui la distingue.
 
 use crate::{evenements::Evenement, reactions::Reaction};
 use serde::Deserialize;
 use std::collections::HashMap;
 
-/// Les réglages d'un ennemi, une fois sa race posée sur le commun.
-#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
-#[serde(default)]
-pub struct Profil {
-    // --- Vue (IA.2) ---
-    /// Jusqu'où il voit devant lui (blocs) ; au-delà de `vue_nette`, il ne fait que soupçonner.
-    pub vue: Option<f32>,
-    /// Jusqu'où il reconnaît tout de suite ce qu'il voit.
-    pub vue_nette: Option<f32>,
-    /// Largeur de son cône de vue, en degrés.
-    pub cone: Option<f32>,
-    /// Rayon dans lequel il perçoit aussi dans son dos.
-    pub dos: Option<f32>,
-    /// Secondes pendant lesquelles il doit garder un soupçon en vue pour le repérer.
-    pub soupcon: Option<f64>,
-    // --- Ouïe (IA.3) ---
-    /// Finesse d'ouïe : facteur sur la portée des bruits (`bruits.ron`) ; rien = sourd.
-    pub ouie: Option<f32>,
-    // --- Chercher (IA.2) ---
-    /// Secondes pendant lesquelles il court vers la dernière position connue d'une cible perdue de vue.
-    pub poursuite: Option<f64>,
-    /// Secondes qu'il passe à fouiller du regard l'endroit où il est venu voir.
-    pub fouille: Option<f64>,
-    /// Secondes au plus pour rejoindre l'endroit à fouiller ; au-delà, il renonce.
-    pub trajet: Option<f64>,
-    /// Distance (blocs) à laquelle un endroit est atteint.
-    pub arrivee: Option<f32>,
-    /// Blocs au plus entre lui et son poste pendant un combat ; au-delà, il lâche sa cible et rentre.
-    pub laisse: Option<f32>,
-    // --- Choix de cible (Y.2, Y.9) ---
-    /// Achever : un joueur à terre à moins de ce rayon (blocs) passe en tête des cibles.
-    pub acheve: Option<f32>,
-    /// Il n'achève qu'à plusieurs : ce nombre de membres de la race (lui compris) à moins de
-    /// `meute_rayon` blocs ; seul, il vise d'abord un joueur debout. Rien = il achève toujours.
-    pub meute: Option<usize>,
-    pub meute_rayon: Option<f32>,
-    /// Contre de l'achèvement : celui qui vient de le frapper (depuis moins de ces secondes) passe
-    /// avant un joueur à terre.
-    pub provoque_par_coup: Option<f64>,
-    /// Secondes entre deux choix de cible pendant un combat, ± 25 % selon la créature.
-    pub reciblage: Option<f64>,
-    /// Blocs « ajoutés » à la distance d'une cible par allié qui la vise déjà (0 = le plus proche).
-    pub repartition: Option<f32>,
-    // --- Réactions (IA.4) ---
-    /// Par événement : les réactions qu'il tire, avec leur poids. Un événement absent : ce que fait le tronc.
-    pub reactions: HashMap<Evenement, Vec<(Reaction, f32)>>,
-    /// Secondes au moins entre deux tirages du même événement.
-    pub tirage_delai: Option<f64>,
-    /// Distance (blocs) à l'allié à laquelle celui qui vient prévenir crie.
-    pub prevenir_a: Option<f32>,
-    /// Rayon (blocs) dans lequel il connaît les postes des siens.
-    pub voisinage: Option<f32>,
-    // --- Fuite ---
-    /// Part de ses PV (0 à 1) sous laquelle il fuit ; rien = ne fuit pas.
-    pub fuite: Option<f32>,
+/// Déclare les réglages facultatifs du profil, et la fusion de deux couches : un réglage ajouté ici
+/// ne peut pas être oublié par `sur`.
+macro_rules! profil {
+    ($( $(#[$doc:meta])* $champ:ident : $ty:ty, )*) => {
+        /// Les réglages d'un ennemi, une fois ses couches posées sur le commun.
+        #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+        #[serde(default)]
+        pub struct Profil {
+            $( $(#[$doc])* pub $champ: Option<$ty>, )*
+            /// Par événement : les réactions qu'il tire, avec leur poids. Un événement absent : ce
+            /// que fait le tronc.
+            pub reactions: HashMap<Evenement, Vec<(Reaction, f32)>>,
+        }
+
+        impl Profil {
+            /// Ces réglages posés sur `base` : ce qui est dit ici l'emporte, le reste vient de `base`.
+            pub fn sur(&self, base: &Profil) -> Profil {
+                Profil {
+                    $( $champ: self.$champ.clone().or_else(|| base.$champ.clone()), )*
+                    reactions: {
+                        // Événement par événement : la liste d'ici remplace celle de la base.
+                        let mut reactions = base.reactions.clone();
+                        reactions.extend(self.reactions.clone());
+                        reactions
+                    },
+                }
+            }
+        }
+    };
 }
 
-impl Profil {
-    /// Ces réglages posés sur `base` : ce qui est dit ici l'emporte, le reste vient de `base`.
-    pub fn sur(&self, base: &Profil) -> Profil {
-        Profil {
-            vue: self.vue.or(base.vue),
-            vue_nette: self.vue_nette.or(base.vue_nette),
-            cone: self.cone.or(base.cone),
-            dos: self.dos.or(base.dos),
-            soupcon: self.soupcon.or(base.soupcon),
-            ouie: self.ouie.or(base.ouie),
-            poursuite: self.poursuite.or(base.poursuite),
-            fouille: self.fouille.or(base.fouille),
-            trajet: self.trajet.or(base.trajet),
-            arrivee: self.arrivee.or(base.arrivee),
-            laisse: self.laisse.or(base.laisse),
-            acheve: self.acheve.or(base.acheve),
-            meute: self.meute.or(base.meute),
-            meute_rayon: self.meute_rayon.or(base.meute_rayon),
-            provoque_par_coup: self.provoque_par_coup.or(base.provoque_par_coup),
-            reciblage: self.reciblage.or(base.reciblage),
-            repartition: self.repartition.or(base.repartition),
-            reactions: {
-                // Événement par événement : la liste d'ici remplace celle de la base.
-                let mut reactions = base.reactions.clone();
-                reactions.extend(self.reactions.clone());
-                reactions
-            },
-            tirage_delai: self.tirage_delai.or(base.tirage_delai),
-            prevenir_a: self.prevenir_a.or(base.prevenir_a),
-            voisinage: self.voisinage.or(base.voisinage),
-            fuite: self.fuite.or(base.fuite),
-        }
-    }
+profil! {
+    // --- Vue (IA.2) ---
+    /// Jusqu'où il voit devant lui (blocs) ; au-delà de `vue_nette`, il ne fait que soupçonner.
+    vue: f32,
+    /// Jusqu'où il reconnaît tout de suite ce qu'il voit.
+    vue_nette: f32,
+    /// Largeur de son cône de vue, en degrés.
+    cone: f32,
+    /// Rayon dans lequel il perçoit aussi dans son dos.
+    dos: f32,
+    /// Secondes pendant lesquelles il doit garder un soupçon en vue pour le repérer.
+    soupcon: f64,
+    // --- Ouïe (IA.3) ---
+    /// Finesse d'ouïe : facteur sur la portée des bruits (`bruits.ron`) ; rien = sourd.
+    ouie: f32,
+    // --- Chercher (IA.2) ---
+    /// Secondes pendant lesquelles il court vers la dernière position connue d'une cible perdue de vue.
+    poursuite: f64,
+    /// Secondes qu'il passe à fouiller du regard l'endroit où il est venu voir.
+    fouille: f64,
+    /// Secondes au plus pour rejoindre l'endroit à fouiller ; au-delà, il renonce.
+    trajet: f64,
+    /// Distance (blocs) à laquelle un endroit est atteint.
+    arrivee: f32,
+    /// Blocs au plus entre lui et son poste pendant un combat ; au-delà, il lâche sa cible et rentre.
+    laisse: f32,
+    // --- Choix de cible (Y.2, Y.9) ---
+    /// Achever : un joueur à terre à moins de ce rayon (blocs) passe en tête des cibles.
+    acheve: f32,
+    /// Il n'achève qu'à plusieurs : ce nombre de membres de la race (lui compris) à moins de
+    /// `meute_rayon` blocs ; seul, il vise d'abord un joueur debout. Rien = il achève toujours.
+    meute: usize,
+    meute_rayon: f32,
+    /// Contre de l'achèvement : celui qui vient de le frapper (depuis moins de ces secondes) passe
+    /// avant un joueur à terre.
+    provoque_par_coup: f64,
+    /// Secondes entre deux choix de cible pendant un combat, ± 25 % selon la créature.
+    reciblage: f64,
+    /// Blocs « ajoutés » à la distance d'une cible par allié qui la vise déjà (0 = le plus proche).
+    repartition: f32,
+    // --- Réactions (IA.4) ---
+    /// Secondes au moins entre deux tirages du même événement.
+    tirage_delai: f64,
+    /// Distance (blocs) à l'allié à laquelle celui qui vient prévenir crie.
+    prevenir_a: f32,
+    /// Rayon (blocs) dans lequel il connaît les postes des siens.
+    voisinage: f32,
+    // --- Habileté (IA.5) : ce que règle le cran ---
+    /// Délai de réaction : secondes entre le moment où il repère un intrus et son premier coup.
+    reaction: f64,
+    /// Temps mort : secondes sans attaquer après chacune de ses attaques.
+    pause: f64,
+    /// Secondes au plus pendant lesquelles il tient une attaque sans s'arrêter (un enchaînement, un
+    /// rayon) ; rien = tant qu'il veut.
+    enchainement: f64,
+    /// Il fait les roulades que sa façon de se battre lui propose.
+    roule: bool,
+    /// Il pare quand sa façon de se battre le lui propose.
+    pare: bool,
+    // --- Fuite ---
+    /// Part de ses PV (0 à 1) sous laquelle il fuit ; rien = ne fuit pas.
+    fuite: f32,
 }
 
 /// Le fichier `profils.ron`.
@@ -164,35 +168,30 @@ mod tests {
         assert_eq!(profils.profil("x", "?", "?").ouie, Some(2.0));
     }
 
-    /// Chaque réglage se pose sur le commun : un champ oublié dans `sur` ferait perdre le réglage
-    /// d'une race sans que rien ne le dise.
+    /// Une couche se pose sur une autre réglage par réglage, et événement par événement pour les
+    /// réactions (la fusion est écrite par la macro `profil!` : aucun réglage ne peut y manquer).
     #[test]
-    fn aucun_champ_n_est_oublie_par_la_fusion() {
-        let tout = Profil {
+    fn une_couche_se_pose_reglage_par_reglage() {
+        let base = Profil {
             vue: Some(1.0),
-            vue_nette: Some(1.0),
-            cone: Some(1.0),
-            dos: Some(1.0),
-            soupcon: Some(1.0),
-            ouie: Some(1.0),
-            poursuite: Some(1.0),
-            fouille: Some(1.0),
-            trajet: Some(1.0),
-            arrivee: Some(1.0),
-            laisse: Some(1.0),
-            acheve: Some(1.0),
-            meute: Some(1),
-            meute_rayon: Some(1.0),
-            provoque_par_coup: Some(1.0),
-            reciblage: Some(1.0),
-            repartition: Some(1.0),
-            reactions: HashMap::from([(Evenement::VoitIntrus, vec![(Reaction::Prevenir, 1.0)])]),
-            tirage_delai: Some(1.0),
-            prevenir_a: Some(1.0),
-            voisinage: Some(1.0),
-            fuite: Some(1.0),
+            roule: Some(false),
+            reactions: HashMap::from([
+                (Evenement::VoitIntrus, vec![(Reaction::Prevenir, 1.0)]),
+                (Evenement::AllieTombe, vec![(Reaction::Prevenir, 1.0)]),
+            ]),
+            ..Profil::default()
         };
-        assert_eq!(tout.sur(&Profil::default()), tout);
-        assert_eq!(Profil::default().sur(&tout), tout);
+        let couche = Profil {
+            roule: Some(true),
+            pause: Some(2.0),
+            reactions: HashMap::from([(Evenement::VoitIntrus, vec![(Reaction::Combattre, 1.0)])]),
+            ..Profil::default()
+        };
+        let p = couche.sur(&base);
+        assert_eq!((p.vue, p.roule, p.pause), (Some(1.0), Some(true), Some(2.0)));
+        assert_eq!(p.reactions[&Evenement::VoitIntrus], vec![(Reaction::Combattre, 1.0)]);
+        assert_eq!(p.reactions[&Evenement::AllieTombe], vec![(Reaction::Prevenir, 1.0)]);
+        assert_eq!(base.sur(&Profil::default()), base);
+        assert_eq!(Profil::default().sur(&base), base);
     }
 }

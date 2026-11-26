@@ -80,9 +80,22 @@ pub fn lire(d: &Donnees) -> Result<Vec<Ligne>> {
                     roles.sort();
                     roles.join(", ")
                 },
-                habilete: match niveau.competences.get("guerrier").and_then(|c| c.split('.').find(|m| m.starts_with("rank"))) {
-                    Some(rang) => format!("{} (rang {})", niveau.ia, rang.trim_start_matches("rank")),
-                    None => format!("{} (celle des fiches)", niveau.ia),
+                habilete: {
+                    let rang = match niveau.competences.get("guerrier").and_then(|c| c.split('.').find(|m| m.starts_with("rank"))) {
+                        Some(rang) => format!("rang {}", rang.trim_start_matches("rank")),
+                        None => "rang des fiches".to_string(),
+                    };
+                    // Icebreaker IA.5 : ce que le cran change à sa façon de se battre (`ia/profils.ron`).
+                    let ia = common::icebreaker_ia::profils().profil("", "guerrier", &niveau.ia);
+                    let fait = |quoi: &str, oui: Option<bool>| if oui.unwrap_or(true) { format!(", {quoi}") } else { String::new() };
+                    format!(
+                        "{} ({rang} ; réaction {:.2} s, temps mort {:.2} s{}{})",
+                        niveau.ia,
+                        ia.reaction.unwrap_or(0.0),
+                        ia.pause.unwrap_or(0.0),
+                        fait("roule", ia.roule),
+                        fait("pare", ia.pare)
+                    )
                 },
                 classes: if niveau.classes.is_empty() {
                     "tirage du lieu".to_string()
@@ -113,7 +126,7 @@ pub fn ecrire(feuille: &mut Worksheet, lignes: &[Ligne]) -> Result<()> {
         col("PV des ennemis", 10.0, Nb::Fois),
         col("Dégâts des ennemis", 10.0, Nb::Fois),
         col("Dégâts, par exception", 14.0, Nb::Texte),
-        col("Habileté", 22.0, Nb::Texte),
+        col("Habileté", 58.0, Nb::Texte),
         col("Poids guerrier / archer / mage", 16.0, Nb::Texte),
         col("Ennemis, donjon moyen", 10.0, Nb::Dec1),
         col("Ennemis, grotte", 10.0, Nb::Dec1),

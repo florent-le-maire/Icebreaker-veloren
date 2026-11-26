@@ -1,5 +1,5 @@
 // Icebreaker IA.3 : les bruits que nos ennemis entendent (crate icebreaker-ia, `ouie.rs` ;
-// design/creatures.md « Pour Veloren »). Rechargé à chaud.
+// design/creatures.md « Pour Veloren »). Lu au lancement du serveur.
 //
 // Un bruit porte à `portees[sorte]` blocs, multipliés par la finesse d'ouïe de celui qui écoute (`ouie` de
 // ia/profils.ron). Celui qui l'entend va voir l'endroit, y fouille, puis rentre à son poste.

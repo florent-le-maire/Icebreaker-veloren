@@ -12,7 +12,7 @@ use super::{
 };
 use common::{
     combat::perception_dist_multiplier_from_stealth,
-    comp::{Alignment, Body, Content, UtteranceKind, agent::Target, is_downed},
+    comp::{Alignment, Body, Content, ControlAction, InputKind, UtteranceKind, agent::Target, is_downed},
     icebreaker_ia::{self, Allie, Apercu, Cerveau, Etat, Id, Intention, Niveau, Observation, Percu, Profil},
     terrain::Block,
     uid::Uid,
@@ -51,6 +51,7 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
     let obs = observation(&cerveau, &profil, agent_data, read_data, rng.random());
     let intention = cerveau.tick(&obs, &profil);
     let etat = cerveau.etat();
+    let retenu = cerveau.retenu();
     agent.icebreaker_ia = Some(cerveau);
 
     let yeux = agent_data.pos.0 + Vec3::unit_z() * agent_data.body.map_or(0.0, |b| b.eye_height(agent_data.scale));
@@ -77,6 +78,17 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
             });
             let cible = TargetData::new(pos, cible, read_data);
             agent_data.attack(agent, controller, &cible, read_data, rng);
+            // Icebreaker IA.5 : son habileté filtre ce que la façon de se battre de Veloren propose.
+            let (roule, pare) = (profil.roule.unwrap_or(true), profil.pare.unwrap_or(true));
+            controller.actions.retain(|action| match action {
+                ControlAction::StartInput { input, .. } => match input {
+                    InputKind::Roll => roule,
+                    InputKind::Block => pare,
+                    InputKind::Primary | InputKind::Secondary | InputKind::Ability(_) => !retenu,
+                    _ => true,
+                },
+                _ => true,
+            });
         },
         Intention::Fuir(de) => {
             if avant != Etat::Fuite {
@@ -246,6 +258,7 @@ fn observation(
         percus,
         allies,
         hasard,
+        attaque: agent_data.char_state.is_attack(),
         cible_en_vie: cerveau
             .cible()
             .and_then(|id| entite(id, read_data))

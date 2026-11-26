@@ -21,11 +21,39 @@ use hashbrown::HashSet;
 use specs::{Entities, Entity, Join, Read, ReadStorage, Write, WriteStorage};
 use vek::Vec3;
 
+/// Les coups déjà entendus. Un coup est daté du tick où il est porté et appliqué après les systèmes
+/// de ce tick : il porte l'heure du relevé précédent, pas une heure plus récente.
+#[derive(Default)]
+struct Coups {
+    /// L'heure du dernier relevé.
+    depuis: f64,
+    /// Les coups (numéro de `HealthChange`) entendus au dernier relevé, et à celui-ci.
+    vus: HashSet<u64>,
+    nouveaux: HashSet<u64>,
+}
+
+impl Coups {
+    /// Ce coup, porté à cette heure, n'a-t-il pas encore fait son bruit ?
+    fn nouveau(&mut self, quand: f64, numero: u64) -> bool {
+        if quand < self.depuis {
+            return false;
+        }
+        self.nouveaux.insert(numero);
+        !self.vus.contains(&numero)
+    }
+
+    /// Le relevé de cette heure est fini.
+    fn fin(&mut self, maintenant: f64) {
+        self.depuis = maintenant;
+        self.vus = std::mem::take(&mut self.nouveaux);
+    }
+}
+
 /// Ce que le système retient d'un tick à l'autre.
 #[derive(Default)]
 pub struct IcebreakerIaMonde {
-    /// Les coups reçus jusqu'à cette heure ont déjà fait leur bruit.
-    vu_jusqu_a: f64,
+    /// Les coups qui ont déjà fait leur bruit.
+    coups: Coups,
     /// Les bruits demandés par ailleurs (lieu d'entraînement), à faire entendre au prochain tick.
     demandes: Vec<(&'static str, Vec3<f32>)>,
     /// Nos ennemis en vie au tick précédent : un mort qui en était est un allié tombé.
@@ -82,13 +110,12 @@ impl<'a> System<'a> for Sys {
         (entities, time, morts, chat_bus, mut monde, mut allies, positions, healths, bodies, alignments, uids, mut agents): Self::SystemData,
     ) {
         // Les sons de ce tick : les coups, les morts, les bruits demandés, les cris.
-        let depuis = monde.vu_jusqu_a;
-        monde.vu_jusqu_a = time.0;
         let mut sons: Vec<Son> = (&positions, &healths)
             .join()
-            .filter(|(_, h)| h.last_change.amount < 0.0 && h.last_change.time.0 > depuis)
+            .filter(|(_, h)| h.last_change.amount < 0.0 && monde.coups.nouveau(h.last_change.time.0, h.last_change.instance))
             .map(|(pos, _)| Son::Bruit("combat", pos.0))
             .collect();
+        monde.coups.fin(time.0);
         sons.extend(morts.0.iter().map(|(entite, pos)| {
             if monde.connus.contains(entite) { Son::Mort(pos.0) } else { Son::Bruit("mort", pos.0) }
         }));
@@ -155,5 +182,33 @@ impl<'a> System<'a> for Sys {
                 tracing::debug!(sorte, ?lieu, "Icebreaker IA : un ennemi entend");
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Bug (IA.5, essai au lieu d'entraînement) : un coup est daté du tick où il est porté, mais n'est
+    /// appliqué qu'après les systèmes de ce tick ; le relevé du tick suivant le croyait déjà entendu.
+    /// Chaque coup fait son bruit une fois, ni zéro ni deux.
+    #[test]
+    fn chaque_coup_fait_son_bruit_une_fois() {
+        let mut coups = Coups::default();
+        coups.fin(10.0);
+        // Porté au tick de 10,0 s, appliqué après le relevé de ce tick : entendu au relevé suivant.
+        assert!(coups.nouveau(10.0, 1));
+        coups.fin(10.1);
+        // Il n'est pas réentendu, même si un autre coup porte la même heure que le dernier relevé.
+        assert!(!coups.nouveau(10.0, 1));
+        assert!(coups.nouveau(10.1, 2));
+        coups.fin(10.2);
+        assert!(!coups.nouveau(10.1, 2));
+        // Un coup appliqué avant le relevé de son propre tick n'est entendu qu'une fois lui aussi.
+        assert!(coups.nouveau(10.3, 3));
+        coups.fin(10.3);
+        assert!(!coups.nouveau(10.3, 3));
+        coups.fin(10.4);
+        assert!(!coups.nouveau(10.3, 3));
     }
 }

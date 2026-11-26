@@ -62,6 +62,8 @@ pub struct Observation {
     pub allies: Vec<Allie>,
     /// Un nombre tiré entre 0 et 1 à ce tick, pour ses tirages.
     pub hasard: f32,
+    /// Il est en train d'attaquer (un coup, un tir, un sort en cours).
+    pub attaque: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -147,6 +149,14 @@ pub struct Cerveau {
     prevenu_a: Option<f64>,
     /// Son rôle et son cran d'habileté (`Profils::profil`), posés à son apparition.
     fiche: (String, String),
+    /// Quand il a repéré l'intrus qu'il combat (son délai de réaction part de là).
+    engage_a: f64,
+    /// Il attaque sans s'arrêter depuis cette heure.
+    attaque_depuis: Option<f64>,
+    /// Son temps mort après une attaque dure jusqu'à cette heure.
+    pause_jusqu_a: f64,
+    /// En combat, il se retient de frapper à ce tick.
+    retenu: bool,
 }
 
 impl Default for Cerveau {
@@ -169,6 +179,10 @@ impl Default for Cerveau {
             cris: Vec::new(),
             prevenu_a: None,
             fiche: Default::default(),
+            engage_a: 0.0,
+            attaque_depuis: None,
+            pause_jusqu_a: 0.0,
+            retenu: false,
         }
     }
 }
@@ -181,6 +195,10 @@ impl Cerveau {
     pub fn fiche(&self) -> (&str, &str) { (&self.fiche.0, &self.fiche.1) }
 
     pub fn etat(&self) -> Etat { self.etat }
+
+    /// En combat, il se retient de frapper à ce tick (délai de réaction, temps mort après une
+    /// attaque) : il garde sa cible en face, sans lancer de coup.
+    pub fn retenu(&self) -> bool { self.retenu }
 
     pub fn cible(&self) -> Option<Id> { self.cible }
 
@@ -249,6 +267,14 @@ impl Cerveau {
         if self.prevenu_a.is_some_and(|quand| obs.temps - quand > PREVENU) {
             self.prevenu_a = None;
         }
+        // Une attaque qui finit ouvre son temps mort.
+        if self.attaque_depuis.is_some() && !obs.attaque {
+            self.pause_jusqu_a = obs.temps + profil.pause.unwrap_or(0.0);
+            self.attaque_depuis = None;
+        } else if obs.attaque {
+            self.attaque_depuis.get_or_insert(obs.temps);
+        }
+        self.retenu = false;
 
         // Parti prévenir : il court vers l'allié sans se retourner, crie à portée de voix, puis
         // retourne voir là où étaient les intrus.
@@ -313,6 +339,9 @@ impl Cerveau {
                 return intention;
             }
             vue = true;
+            if self.cible.is_none() {
+                self.engage_a = obs.temps;
+            }
             self.cible = Some(choisie.id);
             self.choisie_a = obs.temps;
             self.percue_a = obs.temps;
@@ -329,6 +358,11 @@ impl Cerveau {
                     Intention::Fuir(self.percue_en)
                 } else if vue {
                     self.etat = Etat::Combat;
+                    self.retenu = match self.attaque_depuis {
+                        // Il ne tient pas un enchaînement plus longtemps que son cran ne le permet.
+                        Some(debut) => profil.enchainement.is_some_and(|max| obs.temps - debut > max),
+                        None => obs.temps - self.engage_a < profil.reaction.unwrap_or(0.0) || obs.temps < self.pause_jusqu_a,
+                    };
                     Intention::Combattre(cible)
                 } else {
                     self.etat = Etat::Combat;
@@ -883,6 +917,85 @@ mod tests {
         assert_eq!(intention, Intention::Prevenir(en(-40.0, 0.0)));
         c.tick(&avec(obs_en(6.0, en(-36.0, 0.0), vec![]), 0.0, vec![allie(2, 40.0)]), &orc_qui_previent());
         assert_eq!(c.cris(), vec![Message::Signalement { lieu: la, vu_a: 1.0 }]);
+    }
+
+    // --- IA.5 : habileté ---
+
+    fn debutant() -> Profil { Profil { reaction: Some(0.8), pause: Some(1.5), ..orc() } }
+
+    /// « Trois crans d'habileté […] : délai de réaction » : il repère un intrus, se met en garde,
+    /// mais ne frappe qu'après son délai de réaction.
+    #[test]
+    fn il_ne_frappe_qu_apres_son_delai_de_reaction() {
+        let mut c = Cerveau::default();
+        assert_eq!(c.tick(&obs(0.0, vec![joueur(1, 3.0)]), &debutant()), Intention::Combattre(1));
+        assert!(c.retenu());
+        c.tick(&obs(0.7, vec![joueur(1, 3.0)]), &debutant());
+        assert!(c.retenu());
+        c.tick(&obs(0.9, vec![joueur(1, 3.0)]), &debutant());
+        assert!(!c.retenu());
+        // Sans délai dans son profil, il frappe aussitôt.
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![joueur(1, 3.0)]), &orc());
+        assert!(!c.retenu());
+    }
+
+    /// « … temps mort entre deux attaques » : son attaque finie, il attend `pause` avant la suivante.
+    #[test]
+    fn il_laisse_un_temps_mort_apres_une_attaque() {
+        let frappe = |temps, attaque| Observation { attaque, ..obs(temps, vec![joueur(1, 3.0)]) };
+        let mut c = Cerveau::default();
+        c.tick(&frappe(0.0, false), &debutant());
+        c.tick(&frappe(1.0, true), &debutant());
+        assert!(!c.retenu(), "il ne se retient pas au milieu de son attaque");
+        c.tick(&frappe(1.6, false), &debutant());
+        assert!(c.retenu());
+        c.tick(&frappe(3.0, false), &debutant());
+        assert!(c.retenu());
+        c.tick(&frappe(3.2, false), &debutant());
+        assert!(!c.retenu());
+        // Un vétéran enchaîne.
+        let veteran = Profil { pause: Some(0.0), ..orc() };
+        let mut c = Cerveau::default();
+        c.tick(&frappe(0.0, true), &veteran);
+        c.tick(&frappe(0.6, false), &veteran);
+        assert!(!c.retenu());
+    }
+
+    /// « Compétences utilisées » : au cran bas, il ne tient pas un enchaînement plus de
+    /// `enchainement` secondes : il lâche, son attaque finit, son temps mort commence.
+    #[test]
+    fn il_ne_tient_pas_un_enchainement_trop_longtemps() {
+        let simple = Profil { enchainement: Some(1.0), ..debutant() };
+        let frappe = |temps, attaque| Observation { attaque, ..obs(temps, vec![joueur(1, 3.0)]) };
+        let mut c = Cerveau::default();
+        c.tick(&frappe(0.0, false), &simple);
+        c.tick(&frappe(2.0, true), &simple);
+        c.tick(&frappe(2.9, true), &simple);
+        assert!(!c.retenu());
+        c.tick(&frappe(3.1, true), &simple);
+        assert!(c.retenu(), "il enchaîne depuis plus d'une seconde");
+        // L'attaque finie, le temps mort ; puis une nouvelle attaque repart de zéro.
+        c.tick(&frappe(3.4, false), &simple);
+        assert!(c.retenu());
+        c.tick(&frappe(5.0, false), &simple);
+        assert!(!c.retenu());
+        c.tick(&frappe(5.2, true), &simple);
+        assert!(!c.retenu());
+        // Sans limite dans son profil, il enchaîne tant qu'il veut.
+        let mut c = Cerveau::default();
+        c.tick(&frappe(0.0, true), &debutant());
+        c.tick(&frappe(9.0, true), &debutant());
+        assert!(!c.retenu());
+    }
+
+    /// Hors combat, il n'est pas « retenu ».
+    #[test]
+    fn hors_combat_il_n_est_pas_retenu() {
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![joueur(1, 3.0)]), &debutant());
+        c.tick(&Observation { cible_en_vie: false, ..obs(0.2, vec![]) }, &debutant());
+        assert!(!c.retenu());
     }
 
     /// `menace.md`, principe 1 : « les créatures ne trichent pas ». Deux cerveaux qui reçoivent les

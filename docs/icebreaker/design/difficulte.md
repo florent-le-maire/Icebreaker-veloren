@@ -20,7 +20,7 @@ La difficulté règle cinq choses :
 | PV des ennemis | un facteur sur les PV de leur fiche | 6 |
 | Dégâts des ennemis | un facteur sur les dégâts qu'ils infligent | 6 |
 | Classes et compositions | un poids par rôle (guerrier, archer, mage) quand le lieu tire un ennemi ; poids 0 : absent | 4 |
-| Habileté | le rang des compétences de l'ennemi (1, 3, 5) : enchaînements, parades et tirs que son IA sait faire | 3 |
+| Habileté | le rang des compétences de l'ennemi (1, 3, 5), et son cran dans `ia/profils.ron` : délai de réaction, temps mort entre deux attaques, roulade, parade, sens un peu plus fins (jalon IA) | 3 |
 
 Le **terrain** ne dépend pas de la difficulté dans cette version : la forme et la taille se choisissent à part. Un
 labyrinthe rend l'expédition plus longue, pas plus dangereuse, et le jeu n'a pas encore de piège.
@@ -56,8 +56,10 @@ flèche tue toujours un mage en un coup.**
 - **Les poids ne créent pas de rôle.** Ils pèsent un tirage entre les rôles que le lieu propose à cet endroit : une
   salle de guerriers reste une salle de guerriers. Si la difficulté interdit tous les rôles proposés (un poste qui
   n'a que des mages, en difficulté 1), le tirage du lieu est gardé.
-- **L'habileté n'a que le levier de Veloren** : le rang des compétences. Il n'existe pas de réglage de précision ou
-  de temps de réaction. Les règles de cible des races (`ia/profils.ron`) ne dépendent pas de la difficulté.
+- **L'habileté a deux leviers** : le rang des compétences (Veloren, `crans` de `difficulte.ron`) et le cran de
+  l'ennemi dans `ia/profils.ron` (IA.5 : au cran « base » il attend 0,8 s avant son premier coup et 1,4 s après
+  chaque attaque, sans rouler ni parer ; « vétéran » roule, pare et enchaîne). Le classeur ne mesure pas l'habileté :
+  elle s'essaie au lieu d'entraînement. Les règles de cible des races ne dépendent pas de la difficulté.
 
 ## Pas dans cette version
 

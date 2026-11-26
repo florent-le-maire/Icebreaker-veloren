@@ -5,7 +5,8 @@
 //   pv      : facteur des PV de la fiche de l'ennemi (icebreaker_pv de assets/icebreaker/ennemis/)
 //   degats  : facteur des dégâts que l'ennemi inflige
 //   degats_roles : le même facteur pour certains rôles seulement (un rôle absent prend `degats`)
-//   ia      : cran d'habileté, une clé de `crans` plus bas
+//   ia      : cran d'habileté, une clé de `crans` plus bas (compétences) et de `crans` de ia/profils.ron (délai de
+//             réaction, temps mort entre deux attaques, roulade, parade, sens : jalon IA)
 //   classes : poids de chaque rôle (nom de la fiche de assets/icebreaker/ennemis/) quand le lieu tire un ennemi
 //             parmi plusieurs rôles ; 0 = ce rôle n'apparaît pas ; rien = le tirage du lieu, inchangé
 // Lu par common/src/icebreaker_difficulte.rs ; le classeur d'équilibrage le relit (onglet Difficulté).

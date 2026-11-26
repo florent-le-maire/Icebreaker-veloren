@@ -354,6 +354,10 @@ tâche pour ce qui casse.
   se bat, ou crie « Je vais chercher les autres ! » et court au groupe du nord, qui arrive après « Des intrus ! » ;
   si on s'est caché, ils fouillent puis rentrent. Jamais deux messagers à la fois ; un chef ne part pas. En donjon :
   le messager trouve-t-il son chemin jusqu'à la salle voisine ?
+- [ ] IA.5 (habileté, 2026-11-26) : au lieu d'entraînement, le même guerrier en `/entrainement difficulte 1` puis
+  `6` : en 1 il attend avant son premier coup, frappe un ou deux coups puis laisse un temps mort, ne roule pas et ne
+  pare pas ; en 6 il roule, pare et enchaîne. Même essai avec un archer et un mage. Les chiffres des crans
+  (`ia/profils.ron`, `crans`) sont à régler ; la difficulté 3 n'est plus tout à fait « le jeu d'avant » (Q72).
 - [ ] DF (difficulté 1 à 6, 2026-11-25) : au panneau Départ, les six lignes « Difficulté » ; partir en 1 puis en 6 dans
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au

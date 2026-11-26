@@ -61,9 +61,12 @@ Règles de conduite :
   part pas), liste des nôtres tenue par `icebreaker_ia_monde`. Testé ; client texte, scène `massacre` (poids forcés) :
   « Je vais chercher les autres ! », « Des intrus ! », le groupe du nord arrive (« ? » puis « ! »). Pas vu : le vrai
   client, un donjon (chemin du messager), le tirage aux vrais poids (1 sur 6 à la vue, 1 sur 3 à une mort).
-- [ ] **IA.5 Habileté** — crans étendus (`difficulte.ron`) : délai de réaction, roulade, parade, pause entre deux
-  attaques, sens ; classeur d'équilibrage relancé.
-  *Fin* : le même ennemi en difficulté 1 et 6 : l'un frappe simple et laisse des temps morts, l'autre roule et enchaîne.
+- [x] **IA.5 Habileté** — `crans` de `ia/profils.ron` (mêmes clés que `difficulte.ron`) : délai de réaction, temps
+  mort après une attaque, enchaînement borné, roulade et parade filtrées (le cerveau retire des entrées à ce que
+  `attack()` de Veloren propose), sens un peu plus fins ; classeur relancé (colonne Habileté). Corrige IA.3 : un coup
+  ne faisait pas de bruit (daté du tick précédent). Testé ; client texte, un orc sur un joueur immobile : 0,55 coup
+  par seconde en difficulté 1 (1,15 sans les réglages du cran), 2,8 en difficulté 6. Pas vu : le vrai client, la
+  roulade et la parade, l'archer et le mage.
 - [ ] **IA.6 Le mage** — table de sorts du bâton, par cran, à la place de `handle_staff_attack` pour nos mages.
   *Fin* : le mage choisit son sort selon la distance et la situation.
 - [ ] **IA.7 Défense réactive** — « le joueur arme un coup » : esquive ou parade tirée après le délai de réaction.

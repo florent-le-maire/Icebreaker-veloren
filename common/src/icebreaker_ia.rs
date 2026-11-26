@@ -15,14 +15,18 @@ use serde::Deserialize;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Le profil d'un ennemi : la race de son corps, son rôle et son cran d'habileté (`Cerveau::fiche`)
-/// (rien hors humanoïde, ou si le fichier manque). Relu à chaque appel : un réglage changé dans le
-/// fichier vaut tout de suite.
+/// (rien hors humanoïde, ou si le fichier manque).
 pub fn profil(body: Option<&Body>, (role, cran): (&str, &str)) -> Option<Profil> {
     let Some(Body::Humanoid(humanoide)) = body else {
         return None;
     };
     let profils = Ron::<Profils>::load("icebreaker.ia.profils").ok()?;
     Some(profils.read().0.profil(nom(humanoide.species), role, cran))
+}
+
+/// Tous les profils (`assets/icebreaker/ia/profils.ron` ; sans fichier, aucun réglage).
+pub fn profils() -> Profils {
+    Ron::<Profils>::load("icebreaker.ia.profils").map_or_else(|_| Profils::default(), |r| r.read().0.clone())
 }
 
 /// Nos ennemis, tels que les leurs les connaissent (poste, alerté ou non, parti prévenir) : refait à
@@ -111,6 +115,37 @@ mod tests {
         let danari = profil(Some(&corps(humanoid::Species::Danari)), ("guerrier", "")).unwrap();
         assert!(danari.acheve_a(2) && !danari.acheve_a(1));
         assert!(danari.fuite.is_some() && orc.fuite.is_none());
+    }
+
+    /// IA.5, `design/difficulte.md` : chaque cran d'habileté des difficultés a son profil ; plus la
+    /// difficulté monte, plus l'ennemi réagit vite et moins il laisse de temps morts ; seul le haut
+    /// du tableau roule ; les sens s'aiguisent un peu et restent bornés.
+    #[test]
+    fn les_crans_d_habilete_suivent_la_difficulte() {
+        let profils = Ron::<Profils>::load_expect("icebreaker.ia.profils").read().0.clone();
+        let difficultes = crate::icebreaker_difficulte::IcebreakerDifficulte::actuel();
+        let crans: Vec<Profil> = (1..=difficultes.max())
+            .map(|n| {
+                let cran = difficultes.niveau(Some(n)).ia;
+                assert!(profils.crans.contains_key(&cran), "le cran {cran} manque dans profils.ron");
+                profils.profil("orc", "guerrier", &cran)
+            })
+            .collect();
+        for paire in crans.windows(2) {
+            assert!(paire[0].reaction.unwrap() >= paire[1].reaction.unwrap());
+            assert!(paire[0].pause.unwrap() >= paire[1].pause.unwrap());
+        }
+        let (facile, dur) = (crans.first().unwrap(), crans.last().unwrap());
+        assert!(facile.reaction.unwrap() > dur.reaction.unwrap() && facile.pause.unwrap() > dur.pause.unwrap());
+        // Le bas du tableau frappe simple (enchaînement borné), le haut enchaîne sans limite.
+        assert!(facile.enchainement.is_some() && dur.enchainement.is_none());
+        assert_eq!((facile.roule, dur.roule), (Some(false), Some(true)));
+        assert_eq!((facile.pare, dur.pare), (Some(false), Some(true)));
+        for (a, b) in [(facile.vue, dur.vue), (facile.vue_nette, dur.vue_nette), (facile.ouie, dur.ouie)] {
+            let (a, b) = (a.unwrap(), b.unwrap());
+            assert!(b >= a && b <= a * 1.3, "sens de {a} à {b}");
+        }
+        assert!(dur.vue_nette.unwrap() < dur.vue.unwrap());
     }
 
     /// Les scènes d'essai ne nomment que des races et des rôles de l'arène, et tiennent sur le plateau.
