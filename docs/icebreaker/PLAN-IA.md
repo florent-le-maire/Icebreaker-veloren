@@ -50,7 +50,7 @@ Règles de conduite :
 - [x] **IA.2 Voir et chercher** — vue à nous (cône, dos, soupçon « ? » puis repéré « ! »), dernière position connue,
   poursuite, fouille, retour au poste, `laisse` (réglage, aucune race ne s'en sert). Testé ; client texte au lieu
   d'entraînement : « ? », « ! », combat, puis le joueur téléporté au loin : l'orc fouille et rentre. Pas vu : derrière
-  un vrai mur, les chemins longs en donjon, le vrai client. `HASH_IA2`
+  un vrai mur, les chemins longs en donjon, le vrai client. `2ec6141a`
 - [ ] **IA.3 Entendre** — bruits de combat et de mort (`icebreaker_ia_monde`, `ia/bruits.ron`), ouïe par profil,
   enquête sur un bruit, aussi en combat.
   *Fin* : on tue un ennemi hors de vue d'un autre : l'autre vient voir.
