@@ -20,8 +20,15 @@ Le projet principal, sa vision et sa méthode sont dans le dépôt `../Icebreake
 - Réglages (rayons, temps, prix) en configuration ou en fichiers de données (`assets/`), pas en dur.
 - Notre dépôt est `origin` (GitHub, `git pull` / `git push` sur `master`) ; Veloren est le remote `veloren`, rien n'y est
   poussé. L'ancien `master` (avec l'historique de Veloren) est gardé sous l'étiquette `ancien-master`.
-- Teste ce que tu écris : tests ciblés pour la logique, et lancer le lieu concerné pour vérifier qu'il démarre sans
-  erreur ; dire dans la tâche cochée ce qui n'a pas été vérifié en jeu.
+- Teste ce que tu écris (décision `0023`). **TDD** (skill `superpowers:test-driven-development` : test d'abord, vu
+  en échec, puis le code) pour : les règles de jeu de `docs/icebreaker/design/` (le test cite la règle ; une règle
+  qu'on n'arrive pas à tester est ambiguë → `QUESTIONS.md`) ; les générateurs (grottes, forêts, donjon, modèles), en
+  testant des propriétés (salles reliées, abri présent, même graine → même résultat), pas des formes exactes ; chaque
+  bug corrigé (d'abord un test qui le reproduit). **Pas de TDD** pour le ressenti, le rendu, la caméra, le son ; pour
+  les valeurs de `assets/` (tester la règle, « difficulté 6 > difficulté 1 », jamais le chiffre) ; pour le code mêlé
+  à Veloren dans `server/` ou `voxygen/` : en sortir la logique dans une fonction pure (`common/src/icebreaker_*.rs`
+  ou un crate `icebreaker-*`), la tester, garder le branchement mince. Toujours : lancer le lieu concerné pour
+  vérifier qu'il démarre sans erreur, et dire dans la tâche cochée ce qui n'a pas été vérifié en jeu.
 - Reste simple : la solution la plus simple qui marche pour la tâche en cours.
 - Fin de session : résumer ce qui a été fait, ce qui reste ; mettre à jour « État » de `PLAN.md` si le tableau a
   changé ; les questions pour l'équipe vont dans `QUESTIONS.md` (numéro Qn suivant), jamais dans un plan ; une

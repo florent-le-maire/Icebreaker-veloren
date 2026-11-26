@@ -84,6 +84,6 @@ Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont 
 - Une question nouvelle va dans `QUESTIONS.md` (numéro Qn suivant, jamais réattribué) ; le plan concerné y renvoie.
   Une fois tranchée, elle passe dans « Tranché » avec la date et le fichier où la règle est écrite.
 - Une décision importante (choix technique, changement de cap) = une note `decisions/00NN-<sujet>.md` (prochain
-  numéro : 0023), au format des existantes (date, statut, problème, options, décision, conséquences).
+  numéro : 0024), au format des existantes (date, statut, problème, options, décision, conséquences).
 - Une idée pas encore décidée va dans `IDEES.md` ; retenue, elle devient une tâche et sort de là.
 - Un worktree par piste (`CLAUDE.md`) ; la colonne ci-dessus dit lequel.
