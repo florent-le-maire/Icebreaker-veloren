@@ -20,4 +20,8 @@ pub use evenements::{Evenement, Message};
 pub use ouie::Bruits;
 pub use perception::{Apercu, Niveau, niveau};
 pub use profil::{Profil, Profils};
-pub use reactions::{Reaction, defense::Geste};
+pub use reactions::{
+    Reaction,
+    defense::Geste,
+    rage::{Effet, Rage},
+};

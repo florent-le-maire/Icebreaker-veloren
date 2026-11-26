@@ -110,6 +110,11 @@ profil! {
     defend_duree: f64,
     /// Secondes de déroute quand son chef tombe (0 : il tient bon).
     deroute: f64,
+    // --- Une réaction à ses PV bas (IA.11) ---
+    /// La part de ses PV (0 à 1) sous laquelle il tire, une fois, sa réaction à `PvBas`.
+    pv_bas: f32,
+    /// Ce que la rage lui donne, s'il la tire (`reactions/rage.rs`).
+    rage: crate::reactions::rage::Rage,
     // --- Le mage (IA.6) ---
     /// Sa table de sorts (`combat.rs`) : il choisit lui-même le sort à lancer, selon la distance et
     /// la situation. Rien = la façon de se battre de Veloren choisit.

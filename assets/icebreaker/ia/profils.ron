@@ -56,6 +56,11 @@
 //   là où le cri le dit) ; les autres viennent voir.
 // Déroute (IA.9) : son chef meurt à portée d'oreille (événement ChefTombe) : il tire Deroute et fuit l'ennemi le plus
 //   proche pendant `deroute` secondes (0 : il tient bon), même si on le frappe ; puis il se reprend et va voir.
+// Une race en plus (IA.11) — les orcs en rage, en trois réglages dans `races`, sans toucher au code :
+//   pv_bas : la part des PV sous laquelle il tire, une fois, sa réaction à l'événement PvBas ;
+//   reactions: { PvBas: [(Rage, 1.0)] } : cette réaction est la rage ;
+//   rage : ce qu'elle donne — `force` (0.4 = +40 % de dégâts infligés, plus vite, et autant de dégâts reçus en
+//     plus : le « Berserk » de Veloren) pendant `duree` secondes. Il crie « RAAAH ! ».
 // Défense réactive (IA.7) : un adversaire à moins de `garde` blocs arme un coup de mêlée vers lui (CoupArme) : il
 //   tire une fois Rien, Esquiver (une roulade de côté) ou Parer, et fait ce geste `reaction` secondes plus tard.
 //   Un coup lent est donc esquivé ou paré, une compétence rapide passe. Esquiver ne sort que s'il `roule`, Parer
@@ -110,8 +115,12 @@
         ),
         // Organisés : leurs rondes sont encore dans ennemis/races.ron (IA.10).
         "human": (),
-        // Brutaux : rage sous la moitié des PV (IA.11).
-        "orc": (),
+        // Brutaux : sous la moitié de leurs PV ils s'enragent, une fois (Y.4, IA.11).
+        "orc": (
+            pv_bas: 0.5,
+            reactions: { PvBas: [(Rage, 1.0)] },
+            rage: (force: 0.4, duree: 12.0),
+        ),
         // Tenaces : tiennent leur salle (IA.13).
         "dwarf": (),
         // Tireurs : voient de loin.

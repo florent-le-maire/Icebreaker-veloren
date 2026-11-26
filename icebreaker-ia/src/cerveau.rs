@@ -11,6 +11,7 @@ use crate::{
         Reaction,
         coince::Forcer,
         defense::{Defense, Geste},
+        rage::Effet,
         prevenir::{self, Etape, Prevenir},
     },
     tirage::tirer,
@@ -226,6 +227,10 @@ pub struct Cerveau {
     deroute: Option<(Vec3<f32>, f64)>,
     /// L'ordre qu'il suit quand rien d'autre ne l'occupe.
     ordre: Option<Ordre>,
+    /// Il a déjà tiré sa réaction à ses PV bas.
+    pv_bas_tire: bool,
+    /// Les effets de ses réactions, depuis la dernière fois qu'on les lui a demandés (`effets`).
+    effets: Vec<Effet>,
 }
 
 impl Default for Cerveau {
@@ -269,6 +274,8 @@ impl Default for Cerveau {
             chef_tombe: None,
             deroute: None,
             ordre: None,
+            pv_bas_tire: false,
+            effets: Vec::new(),
         }
     }
 }
@@ -427,6 +434,9 @@ impl Cerveau {
     /// Il est parti prévenir un allié.
     pub fn messager(&self) -> bool { self.prevenir.is_some() }
 
+    /// Les effets de ses réactions depuis le dernier appel : le serveur les lui applique.
+    pub fn effets(&mut self) -> Vec<Effet> { std::mem::take(&mut self.effets) }
+
     /// Ce qu'il a crié depuis le dernier appel : le serveur le fait entendre aux siens.
     pub fn cris(&mut self) -> Vec<Message> { std::mem::take(&mut self.cris) }
 
@@ -453,7 +463,7 @@ impl Cerveau {
         let poids = profil.reactions.get(&evenement)?;
         let delai = match evenement {
             Evenement::VoitIntrus | Evenement::AllieTombe => profil.tirage_delai.unwrap_or(0.0),
-            Evenement::CoupArme | Evenement::Coince | Evenement::Touche | Evenement::ChefTombe => 0.0,
+            Evenement::CoupArme | Evenement::Coince | Evenement::Touche | Evenement::ChefTombe | Evenement::PvBas => 0.0,
         };
         if self.tirages.iter().any(|(e, quand)| *e == evenement && obs.temps - quand < delai) {
             return None;
@@ -473,6 +483,7 @@ impl Cerveau {
                 | Reaction::Forcer
                 | Reaction::AppelerALAide
                 | Reaction::Deroute => true,
+                Reaction::Rage => profil.rage.is_some(),
             })
             .copied()
             .collect();
@@ -527,6 +538,16 @@ impl Cerveau {
         {
             self.appel_a = Some(obs.temps);
             self.cris.push(Message::Appel { agresseur: agresseur.id, lieu: agresseur.pos });
+        }
+
+        // Ses PV passent sous `pv_bas` : il tire sa réaction, une fois (la rage, pour qui l'a dans son profil).
+        if !self.pv_bas_tire && profil.pv_bas.is_some_and(|seuil| obs.pv < seuil) {
+            self.pv_bas_tire = true;
+            if self.tirer(Evenement::PvBas, obs, profil) == Some(Reaction::Rage)
+                && let Some(rage) = profil.rage
+            {
+                self.effets.push(rage.effet());
+            }
         }
 
         // Un appel à l'aide entendu : celui qui défend vient sur l'agresseur, les autres viennent voir.
@@ -798,7 +819,13 @@ impl Cerveau {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{combat::Sort, reactions::defense::Geste};
+    use crate::{
+        combat::Sort,
+        reactions::{
+            defense::Geste,
+            rage::{Effet, Rage},
+        },
+    };
     use std::collections::HashMap;
 
     fn orc() -> Profil {
@@ -1817,6 +1844,40 @@ mod tests {
         assert_eq!(c.tick(&obs(0.0, vec![joueur(1, 5.0)]), &orc()), Intention::Combattre(1));
         let morte = Observation { cible_en_vie: false, ..obs_en(4.0, en(8.0, 0.0), vec![]) };
         assert_eq!(c.tick(&morte, &orc()), Intention::Obeir(etape, 0.5));
+    }
+
+    // --- IA.11 : une race en plus (orcs en rage) ---
+
+    /// Les trois réglages qui font un orc brutal.
+    fn orc_brutal() -> Profil {
+        Profil {
+            pv_bas: Some(0.5),
+            rage: Some(Rage { force: 0.4, duree: 12.0 }),
+            reactions: HashMap::from([(Evenement::PvBas, vec![(Reaction::Rage, 1.0)])]),
+            ..orc()
+        }
+    }
+
+    /// Y.4 : « Orcs en rage — sous la moitié des PV, une fois : dégâts et vitesse en plus. »
+    #[test]
+    fn l_orc_sous_la_moitie_de_ses_pv_s_enrage_une_fois() {
+        let a = |temps, pv| Observation { pv, ..obs(temps, vec![joueur(1, 3.0)]) };
+        let mut c = Cerveau::default();
+        c.tick(&a(0.0, 1.0), &orc_brutal());
+        c.tick(&a(1.0, 0.6), &orc_brutal());
+        assert!(c.effets().is_empty());
+        // Sous la moitié : la rage, et il se bat toujours.
+        assert_eq!(c.tick(&a(2.0, 0.45), &orc_brutal()), Intention::Combattre(1));
+        assert_eq!(c.effets(), vec![Effet::Rage { force: 0.4, duree: 12.0 }]);
+        // Une fois : ni au tick suivant, ni s'il remonte puis redescend.
+        c.tick(&a(3.0, 0.3), &orc_brutal());
+        c.tick(&a(20.0, 0.8), &orc_brutal());
+        c.tick(&a(30.0, 0.2), &orc_brutal());
+        assert!(c.effets().is_empty());
+        // Une race qui n'a pas ces réglages ne s'enrage pas.
+        let mut c = Cerveau::default();
+        c.tick(&a(0.0, 0.2), &orc());
+        assert!(c.effets().is_empty());
     }
 
     /// `menace.md`, principe 1 : « les créatures ne trichent pas ». Deux cerveaux qui reçoivent les

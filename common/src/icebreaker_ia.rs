@@ -8,7 +8,8 @@ use crate::{
     icebreaker_races::nom,
 };
 pub use icebreaker_ia::{
-    Allie, Apercu, Bruits, Cerveau, Etat, Evenement, Geste, Id, Intention, Message, Niveau, Observation, Ordre, Percu,
+    Allie, Apercu, Bruits, Cerveau, Effet, Etat, Evenement, Geste, Id, Intention, Message, Niveau, Observation, Ordre,
+    Percu,
     Profil,
     Profils, Reaction, Situation, Sort, niveau,
 };
@@ -222,6 +223,21 @@ mod tests {
         let deroute = |role: &str| de(role).deroute.unwrap_or(0.0);
         assert!(deroute("guerrier") > 0.0 && deroute("archer") > deroute("guerrier") && deroute("chef") == 0.0);
         assert!(de("guerrier").reactions[&Evenement::ChefTombe].iter().any(|(r, _)| *r == Reaction::Deroute));
+    }
+
+    /// Y.4, IA.11 : les orcs s'enragent sous une part de leurs PV ; les autres races non.
+    #[test]
+    fn seuls_les_orcs_s_enragent() {
+        let de = |espece| profil(Some(&corps(espece)), ("guerrier", "base")).unwrap();
+        let s_enrage = |p: &Profil| {
+            p.pv_bas.is_some_and(|seuil| seuil > 0.0 && seuil < 1.0)
+                && p.rage.is_some_and(|r| r.force > 0.0 && r.duree > 0.0)
+                && p.reactions.get(&Evenement::PvBas).is_some_and(|r| r.iter().any(|(r, poids)| *r == Reaction::Rage && *poids > 0.0))
+        };
+        assert!(s_enrage(&de(humanoid::Species::Orc)));
+        for espece in [humanoid::Species::Human, humanoid::Species::Dwarf, humanoid::Species::Elf, humanoid::Species::Danari] {
+            assert!(!s_enrage(&de(espece)), "{espece:?}");
+        }
     }
 
     /// Les scènes d'essai ne nomment que des races et des rôles de l'arène, et tiennent sur le plateau.

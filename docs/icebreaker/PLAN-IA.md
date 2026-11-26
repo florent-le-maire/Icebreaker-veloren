@@ -95,8 +95,11 @@ Règles de conduite :
   rtsim ; combat, enquête et fuite passent avant, puis il reprend son ordre sans rentrer à son poste. Testé ; client
   texte, donjon humain : deux rondes font 1, 2, 1, 0, 1, 2 dans le journal. Pas vu : une ronde qui entend un combat,
   enquête et reprend (testé dans le crate seulement), le vrai client.
-- [ ] **IA.11 Une race en plus** — Y.4, orcs en rage : une réaction et trois lignes de profil, tronc intact.
-  *Fin* : un orc sous la moitié de ses PV s'enrage, une fois.
+- [x] **IA.11 Une race en plus** — Y.4, orcs en rage : `reactions/rage.rs` et trois réglages de la race (`pv_bas`,
+  `reactions: { PvBas: [(Rage, 1.0)] }`, `rage`) ; l'effet est le « Berserk » de Veloren, posé par
+  `icebreaker_ia_monde` (+40 % de dégâts, plus vite, encaisse moins bien, 12 s). Le tronc gagne l'événement `PvBas` et
+  la sortie `effets`, qui serviront aux prochaines races. Scène `rage`. Testé ; client texte : un orc à 55 % frappé une
+  fois crie « RAAAH ! », une seule fois. Pas vu : l'effet au vrai client (frappe-t-il visiblement plus fort ?).
 - [ ] **IA.12 Mémoire du lieu et niveau d'alerte** (ex-G.15) — à redécouper.
 - [ ] **IA.13 Salles exportées** — `MissionTargets.salles` ; embuscade (ex-G.16), nains qui tiennent leur salle (Y.5).
 - [ ] **IA.14 Guerrier et archer en table** — seulement si IA.5 et IA.7 ne suffisent pas.

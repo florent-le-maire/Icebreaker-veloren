@@ -4,6 +4,7 @@
 pub mod coince;
 pub mod defense;
 pub mod prevenir;
+pub mod rage;
 
 use serde::Deserialize;
 
@@ -29,4 +30,6 @@ pub enum Reaction {
     AppelerALAide,
     /// Le chef est tombé : fuir un moment, puis se reprendre (le tronc).
     Deroute,
+    /// S'enrager (`rage.rs`).
+    Rage,
 }

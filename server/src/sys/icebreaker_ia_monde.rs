@@ -4,16 +4,18 @@
 //!   (`icebreaker_ia::Bruits`, `assets/icebreaker/ia/bruits.ron`) ; un dormeur qui entend se réveille
 //!   (`icebreaker_sleep`) ;
 //! - il porte les cris d'un cerveau (`Cerveau::cris`) à ceux qui les entendent (`Cerveau::recevoir`) ;
-//! - il tient la liste des nôtres (`IcebreakerIaAllies`) que les agents lisent au tick suivant.
+//! - il tient la liste des nôtres (`IcebreakerIaAllies`) que les agents lisent au tick suivant ;
+//! - il applique les effets des réactions (`Cerveau::effets` : la rage) avec les buffs de Veloren.
 
 use common::{
     comp::{
-        Agent, Alignment, Body, Content, Health, Pos, UnresolvedChatMsg,
+        Agent, Alignment, Body, Buffs, Content, Health, Mass, Pos, Stats, UnresolvedChatMsg,
         agent::{AgentEvent, Sound, SoundKind},
+        buff::{Buff, BuffData, BuffKind, BuffSource, DestInfo},
     },
     event::{ChatEvent, EventBus},
-    icebreaker_ia::{self, Allie, IcebreakerIaAllies, Message},
-    resources::{EntitiesDiedLastTick, Time},
+    icebreaker_ia::{self, Allie, Effet, IcebreakerIaAllies, Message},
+    resources::{EntitiesDiedLastTick, Secs, Time},
     uid::Uid,
 };
 use common_ecs::{Job, Origin, Phase, System};
@@ -102,6 +104,9 @@ impl<'a> System<'a> for Sys {
         ReadStorage<'a, Body>,
         ReadStorage<'a, Alignment>,
         ReadStorage<'a, Uid>,
+        ReadStorage<'a, Stats>,
+        ReadStorage<'a, Mass>,
+        WriteStorage<'a, Buffs>,
         WriteStorage<'a, Agent>,
     );
 
@@ -111,7 +116,23 @@ impl<'a> System<'a> for Sys {
 
     fn run(
         _job: &mut Job<Self>,
-        (entities, time, morts, chat_bus, mut monde, mut allies, positions, healths, bodies, alignments, uids, mut agents): Self::SystemData,
+        (
+            entities,
+            time,
+            morts,
+            chat_bus,
+            mut monde,
+            mut allies,
+            positions,
+            healths,
+            bodies,
+            alignments,
+            uids,
+            stats,
+            masses,
+            mut buffs,
+            mut agents,
+        ): Self::SystemData,
     ) {
         // Les sons de ce tick : les coups, les morts, les bruits demandés, les cris.
         let mut sons: Vec<Son> = (&positions, &healths)
@@ -153,6 +174,29 @@ impl<'a> System<'a> for Sys {
                 alerte: cerveau.alerte(),
                 messager: cerveau.messager(),
             });
+            // Les effets de ses réactions : la rage est le « Berserk » de Veloren (plus de dégâts, plus vite,
+            // et il encaisse moins bien).
+            for effet in cerveau.effets() {
+                let Effet::Rage { force, duree } = effet;
+                if let Some(mut les_siens) = buffs.get_mut(entite) {
+                    let pour = DestInfo { stats: stats.get(entite), mass: masses.get(entite) };
+                    let rage = Buff::new(
+                        BuffKind::Berserk,
+                        BuffData::new(force, Some(Secs(duree))),
+                        Vec::new(),
+                        BuffSource::World,
+                        *time,
+                        pour,
+                        None,
+                        None,
+                    );
+                    les_siens.insert(rage, *time);
+                    chat.emit(ChatEvent {
+                        msg: UnresolvedChatMsg::npc(*uid, Content::Plain("RAAAH !".to_string())),
+                        from_client: false,
+                    });
+                }
+            }
             for message in cerveau.cris() {
                 chat.emit(ChatEvent {
                     msg: UnresolvedChatMsg::npc(*uid, Content::Plain(paroles(&message).to_string())),

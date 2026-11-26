@@ -283,7 +283,8 @@ IA.2 et IA.13, Y.6 et Y.7 → profils et générateur, Y.8 → IA.15 ; les règl
   joueur à terre à 20 blocs en tête des cibles, sauf celui qui vient de les frapper ; fuite à 30 %. Humains : rondes
   de 3 guerriers sur 3 salles, aller et retour. Testé (tests ciblés ; client texte : une ronde humaine fait 0→1→2→1→0
   dans le journal, donjon danari sans erreur) ; achèvement et rondes pas vus dans le vrai client. ed852019b5
-- [ ] **Y.4 Orcs en rage** — sous la moitié des PV, une fois : dégâts et vitesse en plus.
+- [x] **Y.4 Orcs en rage** — sous la moitié des PV, une fois : dégâts et vitesse en plus. Fait par IA.11
+  (`PLAN-IA.md`).
 - [ ] **Y.5 Nains tenaces** — ils tiennent leur salle (poursuite bornée), plus d'armure.
 - [ ] **Y.6 Elfes tireurs** — plus d'archers à la composition, voient de plus loin.
 - [ ] **Y.7 Draugr dormeurs** — presque tous endormis (réveil au bruit), lents.
@@ -376,6 +377,9 @@ tâche pour ce qui casse.
 - [ ] IA.10 (ordres, 2026-11-27) : en donjon humain (`donjon -Site Genere -Race human`), les rondes tournent
   toujours entre leurs salles ; se battre à portée d'oreille d'une ronde : elle vient voir, fouille, puis reprend
   sa ronde là où elle en était (elle ne retourne pas d'abord à sa salle de départ).
+- [ ] IA.11 (orcs en rage, 2026-11-27) : `/entrainement scene rage` : frapper l'orc, sous la moitié de ses PV il
+  crie « RAAAH ! » et frappe plus fort et plus vite pendant 12 s, une seule fois. Est-ce lisible sans le cri (aura,
+  couleur) ? La rage rend-elle un groupe d'orcs trop dur en difficulté 5 et 6 ?
 - [ ] DF (difficulté 1 à 6, 2026-11-25) : au panneau Départ, les six lignes « Difficulté » ; partir en 1 puis en 6 dans
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au

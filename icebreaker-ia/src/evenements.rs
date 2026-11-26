@@ -19,6 +19,8 @@ pub enum Evenement {
     Touche,
     /// Son chef meurt à portée d'oreille.
     ChefTombe,
+    /// Ses PV passent sous `pv_bas` (une fois).
+    PvBas,
 }
 
 /// Ce qu'un ennemi crie aux siens, ou ce que le monde lui apprend. Jamais la position d'un joueur
