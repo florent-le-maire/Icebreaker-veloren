@@ -336,6 +336,9 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 `PLAN-GROTTE.md`). À parcourir dans le vrai client, en campagne, à deux si possible ; barrer ce qui est vu, ouvrir une
 tâche pour ce qui casse.
 
+- [ ] IA.1 (cerveau des ennemis, 2026-11-26, `PLAN-IA.md`) : au lieu d'entraînement, `/entrainement ia` puis des
+  orcs et des danari : ils se battent comme avant (cible, répartition à plusieurs joueurs, danari qui achèvent à
+  plusieurs et fuient sous 30 % de PV) ; en donjon humain, les rondes tournent toujours.
 - [ ] DF (difficulté 1 à 6, 2026-11-25) : au panneau Départ, les six lignes « Difficulté » ; partir en 1 puis en 6 dans
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au

@@ -680,6 +680,9 @@ pub struct Agent {
     /// Icebreaker: asleep in a generated dungeon, the agent does nothing until
     /// it wakes up (`server/src/sys/icebreaker_sleep.rs`).
     pub icebreaker_asleep: bool,
+    /// Icebreaker: the brain of one of our humanoid enemies, which decides in
+    /// place of the behavior tree (`server/src/sys/agent/icebreaker_ia.rs`).
+    pub icebreaker_ia: Option<Box<crate::icebreaker_ia::Cerveau>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -795,6 +798,7 @@ impl Agent {
             awareness: Awareness::new(0.0),
             rtsim_outbox: None,
             icebreaker_asleep: false,
+            icebreaker_ia: None,
         }
     }
 

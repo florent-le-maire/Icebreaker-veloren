@@ -661,16 +661,7 @@ impl SpawnEntityData {
         let agent = if matches!(alignment, comp::Alignment::Enemy)
             && matches!(body, comp::Body::Humanoid(_))
         {
-            agent.map(|a| {
-                let mut a = a.with_aggro_no_warn().with_no_flee_if(true);
-                // Icebreaker Y.1: an enemy of a race that flees (races.ron → fuite).
-                if let Some(fuite) =
-                    common::icebreaker_races::comportement(Some(&body)).and_then(|c| c.fuite)
-                {
-                    a.psyche.flee_health = fuite;
-                }
-                a
-            })
+            agent.map(|a| a.with_aggro_no_warn().with_no_flee_if(true))
         } else {
             agent
         };

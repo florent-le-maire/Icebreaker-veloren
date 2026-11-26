@@ -42,9 +42,9 @@ Règles de conduite :
 
 ## Tâches
 
-- [ ] **IA.0 Décision et plan** — décision `0024`, ce plan, section « Pour Veloren » de `design/creatures.md`,
-  questions Q69 à Q73. *Fin* : l'équipe valide.
-- [ ] **IA.1 Socle** — le crate, le cerveau (repos et combat délégués à Veloren), le nœud, le champ, les profils, les
+- [x] **IA.0 Décision et plan** — décision `0024`, ce plan, section « Pour Veloren » de `design/creatures.md`,
+  questions Q69 à Q73. Plan validé par Flo le 2026-11-26 ; Sayanel n'a pas relu. `2575e705`
+- [ ] **IA.1 Socle** — *en cours : `Veloren-ia`, 2026-11-26* — le crate, le cerveau (repos et combat délégués à Veloren), le nœud, le champ, les profils, les
   règles de cible migrées (patches Y.2 et Y.9 retirés de Veloren), `/entrainement ia` (l'état au-dessus des ennemis).
   *Fin* : au lieu d'entraînement, orcs et danari se battent comme avant, et leur état s'affiche.
 - [ ] **IA.2 Voir et chercher** — cône, dos, soupçon puis repéré, dernière position connue, poursuite aveugle,

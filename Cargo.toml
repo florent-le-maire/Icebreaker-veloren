@@ -37,6 +37,8 @@ members = [
     "icebreaker-modeles",
     # Icebreaker : le classeur d'équilibrage (docs/icebreaker/PLAN-PLAYTEST.md, § 8)
     "icebreaker-equilibrage",
+    # Icebreaker : la décision de nos ennemis (docs/icebreaker/PLAN-IA.md, décision 0024)
+    "icebreaker-ia",
 ]
 
 ### PACKAGE ###

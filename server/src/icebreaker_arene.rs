@@ -494,7 +494,7 @@ const SUIVANTE: &str = "suivante";
 
 const AIDE: &str = "/entrainement classe <id>, arme <jeu>, placer <1|2> [id], niveau <id|tout> \
                     <1-5>, ultime <id>, passif <id>, ennemi <race> [role] [nombre], difficulte <1-6|suivante>, \
-                    allie <id> [nombre], nettoyer, soin, entree";
+                    allie <id> [nombre], nettoyer, soin, entree, ia";
 
 /// `/entrainement …` : tout régler au lieu d'entraînement (les boutons de ses panneaux). Sans rôle
 /// requis, refusée ailleurs.
@@ -723,6 +723,16 @@ pub(crate) fn handle_entrainement(
             }
             Ok("Retour à l'entrée.".to_string())
         })(),
+        // Icebreaker IA : chaque ennemi dit son état (repos, combat, fuite) quand il en change.
+        ["ia"] => {
+            let oui = !common::icebreaker_ia::afficher();
+            common::icebreaker_ia::regler_afficher(oui);
+            Ok(if oui {
+                "Les ennemis disent leur état quand il change (/entrainement ia pour arrêter).".to_string()
+            } else {
+                "Les ennemis ne disent plus leur état.".to_string()
+            })
+        },
         _ => Err(AIDE.to_string()),
     };
     let message = message.map_err(|refus| {

@@ -3655,6 +3655,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "icebreaker-ia"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "icebreaker-modeles"
 version = "0.1.0"
 dependencies = [
@@ -9120,6 +9127,7 @@ dependencies = [
  "enumset",
  "fxhash",
  "hashbrown 0.17.1",
+ "icebreaker-ia",
  "indexmap 2.14.2",
  "inline_tweak",
  "itertools 0.14.0",

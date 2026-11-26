@@ -1,0 +1,15 @@
+# Icebreaker : la décision de nos ennemis (docs/icebreaker/PLAN-IA.md, décision 0024). Un crate sans dépendance à
+# Veloren : le serveur lui donne ce qu'un ennemi perçoit (`Observation`), il rend ce que l'ennemi veut faire
+# (`Intention`). Tests : `cargo test -p icebreaker-ia`.
+[package]
+name = "icebreaker-ia"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }

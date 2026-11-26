@@ -24,6 +24,8 @@ default = ["simd"]
 
 common-base = { package = "veloren-common-base", path = "base" }
 common-i18n = { package = "veloren-common-i18n", path = "i18n" }
+# Icebreaker : la décision de nos ennemis (docs/icebreaker/PLAN-IA.md)
+icebreaker-ia = { path = "../icebreaker-ia" }
 # inline_tweak = { workspace = true }
 
 # Serde

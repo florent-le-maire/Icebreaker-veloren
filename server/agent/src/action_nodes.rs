@@ -1159,63 +1159,6 @@ impl AgentData<'_> {
             },
         };
 
-        // Icebreaker Y.2, Y.9: a humanoid enemy ranks the targets it detects
-        // (races.ron): a standing player before a downed one (all downed: they are
-        // finished off), spread among the players by how many allies already aim
-        // at each; the danari in a pack finish off the downed first, unless
-        // someone just hit them.
-        let icebreaker_regles = matches!(self.alignment, Some(Alignment::Enemy))
-            .then(|| common::icebreaker_races::regles(self.body))
-            .flatten();
-        let icebreaker_cible = agent.target.map(|t| t.target);
-        // Its kin around, itself included.
-        let icebreaker_meute = icebreaker_regles
-            .as_ref()
-            .filter(|r| r.race.meute.is_some())
-            .map_or(1, |r| {
-                let espece = |b: Option<&Body>| match b {
-                    Some(Body::Humanoid(h)) => Some(h.species),
-                    _ => None,
-                };
-                1 + entities_nearby
-                    .iter()
-                    .filter(|e| {
-                        **e != *self.entity
-                            && espece(read_data.bodies.get(**e)) == espece(self.body)
-                            && matches!(read_data.alignments.get(**e), Some(Alignment::Enemy))
-                            && read_data.healths.get(**e).is_some_and(|h| !h.is_dead)
-                            && read_data.positions.get(**e).is_some_and(|p| {
-                                p.0.distance_squared(self.pos.0) < r.race.meute_rayon.powi(2)
-                            })
-                    })
-                    .count()
-            });
-        let icebreaker_cle = |entity: EcsEntity, e_pos: &Pos| -> (u8, i32) {
-            let Some(regles) = &icebreaker_regles else {
-                // As Veloren: the closest.
-                return (2, (e_pos.0.distance_squared(self.pos.0) * 100.0) as i32);
-            };
-            let distance = e_pos.0.distance(self.pos.0);
-            let a_terre = comp::is_downed(
-                read_data.healths.get(entity),
-                read_data.char_states.get(entity),
-            );
-            let uid = read_data.uids.get(entity);
-            let l_a_frappe_depuis = self.health.and_then(|h| {
-                let by = h.last_change.damage_by()?;
-                (Some(&by.uid()) == uid).then(|| read_data.time.0 - h.last_change.time.0)
-            });
-            // The allies already aiming at it, without itself.
-            let dessus = uid
-                .and_then(|uid| read_data.icebreaker_focus.0.get(uid).copied())
-                .unwrap_or(0)
-                .saturating_sub(u8::from(icebreaker_cible == Some(entity)));
-            (
-                regles.rang(distance, a_terre, l_a_frappe_depuis, regles.acheve(icebreaker_meute)),
-                (regles.score(distance, dessus) * 100.0) as i32,
-            )
-        };
-
         let is_detected = |entity: &EcsEntity, e_pos: &Pos, e_scale: Option<&Scale>| {
             self.detects_other(agent, controller, entity, e_pos, e_scale, read_data)
         };
@@ -1228,8 +1171,11 @@ impl AgentData<'_> {
                 get_pos(entity).map(|pos| (entity, pos, attack_target))
             })
             .filter(|(entity, e_pos, _)| is_detected(entity, e_pos, read_data.scales.get(*entity)))
-            .min_by_key(|(entity, e_pos, attack_target)| {
-                (*attack_target, icebreaker_cle(*entity, e_pos))
+            .min_by_key(|(_, e_pos, attack_target)| {
+                (
+                    *attack_target,
+                    (e_pos.0.distance_squared(self.pos.0) * 100.0) as i32,
+                )
             })
             .map(|(entity, _, attack_target)| (entity, attack_target));
 

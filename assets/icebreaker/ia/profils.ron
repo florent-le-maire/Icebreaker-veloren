@@ -1,0 +1,48 @@
+// Icebreaker IA : les réglages de la décision de nos ennemis humanoïdes (crate icebreaker-ia,
+// docs/icebreaker/PLAN-IA.md, design/creatures.md « Pour Veloren »). Rechargé à chaud.
+//
+// Le profil d'un ennemi = les réglages de sa race posés sur `commun` : une race ne dit que ce qui la distingue.
+//
+// Choix de cible (Y.2, Y.9) : parmi les joueurs qu'il perçoit, un joueur debout passe avant un joueur à terre ; si
+// tous sont à terre, ils sont achevés. Entre joueurs de même rang, les ennemis se répartissent.
+//   reciblage : secondes entre deux choix de cible en combat, ± 25 % selon la créature ; une cible qui tombe à
+//     terre fait choisir tout de suite ;
+//   repartition : blocs « ajoutés » à la distance d'un joueur par allié qui le vise déjà (0 = toujours le plus proche) ;
+//   acheve : il achève : un joueur à terre à moins de ce rayon (blocs) passe en tête des cibles ;
+//   meute, meute_rayon : il n'achève qu'à plusieurs (meute membres de la race, lui compris, à meute_rayon blocs) ;
+//     seul, il fait comme les autres ;
+//   provoque_par_coup : secondes pendant lesquelles celui qui vient de le frapper passe avant tout (contre : frapper,
+//     repousser).
+// États :
+//   fuite : part des PV sous laquelle il fuit (absent = ne fuit pas) ;
+//   oubli : secondes sans percevoir sa cible après lesquelles il l'abandonne (IA.1 ; IA.2 le remplace par la
+//     poursuite vers la dernière position connue, puis l'enquête).
+#![enable(implicit_some)]
+(
+    commun: (
+        reciblage: 3.0,
+        repartition: 8.0,
+        oubli: 8.0,
+    ),
+    races: {
+        // Fourbes : à plusieurs ils achèvent les blessés ; ils filent quand ça tourne mal.
+        "danari": (
+            acheve: 20.0,
+            meute: 2,
+            meute_rayon: 20.0,
+            provoque_par_coup: 3.0,
+            reciblage: 2.0,
+            fuite: 0.3,
+        ),
+        // Organisés : leurs rondes sont encore dans ennemis/races.ron (IA.10).
+        "human": (),
+        // Brutaux : rage sous la moitié des PV (IA.11).
+        "orc": (),
+        // Tenaces : tiennent leur salle (IA.13).
+        "dwarf": (),
+        // Tireurs : voient de loin.
+        "elf": (),
+        // Morts qui dorment.
+        "draugr": (),
+    },
+)

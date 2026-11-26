@@ -1,4 +1,6 @@
 pub mod behavior_tree;
+// Icebreaker: the brain of our humanoid enemies (decision 0024).
+pub mod icebreaker_ia;
 use server_agent::data::AgentEvents;
 pub use server_agent::{action_nodes, attack, consts, data, util};
 

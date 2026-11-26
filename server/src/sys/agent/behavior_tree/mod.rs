@@ -90,6 +90,8 @@ impl BehaviorTree {
                 target_if_attacked,
                 process_inbox_sound_and_hurt,
                 process_inbox_interaction,
+                // Icebreaker: our humanoid enemies decide with their own brain.
+                super::icebreaker_ia::noeud,
                 do_target_tree_if_target_else_do_idle_tree,
             ],
         }
@@ -968,31 +970,10 @@ fn do_combat(bdata: &mut BehaviorData) -> bool {
                 agent.target = None;
                 agent_data.idle(agent, controller, read_data, emitters, rng);
             } else {
-                // Icebreaker Y.2, Y.9: a humanoid enemy chooses its target again while
-                // fighting (Veloren never does for those that stop pursuing), more often
-                // (races.ron → reciblage, not all at the same tick), and at once when
-                // its target falls downed: to spread, to leave or finish off the downed.
-                let icebreaker_regles = matches!(agent_data.alignment, Some(Alignment::Enemy))
-                    .then(|| common::icebreaker_races::regles(agent_data.body))
-                    .flatten();
-                let retargeting = icebreaker_regles
-                    .as_ref()
-                    .and_then(|r| r.reciblage(agent_data.entity.id()))
-                    .unwrap_or(RETARGETING_THRESHOLD_SECONDS);
-                let since_selected = read_data.time.0 - selected_at;
-                let target_fell = icebreaker_regles.is_some()
-                    && since_selected > 0.5
-                    && common::comp::is_downed(
-                        read_data.healths.get(target),
-                        read_data.char_states.get(target),
-                    );
-                let is_time_to_retarget = since_selected > retargeting || target_fell;
+                let is_time_to_retarget =
+                    read_data.time.0 - selected_at > RETARGETING_THRESHOLD_SECONDS;
 
-                if (icebreaker_regles.is_some()
-                    || !agent.psyche.should_stop_pursuing
-                    || !in_aggro_range)
-                    && is_time_to_retarget
-                {
+                if (!agent.psyche.should_stop_pursuing || !in_aggro_range) && is_time_to_retarget {
                     agent_data.choose_target(agent, controller, read_data, AgentData::is_enemy);
                 }
 

@@ -57,7 +57,7 @@ flèche tue toujours un mage en un coup.**
   salle de guerriers reste une salle de guerriers. Si la difficulté interdit tous les rôles proposés (un poste qui
   n'a que des mages, en difficulté 1), le tirage du lieu est gardé.
 - **L'habileté n'a que le levier de Veloren** : le rang des compétences. Il n'existe pas de réglage de précision ou
-  de temps de réaction. Les règles de cible des races (`ennemis/races.ron`) ne dépendent pas de la difficulté.
+  de temps de réaction. Les règles de cible des races (`ia/profils.ron`) ne dépendent pas de la difficulté.
 
 ## Pas dans cette version
 

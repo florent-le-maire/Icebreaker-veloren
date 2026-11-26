@@ -29,6 +29,8 @@ pub mod icebreaker_panneau;
 pub mod icebreaker_competences;
 // Icebreaker : comportement de chaque race ennemie (jalon Y).
 pub mod icebreaker_races;
+// Icebreaker : la décision de nos ennemis (jalon IA, crate icebreaker-ia).
+pub mod icebreaker_ia;
 // Icebreaker : la difficulté 1 à 6 d'une expédition (jalon DF).
 pub mod icebreaker_difficulte;
 // Icebreaker : le lieu d'entraînement (jalon O).

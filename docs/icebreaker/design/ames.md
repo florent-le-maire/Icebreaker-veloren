@@ -100,7 +100,7 @@ donjon (`solitaires` de `generation.ron`), poches et culs-de-sac de la grotte (`
 gnarling ne sert plus en campagne.
 
 **Comportement par race (jalon Y, 2026-11-14, Flo ; à valider, `QUESTIONS.md` Q50)** : réglages dans
-`assets/icebreaker/ennemis/races.ron`. Faits : **tous** choisissent leur cible parmi les joueurs qu'ils ont
+`assets/icebreaker/ia/profils.ron` (les rondes : `ennemis/races.ron`). Faits : **tous** choisissent leur cible parmi les joueurs qu'ils ont
 repérés (Y.9) : un joueur debout passe avant un joueur à terre ; si tous sont à terre, ils sont achevés ; entre joueurs
 debout ils se répartissent (un joueur déjà visé par un allié compte comme 8 blocs plus loin) ; ils rechoisissent toutes
 les 3 s environ, et tout de suite quand leur cible tombe. Les **danari** sont fourbes : à deux ou plus (à 20 blocs), un
