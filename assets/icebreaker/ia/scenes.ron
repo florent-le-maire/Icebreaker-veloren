@@ -16,6 +16,15 @@
                 (race: "orc", role: "guerrier", nombre: 1, en: (0.0, 0.0), regard: (0.0, 1.0), immobile: true),
             ],
         ),
+        // IA.6 : un mage à 25 blocs, de face. Avec /entrainement ia il dit le sort qu'il choisit : de loin la boule
+        // de feu ; approchez : le lance-flammes ; collez-le : l'onde de feu. En difficulté 6 il a tous ses sorts.
+        "mage": (
+            texte: "un mage à 25 blocs. /entrainement ia : il dit ses sorts. Approchez, collez-le, foncez-lui dessus.",
+            joueur: (0.0, -25.0),
+            groupes: [
+                (race: "elf", role: "mage", nombre: 1, en: (0.0, 0.0), regard: (0.0, -1.0), immobile: true),
+            ],
+        ),
         // IA.4 : trois orcs au centre, un quatrième à l'écart, et un groupe loin au nord qui ne voit ni n'entend
         // le combat. On tue ceux du centre : celui de l'écart vient se battre, ou part chercher le groupe du nord
         // (« Je vais chercher les autres ! », puis « Des intrus ! ») ; le groupe vient voir là où on a été vu.

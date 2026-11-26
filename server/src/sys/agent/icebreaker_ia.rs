@@ -12,7 +12,10 @@ use super::{
 };
 use common::{
     combat::perception_dist_multiplier_from_stealth,
-    comp::{Alignment, Body, Content, ControlAction, InputKind, UtteranceKind, agent::Target, is_downed},
+    comp::{
+        Alignment, Body, Content, ControlAction, InputKind, UtteranceKind, ability::AbilityInput, agent::Target,
+        is_downed,
+    },
     icebreaker_ia::{self, Allie, Apercu, Cerveau, Etat, Id, Intention, Niveau, Observation, Percu, Profil},
     terrain::Block,
     uid::Uid,
@@ -48,10 +51,21 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
         return false;
     };
     let avant = cerveau.etat();
-    let obs = observation(&cerveau, &profil, agent_data, read_data, rng.random());
+    let sort_avant = cerveau.sort().map(str::to_string);
+    // Icebreaker IA.6 : celui qui a une table de sorts choisit lui-même ; il lui faut ceux qu'il peut lancer.
+    let prets = if profil.sorts.is_some() { sorts_prets(agent_data) } else { Vec::new() };
+    let mut obs = observation(&cerveau, &profil, agent_data, read_data, rng.random());
+    obs.sorts = prets.iter().map(|(_, nom)| nom.clone()).collect();
     let intention = cerveau.tick(&obs, &profil);
     let etat = cerveau.etat();
     let retenu = cerveau.retenu();
+    let sort = cerveau.sort().and_then(|voulu| prets.iter().find(|(_, nom)| nom == voulu)).map(|(touche, _)| *touche);
+    // `/entrainement ia` : le mage dit le sort qu'il choisit.
+    if icebreaker_ia::afficher()
+        && let Some(voulu) = cerveau.sort().filter(|voulu| sort_avant.as_deref() != Some(*voulu))
+    {
+        agent_data.chat_npc(Content::Plain(format!("→ {voulu}")), emitters);
+    }
     agent.icebreaker_ia = Some(cerveau);
 
     let yeux = agent_data.pos.0 + Vec3::unit_z() * agent_data.body.map_or(0.0, |b| b.eye_height(agent_data.scale));
@@ -84,11 +98,15 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
                 ControlAction::StartInput { input, .. } => match input {
                     InputKind::Roll => roule,
                     InputKind::Block => pare,
-                    InputKind::Primary | InputKind::Secondary | InputKind::Ability(_) => !retenu,
+                    // Le mage à table de sorts (IA.6) choisit lui-même : le choix de Veloren est retiré.
+                    InputKind::Primary | InputKind::Secondary | InputKind::Ability(_) => !retenu && profil.sorts.is_none(),
                     _ => true,
                 },
                 _ => true,
             });
+            if let Some(touche) = sort {
+                controller.push_basic_input(touche);
+            }
         },
         Intention::Fuir(de) => {
             if avant != Etat::Fuite {
@@ -140,6 +158,34 @@ pub fn noeud(bdata: &mut BehaviorData) -> bool {
     }
     true
 }
+
+/// Les sorts qu'il a et peut payer à ce tick : (la touche de Veloren, le nom de `combat::Sort`, c'est-à-dire
+/// la fin de l'identifiant de la capacité).
+fn sorts_prets(agent_data: &AgentData) -> Vec<(InputKind, String)> {
+    let touches = [(AbilityInput::Primary, InputKind::Primary), (AbilityInput::Secondary, InputKind::Secondary)]
+        .into_iter()
+        .chain((0..TOUCHES_DE_SORTS).map(|i| (AbilityInput::Auxiliary(i), InputKind::Ability(i))));
+    touches
+        .filter_map(|(entree, touche)| {
+            let (capacite, _, precise) = agent_data.active_abilities.activate_ability(
+                entree,
+                Some(agent_data.inventory),
+                agent_data.skill_set,
+                agent_data.body,
+                Some(agent_data.char_state),
+                agent_data.stance,
+                agent_data.combo,
+                agent_data.stats,
+                agent_data.buffs,
+            )?;
+            let nom = precise.ability_id(Some(agent_data.char_state), Some(agent_data.inventory))?.rsplit('.').next()?;
+            (capacite.energy_cost() <= agent_data.energy.current()).then(|| (touche, nom.to_string()))
+        })
+        .collect()
+}
+
+/// Combien de touches de compétence regarder, après l'attaque de base et la secondaire.
+const TOUCHES_DE_SORTS: usize = 6;
 
 /// Part de sa vitesse à laquelle il rentre à son poste.
 const ALLURE_RETOUR: f32 = 0.6;
@@ -214,6 +260,9 @@ fn observation(
                 a_terre: is_downed(read_data.healths.get(e), read_data.char_states.get(e)),
                 l_a_frappe_depuis,
                 dessus: read_data.icebreaker_focus.0.get(&uid).copied().unwrap_or(0),
+                approche: vers
+                    .try_normalized()
+                    .map_or(0.0, |direction| -read_data.velocities.get(e).map_or(0.0, |v| v.0.dot(direction))),
             })
         })
         .collect::<Vec<Percu>>();
@@ -259,6 +308,7 @@ fn observation(
         allies,
         hasard,
         attaque: agent_data.char_state.is_attack(),
+        sorts: Vec::new(),
         cible_en_vie: cerveau
             .cible()
             .and_then(|id| entite(id, read_data))

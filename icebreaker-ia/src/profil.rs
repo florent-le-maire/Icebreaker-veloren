@@ -96,6 +96,10 @@ profil! {
     roule: bool,
     /// Il pare quand sa façon de se battre le lui propose.
     pare: bool,
+    // --- Le mage (IA.6) ---
+    /// Sa table de sorts (`combat.rs`) : il choisit lui-même le sort à lancer, selon la distance et
+    /// la situation. Rien = la façon de se battre de Veloren choisit.
+    sorts: Vec<crate::combat::Sort>,
     // --- Fuite ---
     /// Part de ses PV (0 à 1) sous laquelle il fuit ; rien = ne fuit pas.
     fuite: f32,

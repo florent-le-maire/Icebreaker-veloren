@@ -358,6 +358,10 @@ tâche pour ce qui casse.
   `6` : en 1 il attend avant son premier coup, frappe un ou deux coups puis laisse un temps mort, ne roule pas et ne
   pare pas ; en 6 il roule, pare et enchaîne. Même essai avec un archer et un mage. Les chiffres des crans
   (`ia/profils.ron`, `crans`) sont à régler ; la difficulté 3 n'est plus tout à fait « le jeu d'avant » (Q72).
+- [ ] IA.6 (le mage, 2026-11-26) : `/entrainement ia` puis `/entrainement scene mage`, en difficulté 1, 4 et 6 : il
+  dit le sort qu'il choisit. De loin la boule (et napalm, souffle, pluie de braises en 6), à mi-distance le
+  lance-flammes, au contact l'onde, la cape ou la ruée ; lui foncer dessus appelle l'onde. Chaque sort part-il dans
+  la bonne direction ? Le mage reste-t-il lisible et battable ?
 - [ ] DF (difficulté 1 à 6, 2026-11-25) : au panneau Départ, les six lignes « Difficulté » ; partir en 1 puis en 6 dans
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au

@@ -6,6 +6,7 @@
 
 pub mod cerveau;
 pub mod cible;
+pub mod combat;
 pub mod evenements;
 pub mod ouie;
 pub mod perception;
@@ -13,6 +14,7 @@ pub mod profil;
 pub mod reactions;
 pub mod tirage;
 
+pub use combat::{Situation, Sort};
 pub use cerveau::{Allie, Cerveau, Etat, Id, Intention, Observation, Percu};
 pub use evenements::{Evenement, Message};
 pub use ouie::Bruits;

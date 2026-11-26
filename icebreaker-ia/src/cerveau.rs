@@ -4,6 +4,7 @@
 //! perdue de vue, il ne garde que la dernière position où il l'a perçue.
 
 use crate::{
+    combat::{self, Situation},
     evenements::{Evenement, Message},
     profil::Profil,
     reactions::{
@@ -29,6 +30,8 @@ pub struct Percu {
     pub l_a_frappe_depuis: Option<f64>,
     /// Combien d'ennemis le visent déjà (l'observateur compris, s'il le vise).
     pub dessus: u8,
+    /// La vitesse à laquelle il se rapproche de l'ennemi (blocs par seconde ; négative : il s'éloigne).
+    pub approche: f32,
 }
 
 /// Un des siens, dont il connaît le poste (IA.4).
@@ -64,6 +67,8 @@ pub struct Observation {
     pub hasard: f32,
     /// Il est en train d'attaquer (un coup, un tir, un sort en cours).
     pub attaque: bool,
+    /// Les sorts qu'il a et peut payer à ce tick (le nom de `combat::Sort`) ; vide s'il n'a pas de table.
+    pub sorts: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -107,6 +112,8 @@ const VICTIME: f64 = 1.0;
 const VICTIME_PRES: f32 = 6.0;
 /// Secondes pendant lesquelles celui qu'un allié vient de prévenir compte comme alerté.
 const PREVENU: f64 = 30.0;
+/// Secondes pendant lesquelles un mage demande un sort qui ne part pas, avant d'en choisir un autre.
+const SORT_ATTENTE: f64 = 1.5;
 
 /// Un endroit où il est venu voir.
 #[derive(Clone, Copy, Debug)]
@@ -157,6 +164,13 @@ pub struct Cerveau {
     pause_jusqu_a: f64,
     /// En combat, il se retient de frapper à ce tick.
     retenu: bool,
+    /// Le sort qu'il a choisi de lancer (mage), et depuis quand il le demande.
+    sort: Option<String>,
+    sort_depuis: f64,
+    /// Il lâche à ce tick le sort qu'il tenait.
+    lache: bool,
+    /// Son dernier lancer de chaque sort.
+    lances: Vec<(String, f64)>,
 }
 
 impl Default for Cerveau {
@@ -183,6 +197,10 @@ impl Default for Cerveau {
             attaque_depuis: None,
             pause_jusqu_a: 0.0,
             retenu: false,
+            sort: None,
+            sort_depuis: 0.0,
+            lache: false,
+            lances: Vec::new(),
         }
     }
 }
@@ -199,6 +217,43 @@ impl Cerveau {
     /// En combat, il se retient de frapper à ce tick (délai de réaction, temps mort après une
     /// attaque) : il garde sa cible en face, sans lancer de coup.
     pub fn retenu(&self) -> bool { self.retenu }
+
+    /// Le sort qu'il veut lancer (ou tenir) à ce tick, s'il a une table de sorts (`combat.rs`).
+    pub fn sort(&self) -> Option<&str> {
+        self.sort.as_deref().filter(|_| self.etat == Etat::Combat && !self.lache)
+    }
+
+    /// Ce sort est parti (ou ne part pas) : sa recharge court.
+    fn noter_lancer(&mut self, sort: String, temps: f64) {
+        self.lances.retain(|(nom, _)| *nom != sort);
+        self.lances.push((sort, temps));
+    }
+
+    /// Le mage en combat : le sort à demander à ce tick, face à sa cible.
+    fn regler_sort(&mut self, obs: &Observation, profil: &Profil, situation: Situation) {
+        let Some(table) = &profil.sorts else {
+            self.sort = None;
+            return;
+        };
+        if obs.attaque {
+            // Un sort en cours : il le tient tant que la cible est à sa portée et que son cran le laisse faire.
+            let porte = self.sort.as_ref().is_some_and(|s| table.iter().any(|l| l.sort == *s && l.porte(situation.distance)));
+            self.lache = self.retenu || !porte;
+        } else if self.retenu {
+            self.sort = None;
+        } else {
+            // Il choisit : rien de demandé, ou un sort qu'il n'a plus, ou qui ne part pas.
+            let attendu = obs.temps - self.sort_depuis > SORT_ATTENTE;
+            if self.sort.as_ref().is_none_or(|s| attendu || !obs.sorts.contains(s)) {
+                if let Some(rate) = self.sort.take().filter(|_| attendu) {
+                    self.noter_lancer(rate, obs.temps);
+                }
+                self.sort = combat::choisir(table, &obs.sorts, situation, &self.lances, obs.temps, obs.hasard)
+                    .map(|s| s.sort.clone());
+                self.sort_depuis = obs.temps;
+            }
+        }
+    }
 
     pub fn cible(&self) -> Option<Id> { self.cible }
 
@@ -268,9 +323,13 @@ impl Cerveau {
             self.prevenu_a = None;
         }
         // Une attaque qui finit ouvre son temps mort.
+        self.lache = false;
         if self.attaque_depuis.is_some() && !obs.attaque {
             self.pause_jusqu_a = obs.temps + profil.pause.unwrap_or(0.0);
             self.attaque_depuis = None;
+            if let Some(lance) = self.sort.take() {
+                self.noter_lancer(lance, obs.temps);
+            }
         } else if obs.attaque {
             self.attaque_depuis.get_or_insert(obs.temps);
         }
@@ -363,6 +422,10 @@ impl Cerveau {
                         Some(debut) => profil.enchainement.is_some_and(|max| obs.temps - debut > max),
                         None => obs.temps - self.engage_a < profil.reaction.unwrap_or(0.0) || obs.temps < self.pause_jusqu_a,
                     };
+                    if let Some(p) = obs.percus.iter().find(|p| p.id == cible) {
+                        let situation = Situation { distance: p.pos.distance(obs.pos), approche: p.approche };
+                        self.regler_sort(obs, profil, situation);
+                    }
                     Intention::Combattre(cible)
                 } else {
                     self.etat = Etat::Combat;
@@ -470,6 +533,7 @@ impl Cerveau {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::combat::Sort;
     use std::collections::HashMap;
 
     fn orc() -> Profil {
@@ -500,7 +564,7 @@ mod tests {
 
     /// Un joueur debout, reconnu, à `distance` blocs à l'est de l'origine.
     fn joueur(id: Id, distance: f32) -> Percu {
-        Percu { id, pos: en(distance, 0.0), net: true, a_terre: false, l_a_frappe_depuis: None, dessus: 0 }
+        Percu { id, pos: en(distance, 0.0), net: true, a_terre: false, l_a_frappe_depuis: None, dessus: 0, approche: 0.0 }
     }
 
     /// L'observation d'un ennemi en pleine forme à l'origine, seul de sa race (`moi` 0 : reciblage
@@ -996,6 +1060,76 @@ mod tests {
         c.tick(&obs(0.0, vec![joueur(1, 3.0)]), &debutant());
         c.tick(&Observation { cible_en_vie: false, ..obs(0.2, vec![]) }, &debutant());
         assert!(!c.retenu());
+    }
+
+    // --- IA.6 : le mage ---
+
+    fn mage() -> Profil {
+        let sort = |nom: &str, min, max, recharge| Sort { sort: nom.to_string(), min, max, poids: 1.0, recharge, approche: None };
+        Profil { sorts: Some(vec![sort("boule", 8.0, 40.0, 0.0), sort("rayon", 3.0, 12.0, 0.0), sort("onde", 0.0, 5.0, 6.0)]), ..orc() }
+    }
+
+    /// Le mage en pleine forme, à l'origine, qui voit un joueur à `distance` ; `attaque` : un sort est en cours.
+    fn face(temps: f64, distance: f32, attaque: bool) -> Observation {
+        let sorts = vec!["boule".to_string(), "rayon".to_string(), "onde".to_string()];
+        Observation { attaque, sorts, hasard: 0.5, ..obs(temps, vec![joueur(1, distance)]) }
+    }
+
+    /// « Le mage choisit son sort selon la distance et la situation » ; il garde son choix jusqu'à
+    /// ce que le sort parte, puis en choisit un autre.
+    #[test]
+    fn le_mage_demande_le_sort_qui_convient_a_la_distance() {
+        let mut c = Cerveau::default();
+        assert_eq!(c.tick(&face(0.0, 25.0, false), &mage()), Intention::Combattre(1));
+        assert_eq!(c.sort(), Some("boule"));
+        // Le sort part, puis finit ; la cible est maintenant au contact : l'onde.
+        c.tick(&face(0.3, 25.0, true), &mage());
+        assert_eq!(c.sort(), Some("boule"));
+        c.tick(&face(1.0, 2.0, false), &mage());
+        assert_eq!(c.sort(), Some("onde"));
+        // L'onde lancée recharge : au contact il n'a rien d'autre.
+        c.tick(&face(1.2, 2.0, true), &mage());
+        c.tick(&face(2.0, 2.0, false), &mage());
+        assert_eq!(c.sort(), None);
+        // Un guerrier n'a pas de table : il laisse faire Veloren.
+        let mut c = Cerveau::default();
+        c.tick(&face(0.0, 25.0, false), &orc());
+        assert_eq!(c.sort(), None);
+    }
+
+    /// Un sort tenu (le rayon) est lâché quand la cible sort de sa portée.
+    #[test]
+    fn le_mage_lache_un_sort_tenu_quand_la_cible_sort_de_portee() {
+        let mut c = Cerveau::default();
+        c.tick(&Observation { hasard: 0.9, ..face(0.0, 10.0, false) }, &mage());
+        assert_eq!(c.sort(), Some("rayon"));
+        c.tick(&face(0.5, 10.0, true), &mage());
+        assert_eq!(c.sort(), Some("rayon"));
+        c.tick(&face(1.0, 16.0, true), &mage());
+        assert_eq!(c.sort(), None);
+    }
+
+    /// Pendant son délai de réaction ou son temps mort, il ne demande aucun sort.
+    #[test]
+    fn le_mage_qui_se_retient_ne_demande_rien() {
+        let lent = Profil { reaction: Some(1.0), ..mage() };
+        let mut c = Cerveau::default();
+        c.tick(&face(0.0, 25.0, false), &lent);
+        assert!(c.retenu());
+        assert_eq!(c.sort(), None);
+        c.tick(&face(1.2, 25.0, false), &lent);
+        assert_eq!(c.sort(), Some("boule"));
+    }
+
+    /// Un sort demandé qui ne part pas (plus d'énergie, gêné) : il passe à un autre.
+    #[test]
+    fn le_mage_renonce_a_un_sort_qui_ne_part_pas() {
+        let mut c = Cerveau::default();
+        c.tick(&Observation { hasard: 0.9, ..face(0.0, 10.0, false) }, &mage());
+        assert_eq!(c.sort(), Some("rayon"));
+        let sans_rayon = |temps| Observation { sorts: vec!["boule".to_string()], ..face(temps, 10.0, false) };
+        c.tick(&sans_rayon(0.5), &mage());
+        assert_eq!(c.sort(), Some("boule"));
     }
 
     /// `menace.md`, principe 1 : « les créatures ne trichent pas ». Deux cerveaux qui reçoivent les

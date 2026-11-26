@@ -67,8 +67,11 @@ Règles de conduite :
   ne faisait pas de bruit (daté du tick précédent). Testé ; client texte, un orc sur un joueur immobile : 0,55 coup
   par seconde en difficulté 1 (1,15 sans les réglages du cran), 2,8 en difficulté 6. Pas vu : le vrai client, la
   roulade et la parade, l'archer et le mage.
-- [ ] **IA.6 Le mage** — table de sorts du bâton, par cran, à la place de `handle_staff_attack` pour nos mages.
-  *Fin* : le mage choisit son sort selon la distance et la situation.
+- [x] **IA.6 Le mage** — table de sorts du bâton (`sorts` du rôle mage, `combat.rs`) : distance, cible qui fonce,
+  recharge, poids ; les sorts dont il dispose viennent du rang de son cran. `handle_staff_attack` garde le
+  déplacement et la visée, son choix de sort est retiré et remplacé par celui du cerveau. Scène `mage`. Testé ;
+  client texte : boule de feu à 25 blocs, lance-flammes ou boule à 10, onde de feu à 3, napalm en difficulté 6. Pas
+  vu : le vrai client (visée de chaque sort, ruée, cape), une cible qui fonce.
 - [ ] **IA.7 Défense réactive** — « le joueur arme un coup » : esquive ou parade tirée après le délai de réaction.
   *Fin* : au cran haut, un coup lent est esquivé ou paré ; une compétence rapide passe.
 - [ ] **IA.8 Fuite et coincé** — le fuyard n'oublie pas ; coincé, il tire : se cacher, forcer le passage.

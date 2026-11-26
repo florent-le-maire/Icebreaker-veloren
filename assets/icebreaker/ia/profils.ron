@@ -44,6 +44,12 @@
 //   enchainement : secondes au plus pendant lesquelles il tient une attaque sans s'arrêter (absent : sans limite) ;
 //   roule, pare : il fait (ou non) les roulades et les parades que sa façon de se battre lui propose ;
 //   un cran peut aussi aiguiser un peu les sens (vue_nette, soupcon, ouie) : ils restent bornés.
+// Le mage (IA.6) : `sorts`, sa table de sorts, dans `roles` plus bas. Parmi les sorts qu'il a (le rang de son
+// cran, difficulte.ron : 1 = onde de feu ; 3 = + ruée et cape ; 5 = tous) et peut payer, il tire celui qui convient.
+//   sort : la fin du nom de la capacité de Veloren (assets/common/abilities/staff/<sort>.ron) ;
+//   min, max : il le lance sur une cible entre ces distances (blocs) ; poids : sa part dans le tirage ;
+//   recharge : secondes avant de le relancer ; approche : seulement si la cible approche à cette vitesse (blocs/s).
+// Sans table, c'est la façon de se battre de Veloren qui choisit (boule, lance-flammes, onde).
 #![enable(implicit_some)]
 (
     commun: (
@@ -91,7 +97,27 @@
     roles: {
         "guerrier": (),
         "archer": (),
-        "mage": (),
+        "mage": (
+            sorts: [
+                // La boule de feu : de loin, tout le temps.
+                (sort: "firebomb", min: 9.0, max: 40.0, poids: 4.0),
+                // Le lance-flammes : à mi-distance, tant que la cible y reste.
+                (sort: "flamethrower", min: 3.0, max: 13.0, poids: 4.0),
+                // L'onde de feu repousse : au contact, ou sur une cible qui lui fonce dessus.
+                (sort: "fireshockwave", max: 5.0, poids: 8.0, recharge: 6.0),
+                (sort: "fireshockwave", max: 10.0, poids: 20.0, recharge: 6.0, approche: 7.0),
+                // La cape de flammes brûle ceux qui le collent.
+                (sort: "flame_cloak", max: 4.0, poids: 5.0, recharge: 12.0),
+                // La ruée de feu : il traverse sa cible quand elle le serre.
+                (sort: "fire_dash", min: 2.0, max: 7.0, poids: 3.0, recharge: 9.0),
+                // Le napalm couvre le sol autour d'une cible éloignée.
+                (sort: "napalm_strike", min: 12.0, max: 30.0, poids: 3.0, recharge: 14.0),
+                // Le souffle explose : à mi-distance.
+                (sort: "fire_breath", min: 8.0, max: 28.0, poids: 3.0, recharge: 8.0),
+                // La pluie de braises : de loin.
+                (sort: "pyroclasm", min: 12.0, max: 36.0, poids: 3.0, recharge: 10.0),
+            ],
+        ),
         // Le chef ne quitte pas les siens (Q70, proposé).
         "chef": (
             reactions: {

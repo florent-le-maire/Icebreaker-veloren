@@ -9,7 +9,7 @@ use crate::{
 };
 pub use icebreaker_ia::{
     Allie, Apercu, Bruits, Cerveau, Etat, Evenement, Id, Intention, Message, Niveau, Observation, Percu, Profil,
-    Profils, Reaction, niveau,
+    Profils, Reaction, Situation, Sort, niveau,
 };
 use serde::Deserialize;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -146,6 +146,30 @@ mod tests {
             assert!(b >= a && b <= a * 1.3, "sens de {a} à {b}");
         }
         assert!(dur.vue_nette.unwrap() < dur.vue.unwrap());
+    }
+
+    /// IA.6 : le mage a une table de sorts faite de vrais sorts du bâton, qui couvre toutes les distances
+    /// où il se bat (il a toujours un sort gratuit à lancer) ; les autres rôles n'en ont pas.
+    #[test]
+    fn la_table_de_sorts_du_mage() {
+        let mage = profil(Some(&corps(humanoid::Species::Elf)), ("mage", "base")).unwrap();
+        let table = mage.sorts.expect("le mage n'a pas de table de sorts");
+        for sort in &table {
+            let _ = Ron::<crate::comp::CharacterAbility>::load_expect(&format!("common.abilities.staff.{}", sort.sort));
+            assert!(sort.min < sort.max && sort.poids > 0.0 && sort.recharge >= 0.0, "{}", sort.sort);
+        }
+        // L'attaque de base et la secondaire ne coûtent pas d'énergie à lancer et ne rechargent pas : de 3 à 40
+        // blocs, l'une des deux porte.
+        let gratuits = ["firebomb", "flamethrower"];
+        for distance in 3..=40 {
+            assert!(
+                table.iter().any(|s| gratuits.contains(&s.sort.as_str()) && s.recharge == 0.0 && s.porte(distance as f32)),
+                "rien à lancer à {distance} blocs"
+            );
+        }
+        for role in ["guerrier", "archer", "chef"] {
+            assert!(profil(Some(&corps(humanoid::Species::Elf)), (role, "base")).unwrap().sorts.is_none(), "{role}");
+        }
     }
 
     /// Les scènes d'essai ne nomment que des races et des rôles de l'arène, et tiennent sur le plateau.
