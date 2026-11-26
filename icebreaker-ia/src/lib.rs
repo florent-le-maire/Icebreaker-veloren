@@ -6,9 +6,11 @@
 
 pub mod cerveau;
 pub mod cible;
+pub mod ouie;
 pub mod perception;
 pub mod profil;
 
 pub use cerveau::{Cerveau, Etat, Id, Intention, Observation, Percu};
+pub use ouie::Bruits;
 pub use perception::{Apercu, Niveau, niveau};
 pub use profil::{Profil, Profils};

@@ -1,0 +1,18 @@
+// Icebreaker IA.3 : les bruits que nos ennemis entendent (crate icebreaker-ia, `ouie.rs` ;
+// design/creatures.md « Pour Veloren »). Rechargé à chaud.
+//
+// Un bruit porte à `portees[sorte]` blocs, multipliés par la finesse d'ouïe de celui qui écoute (`ouie` de
+// ia/profils.ron). Celui qui l'entend va voir l'endroit, y fouille, puis rentre à son poste.
+// Les murs n'arrêtent aucun son tant que le serveur ne connaît pas les salles (IA.13) : portées courtes.
+(
+    portees: {
+        // Un coup qui touche (quelqu'un perd des PV).
+        "combat": 22.0,
+        // Quelqu'un meurt.
+        "mort": 28.0,
+    },
+    // Ce que compte un bloc d'écart de hauteur : 2 = un étage au-dessus s'entend de deux fois moins loin.
+    hauteur: 2.0,
+    // Facteur sur la portée pour un ennemi endormi (il se réveille s'il entend).
+    endormi: 0.5,
+)

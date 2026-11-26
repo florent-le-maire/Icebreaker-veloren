@@ -20,6 +20,8 @@
 //   cone : largeur du cône, en degrés ;
 //   dos : rayon dans lequel il perçoit aussi dans son dos ;
 //   soupcon : secondes pendant lesquelles un soupçon doit rester en vue pour devenir un combat (« ! »).
+// Ouïe (IA.3) : un coup qui touche, une mort font un bruit (ia/bruits.ron) ; il va voir, même après un combat.
+//   ouie : facteur sur la portée des bruits (absent = sourd).
 // Chercher (IA.2) : il ne sait d'une cible perdue de vue que le dernier endroit où il l'a perçue.
 //   poursuite : secondes pendant lesquelles il y court sans la voir ; ensuite il n'a plus de cible : il enquête ;
 //   trajet : secondes au plus pour arriver à l'endroit ; arrivee : distance (blocs) à laquelle il y est ;
@@ -35,6 +37,7 @@
         cone: 140.0,
         dos: 3.0,
         soupcon: 1.2,
+        ouie: 1.0,
         poursuite: 3.0,
         trajet: 20.0,
         arrivee: 2.5,

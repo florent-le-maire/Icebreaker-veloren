@@ -72,6 +72,10 @@ const ARRIVEE: f32 = 2.0;
 /// La fouille du regard : il regarde un point à `REGARD` blocs, qui tourne de `TOUR` radians par seconde.
 const REGARD: f32 = 4.0;
 const TOUR: f32 = 1.0;
+/// Le bruit de la mort de sa victime : moins de `VICTIME` secondes après, à moins de `VICTIME_PRES` blocs
+/// de là où il l'a vue.
+const VICTIME: f64 = 1.0;
+const VICTIME_PRES: f32 = 6.0;
 
 /// Un endroit où il est venu voir.
 #[derive(Clone, Copy, Debug)]
@@ -98,6 +102,10 @@ pub struct Cerveau {
     poste: Option<Vec3<f32>>,
     /// Il doit rentrer à son poste.
     rentre: bool,
+    /// Le dernier bruit entendu : où, quand.
+    bruit: Option<(Vec3<f32>, f64)>,
+    /// Sa victime vient de mourir là, à cette heure : le bruit de cette mort n'est pas à aller voir.
+    victime: Option<(Vec3<f32>, f64)>,
 }
 
 impl Default for Cerveau {
@@ -112,6 +120,8 @@ impl Default for Cerveau {
             enquete: None,
             poste: None,
             rentre: false,
+            bruit: None,
+            victime: None,
         }
     }
 }
@@ -120,6 +130,13 @@ impl Cerveau {
     pub fn etat(&self) -> Etat { self.etat }
 
     pub fn cible(&self) -> Option<Id> { self.cible }
+
+    /// Il entend un bruit fait à cet endroit, à cette heure (`ouie.rs` dit s'il l'entend).
+    pub fn entendre(&mut self, lieu: Vec3<f32>, temps: f64) {
+        if self.bruit.is_none_or(|(_, avant)| temps >= avant) {
+            self.bruit = Some((lieu, temps));
+        }
+    }
 
     pub fn tick(&mut self, obs: &Observation, profil: &Profil) -> Intention {
         let poste = *self.poste.get_or_insert(obs.pos);
@@ -146,6 +163,11 @@ impl Cerveau {
             if !obs.cible_en_vie || dehors {
                 self.cible = None;
                 self.rentre = true;
+                // Le bruit entendu pendant ce combat était le sien.
+                self.bruit = None;
+                if !obs.cible_en_vie {
+                    self.victime = Some((self.percue_en, obs.temps));
+                }
             }
         }
 
@@ -186,8 +208,20 @@ impl Cerveau {
                 self.poste = Some(obs.pos);
                 self.rentre = false;
             } else {
-                self.enquete = Some(Enquete { lieu: self.percue_en, depuis: obs.temps, sur_place: None });
+                // Il va voir ce qu'il sait de plus récent : où il l'a vue, ou un bruit entendu depuis.
+                let lieu = self.bruit.take().filter(|(_, quand)| *quand > self.percue_a).map_or(self.percue_en, |(lieu, _)| lieu);
+                self.enquete = Some(Enquete { lieu, depuis: obs.temps, sur_place: None });
             }
+        }
+
+        // Un bruit : il va voir (pas celui qui fuirait, ni celui que sa laisse retient).
+        if let Some((lieu, quand)) = self.bruit.take()
+
+            && !self.victime.is_some_and(|(ou, mort)| quand - mort < VICTIME && lieu.distance(ou) < VICTIME_PRES)
+            && !dehors
+            && !profil.fuite.is_some_and(|seuil| obs.pv < seuil)
+        {
+            self.enquete = Some(Enquete { lieu, depuis: obs.temps, sur_place: None });
         }
 
         // Un soupçon : il s'arrête et regarde.
@@ -502,6 +536,69 @@ mod tests {
         let frappe = Percu { l_a_frappe_depuis: Some(1.0), ..joueur(2, 2.0) };
         let mut c = Cerveau::default();
         assert_eq!(c.tick(&a_deux(vec![a_terre, frappe]), &danari()), Intention::Combattre(2));
+    }
+
+    /// « Entendre un bruit → enquête : il va voir l'endroit, fouille un moment, puis rentre à son
+    /// poste. »
+    #[test]
+    fn un_bruit_le_fait_venir_voir_fouiller_puis_rentrer() {
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![]), &orc());
+        c.entendre(en(15.0, 0.0), 1.0);
+        assert_eq!(c.tick(&obs(1.0, vec![]), &orc()), Intention::AllerVoir(en(15.0, 0.0)));
+        assert_eq!(c.etat(), Etat::Enquete);
+        let sur_place = en(14.0, 0.0);
+        assert!(matches!(c.tick(&obs_en(5.0, sur_place, vec![]), &orc()), Intention::Regarder(_)));
+        assert_eq!(c.tick(&obs_en(11.5, sur_place, vec![]), &orc()), Intention::Rentrer(Vec3::zero()));
+    }
+
+    /// Un bruit plus récent déplace l'enquête.
+    #[test]
+    fn un_nouveau_bruit_deplace_l_enquete() {
+        let mut c = Cerveau::default();
+        c.entendre(en(15.0, 0.0), 0.0);
+        c.tick(&obs(0.0, vec![]), &orc());
+        c.entendre(en(0.0, 12.0), 2.0);
+        assert_eq!(c.tick(&obs(2.0, vec![]), &orc()), Intention::AllerVoir(en(0.0, 12.0)));
+    }
+
+    /// « Il entend aussi pendant un combat » : il ne lâche pas la cible qu'il voit ; s'il la perd,
+    /// il va voir le bruit entendu depuis plutôt que l'endroit où il l'a vue.
+    #[test]
+    fn en_combat_il_retient_le_bruit_pour_quand_il_perd_sa_cible() {
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![joueur(1, 10.0)]), &orc());
+        c.entendre(en(0.0, -14.0), 0.5);
+        assert_eq!(c.tick(&obs(1.0, vec![joueur(1, 10.0)]), &orc()), Intention::Combattre(1));
+        // Perdue de vue : ce bruit est plus vieux que la dernière fois qu'il l'a vue.
+        assert_eq!(c.tick(&obs(2.0, vec![]), &orc()), Intention::AllerVoir(en(10.0, 0.0)));
+        c.entendre(en(0.0, -14.0), 3.0);
+        assert_eq!(c.tick(&obs(4.5, vec![]), &orc()), Intention::AllerVoir(en(0.0, -14.0)));
+        assert_eq!(c.etat(), Etat::Enquete);
+    }
+
+    /// Le bruit de son propre combat ne le fait pas fouiller quand sa cible meurt : il rentre.
+    #[test]
+    fn sa_cible_morte_il_oublie_le_bruit_de_son_combat() {
+        let mut c = Cerveau::default();
+        c.tick(&obs(0.0, vec![joueur(1, 3.0)]), &orc());
+        c.entendre(en(3.0, 0.0), 0.5);
+        let morte = Observation { cible_en_vie: false, ..obs_en(1.0, en(30.0, 0.0), vec![]) };
+        assert_eq!(c.tick(&morte, &orc()), Intention::Rentrer(Vec3::zero()));
+        // Le bruit de la mort de sa victime lui arrive juste après : il ne va pas la voir.
+        c.entendre(en(3.5, 0.0), 1.03);
+        assert_eq!(c.tick(&obs_en(1.1, en(30.0, 0.0), vec![]), &orc()), Intention::Rentrer(Vec3::zero()));
+        // Une autre mort, ailleurs ou plus tard : il y va.
+        c.entendre(en(3.5, 20.0), 1.2);
+        assert_eq!(c.tick(&obs_en(1.2, en(30.0, 0.0), vec![]), &orc()), Intention::AllerVoir(en(3.5, 20.0)));
+    }
+
+    /// Celui qui fuirait (PV sous son seuil) ne va pas voir un bruit.
+    #[test]
+    fn un_blesse_qui_fuit_ne_va_pas_voir_un_bruit() {
+        let mut c = Cerveau::default();
+        c.entendre(en(15.0, 0.0), 0.0);
+        assert_eq!(c.tick(&Observation { pv: 0.2, ..obs(0.0, vec![]) }, &danari()), Intention::Repos);
     }
 
     /// `menace.md`, principe 1 : « les créatures ne trichent pas ». Deux cerveaux qui reçoivent les

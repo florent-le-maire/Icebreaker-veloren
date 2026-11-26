@@ -346,6 +346,10 @@ tâche pour ce qui casse.
   l'ennemi court là où il nous a vus (« ? »), fouille quelques secondes, puis rentre à son poste, sans nous suivre à
   travers le mur ; de loin ou accroupi, il soupçonne d'abord (« ? ») avant d'attaquer (« ! ») ; de dos, on l'approche
   jusqu'à 3 blocs. Les chemins longs (portes, escaliers) pour aller voir et rentrer sont à regarder.
+- [ ] IA.3 (entendre, 2026-11-26) : au lieu d'entraînement, `/entrainement scene ecoute` puis `/entrainement
+  bruit` : l'orc qui nous tourne le dos vient voir. En donjon : tuer un ennemi hors de vue d'un autre, à moins de 22
+  blocs : l'autre vient voir, fouille, puis rentre ; un dormeur proche se réveille. Les portées (22 et 28 blocs,
+  à travers les murs) sont à régler.
 - [ ] DF (difficulté 1 à 6, 2026-11-25) : au panneau Départ, les six lignes « Difficulté » ; partir en 1 puis en 6 dans
   le donjon, la grotte et la forêt : l'annonce d'arrivée dit la difficulté, il y a moins puis plus d'ennemis, aucun
   mage en 1 ; les coups d'un ennemi font plus mal en 6 qu'en 1 (et encore après quelques secondes de combat) ; au

@@ -51,9 +51,11 @@ Règles de conduite :
   poursuite, fouille, retour au poste, `laisse` (réglage, aucune race ne s'en sert). Testé ; client texte au lieu
   d'entraînement : « ? », « ! », combat, puis le joueur téléporté au loin : l'orc fouille et rentre. Pas vu : derrière
   un vrai mur, les chemins longs en donjon, le vrai client. `2ec6141a`
-- [ ] **IA.3 Entendre** — bruits de combat et de mort (`icebreaker_ia_monde`, `ia/bruits.ron`), ouïe par profil,
-  enquête sur un bruit, aussi en combat.
-  *Fin* : on tue un ennemi hors de vue d'un autre : l'autre vient voir.
+- [x] **IA.3 Entendre** — un coup qui touche et une mort font un bruit (`icebreaker_ia_monde`, `ia/bruits.ron`) ;
+  `ouie` par profil, écart de hauteur compté double ; celui qui entend va voir, fouille, rentre ; en combat il le
+  retient pour quand il perd sa cible ; un dormeur qui entend se réveille. Scènes d'essai (`ia/scenes.ron`,
+  `/entrainement scene ecoute`, `/entrainement bruit`). Testé ; client texte : dans le dos de l'orc rien, au bruit
+  « ? » puis « ! ». Pas vu : un vrai meurtre hors de vue, le réveil d'un dormeur, le vrai client.
 - [ ] **IA.4 Prévenir** — tirage à l'événement, `aller_prevenir`, cri porteur d'un signalement, scènes
   (`ia/scenes.ron`).
   *Fin* : scène `massacre` : on tue un groupe d'orcs, un survivant éloigné part (ou non) chercher des renforts, qui

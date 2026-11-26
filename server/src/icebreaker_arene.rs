@@ -494,7 +494,71 @@ const SUIVANTE: &str = "suivante";
 
 const AIDE: &str = "/entrainement classe <id>, arme <jeu>, placer <1|2> [id], niveau <id|tout> \
                     <1-5>, ultime <id>, passif <id>, ennemi <race> [role] [nombre], difficulte <1-6|suivante>, \
-                    allie <id> [nombre], nettoyer, soin, entree, ia";
+                    allie <id> [nombre], nettoyer, soin, entree, ia, scene <nom>, bruit";
+
+/// Retire de l'arène les ennemis et les alliés ; rend leur nombre.
+fn nettoyer(server: &mut crate::Server) -> usize {
+    use crate::state_ext::StateExt;
+    use specs::Join;
+    let partis: Vec<Entity> = {
+        let ecs = server.state.ecs();
+        (&ecs.entities(), &ecs.read_storage::<common::comp::Agent>(), &ecs.read_storage::<common::comp::Alignment>())
+            .join()
+            .filter(|(_, _, alignement)| camp(alignement).is_some())
+            .map(|(entite, ..)| entite)
+            .collect()
+    };
+    for entite in &partis {
+        let _ = server.state.delete_entity_recorded(*entite);
+    }
+    partis.len()
+}
+
+/// Icebreaker IA : `/entrainement scene <nom>` — l'arène est nettoyée, les groupes de la scène viennent à leur
+/// place (depuis le centre), tournés comme elle le dit, et le joueur est posé à la sienne.
+fn jouer_scene(server: &mut crate::Server, client: Entity, nom: &str) -> Result<String, String> {
+    use common::comp::{ForceUpdate, Ori, Pos};
+    let scenes = common::icebreaker_ia::scenes();
+    let scene = scenes.scenes.get(nom).ok_or_else(|| {
+        let mut noms: Vec<&str> = scenes.scenes.keys().map(String::as_str).collect();
+        noms.sort_unstable();
+        format!("Scène inconnue : {nom} ({}).", liste(noms))
+    })?;
+    let config = common::icebreaker_arene::config();
+    let centre = world::icebreaker::arene::place(server.world.sim())
+        .map(|arene| arene.centre.as_::<f32>().with_z(arene.alt as f32))
+        .ok_or_else(|| "Pas d'arène dans ce monde.".to_string())?;
+    nettoyer(server);
+    let ecs = server.state.ecs();
+    let difficulte = difficulte();
+    let bus = ecs.read_resource::<common::event::EventBus<common::event::CreateNpcEvent>>();
+    for groupe in &scene.groupes {
+        let (fichier, ..) = ennemi_demande(&config, &groupe.race, Some(&groupe.role))?;
+        let ori = groupe
+            .regard
+            .and_then(|(x, y)| common::util::Dir::from_unnormalized(vek::Vec3::new(x, y, 0.0)))
+            .map_or_else(Ori::default, Ori::from);
+        let ou = centre + vek::Vec3::new(groupe.en.0, groupe.en.1, 0.0);
+        for pos in positions(ou, 1.0 + groupe.nombre as f32 * 0.5, groupe.nombre) {
+            let mut info = world::icebreaker::races::entity_au_hasard(&fichier, Some(&groupe.race), pos, &difficulte);
+            if groupe.immobile {
+                info.idle_wander_factor = 0.0;
+            }
+            if let crate::sys::terrain::SpawnEntityData::Npc(data) = crate::sys::terrain::SpawnEntityData::from_entity_info(info) {
+                bus.emit_now(common::event::CreateNpcEvent { pos: Pos(pos), ori, npc: data.to_npc_builder().0 });
+            }
+        }
+    }
+    if let Some((x, y)) = scene.joueur
+        && let Some(pos) = ecs.write_storage::<Pos>().get_mut(client)
+    {
+        pos.0 = centre + vek::Vec3::new(x, y, 1.0);
+        if let Some(force) = ecs.write_storage::<ForceUpdate>().get_mut(client) {
+            force.update();
+        }
+    }
+    Ok(format!("Scène « {nom} » : {}", scene.texte))
+}
 
 /// `/entrainement …` : tout régler au lieu d'entraînement (les boutons de ses panneaux). Sans rôle
 /// requis, refusée ailleurs.
@@ -515,31 +579,19 @@ pub(crate) fn handle_entrainement(
     }
     let config = common::icebreaker_arene::config();
     if args.len() == 1 && args[0] == "nettoyer" {
-        use crate::state_ext::StateExt;
-        use specs::Join;
-        let partis: Vec<Entity> = {
-            let ecs = server.state.ecs();
-            (
-                &ecs.entities(),
-                &ecs.read_storage::<common::comp::Agent>(),
-                &ecs.read_storage::<common::comp::Alignment>(),
-            )
-                .join()
-                .filter(|(_, _, alignement)| camp(alignement).is_some())
-                .map(|(entite, ..)| entite)
-                .collect()
-        };
-        for entite in &partis {
-            let _ = server.state.delete_entity_recorded(*entite);
-        }
-        dire_au_panneau(server.state.ecs(), client, &format!("Arène nettoyée ({} en moins).", partis.len()), Sorte::Reussite);
-        server.notify_client(
-            client,
-            ServerGeneral::server_msg(
-                ChatType::Meta,
-                Content::Plain(format!("Arène nettoyée ({} en moins).", partis.len())),
-            ),
-        );
+        let message = format!("Arène nettoyée ({} en moins).", nettoyer(server));
+        dire_au_panneau(server.state.ecs(), client, &message, Sorte::Reussite);
+        server.notify_client(client, ServerGeneral::server_msg(ChatType::Meta, Content::Plain(message)));
+        return Ok(());
+    }
+    // Icebreaker IA : une scène d'essai (`ia/scenes.ron`) remplace ce qui est en piste.
+    if args.len() == 2 && args[0] == "scene" {
+        let message = jouer_scene(server, client, &args[1]).map_err(|refus| {
+            dire_au_panneau(server.state.ecs(), client, &refus, Sorte::Refus);
+            Content::Plain(refus)
+        })?;
+        dire_au_panneau(server.state.ecs(), client, &message, Sorte::Reussite);
+        server.notify_client(client, ServerGeneral::server_msg(ChatType::Meta, Content::Plain(message)));
         return Ok(());
     }
     let arene = world::icebreaker::arene::place(server.world.sim())
@@ -722,6 +774,12 @@ pub(crate) fn handle_entrainement(
                 force.update();
             }
             Ok("Retour à l'entrée.".to_string())
+        })(),
+        // Icebreaker IA.3 : le joueur fait un bruit de combat là où il est (ceux qui l'entendent viennent voir).
+        ["bruit"] => (|| {
+            let pos = ecs.read_storage::<Pos>().get(client).map(|pos| pos.0).ok_or_else(|| "Il faut jouer un personnage.".to_string())?;
+            ecs.write_resource::<crate::sys::icebreaker_ia_monde::IcebreakerIaMonde>().bruit("combat", pos);
+            Ok("Vous faites du bruit : ceux qui l'entendent viennent voir.".to_string())
         })(),
         // Icebreaker IA : chaque ennemi dit son état (repos, combat, fuite) quand il en change.
         ["ia"] => {

@@ -9,6 +9,7 @@ pub mod icebreaker_clock;
 pub mod icebreaker_entrainement;
 pub mod icebreaker_expedition;
 pub mod icebreaker_focus;
+pub mod icebreaker_ia_monde;
 // Icebreaker O : réapparition au lieu d'entraînement.
 pub mod icebreaker_arene;
 pub mod icebreaker_mort;
@@ -73,6 +74,8 @@ pub fn add_server_systems(dispatch_builder: &mut DispatcherBuilder) {
     dispatch::<icebreaker_rondes::Sys>(dispatch_builder, &[]);
     // Icebreaker Y.9: who aims at whom, for the enemies to spread.
     dispatch::<icebreaker_focus::Sys>(dispatch_builder, &[]);
+    // Icebreaker IA: the noises our enemies hear.
+    dispatch::<icebreaker_ia_monde::Sys>(dispatch_builder, &[]);
     // Icebreaker: after the movements, so that sleepers keep lying.
     dispatch::<icebreaker_sleep::Sys>(dispatch_builder, &[
         &phys::Sys::sys_name(),

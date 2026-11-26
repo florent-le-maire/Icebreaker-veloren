@@ -1,0 +1,20 @@
+// Icebreaker IA : les scènes d'essai du lieu d'entraînement (`/entrainement scene <nom>`,
+// docs/icebreaker/PLAN-IA.md). Une scène nettoie l'arène, fait venir ses groupes et pose le joueur.
+//   texte   : ce qu'on y essaie (dit au joueur)
+//   joueur  : où il est posé, depuis le centre de l'arène (x vers l'est, y vers le nord) ; absent : il ne bouge pas
+//   groupes : race et role (ceux de arene.ron), nombre, en (depuis le centre), regard (vers où ils sont tournés),
+//             immobile (ils ne flânent pas au repos)
+// Le plateau fait 48 blocs de rayon ; un ennemi voit à 32 blocs devant lui (ia/profils.ron).
+#![enable(implicit_some)]
+(
+    scenes: {
+        // IA.3 : on est dans le dos de l'orc, trop loin pour qu'il nous sente.
+        "ecoute": (
+            texte: "un orc vous tourne le dos, à 18 blocs. /entrainement bruit : il vient voir (« ? »), puis vous voit (« ! »).",
+            joueur: (0.0, -18.0),
+            groupes: [
+                (race: "orc", role: "guerrier", nombre: 1, en: (0.0, 0.0), regard: (0.0, 1.0), immobile: true),
+            ],
+        ),
+    },
+)

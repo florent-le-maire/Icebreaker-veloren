@@ -19,6 +19,9 @@ pub struct Profil {
     pub dos: Option<f32>,
     /// Secondes pendant lesquelles il doit garder un soupçon en vue pour le repérer.
     pub soupcon: Option<f64>,
+    // --- Ouïe (IA.3) ---
+    /// Finesse d'ouïe : facteur sur la portée des bruits (`bruits.ron`) ; rien = sourd.
+    pub ouie: Option<f32>,
     // --- Chercher (IA.2) ---
     /// Secondes pendant lesquelles il court vers la dernière position connue d'une cible perdue de vue.
     pub poursuite: Option<f64>,
@@ -58,6 +61,7 @@ impl Profil {
             cone: self.cone.or(base.cone),
             dos: self.dos.or(base.dos),
             soupcon: self.soupcon.or(base.soupcon),
+            ouie: self.ouie.or(base.ouie),
             poursuite: self.poursuite.or(base.poursuite),
             fouille: self.fouille.or(base.fouille),
             trajet: self.trajet.or(base.trajet),
@@ -123,6 +127,7 @@ mod tests {
             cone: Some(1.0),
             dos: Some(1.0),
             soupcon: Some(1.0),
+            ouie: Some(1.0),
             poursuite: Some(1.0),
             fouille: Some(1.0),
             trajet: Some(1.0),
