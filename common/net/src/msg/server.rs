@@ -242,6 +242,9 @@ pub enum ServerGeneral {
     /// Icebreaker : les bâtiments et les terrains du plan du village ; envoyés à
     /// l'ouverture du plan, puis quand ils changent (jalon N).
     IcebreakerBuildings(Vec<common::icebreaker_panneau::Batiment>),
+    /// Icebreaker CA : les objectifs du lieu où est le joueur, pour sa carte de l'expédition ;
+    /// envoyés à l'arrivée puis quand ils changent (liste vide : pas en expédition).
+    IcebreakerObjectifs(Vec<common::icebreaker_carte::Objectif>),
     MapMarker(comp::MapMarkerUpdate),
     WeatherUpdate(SharedWeatherGrid),
     LocalWindUpdate(Vec2<f32>),
@@ -405,6 +408,7 @@ impl ServerMsg {
                         | ServerGeneral::IcebreakerJouer(_)
                         | ServerGeneral::IcebreakerExpedition(_)
                         | ServerGeneral::IcebreakerBuildings(_)
+                        | ServerGeneral::IcebreakerObjectifs(_)
                         | ServerGeneral::IcebreakerBaliseRecharge(_)
                         | ServerGeneral::MapMarker(_)
                         | ServerGeneral::WeatherUpdate(_)

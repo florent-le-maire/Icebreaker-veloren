@@ -29,6 +29,8 @@ pub mod icebreaker_expedition;
 // Icebreaker : maîtrise d'arme (jalon A).
 pub mod icebreaker_maitrise;
 pub mod icebreaker_mission;
+// Icebreaker CA : la carte de l'expédition (objet remis, objectifs envoyés).
+pub mod icebreaker_carte;
 pub mod icebreaker_mort;
 pub mod icebreaker_portail;
 pub mod icebreaker_autel;
@@ -806,6 +808,8 @@ impl Server {
         state.ecs_mut().insert(icebreaker_balise::IcebreakerBalises::default());
         // Icebreaker : qui a le plan du village ouvert (jalon N).
         state.ecs_mut().insert(icebreaker_panneaux::IcebreakerPanneaux::default());
+        // Icebreaker CA : les objectifs déjà envoyés à chaque joueur, pour sa carte.
+        state.ecs_mut().insert(icebreaker_carte::IcebreakerCartes::default());
 
         // Set the spawn point we calculated above
         state.ecs_mut().insert(spawn_point);

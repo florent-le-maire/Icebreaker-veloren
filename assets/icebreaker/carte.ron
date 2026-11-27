@@ -9,6 +9,8 @@
     periode: 0.5,
     // Cases gardées au plus ; au-delà, la carte ne grandit plus.
     max_cases: 200000,
+    // Secondes entre deux regards du serveur sur les objectifs à envoyer (arrivée, chef tombé, retour).
+    envoi: 1.0,
     // Côté de l'image de la carte, en pixels.
     taille: 512,
     // Zoom à l'ouverture, en pixels par bloc, et ses bornes (molette).

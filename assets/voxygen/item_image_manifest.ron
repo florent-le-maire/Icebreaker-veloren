@@ -3744,6 +3744,11 @@
         "voxel.item.mineral.gem.diamond",
         (0.0, 0.0, 0.0), (-55.0, 30.0, 20.0), 0.6,
     ),
+    // Icebreaker : carte de l'expédition (jalon CA)
+    Simple("common.items.icebreaker.carte"): VoxTrans(
+        "voxel.item.recipe.recipe_basic",
+        (1.0, 0.0, 20.0), (30.0, 45.0, 120.0), 1.0,
+    ),
     // Icebreaker : cristal d'un mort (T.11)
     Simple("common.items.icebreaker.cristal"): VoxTrans(
         "voxel.item.icebreaker.cristal",

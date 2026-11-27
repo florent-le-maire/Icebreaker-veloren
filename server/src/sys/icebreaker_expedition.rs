@@ -128,6 +128,8 @@ impl<'a> System<'a> for Sys {
                 if let Some(mut inventory) = inventories.get_mut(entity) {
                     // Icebreaker : une balise lumineuse pour le donjon (jalon J).
                     crate::icebreaker_balise::donner_si_absente(&mut inventory);
+                    // Icebreaker CA : et la carte de l'expédition.
+                    crate::icebreaker_carte::donner_si_absente(&mut inventory);
                     let _ = arrivals.insert(entity, Arrival::of(&inventory));
                 }
                 if let (Some((lieu, profil, seed, difficulte)), Some(client)) = (&grotte, clients.get(entity)) {

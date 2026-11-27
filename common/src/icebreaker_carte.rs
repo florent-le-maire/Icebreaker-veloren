@@ -12,6 +12,14 @@ use vek::{Rgb, Vec2, Vec3};
 /// L'objet « carte de l'expédition » : dans le sac, il ouvre la carte.
 pub const CARTE: &str = "common.items.icebreaker.carte";
 
+/// `item` est la carte de l'expédition.
+pub fn est_carte(item: &crate::comp::Item) -> bool {
+    matches!(
+        item.item_definition_id(),
+        crate::comp::item::ItemDefinitionId::Simple(id) if id == CARTE
+    )
+}
+
 /// Les réglages de la carte (`assets/icebreaker/carte.ron`).
 #[derive(Clone, Debug, Deserialize)]
 pub struct Reglages {
@@ -23,6 +31,8 @@ pub struct Reglages {
     pub periode: f32,
     /// Cases gardées au plus ; au-delà, la carte ne grandit plus.
     pub max_cases: usize,
+    /// Secondes entre deux regards du serveur sur les objectifs à envoyer.
+    pub envoi: f64,
     /// Côté de l'image de la carte, en pixels.
     pub taille: u32,
     /// Zoom à l'ouverture, en pixels par bloc, et ses bornes (molette).
@@ -54,6 +64,7 @@ impl Default for Reglages {
             rayon: 24,
             periode: 0.5,
             max_cases: 200_000,
+            envoi: 1.0,
             taille: 512,
             zoom: 3.0,
             zoom_min: 1.0,
@@ -556,6 +567,14 @@ mod tests {
         let mut e = Exploration::default();
         assert!(!e.explorer(Vec3::new(5, 0, 0), deux_salles(false), &reglages()));
         assert!(e.is_empty());
+    }
+
+    #[test]
+    fn l_objet_carte_existe() {
+        // CA (Flo, 2026-11-27) : « il faut que ça soit un item qui sera donné dans l'inventaire ».
+        let carte = crate::comp::Item::new_from_asset_expect(CARTE);
+        assert!(est_carte(&carte));
+        assert!(!est_carte(&crate::comp::Item::new_from_asset_expect("common.items.food.apple")));
     }
 
     #[test]

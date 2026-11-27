@@ -4,6 +4,7 @@ pub mod chunk_serialize;
 pub mod entity_sync;
 pub mod icebreaker_armes;
 pub mod icebreaker_balise;
+pub mod icebreaker_carte;
 pub mod icebreaker_charrette;
 pub mod icebreaker_clock;
 pub mod icebreaker_entrainement;
@@ -70,6 +71,8 @@ pub fn add_server_systems(dispatch_builder: &mut DispatcherBuilder) {
     dispatch::<icebreaker_arene::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_balise::Sys>(dispatch_builder, &[]);
     dispatch::<icebreaker_panneaux::Sys>(dispatch_builder, &[]);
+    // Icebreaker CA : les objectifs du lieu, pour la carte de l'expédition.
+    dispatch::<icebreaker_carte::Sys>(dispatch_builder, &[]);
     // Icebreaker Y.3: the rounds of a race.
     dispatch::<icebreaker_rondes::Sys>(dispatch_builder, &[]);
     // Icebreaker Y.9: who aims at whom, for the enemies to spread.

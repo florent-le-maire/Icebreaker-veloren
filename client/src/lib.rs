@@ -151,6 +151,8 @@ pub enum Event {
     IcebreakerBaliseRecharge(f32),
     /// Icebreaker : les bâtiments et les terrains du plan du village.
     IcebreakerBuildings(Vec<common::icebreaker_panneau::Batiment>),
+    /// Icebreaker CA : les objectifs du lieu, pour la carte de l'expédition (vide : pas en expédition).
+    IcebreakerObjectifs(Vec<common::icebreaker_carte::Objectif>),
     Gizmos(Vec<Gizmos>),
 }
 
@@ -3050,6 +3052,9 @@ impl Client {
             },
             ServerGeneral::IcebreakerBuildings(buildings) => {
                 frontend_events.push(Event::IcebreakerBuildings(buildings));
+            },
+            ServerGeneral::IcebreakerObjectifs(objectifs) => {
+                frontend_events.push(Event::IcebreakerObjectifs(objectifs));
             },
             ServerGeneral::IcebreakerExpedition(expedition) => {
                 frontend_events.push(Event::IcebreakerExpedition(expedition));

@@ -100,6 +100,19 @@ impl Mission {
         slot.nth == 0 && self.leader.as_ref().is_some_and(|(wpos, _)| *wpos == slot.wpos)
     }
 
+    /// Icebreaker CA : les objectifs de la mission, pour la carte de l'expédition : le chef (ou le
+    /// boss), rempli quand il est tombé. Une mission sans chef n'a pas d'objectif.
+    pub fn objectifs(&self, is_killed: impl Fn(&DungeonSlot) -> bool) -> Vec<common::icebreaker_carte::Objectif> {
+        self.leader
+            .iter()
+            .map(|(wpos, sorte)| common::icebreaker_carte::Objectif {
+                pos: *wpos,
+                sorte: sorte.clone(),
+                fait: is_killed(&DungeonSlot { wpos: *wpos, nth: 0 }),
+            })
+            .collect()
+    }
+
     /// Icebreaker : ce que la mission compte, au moment où on la regarde.
     pub fn decompte(
         &self,
@@ -175,6 +188,18 @@ mod tests {
         // Le chef est vivant : la mission n'est pas accomplie.
         assert!(!mission.decompte(|slot| slot.wpos.x == 2, |_| false).accomplie);
         assert!(!Mission::default().decompte(|_| true, |_| true).accomplie);
+
+        // CA (Flo, 2026-11-27) : la carte montre en rouge les objectifs, « par exemple si on doit tuer
+        // un boss » ; design/mission.md : « un plan sans chef n'a pas d'objectif ».
+        let objectif = |fait| common::icebreaker_carte::Objectif {
+            pos: spot(1),
+            sorte: "chief".to_string(),
+            fait,
+        };
+        assert_eq!(mission.objectifs(|_| false), vec![objectif(false)]);
+        assert_eq!(mission.objectifs(|slot| slot.wpos.x == 1), vec![objectif(true)]);
+        assert_eq!(mission.objectifs(|slot| slot.wpos.x == 2), vec![objectif(false)]);
+        assert!(Mission::default().objectifs(|_| true).is_empty());
 
         let message = mission.accomplished_message(|slot| slot.wpos.x <= 2, |wpos| wpos.x == 5);
         assert_eq!(

@@ -1,0 +1,10 @@
+// Icebreaker : la carte de l'expédition (jalon CA, `assets/icebreaker/carte.ron`). L'utiliser (ou le haut de la
+// roue des objets) ouvre la carte en volume de ce qu'on a exploré, avec les objectifs en rouge. Donnée à
+// l'arrivée dans un donjon.
+ItemDef(
+    legacy_name: "Expedition map",
+    legacy_description: "Shows in 3D what you have explored, and the objectives in red.",
+    kind: Quest,
+    quality: Common,
+    tags: [],
+)

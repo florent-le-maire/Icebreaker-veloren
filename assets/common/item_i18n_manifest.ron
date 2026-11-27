@@ -1519,6 +1519,10 @@
         Simple(
             "common.items.icebreaker.balise_lumineuse",
         ): "icebreaker-balise_lumineuse",
+        // Icebreaker : carte de l'expédition (jalon CA)
+        Simple(
+            "common.items.icebreaker.carte",
+        ): "icebreaker-carte",
         // Icebreaker : cristal d'un mort (T.11)
         Simple(
             "common.items.icebreaker.cristal",
