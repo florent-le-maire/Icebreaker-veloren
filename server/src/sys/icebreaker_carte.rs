@@ -15,7 +15,8 @@ use specs::{Entities, Join, Read, ReadExpect, ReadStorage, Write};
 
 /// Icebreaker CA : les objectifs du lieu où est chaque joueur, pour sa carte de l'expédition. Regardés
 /// toutes les `envoi` secondes (`assets/icebreaker/carte.ron`) et envoyés seulement s'ils ont changé :
-/// à l'arrivée, quand le chef tombe, et une liste vide au retour au village.
+/// à l'arrivée (même dans un lieu sans chef : la carte s'y remplit quand même), quand le chef tombe, et
+/// « pas en expédition » au retour au village.
 #[derive(Default)]
 pub struct Sys;
 impl<'a> System<'a> for Sys {
@@ -58,14 +59,17 @@ impl<'a> System<'a> for Sys {
             if !en_jeu(entity) {
                 continue;
             }
+            let slot = slots.at(pos.0.xy());
             let mission = if seul {
                 missions.iter().next().map(|(_, mission)| mission)
             } else {
-                slots.at(pos.0.xy()).and_then(|slot| missions.of(slot.site))
+                slot.and_then(|slot| missions.of(slot.site))
             };
-            let objectifs = mission
-                .map(|mission| mission.objectifs(|slot| rtsim.is_dungeon_npc_killed(slot)))
-                .unwrap_or_default();
+            let objectifs = (seul || slot.is_some()).then(|| {
+                mission
+                    .map(|mission| mission.objectifs(|slot| rtsim.is_dungeon_npc_killed(slot)))
+                    .unwrap_or_default()
+            });
             let envoyes = cartes.envoyes.entry(entity).or_default();
             if *envoyes != objectifs {
                 client.send_fallible(ServerGeneral::IcebreakerObjectifs(objectifs.clone()));

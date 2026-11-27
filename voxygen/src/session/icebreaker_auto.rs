@@ -53,6 +53,9 @@ pub enum Pas {
     /// Icebreaker RO : ouvrir la roue des objets et viser à moitié cette direction (`false`), puis finir
     /// le coup de souris (`true`) : `roue E`.
     Roue(common::icebreaker_roue::Direction8, bool),
+    /// Icebreaker CA : ouvrir ou fermer la carte de l'expédition (`carte`), ou la tourner à ce lacet en
+    /// degrés (`carte 90`).
+    Carte(Option<i32>),
     /// Cliquer le bâtiment de cette sorte.
     Cliquer(String),
     /// Cliquer l'onglet `n` (compté depuis zéro) du panneau ouvert.
@@ -110,6 +113,12 @@ impl Auto {
                     Pas::Roue(direction, true),
                     Pas::Capturer,
                 ]);
+                continue;
+            }
+            if let Some(reste) = sorte.strip_prefix("carte")
+                && (reste.is_empty() || reste.starts_with(' '))
+            {
+                a_faire.extend([Pas::Carte(reste.trim().parse::<i32>().ok()), Pas::Capturer]);
                 continue;
             }
             if let Some(reste) = sorte.strip_prefix("cap ") {
@@ -171,6 +180,20 @@ mod tests {
     }
 
     use super::*;
+
+    #[test]
+    fn carte_ouvre_la_carte_et_carte_90_la_tourne() {
+        let mut auto = Auto::de("carte, carte 90, carte", Instant::now());
+        let pas: Vec<_> = std::iter::from_fn(|| auto.a_faire.pop_front()).collect();
+        assert_eq!(&pas[2..], &[
+            Pas::Carte(None),
+            Pas::Capturer,
+            Pas::Carte(Some(90)),
+            Pas::Capturer,
+            Pas::Carte(None),
+            Pas::Capturer,
+        ]);
+    }
 
     #[test]
     fn l_essai_ouvre_le_plan_puis_clique_et_capture_chaque_batiment() {

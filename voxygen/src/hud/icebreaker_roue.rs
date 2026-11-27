@@ -51,7 +51,6 @@ widget_ids! {
         croix_a[],
         croix_b[],
         vides[],
-        bientot,
     }
 }
 
@@ -156,14 +155,6 @@ impl Roue {
                             .color(MAUVAIS)
                             .set(id, ui);
                     }
-                },
-                Etat::Bientot => {
-                    Text::new(&i18n.get_msg("icebreaker-roue-bientot"))
-                        .font_id(fonts.cyri.conrod_id)
-                        .font_size(fonts.cyri.scale(13))
-                        .color(DISCRET)
-                        .mid_bottom_with_margin_on(ids.fonds[i], -18.0)
-                        .set(ids.bientot, ui);
                 },
                 Etat::Pret => {},
             }

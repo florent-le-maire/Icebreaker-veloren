@@ -9,9 +9,9 @@ use common::{
 use hashbrown::HashMap;
 use specs::Entity;
 
-/// Les objectifs déjà envoyés à chaque joueur (rien : une liste vide), et quand on a regardé.
+/// Ce qui a déjà été envoyé à chaque joueur (`None` : pas en expédition), et quand on a regardé.
 pub struct IcebreakerCartes {
-    pub envoyes: HashMap<Entity, Vec<Objectif>>,
+    pub envoyes: HashMap<Entity, Option<Vec<Objectif>>>,
     pub vu: f64,
     /// Secondes entre deux regards (`envoi` de `assets/icebreaker/carte.ron`).
     pub envoi: f64,

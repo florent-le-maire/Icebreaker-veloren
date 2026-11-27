@@ -3,6 +3,8 @@ pub mod icebreaker_lock;
 pub mod icebreaker_visee;
 // Icebreaker : essai du plan du village sans les mains (jalon N).
 mod icebreaker_auto;
+// Icebreaker : la carte 3D de l'expédition (jalon CA).
+mod icebreaker_carte;
 pub mod icebreaker_vue;
 pub mod interactable;
 pub mod settings_change;
@@ -128,6 +130,8 @@ pub struct SessionState {
     /// Icebreaker : la roue des objets, ouverte tant que Tab est tenu (jalon RO).
     icebreaker_roue: Option<common::icebreaker_roue::Geste>,
     icebreaker_roue_reglages: common::icebreaker_roue::Reglages,
+    /// Icebreaker : la carte 3D de l'expédition, un objet du sac (jalon CA).
+    icebreaker_carte: icebreaker_carte::Carte,
     icebreaker_vue_settings: icebreaker_vue::Reglages,
     /// Icebreaker : essai du plan du village sans les mains (`ICEBREAKER_AUTO_PLAN`, jalon N).
     icebreaker_auto: Option<icebreaker_auto::Auto>,
@@ -218,6 +222,7 @@ impl SessionState {
             icebreaker_lock_avis: icebreaker_lock::Avertissements::default(),
             icebreaker_roue: None,
             icebreaker_roue_reglages: common::icebreaker_roue::Reglages::charger(),
+            icebreaker_carte: icebreaker_carte::Carte::charger(),
             icebreaker_vue_settings: icebreaker_vue::Reglages::charger(),
             icebreaker_auto: icebreaker_auto::Auto::charger(),
             auto_walk: false,
@@ -435,6 +440,10 @@ impl SessionState {
                     crate::icebreaker::garder_bilan(panneau.clone());
                     self.hud
                         .icebreaker_bilan(panneau, &global_state.i18n.read());
+                },
+                // Icebreaker CA : les objectifs du lieu, pour la carte de l'expédition.
+                client::Event::IcebreakerObjectifs(objectifs) => {
+                    self.icebreaker_carte.recevoir(objectifs);
                 },
                 client::Event::IcebreakerExpedition(expedition) => {
                     self.hud
@@ -862,6 +871,13 @@ impl PlayState for SessionState {
 
             // Handle window events.
             for event in events {
+                // Icebreaker CA : Échap ferme d'abord la carte de l'expédition.
+                if self.icebreaker_carte.ouverte()
+                    && matches!(event, Event::InputUpdate(GameInput::Escape, true))
+                {
+                    self.icebreaker_carte.fermer();
+                    continue;
+                }
                 // Pass all events to the ui first.
                 {
                     let client = self.client.borrow();
@@ -1500,6 +1516,21 @@ impl PlayState for SessionState {
                         self.icebreaker_roue_coup(delta, global_state);
                     },
 
+                    // Icebreaker CA : carte ouverte, la souris la fait tourner et la molette zoome ; la
+                    // caméra ne bouge pas.
+                    Event::CursorPan(delta) if self.icebreaker_carte.ouverte() => {
+                        let delta = if global_state.settings.gameplay.mouse_y_inversion {
+                            Vec2::new(delta.x, -delta.y)
+                        } else {
+                            delta
+                        };
+                        self.icebreaker_carte.souris(delta);
+                    },
+                    Event::Zoom(delta) if self.icebreaker_carte.ouverte() => {
+                        // Un cran de molette vaut 15 ; vers le haut (négatif) : plus près.
+                        self.icebreaker_carte.molette(-delta / 15.0);
+                    },
+
                     // Icebreaker: while an enemy is locked, the wheel switches to its neighbour.
                     Event::Zoom(delta) if self.icebreaker_lock.is_some() => {
                         self.switch_icebreaker_lock(delta);
@@ -1890,6 +1921,9 @@ impl PlayState for SessionState {
 
             // Icebreaker : le plan du village se ferme seul hors du village ; où est le joueur.
             self.update_icebreaker_top_view();
+            // Icebreaker CA : la carte de l'expédition découvre ce qui est autour du joueur.
+            self.icebreaker_carte
+                .tic(global_state.clock.real_dt().as_secs_f32(), &self.client.borrow());
             // Icebreaker : essai sans les mains (`ICEBREAKER_AUTO_PLAN`, jalon N) : ouvrir le plan,
             // cliquer un bâtiment, prendre une capture d'écran.
             if let Some(pas) = self
@@ -1911,6 +1945,11 @@ impl PlayState for SessionState {
                             .handle_input(InputKind::Ability(n), appuyee, None, None);
                     },
                     icebreaker_auto::Pas::Lanterne => self.client.borrow_mut().enable_lantern(),
+                    // Icebreaker CA : ouvrir ou fermer la carte de l'expédition, ou la tourner.
+                    icebreaker_auto::Pas::Carte(None) => self.icebreaker_carte_basculer(global_state),
+                    icebreaker_auto::Pas::Carte(Some(lacet)) => {
+                        self.icebreaker_carte.tourner_a(lacet as f32)
+                    },
                     // Icebreaker RO : la roue des objets, comme Tab tenu et un coup de souris.
                     icebreaker_auto::Pas::Roue(direction, achever) => {
                         let seuil = self.icebreaker_roue_reglages.seuil;
@@ -2006,6 +2045,7 @@ impl PlayState for SessionState {
                         .icebreaker_lock_avis
                         .avis(self.icebreaker_lock.is_some()),
                     icebreaker_roue: self.icebreaker_roue_vue(),
+                    icebreaker_carte: self.icebreaker_carte.vue_hud(),
                     persistence_load_error: self.metadata.skill_set_persistence_load_error,
                     key_state: &self.key_state,
                 },
@@ -2117,6 +2157,22 @@ impl PlayState for SessionState {
                             self.client
                                 .borrow_mut()
                                 .send_command("balise".to_string(), vec!["poser".to_string()]);
+                            continue;
+                        }
+                        // Icebreaker CA : utiliser la carte de l'expédition l'ouvre (ou la ferme).
+                        let carte = match slot {
+                            Slot::Inventory(inv_slot) => {
+                                let client = self.client.borrow();
+                                client
+                                    .inventories()
+                                    .get(client.entity())
+                                    .and_then(|inventory| inventory.get(inv_slot))
+                                    .is_some_and(common::icebreaker_carte::est_carte)
+                            },
+                            _ => false,
+                        };
+                        if carte {
+                            self.icebreaker_carte_basculer(global_state);
                             continue;
                         }
                         let mut move_allowed = true;
@@ -2975,21 +3031,24 @@ impl SessionState {
         match secteur {
             Some(s) if s.etat == Etat::Pret => match (s.action, s.objet) {
                 (Action::ChangerArme, _) => self.client.borrow_mut().swap_loadout(),
+                // Icebreaker CA : le haut de la roue ouvre la carte de l'expédition.
+                (Action::Carte, _) => self.icebreaker_carte_basculer(global_state),
                 (Action::Potion | Action::Nourriture, Some(slot)) => {
                     self.client.borrow_mut().use_slot(Slot::Inventory(slot))
                 },
                 _ => {},
             },
-            Some(s) if s.etat == Etat::Bientot => {
-                let texte = global_state
-                    .i18n
-                    .read()
-                    .get_msg("icebreaker-roue-carte-bientot")
-                    .into_owned();
-                self.hud
-                    .new_message(ChatType::CommandInfo.into_plain_msg(texte));
-            },
             _ => {},
+        }
+    }
+
+    /// Icebreaker CA : ouvre ou ferme la carte de l'expédition ; dit pourquoi si elle ne s'ouvre pas.
+    fn icebreaker_carte_basculer(&mut self, global_state: &GlobalState) {
+        let resultat = self.icebreaker_carte.basculer(&self.client.borrow());
+        if let Err(cle) = resultat {
+            let texte = global_state.i18n.read().get_msg(cle).into_owned();
+            self.hud
+                .new_message(ChatType::CommandInfo.into_plain_msg(texte));
         }
     }
 

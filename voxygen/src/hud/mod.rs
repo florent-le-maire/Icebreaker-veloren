@@ -13,6 +13,8 @@ mod hotbar;
 pub(crate) mod icebreaker;
 // Icebreaker : la roue des objets, Tab tenu (jalon RO).
 pub(crate) mod icebreaker_roue;
+// Icebreaker : la carte 3D de l'expédition (jalon CA).
+pub(crate) mod icebreaker_carte;
 mod loot_scroller;
 mod map;
 mod minimap;
@@ -683,6 +685,8 @@ pub struct HudInfo<'a> {
     pub icebreaker_lock_avis: crate::session::icebreaker_lock::Avis,
     /// Icebreaker : la roue des objets, quand Tab est tenu (RO).
     pub icebreaker_roue: Option<icebreaker_roue::Ouverte>,
+    /// Icebreaker : la carte de l'expédition, quand elle est ouverte (CA).
+    pub icebreaker_carte: Option<icebreaker_carte::Ouverte>,
     pub persistence_load_error: Option<SkillsPersistenceError>,
     pub key_state: &'a KeyState,
 }
@@ -1370,6 +1374,7 @@ pub struct Hud {
     /// Icebreaker : l'interface ajoutée (jalon N) : fenêtre du village, bandeaux, panneau libre.
     icebreaker: icebreaker::Interface,
     icebreaker_roue: icebreaker_roue::Roue,
+    icebreaker_carte: icebreaker_carte::Carte,
     /// Icebreaker : l'allié que l'écran de mort propose, cherché au plus deux fois par seconde (N.9) :
     /// l'instant de la dernière recherche et son résultat.
     icebreaker_allie: Option<(f64, Option<String>)>,
@@ -1408,6 +1413,7 @@ impl Hud {
         // Icebreaker : les identifiants de l'interface ajoutée (jalon N).
         let icebreaker = icebreaker::Interface::new(ui.id_generator());
         let icebreaker_roue = icebreaker_roue::Roue::new(ui.id_generator());
+        let icebreaker_carte = icebreaker_carte::Carte::new(ui.id_generator());
         // Load world map
         let mut layers = Vec::new();
         for layer in client.world_data().map_layers() {
@@ -1483,6 +1489,7 @@ impl Hud {
             force_ungrab: false,
             icebreaker,
             icebreaker_roue,
+            icebreaker_carte,
             icebreaker_allie: None,
             force_chat_input: None,
             force_chat_cursor: None,
@@ -1550,6 +1557,9 @@ impl Hud {
         if global_state.settings.interface.map_show_voxel_map {
             self.voxel_minimap.maintain(client, &mut self.ui);
         }
+        // Icebreaker CA : le dernier dessin de la carte de l'expédition.
+        self.icebreaker_carte
+            .maintenir(&mut self.ui, info.icebreaker_carte.as_ref());
         let scale = self.ui.scale();
         let (ui_widgets, item_tooltip_manager, tooltip_manager) = &mut self.ui.set_widgets();
         // self.ui.set_item_widgets(); pulse time for pulsating elements
@@ -4360,6 +4370,11 @@ impl Hud {
             icebreaker_en_cours,
             &icebreaker_etat,
         ));
+        // Icebreaker CA : la carte de l'expédition, sous la roue.
+        if let Some(carte) = &info.icebreaker_carte {
+            self.icebreaker_carte
+                .dessiner(ui_widgets, carte, &self.fonts, i18n);
+        }
         // Icebreaker RO : la roue des objets, par-dessus le reste.
         if let Some(roue) = &info.icebreaker_roue {
             self.icebreaker_roue.dessiner(

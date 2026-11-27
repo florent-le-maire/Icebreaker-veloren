@@ -25,8 +25,11 @@ pub fn est_carte(item: &crate::comp::Item) -> bool {
 pub struct Reglages {
     /// Côté d'une case de la carte, en blocs.
     pub maille: i32,
-    /// Jusqu'où on découvre autour de soi, en blocs parcourus dans l'air (un mur arrête).
+    /// Jusqu'où on découvre autour de soi, en blocs, à plat (un mur arrête : on ne découvre que ce
+    /// qu'on atteint par l'air).
     pub rayon: u32,
+    /// Et jusqu'où vers le haut et vers le bas, en blocs.
+    pub hauteur: u32,
     /// Secondes entre deux découvertes.
     pub periode: f32,
     /// Cases gardées au plus ; au-delà, la carte ne grandit plus.
@@ -45,10 +48,14 @@ pub struct Reglages {
     pub tangage_max: f32,
     /// Degrés tournés par pixel de souris.
     pub sensibilite: f32,
-    /// Éclaircit les couleurs du terrain (1 : telles quelles).
-    pub eclat: f32,
-    /// Part de lumière d'une face vue de biais (0 : noire, 1 : pas d'ombre).
+    /// Une couleur de bloc plus sombre que cela (0 à 255) est remontée jusque-là : la pierre noire d'un
+    /// donjon reste lisible sur le fond de la carte.
+    pub clarte_min: f32,
+    /// Lumière des murs par rapport au sol (0 : noirs, 1 : comme le sol) ; les murs nord-sud en
+    /// reçoivent la moitié de moins, pour qu'on lise les angles.
     pub ombre: f32,
+    /// Ce qui est plus haut que moi est plus clair, ce qui est plus bas plus sombre : part par bloc.
+    pub relief: f32,
     /// Assombrit ce qui est loin derrière (0 : pas de brume).
     pub brume: f32,
     /// Couleurs des repères : objectif à remplir, objectif rempli, moi.
@@ -62,6 +69,7 @@ impl Default for Reglages {
         Self {
             maille: 2,
             rayon: 24,
+            hauteur: 10,
             periode: 0.5,
             max_cases: 200_000,
             envoi: 1.0,
@@ -73,8 +81,9 @@ impl Default for Reglages {
             tangage_min: 15.0,
             tangage_max: 90.0,
             sensibilite: 0.4,
-            eclat: 1.4,
-            ombre: 0.45,
+            clarte_min: 150.0,
+            ombre: 0.7,
+            relief: 0.02,
             brume: 0.25,
             couleur_objectif: (230, 40, 40),
             couleur_fait: (120, 120, 120),
@@ -173,8 +182,8 @@ impl Exploration {
         self.cases.contains_key(&Self::case_de(wpos, maille))
     }
 
-    /// Découvre autour de `depuis` : on avance dans l'air, de `rayon` blocs au plus, et on note les blocs
-    /// pleins qu'on touche. Un mur arrête la découverte ; le terrain pas chargé aussi. Rend `true` si la
+    /// Découvre autour de `depuis` : on avance dans l'air, sans s'éloigner de plus de `rayon` blocs à plat
+    /// ni de `hauteur` blocs en haut ou en bas, et on note les blocs pleins qu'on touche. Un mur arrête la découverte ; le terrain pas chargé aussi. Rend `true` si la
     /// carte a changé.
     pub fn explorer(&mut self, depuis: Vec3<i32>, bloc: impl Fn(Vec3<i32>) -> Bloc, reglages: &Reglages) -> bool {
         if bloc(depuis) != Bloc::Air {
@@ -184,14 +193,19 @@ impl Exploration {
         let mut vus = hashbrown::HashSet::new();
         let mut file = VecDeque::new();
         vus.insert(depuis);
-        file.push_back((depuis, 0u32));
-        while let Some((pos, pas)) = file.pop_front() {
+        file.push_back(depuis);
+        let pres = |p: Vec3<i32>| {
+            let ecart = (p - depuis).map(i64::from);
+            ecart.xy().magnitude_squared() <= i64::from(reglages.rayon).pow(2)
+                && ecart.z.abs() <= i64::from(reglages.hauteur)
+        };
+        while let Some(pos) = file.pop_front() {
             for (i, d) in VOISINS.iter().enumerate() {
                 let voisin = pos + *d;
                 match bloc(voisin) {
                     Bloc::Air => {
-                        if pas < reglages.rayon && vus.insert(voisin) {
-                            file.push_back((voisin, pas + 1));
+                        if pres(voisin) && vus.insert(voisin) {
+                            file.push_back(voisin);
                         }
                     },
                     Bloc::Plein(couleur) => {
@@ -249,6 +263,13 @@ impl Vue {
         }
     }
 
+    /// Tourne la carte pour que `regard` (direction horizontale du monde) soit vers le haut de l'image.
+    pub fn face_a(&mut self, regard: Vec2<f32>) {
+        if regard.magnitude_squared() > f32::EPSILON {
+            self.lacet = regard.x.atan2(regard.y);
+        }
+    }
+
     /// Un mouvement de souris (pixels, y vers le bas) fait tourner la carte ; l'inclinaison est bornée.
     pub fn tourner(&mut self, delta: Vec2<f32>, reglages: &Reglages) {
         let pas = reglages.sensibilite.to_radians();
@@ -283,6 +304,29 @@ impl Vue {
         let (s, c) = self.lacet.sin_cos();
         let (st, ct) = self.tangage.sin_cos();
         -(n.x * s + n.y * c) * ct + n.z * st
+    }
+}
+
+/// La carte d'un personnage : ce qu'il a exploré du lieu où il est, et les objectifs de ce lieu.
+#[derive(Clone, Debug, Default)]
+pub struct Carnet {
+    pub exploration: Exploration,
+    /// `None` : pas en expédition.
+    objectifs: Option<Vec<Objectif>>,
+}
+
+impl Carnet {
+    pub fn en_expedition(&self) -> bool { self.objectifs.is_some() }
+
+    pub fn objectifs(&self) -> &[Objectif] { self.objectifs.as_deref().unwrap_or(&[]) }
+
+    /// Ce que le serveur dit du lieu où l'on est (`None` : pas en expédition). Arriver dans un lieu
+    /// donne une carte vierge.
+    pub fn recevoir(&mut self, objectifs: Option<Vec<Objectif>>) {
+        if self.objectifs.is_none() && objectifs.is_some() {
+            self.exploration = Exploration::default();
+        }
+        self.objectifs = objectifs;
     }
 }
 
@@ -381,23 +425,34 @@ pub fn dessiner(
     let portee = centre / vue.zoom;
     let de_face = VOISINS.map(|n| vue.de_face(n.map(|e| e as f32)));
     for (case, (couleur, faces)) in &exploration.cases {
-        let lumiere = (0..6)
-            .filter(|i| faces & (1 << i) != 0)
-            .map(|i| de_face[i])
-            .fold(0.0, f32::max);
-        if lumiere <= 0.01 {
+        // La face la plus tournée vers l'œil ; aucune : on voit la case de dos, on ne la dessine pas.
+        let Some(face) = (0..6)
+            .filter(|i| faces & (1 << i) != 0 && de_face[*i] > 0.01)
+            .max_by(|a, b| de_face[*a].total_cmp(&de_face[*b]))
+        else {
             continue;
-        }
+        };
+        // Le sol en pleine lumière, les murs est-ouest un peu moins, les murs nord-sud encore moins.
+        let lumiere = match face {
+            0 | 1 => reglages.ombre,
+            2 | 3 => reglages.ombre * 0.75,
+            4 => 1.0,
+            _ => reglages.ombre * 0.5,
+        };
         let milieu = (case.map(|e| e as f32) + 0.5) * maille - moi;
         let (x, y, profondeur) = vue.projeter(milieu, cote);
         let (x, y) = (x.floor() as i32, y.floor() as i32);
         if x + demi < 0 || y + demi < 0 || x - demi >= cote as i32 || y - demi >= cote as i32 {
             continue;
         }
-        let eclairage = (reglages.ombre + (1.0 - reglages.ombre) * lumiere)
+        let eclairage = lumiere
             * (1.0 - reglages.brume * (profondeur / portee).clamp(-1.0, 1.0))
-            * reglages.eclat;
-        let teinte = couleur.map(|c| (c as f32 * eclairage).clamp(0.0, 255.0) as u8);
+            * (1.0 + reglages.relief * milieu.z).clamp(0.5, 1.5);
+        // Une couleur sombre est remontée à `clarte_min`, en gardant sa teinte.
+        let clair = couleur.map(|c| c as f32);
+        let clarte = clair.reduce_partial_max().max(1.0);
+        let clair = clair * (reglages.clarte_min.max(clarte) / clarte);
+        let teinte = clair.map(|c| (c * eclairage).clamp(0.0, 255.0) as u8);
         for py in (y - demi).max(0)..(y + demi).min(cote as i32) {
             for px in (x - demi).max(0)..(x + demi).min(cote as i32) {
                 let i = (py as u32 * cote + px as u32) as usize;
@@ -502,6 +557,27 @@ mod tests {
         assert!(e.connait(Vec3::new(58, 0, -1), 1));
         assert!(!e.connait(Vec3::new(62, 0, -1), 1));
         assert!(!e.connait(Vec3::new(38, 0, -1), 1));
+    }
+
+    #[test]
+    fn on_decouvre_en_rond_et_pas_trop_haut() {
+        // Vu en jeu (2026-11-27) : compter les blocs parcourus donnait un losange au sol.
+        // Un sol nu, deux blocs en l'air : l'un à 4 de haut, l'autre à 9.
+        let monde = |p: Vec3<i32>| {
+            if p.z <= 0 || p == Vec3::new(0, 0, 5) || p == Vec3::new(0, 0, 10) {
+                Bloc::Plein(PIERRE)
+            } else {
+                Bloc::Air
+            }
+        };
+        let r = Reglages { rayon: 10, hauteur: 6, ..reglages() };
+        let mut e = Exploration::default();
+        e.explorer(Vec3::new(0, 0, 1), monde, &r);
+        assert!(e.connait(Vec3::new(9, 0, 0), 1), "à 9 blocs tout droit");
+        assert!(e.connait(Vec3::new(6, 6, 0), 1), "à 8,5 blocs en diagonale");
+        assert!(!e.connait(Vec3::new(9, 9, 0), 1), "à 12,7 blocs en diagonale");
+        assert!(e.connait(Vec3::new(0, 0, 5), 1), "à 4 blocs au-dessus");
+        assert!(!e.connait(Vec3::new(0, 0, 10), 1), "à 9 blocs au-dessus");
     }
 
     #[test]
@@ -685,6 +761,16 @@ mod tests {
     }
 
     #[test]
+    fn la_pierre_sombre_reste_lisible() {
+        // Vu en jeu (2026-11-27) : les murs presque noirs du donjon ne se voyaient pas sur la carte.
+        let e = explore(|p| if p.z == 0 { Bloc::Plein(Rgb::new(20, 16, 12)) } else { Bloc::Air });
+        let vue = de_dessus();
+        let p = pixel_de(&image(&e, &[], &vue), &vue, Vec3::new(4.5, 0.5, 0.0));
+        assert!(p[0] >= 100, "le sol sombre est éclairci : {p:?}");
+        assert!(p[0] > p[1] && p[1] > p[2], "il garde sa teinte : {p:?}");
+    }
+
+    #[test]
     fn un_objectif_est_rouge_meme_sans_terrain() {
         // CA (Flo, 2026-11-27) : les objectifs rouges sont visibles dès l'arrivée, même dans le vide.
         let r = reglages_dessin();
@@ -757,6 +843,40 @@ mod tests {
         };
         assert!(milieu_des_bleus(0.0) > 70.0);
         assert!(milieu_des_bleus(std::f32::consts::PI) < 58.0);
+    }
+
+    #[test]
+    fn a_l_ouverture_ce_que_je_regarde_est_en_haut() {
+        let mut vue = de_dessus();
+        vue.face_a(Vec2::unit_x());
+        let (x, y, _) = vue.projeter(Vec3::new(5.0, 0.0, 0.0), 128);
+        assert!(y < 60.0 && (x - 64.0).abs() < 0.01, "l'est, où je regarde, est en haut : {x} {y}");
+        vue.face_a(-Vec2::unit_y());
+        let (x, y, _) = vue.projeter(Vec3::new(0.0, -5.0, 0.0), 128);
+        assert!(y < 60.0 && (x - 64.0).abs() < 0.01, "le sud, où je regarde, est en haut : {x} {y}");
+    }
+
+    #[test]
+    fn arriver_dans_un_lieu_donne_une_carte_vierge() {
+        // design/donjon.md : « nouveau donjon = feuille vierge » ; on garde sa carte toute l'expédition.
+        let chef = Vec3::new(10, 0, 1);
+        let mut carnet = Carnet::default();
+        assert!(!carnet.en_expedition());
+        carnet.recevoir(Some(vec![objectif(chef, false)]));
+        assert!(carnet.en_expedition());
+        carnet.exploration.explorer(Vec3::new(2, 2, 2), deux_salles(false), &reglages());
+        assert!(!carnet.exploration.is_empty());
+        // Le chef tombe : l'objectif est rempli, la carte reste.
+        carnet.recevoir(Some(vec![objectif(chef, true)]));
+        assert!(carnet.objectifs()[0].fait);
+        assert!(!carnet.exploration.is_empty());
+        // Retour au village, puis un autre lieu, sans chef : carte vierge, mais on est en expédition.
+        carnet.recevoir(None);
+        assert!(!carnet.en_expedition());
+        assert!(carnet.objectifs().is_empty());
+        carnet.recevoir(Some(Vec::new()));
+        assert!(carnet.en_expedition());
+        assert!(carnet.exploration.is_empty());
     }
 
     #[test]

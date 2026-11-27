@@ -62,7 +62,7 @@ impl Direction8 {
 /// Ce que fait un secteur.
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Hash)]
 pub enum Action {
-    /// La carte : bientôt (ne fait rien pour l'instant).
+    /// Ouvrir la carte de l'expédition, si elle est dans le sac (jalon CA).
     Carte,
     /// Échanger les armes des mains principales et secondaires (l'ancien Tab).
     ChangerArme,
@@ -73,9 +73,11 @@ pub enum Action {
 }
 
 impl Action {
-    /// L'objet du sac qui convient à cette action (Potion : une boisson ; Nourriture : un plat).
-    pub fn prend(self, kind: &ItemKind) -> bool {
-        match (self, kind) {
+    /// L'objet du sac qui convient à cette action (Carte : la carte de l'expédition ; Potion : une
+    /// boisson ; Nourriture : un plat).
+    pub fn prend(self, item: &Item) -> bool {
+        match (self, &*item.kind()) {
+            (Action::Carte, _) => crate::icebreaker_carte::est_carte(item),
             (Action::Potion, ItemKind::Consumable { kind, .. }) => *kind == ConsumableKind::Drink,
             (Action::Nourriture, ItemKind::Consumable { kind, .. }) => {
                 matches!(kind, ConsumableKind::Food | ConsumableKind::ComplexFood)
@@ -193,7 +195,7 @@ pub fn premier_objet<'a, S>(
     action: Action,
     objets: impl IntoIterator<Item = (S, &'a Item)>,
 ) -> Option<(S, &'a Item)> {
-    objets.into_iter().find(|(_, item)| action.prend(&item.kind()))
+    objets.into_iter().find(|(_, item)| action.prend(item))
 }
 
 /// Ce qu'un secteur montre : l'action est-elle possible avec ce qu'on porte ?
@@ -203,16 +205,14 @@ pub enum Etat {
     Pret,
     /// Rien dans l'inventaire pour cette action : la croix rouge.
     Manque,
-    /// Pas encore dans le jeu (la carte).
-    Bientot,
 }
 
-/// L'état d'une action : `objet_trouve` pour Potion et Nourriture, `arme_de_rechange` pour ChangerArme.
+/// L'état d'une action : `objet_trouve` pour Carte, Potion et Nourriture, `arme_de_rechange` pour
+/// ChangerArme.
 pub fn etat(action: Action, objet_trouve: bool, arme_de_rechange: bool) -> Etat {
     let pret = match action {
-        Action::Carte => return Etat::Bientot,
         Action::ChangerArme => arme_de_rechange,
-        Action::Potion | Action::Nourriture => objet_trouve,
+        Action::Carte | Action::Potion | Action::Nourriture => objet_trouve,
     };
     if pret { Etat::Pret } else { Etat::Manque }
 }
@@ -223,7 +223,7 @@ pub struct Secteur {
     pub direction: Direction8,
     pub action: Action,
     pub etat: Etat,
-    /// L'objet du sac que l'action prendra (Potion, Nourriture).
+    /// L'objet du sac que l'action prendra (Carte, Potion, Nourriture).
     pub objet: Option<InvSlotId>,
 }
 
@@ -361,6 +361,11 @@ mod tests {
         assert_eq!(premier_objet(Action::Potion, sac).map(|(s, _)| s), Some(1));
         assert_eq!(premier_objet(Action::Nourriture, sac).map(|(s, _)| s), Some(0));
         assert_eq!(premier_objet(Action::ChangerArme, sac).map(|(s, _)| s), None);
+        // CA : la carte de l'expédition est un objet du sac.
+        assert_eq!(premier_objet(Action::Carte, sac).map(|(s, _)| s), None);
+        let carte = Item::new_from_asset_expect(crate::icebreaker_carte::CARTE);
+        let avec_carte = [(0, &pomme), (1, &carte)];
+        assert_eq!(premier_objet(Action::Carte, avec_carte).map(|(s, _)| s), Some(1));
         let sans_potion = [(0, &pomme)];
         assert_eq!(premier_objet(Action::Potion, sans_potion).map(|(s, _)| s), None);
     }
@@ -373,7 +378,8 @@ mod tests {
         assert_eq!(etat(Action::Nourriture, false, true), Etat::Manque);
         assert_eq!(etat(Action::ChangerArme, true, false), Etat::Manque);
         assert_eq!(etat(Action::ChangerArme, false, true), Etat::Pret);
-        // La carte arrive bientôt : ni prête, ni croix.
-        assert_eq!(etat(Action::Carte, true, true), Etat::Bientot);
+        // CA : la carte est un objet du sac comme les autres.
+        assert_eq!(etat(Action::Carte, false, true), Etat::Manque);
+        assert_eq!(etat(Action::Carte, true, false), Etat::Pret);
     }
 }

@@ -3,8 +3,10 @@
 (
     // Côté d'une case de la carte, en blocs : plus petit = plus fin, plus lourd.
     maille: 2,
-    // Jusqu'où on découvre autour de soi, en blocs parcourus dans l'air (un mur arrête la découverte).
-    rayon: 24,
+    // Jusqu'où on découvre autour de soi, en blocs, à plat (un mur arrête la découverte : on ne découvre
+    // que ce qu'on atteint par l'air), et jusqu'où vers le haut et vers le bas.
+    rayon: 28,
+    hauteur: 10,
     // Secondes entre deux découvertes.
     periode: 0.5,
     // Cases gardées au plus ; au-delà, la carte ne grandit plus.
@@ -14,7 +16,7 @@
     // Côté de l'image de la carte, en pixels.
     taille: 512,
     // Zoom à l'ouverture, en pixels par bloc, et ses bornes (molette).
-    zoom: 3.0,
+    zoom: 4.0,
     zoom_min: 1.0,
     zoom_max: 8.0,
     // Inclinaison à l'ouverture, en degrés (90 : vue de dessus), et ses bornes.
@@ -23,10 +25,13 @@
     tangage_max: 90.0,
     // Degrés tournés par pixel de souris.
     sensibilite: 0.4,
-    // Éclaircit les couleurs du terrain (1 : telles quelles).
-    eclat: 1.4,
-    // Part de lumière d'une face vue de biais (0 : noire, 1 : pas d'ombre).
-    ombre: 0.45,
+    // Une couleur de bloc plus sombre que cela (0 à 255) est remontée jusque-là : la pierre noire d'un
+    // donjon reste lisible sur le fond de la carte.
+    clarte_min: 150.0,
+    // Lumière des murs par rapport au sol (0 : noirs, 1 : comme le sol).
+    ombre: 0.7,
+    // Ce qui est plus haut que moi est plus clair, ce qui est plus bas plus sombre : part par bloc.
+    relief: 0.02,
     // Assombrit ce qui est loin derrière (0 : pas de brume).
     brume: 0.25,
     // Couleurs des repères (rouge, vert, bleu) : objectif à remplir, objectif rempli, moi.

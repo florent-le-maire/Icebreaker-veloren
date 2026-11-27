@@ -243,8 +243,9 @@ pub enum ServerGeneral {
     /// l'ouverture du plan, puis quand ils changent (jalon N).
     IcebreakerBuildings(Vec<common::icebreaker_panneau::Batiment>),
     /// Icebreaker CA : les objectifs du lieu où est le joueur, pour sa carte de l'expédition ;
-    /// envoyés à l'arrivée puis quand ils changent (liste vide : pas en expédition).
-    IcebreakerObjectifs(Vec<common::icebreaker_carte::Objectif>),
+    /// envoyés à l'arrivée puis quand ils changent (`None` : pas en expédition ; un lieu sans chef n'a
+    /// aucun objectif).
+    IcebreakerObjectifs(Option<Vec<common::icebreaker_carte::Objectif>>),
     MapMarker(comp::MapMarkerUpdate),
     WeatherUpdate(SharedWeatherGrid),
     LocalWindUpdate(Vec2<f32>),
