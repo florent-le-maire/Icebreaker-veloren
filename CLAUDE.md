@@ -110,7 +110,10 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   sans clic (avec `ICEBREAKER_AUTO_CAMPAGNE=1` et `ICEBREAKER_AUTO_ADRESSE`).
 - IA des ennemis (jalon IA, `docs/icebreaker/PLAN-IA.md`, décision `0024`) : la décision de nos six espèces est dans le
   crate pur `icebreaker-ia` (`cargo test -p icebreaker-ia`), ses réglages dans `assets/icebreaker/ia/profils.ron`, son
-  branchement dans `server/src/sys/agent/icebreaker_ia.rs` ; `/entrainement ia` fait dire son état à chaque ennemi.
+  branchement dans `server/src/sys/agent/icebreaker_ia.rs` (entre ennemis : `server/src/sys/icebreaker_ia_monde.rs`) ;
+  `/entrainement ia` fait dire à chaque ennemi son état, ses sorts, ses défenses ; `/entrainement scene <nom>` monte
+  une scène de `ia/scenes.ron` (ecoute, massacre, duel, mage, fuyard, appel, garde, rage), `/entrainement bruit` fait
+  du bruit. Les fichiers de `ia/` sont lus au lancement du serveur (pas de rechargement à chaud).
 - Client texte pour tester sans affichage : `cargo build -p veloren-client --example chat_cli --features
   "plugins bin_bot"`, puis sur l'entrée : pseudo, `localhost:<port>`, un mot de passe quelconque, et des lignes de
   chat (`/commande args` part en commande). Laisser ~40 s entre deux connexions coupées net : le serveur n'accepte

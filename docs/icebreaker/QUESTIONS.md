@@ -198,8 +198,7 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 
 ## 11. L'IA des ennemis (`PLAN-IA.md`, `decisions/0024`, jalon IA)
 
-- **Q69 Jusqu'où avant le playtest ?** Le jalon IA compte quinze tâches. *Proposé* : IA.1 à IA.6 avant le playtest
-  (voir, chercher, entendre, prévenir, habileté, mage) ; le reste après. *Qui* : Flo.
+- **Q69** *(numéro réservé : « jusqu'où avant le playtest » est tranchée, voir plus bas, 2026-11-26).*
 - **Q70 Sans rôle fixe, qui prévient et qui fuit ?** Le guetteur disparaît : tout ennemi peut tirer « aller prévenir »
   ou « fuir ». Le chef tire-t-il aussi ? *Proposé* : le chef ne fuit jamais et ne quitte pas sa salle. *Qui* : Flo,
   Sayanel.
@@ -214,6 +213,24 @@ Chaque question : d'où elle vient, qui tranche, ce qui est proposé en attendan
 - **Q73 Les signes au-dessus des ennemis.** « ? » quand il cherche, « ! » quand il repère, un cri quand il part
   prévenir : des bulles de texte suffisent-elles pour le playtest, ou faut-il de vraies icônes (travail côté
   client) ? *Proposé* : des bulles. *Qui* : Flo.
+- **Q74 Le découpage de IA.12 (mémoire du lieu, niveau d'alerte).** Proposé dans `PLAN-IA.md` : IA.12a la mémoire
+  du lieu (intrus signalés, événements, qui vieillissent), IA.12b le niveau d'alerte en points (calme, inquiet, en
+  alerte, mobilisé), IA.12c ses effets un par un (dormeurs, rondes, groupes envoyés), IA.12d les signes (texte,
+  torches). `design/menace.md` est encore une proposition : faut-il la valider d'abord ? Un niveau par lieu, ou par
+  étage ? *Proposé* : valider menace.md, palier 1, puis IA.12a et IA.12b ; un niveau par lieu. *Qui* : Flo, Sayanel.
+- **Q75 IA.13 : trois tâches en une.** Les salles connues du serveur (et le bruit arrêté par les murs) ne valent que
+  pour le donjon généré et touchent son générateur (piste `Veloren-donjon`) ; les nains qui tiennent leur salle
+  attendent Q50 ; l'embuscade attend `design/menace.md` (idée 2, « à définir : dégâts, étourdissement bref, ou juste
+  le nombre »). *Proposé* : faire d'abord les salles et le son (IA.13a), décider le reste après Q50. Et dans la grotte
+  et la forêt, où il n'y a pas de salle : garder des portées courtes ? *Qui* : Flo, Sayanel.
+- **Q76 Coincé : se tapir suffit-il ?** `design/creatures.md` prévoit quatre réactions (se cacher derrière un angle
+  mort, forcer le passage, faire le mort, se fondre dans l'ombre) et l'embuscade depuis la cachette. IA.8 en code
+  deux : se tapir sur place (frappé, il détale à travers nous) et forcer le passage. *Proposé* : s'en tenir là
+  jusqu'au playtest ; la cachette et l'embuscade demandent de connaître les salles (IA.13). *Qui* : Flo, Sayanel.
+- **Q77 Les paroles des ennemis.** IA.4 à IA.11 leur font dire : « Je vais chercher les autres ! », « Des
+  intrus ! », « À l'aide ! », « Fuite ! », « Pitié ! », « Poussez-vous ! », « RAAAH ! ». Le ton convient-il à
+  l'univers (`design/ames.md`) ? Faut-il des paroles par race ? *Proposé* : garder ces bulles pour le playtest.
+  *Qui* : Sayanel.
 
 ## Tranché
 
@@ -294,3 +311,5 @@ Petites décisions, par date ; les règles qui en sortent sont dans le fichier i
   proposition est gardé tel quel, faute d'avis contraire : tireurs sur les plateformes, un groupe par clairière, le
   chef dans celle du fond (le tuer accomplit la mission, comme dans la grotte), un coffre par clairière et
   quelques-uns en hauteur, rien à moins de 30 blocs de l'arrivée.
+- **2026-11-26 (Flo, `PLAN-IA.md`)** : Q69, tout le jalon IA d'affilée, sans attendre le playtest (« finir le plan IA,
+  je testerai à la fin »). IA.3 à IA.11 sont codés ; IA.12 à IA.15 attendent une réponse (Q50, Q74, Q75) ou l'essai.

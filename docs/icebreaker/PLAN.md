@@ -164,10 +164,10 @@ IA.12, G.16 → IA.13 ; G.11 reste ici (après IA.2).
   (24 blocs, une fois toutes les 6 s) ; brutes et chef qui l'entendent prennent l'agresseur pour cible même sans le
   voir ; les dormeurs à portée se réveillent.
   *Fin* : frapper l'archer fait venir la brute de la salle voisine.
-- [ ] **G.13 Déroute à la mort du chef** — « Le chef est tombé ! » : les créatures à 24 blocs fuient (brute 4 s,
+- [x] **G.13 Déroute à la mort du chef** (fait par IA.9, `PLAN-IA.md`) — « Le chef est tombé ! » : les créatures à 24 blocs fuient (brute 4 s,
   archer 8 s, guetteur 12 s), « Fuite ! » au-dessus d'elles, puis se reprennent.
   *Fin* : tuer le chef disperse sa garde.
-- [ ] **G.14 Le guetteur messager** — un guetteur qui repère un joueur crie « Des intrus ! » et court prévenir la
+- [x] **G.14 Le guetteur messager** (fait par IA.4, sans guetteur attitré : n'importe qui peut partir prévenir) — un guetteur qui repère un joueur crie « Des intrus ! » et court prévenir la
   créature combattante la plus proche, qui vient voir.
   *Fin* : on voit le guetteur s'enfuir et des renforts revenir avec lui.
 - [ ] **G.15 Niveau d'alerte du donjon** — calme, inquiet, en alerte, mobilisé : monte avec les cris, combats et morts,
