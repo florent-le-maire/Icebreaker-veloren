@@ -5,7 +5,11 @@
 
 use crate::{
     assets::{AssetExt, Ron},
-    comp::item::{ConsumableKind, Item, ItemKind},
+    comp::{
+        Inventory,
+        inventory::slot::{EquipSlot, InvSlotId},
+        item::{ConsumableKind, Item, ItemKind},
+    },
 };
 use serde::Deserialize;
 use vek::Vec2;
@@ -199,6 +203,42 @@ pub fn etat(action: Action, objet_trouve: bool, arme_de_rechange: bool) -> Etat 
         Action::Potion | Action::Nourriture => objet_trouve,
     };
     if pret { Etat::Pret } else { Etat::Manque }
+}
+
+/// Un secteur de la roue tel qu'on le montre et qu'on le joue.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Secteur {
+    pub direction: Direction8,
+    pub action: Action,
+    pub etat: Etat,
+    /// L'objet du sac que l'action prendra (Potion, Nourriture).
+    pub objet: Option<InvSlotId>,
+}
+
+/// Les secteurs de la roue pour ce que porte le personnage.
+pub fn secteurs(reglages: &Reglages, inventaire: &Inventory) -> Vec<Secteur> {
+    let arme_de_rechange = [EquipSlot::InactiveMainhand, EquipSlot::InactiveOffhand]
+        .into_iter()
+        .any(|slot| inventaire.equipped(slot).is_some());
+    reglages
+        .secteurs
+        .iter()
+        .map(|&(direction, action)| {
+            let objet = premier_objet(
+                action,
+                inventaire
+                    .slots_with_id()
+                    .filter_map(|(id, slot)| slot.as_ref().map(|item| (id, item))),
+            )
+            .map(|(id, _)| id);
+            Secteur {
+                direction,
+                action,
+                etat: etat(action, objet.is_some(), arme_de_rechange),
+                objet,
+            }
+        })
+        .collect()
 }
 
 #[cfg(test)]

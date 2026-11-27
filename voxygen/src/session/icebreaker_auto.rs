@@ -50,6 +50,9 @@ pub enum Pas {
     Cap(i32, i32),
     /// Appuyer (`true`) ou relâcher (`false`) la touche de compétence `n` (comptée depuis zéro).
     Touche(usize, bool),
+    /// Icebreaker RO : ouvrir la roue des objets et viser à moitié cette direction (`false`), puis finir
+    /// le coup de souris (`true`) : `roue E`.
+    Roue(common::icebreaker_roue::Direction8, bool),
     /// Cliquer le bâtiment de cette sorte.
     Cliquer(String),
     /// Cliquer l'onglet `n` (compté depuis zéro) du panneau ouvert.
@@ -100,6 +103,15 @@ impl Auto {
                 a_faire.extend([Pas::Onglet(n), Pas::Capturer]);
                 continue;
             }
+            if let Some(direction) = sorte.strip_prefix("roue ").and_then(|d| direction(d.trim())) {
+                a_faire.extend([
+                    Pas::Roue(direction, false),
+                    Pas::Capturer,
+                    Pas::Roue(direction, true),
+                    Pas::Capturer,
+                ]);
+                continue;
+            }
             if let Some(reste) = sorte.strip_prefix("cap ") {
                 let mut n = reste.split_whitespace().filter_map(|m| m.parse::<i32>().ok());
                 a_faire.extend([Pas::Cap(n.next().unwrap_or(0), n.next().unwrap_or(0)), Pas::Capturer]);
@@ -136,8 +148,28 @@ impl Auto {
     }
 }
 
+/// Icebreaker RO : une direction de la roue écrite comme dans `roue.ron` (N, NE, E, SE, S, SO, O, NO).
+fn direction(mot: &str) -> Option<common::icebreaker_roue::Direction8> {
+    common::icebreaker_roue::Direction8::TOUTES
+        .into_iter()
+        .find(|d| format!("{d:?}").eq_ignore_ascii_case(mot))
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn roue_e_vise_a_moitie_capture_puis_finit_le_coup() {
+        use common::icebreaker_roue::Direction8;
+        let mut auto = Auto::de("roue SE", Instant::now());
+        let pas: Vec<_> = std::iter::from_fn(|| auto.a_faire.pop_front()).collect();
+        assert_eq!(&pas[2..], &[
+            Pas::Roue(Direction8::SE, false),
+            Pas::Capturer,
+            Pas::Roue(Direction8::SE, true),
+            Pas::Capturer,
+        ]);
+    }
+
     use super::*;
 
     #[test]

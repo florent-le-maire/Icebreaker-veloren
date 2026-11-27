@@ -281,7 +281,8 @@ impl ControlSettings {
             GameInput::NextSlot => return None,
             GameInput::PreviousSlot => return None,
             GameInput::CurrentSlot => return None,
-            GameInput::SwapLoadout => Key::Named(NamedKey::Tab),
+            // Icebreaker RO : Tab ouvre la roue des objets, qui change aussi d'arme.
+            GameInput::SwapLoadout => return None,
             GameInput::Select => char("X"),
             GameInput::AcceptGroupInvite => char("Y"),
             GameInput::DeclineGroupInvite => char("N"),
@@ -300,6 +301,7 @@ impl ControlSettings {
             GameInput::IcebreakerLockTarget => char("W"),
             GameInput::IcebreakerBalise => char("<"),
             GameInput::IcebreakerBaliseCouleur => Key::Named(NamedKey::F9),
+            GameInput::IcebreakerRoue => Key::Named(NamedKey::Tab),
         }))
     }
 
@@ -391,6 +393,16 @@ impl ControlSettings {
 #[cfg(test)]
 mod tests_icebreaker {
     use super::*;
+
+    #[test]
+    fn tab_ouvre_la_roue_et_ne_change_plus_d_arme() {
+        // RO : « sur tab (on retire le fait que tab switch d'arme) ».
+        let tab = KeyMouse::Key(Key::Named(NamedKey::Tab));
+        let a = ControlSettings::default();
+        assert_eq!(a.get_binding(GameInput::IcebreakerRoue), Some(tab.clone()));
+        assert_eq!(a.get_binding(GameInput::SwapLoadout), None);
+        assert!(!a.has_conflicting_bindings(tab));
+    }
 
     fn char(s: &str) -> Option<KeyMouse> {
         Some(KeyMouse::Key(Key::Character(winit::keyboard::SmolStr::new(s))))

@@ -102,3 +102,12 @@ icebreaker-regarde-vie = vie { $vie } / { $max }
 icebreaker-regarde-aide = Clic gauche : allié suivant      { $key } : retour au village
 icebreaker-bilan-fermer = Fermer
 icebreaker-bilan-aide = Échap : fermer
+
+## Icebreaker RO : la roue des objets (Tab tenu)
+gameinput-icebreaker-roue = Roue des objets (maintenir)
+icebreaker-roue-carte = Carte
+icebreaker-roue-arme = Changer d’arme
+icebreaker-roue-potion = Potion
+icebreaker-roue-nourriture = Nourriture
+icebreaker-roue-bientot = bientôt
+icebreaker-roue-carte-bientot = La carte arrive bientôt.

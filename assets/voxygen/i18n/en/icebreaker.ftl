@@ -102,3 +102,12 @@ icebreaker-regarde-vie = health { $vie } / { $max }
 icebreaker-regarde-aide = Left click: next ally      { $key }: back to the village
 icebreaker-bilan-fermer = Close
 icebreaker-bilan-aide = Escape: close
+
+## Icebreaker RO: the item wheel (hold Tab)
+gameinput-icebreaker-roue = Item wheel (hold)
+icebreaker-roue-carte = Map
+icebreaker-roue-arme = Swap weapons
+icebreaker-roue-potion = Potion
+icebreaker-roue-nourriture = Food
+icebreaker-roue-bientot = soon
+icebreaker-roue-carte-bientot = The map is coming soon.

@@ -48,20 +48,20 @@ use vek::*;
 
 // La charte (`PLAN-INTERFACE.md`) : les couleurs de Veloren, un seul accent à nous, l'or de
 // l'anneau de verrouillage.
-const FOND: Color = Color::Rgba(0.047, 0.055, 0.063, 1.0);
+pub(super) const FOND: Color = Color::Rgba(0.047, 0.055, 0.063, 1.0);
 const FOND_PLAN: Color = Color::Rgba(0.063, 0.078, 0.059, 1.0);
 const BANDEAU: Color = Color::Rgba(0.118, 0.141, 0.149, 1.0);
-const CASE: Color = Color::Rgba(0.078, 0.094, 0.102, 1.0);
-const BORDURE: Color = Color::Rgba(0.357, 0.400, 0.416, 1.0);
-const TRAIT: Color = Color::Rgba(0.165, 0.188, 0.200, 1.0);
-const TEXTE: Color = Color::Rgba(1.0, 1.0, 1.0, 1.0);
+pub(super) const CASE: Color = Color::Rgba(0.078, 0.094, 0.102, 1.0);
+pub(super) const BORDURE: Color = Color::Rgba(0.357, 0.400, 0.416, 1.0);
+pub(super) const TRAIT: Color = Color::Rgba(0.165, 0.188, 0.200, 1.0);
+pub(super) const TEXTE: Color = Color::Rgba(1.0, 1.0, 1.0, 1.0);
 const CLAIR: Color = Color::Rgba(0.788, 0.831, 0.831, 1.0);
-const DISCRET: Color = Color::Rgba(0.612, 0.702, 0.702, 1.0);
+pub(super) const DISCRET: Color = Color::Rgba(0.612, 0.702, 0.702, 1.0);
 const GRIS: Color = Color::Rgba(0.557, 0.604, 0.604, 1.0);
-const IMAGE_GRISE: Color = Color::Rgba(0.45, 0.45, 0.45, 1.0);
-const OR: Color = Color::Rgba(1.0, 0.82, 0.4, 1.0);
+pub(super) const IMAGE_GRISE: Color = Color::Rgba(0.45, 0.45, 0.45, 1.0);
+pub(super) const OR: Color = Color::Rgba(1.0, 0.82, 0.4, 1.0);
 const BON: Color = Color::Rgba(0.608, 0.847, 0.290, 1.0);
-const MAUVAIS: Color = Color::Rgba(0.949, 0.439, 0.416, 1.0);
+pub(super) const MAUVAIS: Color = Color::Rgba(0.949, 0.439, 0.416, 1.0);
 const INFO: Color = Color::Rgba(0.486, 0.769, 0.878, 1.0);
 
 /// La couleur d'un chiffre, d'une pastille ou d'un message.
@@ -99,7 +99,7 @@ fn melange(couleur: (f32, f32, f32), part: f32, fond: Color) -> Color {
 }
 
 /// Un rectangle plein avec sa bordure.
-fn cadre(dim: [f64; 2], fond: Color, bord: Color, epaisseur: f64) -> BorderedRectangle {
+pub(super) fn cadre(dim: [f64; 2], fond: Color, bord: Color, epaisseur: f64) -> BorderedRectangle {
     BorderedRectangle::new(dim)
         .color(fond)
         .border(epaisseur)

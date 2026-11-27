@@ -11,6 +11,8 @@ mod group;
 mod hotbar;
 // Icebreaker : l'interface ajoutée au HUD (jalon N).
 pub(crate) mod icebreaker;
+// Icebreaker : la roue des objets, Tab tenu (jalon RO).
+pub(crate) mod icebreaker_roue;
 mod loot_scroller;
 mod map;
 mod minimap;
@@ -679,6 +681,8 @@ pub struct HudInfo<'a> {
     pub icebreaker_lock_target: Option<(specs::Entity, f32, f32)>,
     /// Icebreaker : rappel des touches ou « Cible perdue » du verrouillage (N.7).
     pub icebreaker_lock_avis: crate::session::icebreaker_lock::Avis,
+    /// Icebreaker : la roue des objets, quand Tab est tenu (RO).
+    pub icebreaker_roue: Option<icebreaker_roue::Ouverte>,
     pub persistence_load_error: Option<SkillsPersistenceError>,
     pub key_state: &'a KeyState,
 }
@@ -1365,6 +1369,7 @@ pub struct Hud {
     force_ungrab: bool,
     /// Icebreaker : l'interface ajoutée (jalon N) : fenêtre du village, bandeaux, panneau libre.
     icebreaker: icebreaker::Interface,
+    icebreaker_roue: icebreaker_roue::Roue,
     /// Icebreaker : l'allié que l'écran de mort propose, cherché au plus deux fois par seconde (N.9) :
     /// l'instant de la dernière recherche et son résultat.
     icebreaker_allie: Option<(f64, Option<String>)>,
@@ -1402,6 +1407,7 @@ impl Hud {
         let ids = Ids::new(ui.id_generator());
         // Icebreaker : les identifiants de l'interface ajoutée (jalon N).
         let icebreaker = icebreaker::Interface::new(ui.id_generator());
+        let icebreaker_roue = icebreaker_roue::Roue::new(ui.id_generator());
         // Load world map
         let mut layers = Vec::new();
         for layer in client.world_data().map_layers() {
@@ -1476,6 +1482,7 @@ impl Hud {
             to_focus: None,
             force_ungrab: false,
             icebreaker,
+            icebreaker_roue,
             icebreaker_allie: None,
             force_chat_input: None,
             force_chat_cursor: None,
@@ -4353,6 +4360,18 @@ impl Hud {
             icebreaker_en_cours,
             &icebreaker_etat,
         ));
+        // Icebreaker RO : la roue des objets, par-dessus le reste.
+        if let Some(roue) = &info.icebreaker_roue {
+            self.icebreaker_roue.dessiner(
+                ui_widgets,
+                roue,
+                &self.imgs,
+                &self.item_imgs,
+                &self.fonts,
+                i18n,
+                self.pulse,
+            );
+        }
 
         // Camera clamp indicator
         if let Some(cameraclamp_key) = global_state

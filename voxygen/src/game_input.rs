@@ -83,6 +83,9 @@ pub enum GameInput {
     /// Icebreaker: choose the colour of the light beacon (jalon J).
     #[strum(serialize = "gameinput-icebreaker-balisecouleur")]
     IcebreakerBaliseCouleur,
+    /// Icebreaker: the item wheel, held open (jalon RO).
+    #[strum(serialize = "gameinput-icebreaker-roue")]
+    IcebreakerRoue,
     #[strum(serialize = "gameinput-togglewalk")]
     ToggleWalk,
     #[strum(serialize = "gameinput-autowalk")]

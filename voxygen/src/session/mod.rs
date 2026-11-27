@@ -125,6 +125,9 @@ pub struct SessionState {
     icebreaker_lock_settings: icebreaker_lock::Reglages,
     /// Icebreaker : rappel des touches et « Cible perdue » du verrouillage (N.7).
     icebreaker_lock_avis: icebreaker_lock::Avertissements,
+    /// Icebreaker : la roue des objets, ouverte tant que Tab est tenu (jalon RO).
+    icebreaker_roue: Option<common::icebreaker_roue::Geste>,
+    icebreaker_roue_reglages: common::icebreaker_roue::Reglages,
     icebreaker_vue_settings: icebreaker_vue::Reglages,
     /// Icebreaker : essai du plan du village sans les mains (`ICEBREAKER_AUTO_PLAN`, jalon N).
     icebreaker_auto: Option<icebreaker_auto::Auto>,
@@ -213,6 +216,8 @@ impl SessionState {
             icebreaker_lock: None,
             icebreaker_lock_settings: icebreaker_lock::Reglages::charger(),
             icebreaker_lock_avis: icebreaker_lock::Avertissements::default(),
+            icebreaker_roue: None,
+            icebreaker_roue_reglages: common::icebreaker_roue::Reglages::charger(),
             icebreaker_vue_settings: icebreaker_vue::Reglages::charger(),
             icebreaker_auto: icebreaker_auto::Auto::charger(),
             auto_walk: false,
@@ -1448,6 +1453,11 @@ impl PlayState for SessionState {
                             GameInput::IcebreakerLockTarget if state => {
                                 self.toggle_icebreaker_lock();
                             },
+                            // Icebreaker : la roue des objets s'ouvre tant que la touche est tenue (RO).
+                            GameInput::IcebreakerRoue => {
+                                self.icebreaker_roue =
+                                    (state && controlling_char).then(Default::default);
+                            },
                             // Icebreaker : poser une balise lumineuse (jalon J).
                             GameInput::IcebreakerBalise if state => {
                                 self.client
@@ -1483,6 +1493,12 @@ impl PlayState for SessionState {
                     Event::ScreenshotMessage(screenshot_msg) => self
                         .hud
                         .new_message(ChatType::CommandInfo.into_plain_msg(screenshot_msg)),
+
+                    // Icebreaker : roue des objets ouverte, la souris choisit un secteur, la caméra ne
+                    // bouge pas (RO).
+                    Event::CursorPan(delta) if self.icebreaker_roue.is_some() => {
+                        self.icebreaker_roue_coup(delta, global_state);
+                    },
 
                     // Icebreaker: while an enemy is locked, the wheel switches to its neighbour.
                     Event::Zoom(delta) if self.icebreaker_lock.is_some() => {
@@ -1895,6 +1911,15 @@ impl PlayState for SessionState {
                             .handle_input(InputKind::Ability(n), appuyee, None, None);
                     },
                     icebreaker_auto::Pas::Lanterne => self.client.borrow_mut().enable_lantern(),
+                    // Icebreaker RO : la roue des objets, comme Tab tenu et un coup de souris.
+                    icebreaker_auto::Pas::Roue(direction, achever) => {
+                        let seuil = self.icebreaker_roue_reglages.seuil;
+                        if !achever {
+                            self.icebreaker_roue = Some(Default::default());
+                        }
+                        let part = if achever { 0.6 } else { 0.5 };
+                        self.icebreaker_roue_coup(direction.vecteur() * seuil * part, global_state);
+                    },
                     // Icebreaker F.44 : cadrer une capture.
                     icebreaker_auto::Pas::Cap(lacet, inclinaison) => self
                         .scene
@@ -1980,6 +2005,7 @@ impl PlayState for SessionState {
                     icebreaker_lock_avis: self
                         .icebreaker_lock_avis
                         .avis(self.icebreaker_lock.is_some()),
+                    icebreaker_roue: self.icebreaker_roue_vue(),
                     persistence_load_error: self.metadata.skill_set_persistence_load_error,
                     key_state: &self.key_state,
                 },
@@ -2922,5 +2948,85 @@ impl SessionState {
                 }
             },
         }
+    }
+
+    /// Icebreaker RO : un mouvement de souris roue ouverte ; au-delà du seuil, l'action du secteur part
+    /// et la roue se ferme (un coup, une action).
+    fn icebreaker_roue_coup(&mut self, delta: Vec2<f32>, global_state: &GlobalState) {
+        use common::{comp::slot::Slot, icebreaker_roue::{Action, Etat}};
+        // La roue suit l'écran (y vers le bas) même quand la caméra a l'axe vertical inversé.
+        let delta = if global_state.settings.gameplay.mouse_y_inversion {
+            Vec2::new(delta.x, -delta.y)
+        } else {
+            delta
+        };
+        let seuil = self.icebreaker_roue_reglages.seuil;
+        let Some(direction) = self
+            .icebreaker_roue
+            .as_mut()
+            .and_then(|geste| geste.ajouter(delta, seuil))
+        else {
+            return;
+        };
+        self.icebreaker_roue = None;
+        let secteur = self
+            .icebreaker_roue_secteurs()
+            .into_iter()
+            .find(|s| s.direction == direction);
+        match secteur {
+            Some(s) if s.etat == Etat::Pret => match (s.action, s.objet) {
+                (Action::ChangerArme, _) => self.client.borrow_mut().swap_loadout(),
+                (Action::Potion | Action::Nourriture, Some(slot)) => {
+                    self.client.borrow_mut().use_slot(Slot::Inventory(slot))
+                },
+                _ => {},
+            },
+            Some(s) if s.etat == Etat::Bientot => {
+                let texte = global_state
+                    .i18n
+                    .read()
+                    .get_msg("icebreaker-roue-carte-bientot")
+                    .into_owned();
+                self.hud
+                    .new_message(ChatType::CommandInfo.into_plain_msg(texte));
+            },
+            _ => {},
+        }
+    }
+
+    /// Icebreaker RO : les secteurs de la roue pour ce que porte le personnage.
+    fn icebreaker_roue_secteurs(&self) -> Vec<common::icebreaker_roue::Secteur> {
+        let client = self.client.borrow();
+        client
+            .inventories()
+            .get(client.entity())
+            .map(|inv| common::icebreaker_roue::secteurs(&self.icebreaker_roue_reglages, inv))
+            .unwrap_or_default()
+    }
+
+    /// Icebreaker RO : ce que le HUD dessine de la roue ouverte.
+    fn icebreaker_roue_vue(&self) -> Option<crate::hud::icebreaker_roue::Ouverte> {
+        use common::{comp::{ItemKey, slot::EquipSlot}, icebreaker_roue::Action};
+        let geste = self.icebreaker_roue.as_ref()?;
+        let secteurs = self.icebreaker_roue_secteurs();
+        let client = self.client.borrow();
+        let inventories = client.inventories();
+        let inventaire = inventories.get(client.entity());
+        let objets = secteurs
+            .iter()
+            .map(|s| {
+                let inv = inventaire?;
+                let item = match s.action {
+                    Action::ChangerArme => inv.equipped(EquipSlot::InactiveMainhand),
+                    _ => s.objet.and_then(|slot| inv.get(slot)),
+                }?;
+                Some((ItemKey::from(item), item.amount()))
+            })
+            .collect();
+        Some(crate::hud::icebreaker_roue::Ouverte {
+            secteurs,
+            objets,
+            vise: geste.vise(self.icebreaker_roue_reglages.seuil),
+        })
     }
 }
