@@ -9,4 +9,26 @@
     periode: 0.5,
     // Cases gardées au plus ; au-delà, la carte ne grandit plus.
     max_cases: 200000,
+    // Côté de l'image de la carte, en pixels.
+    taille: 512,
+    // Zoom à l'ouverture, en pixels par bloc, et ses bornes (molette).
+    zoom: 3.0,
+    zoom_min: 1.0,
+    zoom_max: 8.0,
+    // Inclinaison à l'ouverture, en degrés (90 : vue de dessus), et ses bornes.
+    tangage: 50.0,
+    tangage_min: 15.0,
+    tangage_max: 90.0,
+    // Degrés tournés par pixel de souris.
+    sensibilite: 0.4,
+    // Éclaircit les couleurs du terrain (1 : telles quelles).
+    eclat: 1.4,
+    // Part de lumière d'une face vue de biais (0 : noire, 1 : pas d'ombre).
+    ombre: 0.45,
+    // Assombrit ce qui est loin derrière (0 : pas de brume).
+    brume: 0.25,
+    // Couleurs des repères (rouge, vert, bleu) : objectif à remplir, objectif rempli, moi.
+    couleur_objectif: (230, 40, 40),
+    couleur_fait: (120, 120, 120),
+    couleur_moi: (255, 220, 120),
 )
