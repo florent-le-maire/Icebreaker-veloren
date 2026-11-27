@@ -400,3 +400,16 @@ Le village est toujours le même et presque plat, disposé comme le croquis de F
   Vu au vrai client. Pas vu : une ville tirée au hasard (garde la grille). `f568001e8d`
 - [x] **VF.6 Apparition sous la place** — la recherche du sol s'arrêtait sous le sommet du tronçon : sur une place plate
   au sommet (graine 949093 en campagne, 2), on apparaissait 2 blocs sous terre. Vu en jeu (Flo, 2026-11-22). `d8fda3e396`
+
+## Jalon RO — La roue des objets (Flo, 2026-11-27)
+
+Tab tenu ouvre une roue façon Monster Hunter, un coup de souris utilise le secteur visé (fiche `wiki/roue.md`,
+réglages `assets/icebreaker/roue.ron`). V1 fixe : carte (bientôt) au nord, changer d'arme à l'ouest, potion à l'est,
+nourriture au sud-est ; croix rouge sur ce qui manque. Personnaliser la roue : `IDEES.md`.
+
+- [x] **RO.1 Logique et réglage** — directions, geste, premier objet du sac, croix rouge ; 9 tests. `e011aee2`
+- [x] **RO.2 et RO.3 Tab, souris, dessin** — Tab ne change plus d'arme ; vu au vrai client sans les mains (roue,
+  croix, changer d'arme, message de la carte) ; boire et manger depuis la roue pas vus. `35876591`
+- [x] **RO.4 Fiche du wiki et docs**
+- [x] **RO.5 Retours de Flo** — seuil du coup de souris 60 → 150 ; la roue reste ouverte après une action tant que Tab
+  est tenu (revenir vers le centre, puis un autre coup) ; vu au vrai client sans les mains. Vu en jeu (Flo, 2026-11-27).

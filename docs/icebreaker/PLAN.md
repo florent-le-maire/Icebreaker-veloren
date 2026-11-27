@@ -71,7 +71,7 @@ Le jeu doit rester lançable après chaque tâche.
 ## Jalons finis (détail dans `HISTORIQUE.md`)
 
 Prototype du 2026-10-28 ; jalon 1 (instances propres, I.1 à I.9) ; jalon 2 (village, V.1 à V.12) ; L (combat
-létal) ; R (charrette et registre) ; X (interface du village) ; S.1 (script Linux) ; VF (village fixe). Finis en partie : C (C.1 à C.3),
+létal) ; R (charrette et registre) ; X (interface du village) ; S.1 (script Linux) ; VF (village fixe) ; RO (roue des objets). Finis en partie : C (C.1 à C.3),
 G (G.1 à G.10), F (F.1 à F.6). Grotte : K.1 à K.5 (`PLAN-GROTTE.md`). Mod : M.1 (`PLAN-MOD.md`).
 
 ## Jalon C — Le village qui grandit (Flo, 2026-10-28)
@@ -328,19 +328,6 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
   avec Sayanel (`0015`). Contenu à confirmer (`QUESTIONS.md`, Q1).
 
-## Jalon RO — La roue des objets (Flo, 2026-11-27)
-
-Tab tenu ouvre une roue façon Monster Hunter, un coup de souris utilise le secteur visé (fiche `wiki/roue.md`,
-réglages `assets/icebreaker/roue.ron`). V1 fixe : carte (bientôt) au nord, changer d'arme à l'ouest, potion à l'est,
-nourriture au sud-est ; croix rouge sur ce qui manque. Personnaliser la roue : `IDEES.md`.
-
-- [x] **RO.1 Logique et réglage** — directions, geste, premier objet du sac, croix rouge ; 9 tests. `e011aee2`
-- [x] **RO.2 et RO.3 Tab, souris, dessin** — Tab ne change plus d'arme ; vu au vrai client sans les mains (roue,
-  croix, changer d'arme, message de la carte) ; boire et manger depuis la roue pas vus. `35876591`
-- [x] **RO.4 Fiche du wiki et docs**
-- [x] **RO.5 Retours de Flo** — seuil du coup de souris 60 → 150 ; la roue reste ouverte après une action tant que Tab
-  est tenu (revenir vers le centre, puis un autre coup) ; vu au vrai client sans les mains.
-
 ## Avant le playtest avec les potes (Flo, 2026-11-16)
 
 Ce que le jeu doit avoir avant d'inviter tout le monde : `PLAN-PLAYTEST.md`. Ses tâches gardent la lettre de leur
@@ -353,9 +340,6 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 `PLAN-GROTTE.md`). À parcourir dans le vrai client, en campagne, à deux si possible ; barrer ce qui est vu, ouvrir une
 tâche pour ce qui casse.
 
-- [ ] RO (roue des objets, 2026-11-27) : tenir Tab, la caméra ne bouge plus ; un coup de souris vers l'est boit
-  une potion, vers le sud-est mange, vers l'ouest change d'arme, vers le nord écrit « La carte arrive bientôt » ;
-  plusieurs actions de suite Tab tenu (revenir au centre entre deux) ; relâcher Tab ferme la roue ; sans potion, croix rouge et rien ne se passe. Le seuil (150) est-il bon ?
 - [ ] IA.1 (cerveau des ennemis, 2026-11-26, `PLAN-IA.md`) : au lieu d'entraînement, `/entrainement ia` puis des
   orcs et des danari : ils se battent comme avant (cible, répartition à plusieurs joueurs, danari qui achèvent à
   plusieurs et fuient sous 30 % de PV) ; en donjon humain, les rondes tournent toujours.
