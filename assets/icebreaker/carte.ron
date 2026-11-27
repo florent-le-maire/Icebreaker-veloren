@@ -19,9 +19,10 @@
     zoom: 4.0,
     zoom_min: 1.0,
     zoom_max: 8.0,
-    // Inclinaison à l'ouverture, en degrés (90 : vue de dessus), et ses bornes.
+    // Inclinaison à l'ouverture, en degrés (90 : vue de dessus, 0 : de côté, -90 : par en dessous), et ses
+    // bornes ; de -90 à 90, avec la rotation à la souris, on regarde la carte de partout.
     tangage: 50.0,
-    tangage_min: 15.0,
+    tangage_min: -90.0,
     tangage_max: 90.0,
     // Degrés tournés par pixel de souris.
     sensibilite: 0.4,

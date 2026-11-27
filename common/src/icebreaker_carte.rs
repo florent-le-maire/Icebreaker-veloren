@@ -42,7 +42,8 @@ pub struct Reglages {
     pub zoom: f32,
     pub zoom_min: f32,
     pub zoom_max: f32,
-    /// Inclinaison à l'ouverture, en degrés (90 : vue de dessus), et ses bornes.
+    /// Inclinaison à l'ouverture, en degrés (90 : vue de dessus, 0 : de côté, -90 : par en dessous), et
+    /// ses bornes ; de -90 à 90, avec la rotation, on regarde la carte de partout.
     pub tangage: f32,
     pub tangage_min: f32,
     pub tangage_max: f32,
@@ -78,7 +79,7 @@ impl Default for Reglages {
             zoom_min: 1.0,
             zoom_max: 8.0,
             tangage: 50.0,
-            tangage_min: 15.0,
+            tangage_min: -90.0,
             tangage_max: 90.0,
             sensibilite: 0.4,
             clarte_min: 150.0,
@@ -130,9 +131,9 @@ impl Reglages {
             return Err("zoom : il faut 0 < zoom_min <= zoom <= zoom_max".to_string());
         }
         if !(self.tangage_min <= self.tangage && self.tangage <= self.tangage_max && self.tangage_max <= 90.0)
-            || self.tangage_min < 0.0
+            || self.tangage_min < -90.0
         {
-            return Err("tangage : il faut 0 <= tangage_min <= tangage <= tangage_max <= 90".to_string());
+            return Err("tangage : il faut -90 <= tangage_min <= tangage <= tangage_max <= 90".to_string());
         }
         Ok(())
     }
@@ -877,6 +878,26 @@ mod tests {
         carnet.recevoir(Some(Vec::new()));
         assert!(carnet.en_expedition());
         assert!(carnet.exploration.is_empty());
+    }
+
+    #[test]
+    fn on_peut_regarder_la_carte_par_en_dessous() {
+        // CA.6 (Flo, 2026-11-27) : « il faudrait que la caméra puisse tourner à 360 degrés ».
+        let r = Reglages { tangage_min: -90.0, ..reglages_dessin() };
+        assert!(r.verifier().is_ok());
+        let mut vue = Vue::nouvelle(&r);
+        vue.tourner(Vec2::new(0.0, -100_000.0), &r);
+        assert!((vue.tangage + std::f32::consts::FRAC_PI_2).abs() < 1e-4);
+        // La même salle, sol rouge et plafond bleu : par en dessous, on voit le plafond.
+        let e = explore(|p| match p.z {
+            0 => Bloc::Plein(ROUGE),
+            3 => Bloc::Plein(BLEU),
+            1 | 2 => Bloc::Air,
+            _ => Bloc::Inconnu,
+        });
+        let p = pixel_de(&image(&e, &[], &vue), &vue, Vec3::new(4.5, 0.5, 3.0));
+        assert_eq!(p[3], 255);
+        assert!(p[2] > p[0], "le plafond bleu : {p:?}");
     }
 
     #[test]

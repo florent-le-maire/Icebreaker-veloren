@@ -88,11 +88,16 @@ impl Carte {
         if !dans_le_sac {
             return Err(ABSENTE);
         }
+        self.ouverte = true;
+        self.recaler(client);
+        Ok(())
+    }
+
+    /// Remet la carte comme à l'ouverture : tournée où le personnage regarde, inclinaison et zoom de départ.
+    pub fn recaler(&mut self, client: &Client) {
         self.vue = Vue::nouvelle(&self.reglages);
         self.vue.face_a(regard(client));
-        self.ouverte = true;
         self.a_dessiner = true;
-        Ok(())
     }
 
     pub fn fermer(&mut self) { self.ouverte = false; }

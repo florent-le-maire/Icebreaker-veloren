@@ -115,6 +115,6 @@ icebreaker-carte-titre = Carte de l’expédition
 icebreaker-carte-objectifs = Objectifs en rouge : { $restants } à remplir
 icebreaker-carte-objectifs-faits = Tous les objectifs sont remplis
 icebreaker-carte-sans-objectif = Ce lieu n’a pas d’objectif
-icebreaker-carte-aide = Souris : tourner · Molette : zoom · Échap : fermer
+icebreaker-carte-aide = Souris : tourner · Molette : zoom · Saut : recentrer · Échap : fermer
 icebreaker-carte-hors-expedition = La carte ne sert qu’en expédition.
 icebreaker-carte-absente = Vous n’avez pas la carte de l’expédition dans votre sac.

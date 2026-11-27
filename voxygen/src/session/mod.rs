@@ -878,6 +878,14 @@ impl PlayState for SessionState {
                     self.icebreaker_carte.fermer();
                     continue;
                 }
+                // Icebreaker CA.6 : carte ouverte, la touche de saut la recale sur ce que regarde le
+                // personnage (on ne saute pas).
+                if self.icebreaker_carte.ouverte()
+                    && matches!(event, Event::InputUpdate(GameInput::Jump, true))
+                {
+                    self.icebreaker_carte.recaler(&self.client.borrow());
+                    continue;
+                }
                 // Pass all events to the ui first.
                 {
                     let client = self.client.borrow();

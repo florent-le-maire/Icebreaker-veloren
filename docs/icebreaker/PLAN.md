@@ -347,6 +347,8 @@ Une carte en volume du lieu, qu'on tourne à la souris, avec les objectifs en ro
   les mains (donjon généré, grotte) ; souris, molette, Échap, forêt et campagne pas essayés — 8a9f778b
 - [x] **CA.5 Docs** — règle dans `design/donjon.md`, fiche `wiki/carte.md`, roue mise à jour.
 - [ ] **CA.6 Retours de Flo** — taille, zoom, couleurs, sens de la souris, rayon de découverte (`carte.ron`).
+  Fait (2026-11-27) : la carte se regarde de partout (inclinaison de -90 à 90), Espace la recale sur le regard du
+  personnage ; pas vu en jeu.
 
 ## Avant le playtest avec les potes (Flo, 2026-11-16)
 

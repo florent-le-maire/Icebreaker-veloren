@@ -73,7 +73,9 @@ Godot).
 - **Chacun sa carte** : on n'y voit que ce que son propre personnage a exploré. On découvre ce qu'on atteint par l'air
   autour de soi (`rayon` et `hauteur` de `carte.ron`) : un mur ou une porte fermée cache la suite. Vide à l'arrivée,
   elle se remplit même fermée ; un nouveau lieu donne une carte vierge.
-- Carte ouverte : la souris la fait tourner, la molette zoome ; elle reste centrée sur soi.
+- Carte ouverte : la souris la fait tourner dans tous les sens (dessus, côté, dessous), la molette zoome ; elle
+  reste centrée sur soi. **Espace** (la touche de saut) la recale : tournée où le personnage regarde, inclinaison et
+  zoom de départ.
 - Dessiné : le terrain exploré, **les objectifs en rouge** (visibles dès l'arrivée, même hors de ce qu'on a exploré ;
   gris une fois remplis ; collés au bord quand ils sont loin) et **moi** (une flèche tournée où je regarde). Rien
   d'autre : ni créatures, ni coffres, ni alliés, ni portail, ni autel.

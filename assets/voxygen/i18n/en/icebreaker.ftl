@@ -115,6 +115,6 @@ icebreaker-carte-titre = Expedition map
 icebreaker-carte-objectifs = Objectives in red: { $restants } left
 icebreaker-carte-objectifs-faits = All objectives are done
 icebreaker-carte-sans-objectif = This place has no objective
-icebreaker-carte-aide = Mouse: turn · Wheel: zoom · Esc: close
+icebreaker-carte-aide = Mouse: turn · Wheel: zoom · Jump: recentre · Esc: close
 icebreaker-carte-hors-expedition = The map is only useful on an expedition.
 icebreaker-carte-absente = You do not have the expedition map in your bag.

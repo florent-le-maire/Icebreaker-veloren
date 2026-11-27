@@ -40,8 +40,10 @@ terrain. Elle est vide à l'arrivée et se remplit en marchant, même fermée. O
 l'air autour de soi : un mur ou une porte fermée cache la salle d'à côté. Chacun a la sienne ; un nouveau lieu donne
 une carte vierge.
 
-Carte ouverte, **la souris la fait tourner** (la caméra ne bouge plus) et **la molette zoome** ; le jeu continue et
-on peut marcher. Elle s'ouvre tournée dans le sens où le personnage regarde, et reste centrée sur lui.
+Carte ouverte, **la souris la fait tourner** dans tous les sens, jusqu'à la regarder par en dessous (la caméra ne
+bouge plus), et **la molette zoome** ; le jeu continue et on peut marcher. Elle s'ouvre tournée dans le sens où le
+personnage regarde, et reste centrée sur lui. **Espace** la remet comme à l'ouverture (on ne saute pas tant qu'elle
+est ouverte).
 
 Deux repères seulement :
 
