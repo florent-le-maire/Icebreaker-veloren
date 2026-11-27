@@ -413,3 +413,22 @@ nourriture au sud-est ; croix rouge sur ce qui manque. Personnaliser la roue : `
 - [x] **RO.4 Fiche du wiki et docs**
 - [x] **RO.5 Retours de Flo** — seuil du coup de souris 60 → 150 ; la roue reste ouverte après une action tant que Tab
   est tenu (revenir vers le centre, puis un autre coup) ; vu au vrai client sans les mains. Vu en jeu (Flo, 2026-11-27).
+
+## Jalon CA — La carte 3D de l'expédition (Flo, 2026-11-27)
+
+Une carte en volume du lieu, qu'on tourne à la souris, avec les objectifs en rouge ; un objet du sac. Règles :
+`design/donjon.md` (« Carte de l'expédition dans Veloren ») ; réglages : `assets/icebreaker/carte.ron`.
+
+- [x] **CA.1 Ce qu'on découvre** — `common/src/icebreaker_carte.rs` : on découvre par l'air autour de soi, un mur
+  arrête ; la carte ne rétrécit jamais ; 10 tests — bcff7aef
+- [x] **CA.2 Le dessin** — image dessinée sur le processeur : terrain aux couleurs des blocs, seules les faces
+  tournées vers l'œil, objectifs rouges (gris une fois remplis, collés au bord quand ils sont loin), flèche de
+  « moi » ; tests de propriétés — 526f7609
+- [x] **CA.3 Objet et objectifs** — objet `common.items.icebreaker.carte` remis à l'arrivée comme la balise ; le
+  serveur envoie les objectifs du lieu (le chef) quand ils changent — 9019c77c
+- [x] **CA.4 La carte dans le client** — ouverte par l'objet ou le haut de la roue, Échap la ferme ; souris pour
+  tourner, molette pour zoomer ; pas `carte` et `carte 90` de l'essai sans les mains. Vu dans le vrai client sans
+  les mains (donjon généré, grotte) ; souris, molette, Échap, forêt et campagne pas essayés — 8a9f778b
+- [x] **CA.5 Docs** — règle dans `design/donjon.md`, fiche `wiki/carte.md`, roue mise à jour.
+- [x] **CA.6 Retours de Flo** — la carte se regarde de partout (inclinaison de -90 à 90), Espace la recale sur le
+  regard du personnage. Vu en jeu (Flo, 2026-11-27). `5362de95`
