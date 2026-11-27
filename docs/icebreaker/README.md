@@ -75,6 +75,7 @@ vision sont dans `../Icebreaker` ; ce dossier contient ce qu'il faut pour travai
 | DF | Difficulté 1 à 6 des expéditions | `PLAN-PLAYTEST.md` (§ 8, règles : `design/difficulte.md`) | DF.1 à DF.7 codés le 2026-11-25 ; pas joué en campagne ni au lieu d'entraînement | `Veloren-difficulte` |
 | IA | L'IA de nos six espèces | `PLAN-IA.md` (décision `0024`, règles : `design/creatures.md`) | plan validé le 2026-11-26 ; IA.1 à IA.11 codés (2026-11-27 : voir, chercher, entendre, prévenir, habileté, mage, défense, fuite, appel à l'aide, déroute, ordres, rage des orcs), essayés au client texte, pas vus dans le vrai client ; IA.12 et IA.13 à redécouper (Q74, Q75), IA.14 selon l'essai, IA.15 après Q50 | `Veloren-ia` |
 | RO | La roue des objets (Tab tenu) | `HISTORIQUE.md` | fait, vu en jeu (Flo, 2026-11-27) | — (supprimé) |
+| CA | La carte 3D de l'expédition (objet du sac) | `PLAN.md` | CA.1 à CA.5 codés le 2026-11-27, vus dans le vrai client sans les mains (donjon, grotte) ; retours de Flo à venir | `Veloren-carte` |
 
 Les « tâches H », « piste Z », « 2D.x » qu'on croise dans `design/` sont celles du projet Godot, pas des nôtres.
 

@@ -63,6 +63,23 @@ Réglages : section `movement` de `game.json`.
   plus haut (fossé franchi), le plongeon est raté, sans impact. Tir allié comme les autres attaques (il blesse les alliés
   pris dans la zone si `combat.friendlyFire`).
 
+## Carte de l'expédition dans Veloren (jalon CA, Flo le 2026-11-27)
+
+Dans Veloren, la carte est **en volume** et remplace la feuille par étage décrite plus bas (gardée pour le projet
+Godot).
+
+- C'est **un objet**, remis dans le sac à l'arrivée dans un lieu (donjon, grotte, forêt). L'utiliser, ou le haut de
+  la roue des objets, ouvre et ferme la carte ; Échap la ferme. **Le jeu continue.**
+- **Chacun sa carte** : on n'y voit que ce que son propre personnage a exploré. On découvre ce qu'on atteint par l'air
+  autour de soi (`rayon` et `hauteur` de `carte.ron`) : un mur ou une porte fermée cache la suite. Vide à l'arrivée,
+  elle se remplit même fermée ; un nouveau lieu donne une carte vierge.
+- Carte ouverte : la souris la fait tourner, la molette zoome ; elle reste centrée sur soi.
+- Dessiné : le terrain exploré, **les objectifs en rouge** (visibles dès l'arrivée, même hors de ce qu'on a exploré ;
+  gris une fois remplis ; collés au bord quand ils sont loin) et **moi** (une flèche tournée où je regarde). Rien
+  d'autre : ni créatures, ni coffres, ni alliés, ni portail, ni autel.
+- Objectif d'aujourd'hui : le chef ou le boss à tuer (`design/mission.md`) ; un lieu sans chef n'a pas d'objectif,
+  la carte y marche quand même.
+
 ## Carte d'exploration (piste C, règles de Flo du 2026-10-20)
 
 - **G** (réassignable) sort ou range la carte : le personnage tient une feuille, la caméra passe à la première

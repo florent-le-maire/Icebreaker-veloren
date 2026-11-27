@@ -58,6 +58,8 @@ Le jeu doit rester lançable après chaque tâche.
   traversé pour rentrer, chacun pour soi) et une salle de l'autel (relève les morts dont on porte le cristal, pour la
   moitié de la vie du moment). La mort n'est définitive que si le mort quitte le donjon ou si plus aucun vivant n'y
   reste (`design/donjon.md`). Le protocole a changé : client et serveur à recompiler ensemble, VPS à redéployer.
+- **Carte de l'expédition (2026-11-27)** : un objet du sac ouvre une carte en volume de ce qu'on a exploré, avec le
+  chef en rouge (jalon CA). Le protocole a changé : client et serveur à recompiler ensemble, VPS à redéployer.
 
 ## Architecture visée
 
@@ -328,6 +330,24 @@ Fait : S.1 (`icebreaker.sh`, même rôle que `icebreaker.ps1`).
 - [ ] **D.1 Soirée de test** : village → donjon → village → route → village, à deux ou plus, puis décision du moteur
   avec Sayanel (`0015`). Contenu à confirmer (`QUESTIONS.md`, Q1).
 
+## Jalon CA — La carte 3D de l'expédition (Flo, 2026-11-27)
+
+Une carte en volume du lieu, qu'on tourne à la souris, avec les objectifs en rouge ; un objet du sac. Règles :
+`design/donjon.md` (« Carte de l'expédition dans Veloren ») ; réglages : `assets/icebreaker/carte.ron`.
+
+- [x] **CA.1 Ce qu'on découvre** — `common/src/icebreaker_carte.rs` : on découvre par l'air autour de soi, un mur
+  arrête ; la carte ne rétrécit jamais ; 10 tests — bcff7aef
+- [x] **CA.2 Le dessin** — image dessinée sur le processeur : terrain aux couleurs des blocs, seules les faces
+  tournées vers l'œil, objectifs rouges (gris une fois remplis, collés au bord quand ils sont loin), flèche de
+  « moi » ; tests de propriétés — 526f7609
+- [x] **CA.3 Objet et objectifs** — objet `common.items.icebreaker.carte` remis à l'arrivée comme la balise ; le
+  serveur envoie les objectifs du lieu (le chef) quand ils changent — 9019c77c
+- [x] **CA.4 La carte dans le client** — ouverte par l'objet ou le haut de la roue, Échap la ferme ; souris pour
+  tourner, molette pour zoomer ; pas `carte` et `carte 90` de l'essai sans les mains. Vu dans le vrai client sans
+  les mains (donjon généré, grotte) ; souris, molette, Échap, forêt et campagne pas essayés — 8a9f778b
+- [x] **CA.5 Docs** — règle dans `design/donjon.md`, fiche `wiki/carte.md`, roue mise à jour.
+- [ ] **CA.6 Retours de Flo** — taille, zoom, couleurs, sens de la souris, rayon de découverte (`carte.ron`).
+
 ## Avant le playtest avec les potes (Flo, 2026-11-16)
 
 Ce que le jeu doit avoir avant d'inviter tout le monde : `PLAN-PLAYTEST.md`. Ses tâches gardent la lettre de leur
@@ -340,6 +360,11 @@ Ce que les tâches cochées n'ont vérifié qu'en test ou au client texte (déta
 `PLAN-GROTTE.md`). À parcourir dans le vrai client, en campagne, à deux si possible ; barrer ce qui est vu, ouvrir une
 tâche pour ce qui casse.
 
+- [ ] CA (carte de l'expédition, 2026-11-27) : en campagne, partir en donjon, en grotte et en forêt ; la carte est
+  dans le sac à l'arrivée (une seule, même après deux expéditions) ; l'ouvrir par le sac et par le haut de la roue ;
+  tourner à la souris (le sens convient ?), zoomer à la molette, fermer avec Échap ; marcher : la carte se remplit,
+  une porte fermée cache la salle d'à côté ; le losange rouge est bien sur le chef et devient gris quand il tombe ;
+  pas d'à-coup en marchant carte fermée (surtout en forêt) ; de retour au village, la carte ne s'ouvre plus.
 - [ ] IA.1 (cerveau des ennemis, 2026-11-26, `PLAN-IA.md`) : au lieu d'entraînement, `/entrainement ia` puis des
   orcs et des danari : ils se battent comme avant (cible, répartition à plusieurs joueurs, danari qui achèvent à
   plusieurs et fuient sous 30 % de PV) ; en donjon humain, les rondes tournent toujours.

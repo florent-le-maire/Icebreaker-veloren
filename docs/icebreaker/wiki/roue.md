@@ -2,7 +2,7 @@
 ordre = 12
 titre = "Roue des objets"
 icone = "voxygen/element/ui/generic/buttons/map.png"
-resume = "Tab maintenu ouvre une roue autour du personnage ; un coup de souris boit une potion, mange ou change d'arme."
+resume = "Tab maintenu ouvre une roue autour du personnage ; un coup de souris ouvre la carte, boit une potion, mange ou change d'arme."
 reglages = ["roue.ron"]
 taches = ["RO"]
 systemes = [
@@ -27,12 +27,12 @@ permet d'enchaîner plusieurs actions (continuer dans la même direction ne repr
 
 Pour l'instant la roue est la même pour tout le monde :
 
-- en haut, la **carte** (elle arrive bientôt : rien ne se passe encore) ;
+- en haut, la **carte de l'expédition** : elle s'ouvre (ou se ferme) si elle est dans le sac ;
 - à gauche, **changer d'arme** (ce que faisait Tab avant) ;
 - à droite, **boire une potion** : la première trouvée dans le sac ;
 - juste en dessous, **manger** : le premier plat trouvé dans le sac.
 
-Un secteur dont on n'a rien dans le sac (pas de potion, rien à manger, pas d'arme de rechange) porte une **croix
+Un secteur dont on n'a rien dans le sac (pas de carte, pas de potion, rien à manger, pas d'arme de rechange) porte une **croix
 rouge** et ne fait rien. Le chiffre en bas d'une case dit combien il en reste.
 
 ## Pourquoi
