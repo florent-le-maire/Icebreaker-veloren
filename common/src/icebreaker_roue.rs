@@ -146,23 +146,35 @@ impl Reglages {
     }
 }
 
+/// Part du seuil sous laquelle il faut revenir, après un choix, pour en faire un autre.
+const RETOUR: f32 = 0.5;
+
 /// Le coup de souris en cours, pendant que la roue est ouverte.
 #[derive(Clone, Debug, Default)]
 pub struct Geste {
     /// Le mouvement cumulé depuis l'ouverture (repère de l'écran).
     pub cumul: Vec2<f32>,
-    /// La direction déjà rendue : un geste ne choisit qu'une fois.
+    /// La direction déjà rendue ; elle ne revient qu'après un retour vers le centre.
     pub choisi: Option<Direction8>,
 }
 
 impl Geste {
-    /// Ajoute un mouvement de souris ; rend la direction la première fois que le cumul dépasse le seuil.
+    /// Ajoute un mouvement de souris ; rend la direction quand le cumul dépasse le seuil. La roue reste
+    /// ouverte : après un choix, revenir sous la moitié du seuil (vers le centre) permet un autre coup.
+    /// Le cumul est borné au seuil, pour que le retour soit court.
     pub fn ajouter(&mut self, delta: Vec2<f32>, seuil: f32) -> Option<Direction8> {
+        self.cumul += delta;
+        let longueur = self.cumul.magnitude();
+        if longueur > seuil {
+            self.cumul *= seuil / longueur;
+        }
         if self.choisi.is_some() {
+            if longueur < seuil * RETOUR {
+                self.choisi = None;
+            }
             return None;
         }
-        self.cumul += delta;
-        if self.cumul.magnitude() < seuil {
+        if longueur < seuil {
             return None;
         }
         self.choisi = Direction8::de(self.cumul);
@@ -285,10 +297,25 @@ mod tests {
 
     #[test]
     fn un_geste_ne_choisit_qu_une_fois() {
+        // Continuer dans la même direction ne reprend pas l'action (pas de deux potions par mégarde).
         let mut g = Geste::default();
         assert_eq!(g.ajouter(v(0.0, -100.0), 60.0), Some(Direction8::N));
-        assert_eq!(g.ajouter(v(100.0, 0.0), 60.0), None);
-        assert_eq!(g.ajouter(v(0.0, 300.0), 60.0), None);
+        assert_eq!(g.ajouter(v(0.0, -300.0), 60.0), None);
+        assert_eq!(g.ajouter(v(10.0, 0.0), 60.0), None);
+    }
+
+    #[test]
+    fn plusieurs_actions_tab_tenu_en_revenant_au_centre() {
+        // RO (Flo, 2026-11-27) : « lorsqu'on valide une action ça ne ferme pas le menu tant que tab est
+        // maintenu, comme ça on peut en faire plusieurs ». On revient vers le centre, puis un autre coup.
+        let mut g = Geste::default();
+        assert_eq!(g.ajouter(v(100.0, 0.0), 60.0), Some(Direction8::E));
+        // Le cumul est borné au seuil : revenir de 40 suffit pour repasser sous la moitié.
+        assert_eq!(g.ajouter(v(-40.0, 0.0), 60.0), None);
+        assert_eq!(g.ajouter(v(40.0, 40.0), 60.0), Some(Direction8::SE));
+        // Revenir au centre puis repartir dans la même direction reprend l'action.
+        assert_eq!(g.ajouter(v(-45.0, -45.0), 60.0), None);
+        assert_eq!(g.ajouter(v(80.0, 80.0), 60.0), Some(Direction8::SE));
     }
 
     #[test]

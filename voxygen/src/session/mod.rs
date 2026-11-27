@@ -2950,8 +2950,8 @@ impl SessionState {
         }
     }
 
-    /// Icebreaker RO : un mouvement de souris roue ouverte ; au-delà du seuil, l'action du secteur part
-    /// et la roue se ferme (un coup, une action).
+    /// Icebreaker RO : un mouvement de souris roue ouverte ; au-delà du seuil, l'action du secteur part ;
+    /// la roue reste ouverte tant que Tab est tenu (revenir vers le centre, puis un autre coup).
     fn icebreaker_roue_coup(&mut self, delta: Vec2<f32>, global_state: &GlobalState) {
         use common::{comp::slot::Slot, icebreaker_roue::{Action, Etat}};
         // La roue suit l'écran (y vers le bas) même quand la caméra a l'axe vertical inversé.
@@ -2968,7 +2968,6 @@ impl SessionState {
         else {
             return;
         };
-        self.icebreaker_roue = None;
         let secteur = self
             .icebreaker_roue_secteurs()
             .into_iter()

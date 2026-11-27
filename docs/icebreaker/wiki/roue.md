@@ -22,7 +22,8 @@ unite = "px"
 Maintenir **Tab** ouvre une roue au centre de l'écran ; la relâcher la fait disparaître. Tant que la roue est
 ouverte, la souris ne tourne plus la caméra : elle vise un des huit secteurs (nord, nord-est, est, sud-est, sud,
 sud-ouest, ouest, nord-ouest). Un **coup de souris** franc dans une direction utilise tout de suite ce qu'il y a dans
-ce secteur, puis la roue se ferme ; pour une autre action, relâcher et rappuyer sur Tab.
+ce secteur. La roue reste ouverte tant que Tab est tenu : ramener la souris vers le centre, puis donner un autre coup,
+permet d'enchaîner plusieurs actions (continuer dans la même direction ne reprend pas l'action).
 
 Pour l'instant la roue est la même pour tout le monde :
 

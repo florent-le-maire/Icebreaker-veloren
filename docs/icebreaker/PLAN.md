@@ -338,6 +338,8 @@ nourriture au sud-est ; croix rouge sur ce qui manque. Personnaliser la roue : `
 - [x] **RO.2 et RO.3 Tab, souris, dessin** — Tab ne change plus d'arme ; vu au vrai client sans les mains (roue,
   croix, changer d'arme, message de la carte) ; boire et manger depuis la roue pas vus. `35876591`
 - [x] **RO.4 Fiche du wiki et docs**
+- [x] **RO.5 Retours de Flo** — seuil du coup de souris 60 → 150 ; la roue reste ouverte après une action tant que Tab
+  est tenu (revenir vers le centre, puis un autre coup) ; vu au vrai client sans les mains.
 
 ## Avant le playtest avec les potes (Flo, 2026-11-16)
 
@@ -353,7 +355,7 @@ tâche pour ce qui casse.
 
 - [ ] RO (roue des objets, 2026-11-27) : tenir Tab, la caméra ne bouge plus ; un coup de souris vers l'est boit
   une potion, vers le sud-est mange, vers l'ouest change d'arme, vers le nord écrit « La carte arrive bientôt » ;
-  relâcher Tab ferme la roue ; sans potion, croix rouge et rien ne se passe. Le seuil (60) est-il bon ?
+  plusieurs actions de suite Tab tenu (revenir au centre entre deux) ; relâcher Tab ferme la roue ; sans potion, croix rouge et rien ne se passe. Le seuil (150) est-il bon ?
 - [ ] IA.1 (cerveau des ennemis, 2026-11-26, `PLAN-IA.md`) : au lieu d'entraînement, `/entrainement ia` puis des
   orcs et des danari : ils se battent comme avant (cible, répartition à plusieurs joueurs, danari qui achèvent à
   plusieurs et fuient sous 30 % de PV) ; en donjon humain, les rondes tournent toujours.

@@ -2,7 +2,8 @@
 // Lu au lancement du client (`common/src/icebreaker_roue.rs`).
 (
     // Longueur du coup de souris qui choisit un secteur, en pixels de souris (après la sensibilité).
-    seuil: 60.0,
+    // Après un choix, revenir sous la moitié vers le centre permet un autre coup, Tab toujours tenu.
+    seuil: 150.0,
     // Huit secteurs au plus, un par direction : N, NE, E, SE, S, SO, O, NO.
     // Actions : Carte (bientôt), ChangerArme, Potion (première boisson du sac), Nourriture (premier plat du sac).
     secteurs: [
