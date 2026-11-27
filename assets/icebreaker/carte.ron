@@ -1,0 +1,12 @@
+// Icebreaker CA : la carte 3D de l'expédition (un objet du sac ; secteur nord de la roue des objets).
+// Lu au lancement du client (`common/src/icebreaker_carte.rs`).
+(
+    // Côté d'une case de la carte, en blocs : plus petit = plus fin, plus lourd.
+    maille: 2,
+    // Jusqu'où on découvre autour de soi, en blocs parcourus dans l'air (un mur arrête la découverte).
+    rayon: 24,
+    // Secondes entre deux découvertes.
+    periode: 0.5,
+    // Cases gardées au plus ; au-delà, la carte ne grandit plus.
+    max_cases: 200000,
+)

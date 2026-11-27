@@ -35,6 +35,8 @@ pub mod icebreaker_ia;
 pub mod icebreaker_difficulte;
 // Icebreaker : la roue des objets, Tab tenu (jalon RO).
 pub mod icebreaker_roue;
+// Icebreaker : la carte 3D de l'expédition, un objet du sac (jalon CA).
+pub mod icebreaker_carte;
 // Icebreaker : le lieu d'entraînement (jalon O).
 pub mod icebreaker_arene;
 // Icebreaker : le fantôme du village (jalon FT).
