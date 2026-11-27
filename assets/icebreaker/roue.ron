@@ -1,0 +1,14 @@
+// Icebreaker RO : la roue des objets (Tab tenu, un coup de souris choisit le secteur).
+// Lu au lancement du client (`common/src/icebreaker_roue.rs`).
+(
+    // Longueur du coup de souris qui choisit un secteur, en pixels de souris (après la sensibilité).
+    seuil: 60.0,
+    // Huit secteurs au plus, un par direction : N, NE, E, SE, S, SO, O, NO.
+    // Actions : Carte (bientôt), ChangerArme, Potion (première boisson du sac), Nourriture (premier plat du sac).
+    secteurs: [
+        (N, Carte),
+        (O, ChangerArme),
+        (E, Potion),
+        (SE, Nourriture),
+    ],
+)

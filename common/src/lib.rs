@@ -33,6 +33,8 @@ pub mod icebreaker_races;
 pub mod icebreaker_ia;
 // Icebreaker : la difficulté 1 à 6 d'une expédition (jalon DF).
 pub mod icebreaker_difficulte;
+// Icebreaker : la roue des objets, Tab tenu (jalon RO).
+pub mod icebreaker_roue;
 // Icebreaker : le lieu d'entraînement (jalon O).
 pub mod icebreaker_arene;
 // Icebreaker : le fantôme du village (jalon FT).
