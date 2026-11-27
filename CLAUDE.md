@@ -127,7 +127,7 @@ importante, écrire une note dans `docs/icebreaker/decisions/` (problème, optio
   chaque bâtiment (ou envoie la commande) et prend une capture à chaque pas (dossier `screenshots_path` de ses
   réglages ; `fullscreen: (enabled: false)` pour une fenêtre) ; `fermer` ferme le plan, `regarder` fait le clic
   gauche d'un mort, `touche 1` appuie la touche de compétence 1, `onglet 3` ouvre le troisième onglet du panneau,
-  `rituel` fait la touche d'interaction devant le portail ou l'autel le plus proche, `lanterne` allume la lanterne, `cap 180` tourne la caméra vers le haut du plan (0 vers le bas).
+  `rituel` fait la touche d'interaction devant le portail ou l'autel le plus proche, `lanterne` allume la lanterne, `cap 180` tourne la caméra vers le haut du plan (0 vers le bas), `roue E` ouvre la roue des objets (Tab), vise l'est à moitié, capture, puis finit le coup de souris.
   `/aller autel` et `/aller portail` (admin) téléportent devant l'autel ou le portail le plus proche.
   `ICEBREAKER_AUTO_MENU=menu|parties` : une capture du menu ou du choix de la partie.
 - Wiki de l'équipe (jalon W, `docs/icebreaker/PLAN-WIKI.md`) : `cargo run -p icebreaker-wiki` écrit `site/` (ouvrir

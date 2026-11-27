@@ -3,6 +3,12 @@
 Idées de fonctions, pas encore décidées ni découpées. Quand l'équipe en retient une, elle passe en tâche dans le
 plan concerné (`PLAN.md`, `PLAN-BOUCLES.md`) et sort d'ici. Effort sur Veloren : P petit, M moyen, G gros.
 
+## Roue des objets personnalisable (Flo, 2026-11-27)
+
+Choisir soi-même ce que portent les huit secteurs de la roue (jalon RO) : un objet précis, une potion donnée plutôt que
+« la première du sac », plusieurs roues. Effort moyen : le placement est déjà une liste dans `roue.ron`, il faudrait
+l'enregistrer par personnage et un écran pour le régler.
+
 ## Âmes des monstres (Sayanel, 2026-11-03)
 
 Âme lâchée rarement par un monstre, inconnue (blanche) jusqu'à ce qu'on la lie à son personnage, puis reconnue
